@@ -72,6 +72,8 @@ jobs:
             --set api.output=type=docker \
             --set php.args.BUILDKIT_INLINE_CACHE=1 \
             --set php.output=type=docker \
+            --set cache-proxy.args.BUILDKIT_INLINE_CACHE=1 \
+            --set cache-proxy.output=type=docker \
       - name: Validate composer.json
         run: |
           if jq -e '.extra.symfony.id != null' api/composer.json > /dev/null; then
@@ -108,6 +110,7 @@ jobs:
           docker-compose push \
             api \
             php \
+            cache-proxy \
 
 #  docker-build-test-deploy-prod:
 #    name: Docker build/test/deploy (Docker ${{ matrix.docker }}) (production)

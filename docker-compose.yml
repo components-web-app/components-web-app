@@ -7,6 +7,7 @@ x-cache-from:
     cache_from:
       - ${NGINX_IMAGE:-registry.gitlab.com/components-web-app/nginx}
       - ${PHP_IMAGE:-registry.gitlab.com/components-web-app/php}
+      - ${VARNISH_IMAGE:-registry.gitlab.com/components-web-app/varnish}
 
 services:
   php:
@@ -48,6 +49,8 @@ services:
     build:
       context: ./api
       target: cwa_varnish
+      <<: *api-cache-from
+    image: ${VARNISH_IMAGE:-registry.gitlab.com/components-web-app/varnish}
     restart: always
     depends_on:
       - api
