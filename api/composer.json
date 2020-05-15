@@ -2,9 +2,10 @@
     "license": "MIT",
     "require": {
         "php": "^7.4",
-        "silverbackis/api-components-bundle": "dev-master",
         "doctrine/doctrine-migrations-bundle": "^2.0",
         "guzzlehttp/guzzle": "^6.3",
+        "liip/imagine-bundle": "^2.3",
+        "silverbackis/api-components-bundle": "dev-master",
         "symfony/console": "5.0.*",
         "symfony/dotenv": "5.0.*",
         "symfony/flex": "^1.1",

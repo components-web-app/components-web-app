@@ -33,6 +33,11 @@ sub vcl_recv {
   # Remove the "Forwarded" HTTP header if exists (security)
   unset req.http.forwarded;
 
+  # Remove fields and preload headers used for vulcain
+  # https://github.com/dunglas/vulcain/blob/master/docs/cache.md
+  unset req.http.fields;
+  unset req.http.preload;
+
   # To allow API Platform to ban by cache tags
   if (req.method == "BAN") {
     if (client.ip !~ invalidators) {

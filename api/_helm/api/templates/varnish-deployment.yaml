@@ -29,7 +29,7 @@ spec:
                     image: "{{ .Values.varnish.image.repository }}:{{ .Values.varnish.image.tag }}"
                     imagePullPolicy: {{ .Values.varnish.image.pullPolicy }}
                     command: ["varnishd"]
-                    args: ["-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304"]
+                    args: ["-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K"]
                     ports:
                         -   containerPort: 80
                     livenessProbe:

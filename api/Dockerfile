@@ -144,4 +144,4 @@ FROM varnish:${VARNISH_VERSION} AS cwa_varnish
 
 COPY _docker/varnish/conf/default.vcl /etc/varnish/default.vcl
 
-CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304"]
+CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K"]
