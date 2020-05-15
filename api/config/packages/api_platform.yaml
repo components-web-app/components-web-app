@@ -9,9 +9,6 @@ api_platform:
     # Mercure integration, remove if unwanted
     mercure:
         hub_url: '%env(MERCURE_SUBSCRIBE_URL)%'
-    defaults:
-        normalization_context:
-            iri_only: true
     http_cache:
         invalidation:
             enabled: true

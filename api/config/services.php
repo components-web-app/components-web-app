@@ -13,8 +13,7 @@ return function (ContainerConfigurator $configurator) {
         ->defaults()
         ->autowire()
         ->autoconfigure()
-        ->private()
-    ;
+        ->private();
 
     $services
         ->load('App\\', '../src')
@@ -23,8 +22,4 @@ return function (ContainerConfigurator $configurator) {
     $services
         ->load('App\\Controller\\', '../src/Controller')
         ->tag('controller.service_arguments');
-
-    $services
-        ->load('App\\Doctrine\\EventSubscriber\\', '../src/Doctrine/EventSubscriber')
-        ->tag('doctrine.event_subscriber');
 };
