@@ -36,7 +36,7 @@ indent_size = 4
 
 [*.sh]
 indent_style = tab
-indent_size = 4
+indent_size = 2
 
 [*.vcl]
 indent_style = space
