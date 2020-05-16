@@ -71,7 +71,7 @@ install_dependencies() {
   rm glibc-2.28-r0.apk
 
   echo "Intalling helm/tiller..."
-  curl "https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
+  curl "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
   mv linux-amd64/helm /usr/bin/
   mv linux-amd64/tiller /usr/bin/
 
@@ -122,13 +122,13 @@ build() {
   fi
 
   docker pull $VARNISH_REPOSITORY:$TAG || true
-  docker build --cache-from $VARNISH_REPOSITORY:$TAG --tag $VARNISH_REPOSITORY:$TAG --target sbwa_varnish api
+  docker build --cache-from $VARNISH_REPOSITORY:$TAG --tag $VARNISH_REPOSITORY:$TAG --target cwa_varnish api
 
   docker pull $PHP_REPOSITORY:$TAG || true
-  docker build --cache-from $PHP_REPOSITORY:$TAG --tag $PHP_REPOSITORY:$TAG --target sbwa_php api
+  docker build --cache-from $PHP_REPOSITORY:$TAG --tag $PHP_REPOSITORY:$TAG --target cwa_php api
 
   docker pull $NGINX_REPOSITORY:$TAG || true
-  docker build --cache-from $NGINX_REPOSITORY:$TAG --tag $NGINX_REPOSITORY:$TAG --target sbwa_nginx api
+  docker build --cache-from $NGINX_REPOSITORY:$TAG --tag $NGINX_REPOSITORY:$TAG --target cwa_nginx api
 
   docker push $VARNISH_REPOSITORY:$TAG
   docker push $PHP_REPOSITORY:$TAG
@@ -343,28 +343,28 @@ performance() {
 }
 
 clean() {
-	echo "clean function disabled - needs refactoring/checking"
-  # Get kubernetes namespaces
-  NAMESPACES=$(kubectl get namespaces -l project=$PROJECT_NAME --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
-
-  # Get git repository branches
-  BRANCHES=$(git ls-remote --heads origin | awk -F '	' '{print $2}' | sed -E 's#^refs/heads/(.*)#\1#g' | sed -E "s/\//-/g" | sed -e 's/\(.*\)/\L\1/')
-
-  # Calculate differences between those 2 arrays
-  DIFF=($(comm -3 <(echo "${NAMESPACES[*]}") <(echo "${BRANCHES[*]}")))
-
-  # Only get existing namespaces
-  NAMESPACES_TO_DELETE=($(comm -12 <(for X in "${DIFF[@]}"; do echo "${X}"; done|sort)  <(for X in "${NAMESPACES[@]}"; do echo "${X}"; done|sort)))
-
-  # Remove useless kubernetes namespaces
-  for i in "${NAMESPACES_TO_DELETE[@]}"; do
-      if [[ $DEPLOYMENT_BRANCH != $i ]]
-      then
-          echo "Remove namespace/release $i"
-          helm delete --purge $i || echo "Release $i does not exist"
-          kubectl delete namespace $i --wait --cascade || echo "Namespace $i does not exist"
-      fi
-  done
+	echo "Needs re-working and checking..."
+#  # Get kubernetes namespaces
+#  NAMESPACES=$(kubectl get namespaces -l project=$PROJECT_NAME --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+#	echo "namespaces: $NAMESPACES"
+#  # Get git repository branches
+#  BRANCHES=$(git ls-remote --heads origin | awk -F '	' '{print $2}' | sed -E 's#^refs/heads/(.*)#\1#g' | sed -E "s/\//-/g" | sed -e 's/\(.*\)/\L\1/')
+#	echo "branches: $BRANCHES"
+#  # Calculate differences between those 2 arrays
+#  DIFF=$(comm -3 <(echo "${NAMESPACES[*]}") <(echo "${BRANCHES[*]}"))
+#	echo "diff: $DIFF"
+#  # Only get existing namespaces
+#  NAMESPACES_TO_DELETE=($(comm -12 <(for X in "${DIFF[@]}"; do echo "${X}"; done|sort)  <(for X in "${NAMESPACES[@]}"; do echo "${X}"; done|sort)))
+#	echo "namespaces to delete: $NAMESPACES_TO_DELETE"
+#  # Remove useless kubernetes namespaces
+#  for i in "${NAMESPACES_TO_DELETE[@]}"; do
+#      if [[ $DEPLOYMENT_BRANCH != $i ]]
+#      then
+#          echo "Remove namespace/release $i"
+#          helm delete --purge $i || echo "Release $i does not exist"
+#          kubectl delete namespace $i --wait --cascade || echo "Namespace $i does not exist"
+#      fi
+#  done
 }
 
 function delete() {
