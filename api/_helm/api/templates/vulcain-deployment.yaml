@@ -1,5 +1,5 @@
-{{- if .Values.varnish.enabled -}}
-{{- $name := "varnish" -}}
+{{- if .Values.vulcain.enabled -}}
+{{- $name := "vulcain" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -8,7 +8,7 @@ metadata:
   labels:
     {{- include "api.labels" $data | nindent 4 }}
 spec:
-  replicas: {{ .Values.varnish.replicaCount }}
+  replicas: {{ .Values.vulcain.replicaCount }}
   selector:
     matchLabels:
       {{- include "api.selectorLabels" $data | nindent 6 }}
@@ -26,8 +26,11 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}-{{ $name }}
-          image: "{{ .Values.varnish.image.repository }}:{{ .Values.varnish.image.tag }}"
-          imagePullPolicy: {{ .Values.varnish.image.pullPolicy }}
+          image: "{{ .Values.vulcain.image.repository }}:{{ .Values.vulcain.image.tag }}"
+          imagePullPolicy: {{ .Values.vulcain.image.pullPolicy }}
+          env:
+          - name: UPSTREAM
+            value: {{ if .Values.varnish.enabled }}http://varnish{{ else }}http://nginx{{ end }}
           ports:
             - containerPort: 80
           livenessProbe:

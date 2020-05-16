@@ -16,7 +16,7 @@ stages:
     - cleanup
 
 before_script:
-    - source ./bin/auto_devops.sh
+    - source ./bin/auto-devops.sh
 
 build:
     stage: build
