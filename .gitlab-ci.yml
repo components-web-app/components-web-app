@@ -1,5 +1,16 @@
 image: alpine:latest
 
+variables:
+    TEST_DISABLED: "false"
+    CODE_QUALITY_DISABLED: "false"
+    LICENSE_MANAGEMENT_DISABLED: "true"
+    PERFORMANCE_DISABLED: "false"
+    SAST_DISABLED: "true"
+    DEPENDENCY_SCANNING_DISABLED: "true"
+    CONTAINER_SCANNING_DISABLED: "true"
+    DAST_DISABLED: "true"
+    STAGING_ENABLED: "true"
+
 cache:
     key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
     paths:
@@ -33,87 +44,7 @@ build:
         - branches
     except:
         variables:
-            - $BUILD_DISABLED
-
-code_quality:
-    stage: test
-    image: docker:stable
-    variables:
-        DOCKER_DRIVER: overlay2
-        DOCKER_TLS_CERTDIR: ""
-    allow_failure: true
-    services:
-        - docker:stable-dind
-    script:
-        - setup_docker
-        - api_code_quality
-    artifacts:
-        reports:
-            codequality: gl-code-quality-report.json
-        expire_in: 1 week
-    dependencies: []
-    only:
-        - branches
-    except:
-        variables:
-            - $CODE_QUALITY_DISABLED
-
-dependency_scanning:
-    stage: test
-    image: docker:stable
-    variables:
-        DOCKER_DRIVER: overlay2
-    allow_failure: true
-    services:
-        - docker:stable-dind
-    script:
-        - setup_docker
-        - dependency_scanning
-    artifacts:
-        paths: [gl-dependency-scanning-report.json]
-    only:
-        - branches
-    except:
-        variables:
-            - $DEPENDENCY_SCANNING_DISABLED
-
-container_scanning:
-    stage: test
-    image: docker:stable
-    variables:
-        DOCKER_DRIVER: overlay2
-    allow_failure: true
-    services:
-        - docker:stable-dind
-    script:
-        - setup_docker
-        - container_scanning
-    artifacts:
-        paths: [gl-container-scanning-report.json]
-    only:
-        - branches
-    except:
-        variables:
-            - $CONTAINER_SCANNING_DISABLED
-
-sast:
-    stage: test
-    image: docker:stable
-    variables:
-        DOCKER_DRIVER: overlay2
-    allow_failure: true
-    services:
-        - docker:stable-dind
-    script:
-        - setup_docker
-        - sast
-    artifacts:
-        paths: [gl-sast-report.json]
-    only:
-        - branches
-    except:
-        variables:
-            - $SAST_DISABLED
+            - $BUILD_DISABLED == "true"
 
 #behat:
 #    stage: test
@@ -139,21 +70,20 @@ sast:
 #        - branches
 
 review:
-    tags:
-        - ci
+#    tags:
+#        - ci
     stage: review
     script:
         - check_kube_domain
         - install_dependencies
-        - download_chart
+        - helm_init
         - ensure_namespace
-        - initialize_tiller
         - create_secret
-        - deploy
+        - deploy_api
         - persist_environment_url
     environment:
         name: review/$CI_COMMIT_REF_NAME
-        url: https://$CI_PROJECT_PATH_SLUG-$CI_ENVIRONMENT_SLUG-review.$AUTO_DEVOPS_DOMAIN
+        url: https://$CI_PROJECT_PATH_SLUG-$CI_ENVIRONMENT_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
         on_stop: stop_review
     artifacts:
         paths: [environment_url.txt]
@@ -165,52 +95,31 @@ review:
         refs:
             - master
         variables:
-            - $REVIEW_DISABLED
-
-dast:
-    stage: dast
-    allow_failure: true
-    image: registry.gitlab.com/gitlab-org/security-products/zaproxy
-    variables:
-        POSTGRES_DB: "false"
-    script:
-        - dast
-    artifacts:
-        paths: [gl-dast-report.json]
-    only:
-        refs:
-            - branches
-        kubernetes: active
-    except:
-        refs:
-            - master
-        variables:
-            - $DAST_DISABLED
+            - $REVIEW_DISABLED == "true"
 
 dev:
-    tags:
-        - ci
-    retry: 1
+#    tags:
+#        - ci
+#    retry: 1
     stage: dev
     script:
         - check_kube_domain
         - install_dependencies
-        - download_chart
+        - helm_init
         - ensure_namespace
-        - initialize_tiller
         - create_secret
-        - deploy
+        - deploy_api
     environment:
         name: dev
-        url: https://$AUTO_DEVOPS_DOMAIN
+        url: https://$KUBE_INGRESS_BASE_DOMAIN
     only:
         refs:
             - master
         #kubernetes: active
         variables:
-            - $STAGING_ENABLED
+            - $STAGING_ENABLED == "true"
     allow_failure: false
-    
+
 production_api:
     stage: production
     script:
@@ -218,13 +127,12 @@ production_api:
         - install_dependencies
         - helm_init
         - ensure_namespace
-        - initialize_tiller
         - create_secret
         - deploy_api
         - persist_environment_url
     environment:
         name: production
-        url: https://$AUTO_DEVOPS_DOMAIN
+        url: https://$KUBE_INGRESS_BASE_DOMAIN
     artifacts:
         paths: [environment_url.txt]
     when: manual
@@ -235,7 +143,7 @@ production_api:
             - master
     except:
         variables:
-            - $PRODUCTION_API_DISABLED          
+            - $PRODUCTION_API_DISABLED == "true"
 
 performance:
     stage: performance
@@ -258,7 +166,7 @@ performance:
         kubernetes: active
     except:
         variables:
-            - $PERFORMANCE_DISABLED
+            - $PERFORMANCE_DISABLED == "true"
 
 stop_review:
     tags:
@@ -268,7 +176,6 @@ stop_review:
         GIT_STRATEGY: none
     script:
         - install_dependencies
-        - initialize_tiller
         - delete
     environment:
         name: review/$CI_COMMIT_REF_NAME
@@ -283,4 +190,4 @@ stop_review:
         refs:
             - master
         variables:
-            - $REVIEW_DISABLED
+            - $REVIEW_DISABLED == "true"

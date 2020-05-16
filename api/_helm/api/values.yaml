@@ -4,7 +4,7 @@
 
 php:
     image:
-        repository: registry.gitlab.com/components-web-app/php
+        repository: registry.gitlab.com/silverback-web-apps/cwa/php
         tag: latest
         pullPolicy: Always
     replicaCount: 1
@@ -26,7 +26,7 @@ php:
 
 nginx:
     image:
-        repository: registry.gitlab.com/components-web-app/nginx
+        repository: registry.gitlab.com/silverback-web-apps/cwa/nginx
         tag: latest
         pullPolicy: Always
     replicaCount: 1
@@ -35,9 +35,9 @@ nginx:
         port: 80
 
 varnish:
-    enabled: false
+    enabled: true
     image:
-        repository: registry.gitlab.com/components-web-app/varnish
+        repository: registry.gitlab.com/silverback-web-apps/cwa/varnish
         tag: latest
         pullPolicy: Always
     replicaCount: 1
@@ -46,7 +46,7 @@ varnish:
         port: 80
 
 vulcain:
-    enabled: false
+    enabled: true
     image:
         repository: dunglas/vulcain
         tag: 0.1.4

@@ -5,9 +5,9 @@ version: '3.4'
 x-cache-from:
   - &api-cache-from
     cache_from:
-      - ${NGINX_IMAGE:-registry.gitlab.com/components-web-app/nginx}
-      - ${PHP_IMAGE:-registry.gitlab.com/components-web-app/php}
-      - ${VARNISH_IMAGE:-registry.gitlab.com/components-web-app/varnish}
+      - ${NGINX_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/nginx}
+      - ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
+      - ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
 
 services:
   php:
@@ -15,7 +15,7 @@ services:
       context: ./api
       target: cwa_php
       <<: *api-cache-from
-    image: ${PHP_IMAGE:-registry.gitlab.com/components-web-app/php}
+    image: ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
     healthcheck:
       interval: 10s
       timeout: 3s
@@ -39,7 +39,7 @@ services:
       context: ./api
       target: cwa_nginx
       <<: *api-cache-from
-    image: ${NGINX_IMAGE:-registry.gitlab.com/components-web-app/nginx}
+    image: ${NGINX_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/nginx}
     depends_on:
       - php
     volumes:
@@ -50,7 +50,7 @@ services:
       context: ./api
       target: cwa_varnish
       <<: *api-cache-from
-    image: ${VARNISH_IMAGE:-registry.gitlab.com/components-web-app/varnish}
+    image: ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
     restart: always
     depends_on:
       - api

@@ -3,6 +3,9 @@
 # echo the commands that are run
 [[ "$TRACE" ]] && set -x
 
+export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
+export CI_APPLICATION_TAG=$CI_COMMIT_SHA
+
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
 export KUBERNETES_VERSION=1.18.2
 export HELM_VERSION=3.2.1
@@ -31,8 +34,6 @@ export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
-
-export TILLER_NAMESPACE=$KUBE_NAMESPACE
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
@@ -70,13 +71,11 @@ install_dependencies() {
   apk add glibc-2.28-r0.apk
   rm glibc-2.28-r0.apk
 
-  echo "Intalling helm/tiller..."
+  echo "Intalling helm..."
   curl "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
   mv linux-amd64/helm /usr/bin/
-  mv linux-amd64/tiller /usr/bin/
 
   helm version --client
-  tiller -version
 
   echo "Intalling kubectl..."
   curl -L -o /usr/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
@@ -135,80 +134,6 @@ build() {
   docker push $NGINX_REPOSITORY:$TAG
 }
 
-api_code_quality() {
-	export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-
-	docker run
-        --env SOURCE_CODE="$PWD"
-        --volume "$PWD":/code
-        --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/ci-cd/codequality:$SP_VERSION" /code/api
-}
-
-function dependency_scanning() {
-	case "$CI_SERVER_VERSION" in
-		*-ee)
-			docker run --env DEP_SCAN_DISABLE_REMOTE_CHECKS="${DEP_SCAN_DISABLE_REMOTE_CHECKS:-false}" \
-								 --volume "$PWD:/code" \
-								 --volume /var/run/docker.sock:/var/run/docker.sock \
-								 "registry.gitlab.com/gitlab-org/security-products/dependency-scanning:$SP_VERSION" /code
-			;;
-		*)
-			echo "GitLab EE is required"
-			;;
-	esac
-}
-
-function container_scanning() {
-	if [[ -n "$CI_REGISTRY_USER" ]]; then
-		echo "Logging to GitLab Container Registry with CI credentials..."
-		docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-		echo ""
-	fi
-
-	docker run -d --name db arminc/clair-db:latest
-	docker run -p 6060:6060 --link db:postgres -d --name clair --restart on-failure arminc/clair-local-scan:v2.0.1
-	apk add -U wget ca-certificates
-	docker pull ${CI_APPLICATION_REPOSITORY}:${CI_APPLICATION_TAG}
-	wget https://github.com/arminc/clair-scanner/releases/download/v8/clair-scanner_linux_amd64
-	mv clair-scanner_linux_amd64 clair-scanner
-	chmod +x clair-scanner
-	touch clair-whitelist.yml
-	retries=0
-	echo "Waiting for clair daemon to start"
-	while( ! wget -T 10 -q -O /dev/null http://docker:6060/v1/namespaces ) ; do sleep 1 ; echo -n "." ; if [ $retries -eq 10 ] ; then echo " Timeout, aborting." ; exit 1 ; fi ; retries=$(($retries+1)) ; done
-	./clair-scanner -c http://docker:6060 --ip $(hostname -i) -r gl-container-scanning-report.json -l clair.log -w clair-whitelist.yml ${CI_APPLICATION_REPOSITORY}:${CI_APPLICATION_TAG} || true
-}
-
-function sast() {
-	case "$CI_SERVER_VERSION" in
-		*-ee)
-
-			# Deprecation notice for CONFIDENCE_LEVEL variable
-			if [ -z "$SAST_CONFIDENCE_LEVEL" -a "$CONFIDENCE_LEVEL" ]; then
-				SAST_CONFIDENCE_LEVEL="$CONFIDENCE_LEVEL"
-				echo "WARNING: CONFIDENCE_LEVEL is deprecated and MUST be replaced with SAST_CONFIDENCE_LEVEL"
-			fi
-
-			docker run --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}" \
-								 --volume "$PWD:/code" \
-								 --volume /var/run/docker.sock:/var/run/docker.sock \
-								 "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
-			;;
-		*)
-			echo "GitLab EE is required"
-			;;
-	esac
-}
-
-function dast() {
-	export CI_ENVIRONMENT_URL=$(cat environment_url.txt)
-
-	mkdir /zap/wrk/
-	/zap/zap-baseline.py -J gl-dast-report.json -t "$CI_ENVIRONMENT_URL" || true
-	cp /zap/wrk/gl-dast-report.json .
-}
-
 function setup_test_db() {
   if [ -z ${KUBERNETES_PORT+x} ]; then
     DB_HOST=postgres
@@ -254,7 +179,9 @@ check_kube_domain() {
 
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
-  helm init --client-only --skip-refresh
+  # helm init --client-only --skip-refresh
+  helm repo add default https://kubernetes-charts.storage.googleapis.com
+  # helm repo add incubator https://storage.googleapis.com/kubernetes-charts-incubator
   helm repo add blackfire https://tech.sparkfabrik.com/blackfire-chart/
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
@@ -264,25 +191,12 @@ ensure_namespace() {
   kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
 }
 
-initialize_tiller() {
-  echo "Checking Tiller..."
-
-  export HELM_HOST=":44134"
-  tiller -listen ${HELM_HOST} -alsologtostderr >/dev/null 2>&1 &
-  echo "Tiller is listening on ${HELM_HOST}"
-
-  if ! helm version --debug; then
-    echo "Failed to init Tiller."
-    return 1
-  fi
-  echo ""
-}
-
 create_secret() {
-  echo "Create secret..."
   if [ "$CI_PROJECT_VISIBILITY" = "public" ]; then
+  	echo "Project is public - skipping secret creation"
     return
   fi
+  echo "Create secret..."
 
   kubectl create secret -n "$KUBE_NAMESPACE" \
     docker-registry $GITLAB_PULL_SECRET_NAME \
@@ -295,6 +209,42 @@ create_secret() {
 
 deploy_api() {
   echo "Installing/upgrading release '${RELEASE}' on namespace '${KUBE_NAMESPACE}'"
+
+#	track="${1-stable}"
+#	percentage="${2:-100}"
+#	name="$CI_ENVIRONMENT_SLUG"
+#
+#	replicas="1"
+#	service_enabled="true"
+#	database_enabled="$DATABASE_ENABLED"
+#	indexation_enabled="false"
+#
+#	# if track is different than stable,
+#	# re-use all attached resources
+#	if [[ "$track" != "stable" ]]; then
+#		name="$name-$track"
+#		service_enabled="false"
+#		database_enabled="false"
+#	fi
+#
+#	replicas=$(get_replicas "$track" "$percentage")
+#
+#	if [[ "$CI_PROJECT_VISIBILITY" != "public" ]]; then
+#		secret_name='gitlab-registry'
+#	else
+#		secret_name=''
+#	fi
+#	# helm delete --purge $name
+#	kubectl delete job indexation-job --ignore-not-found
+#	kubectl delete job ${name}-db-indexation --ignore-not-found
+#	kubectl delete job ${name}-db-migrate-job --ignore-not-found
+#	if [[ "$APP_ENV" != "prod" ]]; then
+#		PHP_APPLICATION_REPOSITORY=$CI_APPLICATION_REPOSITORY
+#		NGINX_APPLICATION_REPOSITORY="$CI_APPLICATION_REPOSITORY/nginx"
+#	else
+#		PHP_APPLICATION_REPOSITORY="$CI_APPLICATION_REPOSITORY/prod"
+#		NGINX_APPLICATION_REPOSITORY="$CI_APPLICATION_REPOSITORY/nginx-prod"
+#	fi
 
   if [[ -n "$HELM_DELETE" ]]; then
     helm delete --purge "$RELEASE" || EXIT_CODE=$? && true
