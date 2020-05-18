@@ -10,5 +10,5 @@ dependencies:
         version: ~3.0.0
         repository: https://kubernetes-charts.storage.googleapis.com/
         condition: mercure.enabled
-
+    
         

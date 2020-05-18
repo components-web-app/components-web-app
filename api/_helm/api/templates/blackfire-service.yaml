@@ -1,0 +1,19 @@
+{{- if .Values.blackfire.enabled -}}
+{{- $name := "blackfire" -}}
+{{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "api.fullname" . }}-{{ $name }}
+  labels:
+    {{- include "api.labels" $data | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8707
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "api.selectorLabels" $data | nindent 4 }}
+{{- end -}}

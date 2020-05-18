@@ -24,10 +24,12 @@ fi
 if [ -z "$LETSENCRYPT_SECRET" ]; then
   export LETSENCRYPT_SECRET="letsencrypt-prod"
 fi
-
-# Required - no fallback
-# CORS_ALLOW_ORIGIN
-# TRUSTED_HOSTS
+if [ -z "$CORS_ALLOW_ORIGIN" ]; then
+  export CORS_ALLOW_ORIGIN="^https?:\/\/(.*\.)?example\.com"
+fi
+if [ -z "$TRUSTED_HOSTS" ]; then
+  export TRUSTED_HOSTS="^.*\.example\.com$"
+fi
 
 export DOMAIN=${KUBE_INGRESS_BASE_DOMAIN}
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
@@ -39,7 +41,7 @@ if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=latest
   export API_ENTRYPOINT="${API_SUBDOMAIN}.${DOMAIN}"
-  # export CLIENT_BUCKET="dons-hub-6cc5c.appspot.com"
+  export MERCURE_SUBSCRIBE_URL="https://mercure.${DOMAIN}/.well-known/mercure"
 else
   if [ -n "$CI_ENVIRONMENT_SLUG" ] && [ -z "$RELEASE" ]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
@@ -47,10 +49,11 @@ else
   if [[ -z "$RELEASE" ]]; then echo 'RELEASE is not defined in your ci environment variables for non-production releases.'; fi
   export TAG=$RELEASE
   export API_ENTRYPOINT="${RELEASE}.${API_SUBDOMAIN}.${DOMAIN}"
+  export MERCURE_SUBSCRIBE_URL="https://${RELEASE}.mercure.${DOMAIN}/.well-known/mercure"
 fi
 
-# To enable blackfire, set the BLACKFIRE_SERVER_ID and BLACKFIRE_SERVER_TOKEN variables.
-if [ -n "$BLACKFIRE_SERVER_ID" ] && [ -n "$BLACKFIRE_SERVER_TOKEN" ] ; then
+# To enable blackfire, set the environment variables
+if [ -n "$BLACKFIRE_SERVER_ID" ] && [ -n "$BLACKFIRE_SERVER_TOKEN" ] && [ -n "$BLACKFIRE_CLIENT_ID" ] && [ -n "$BLACKFIRE_CLIENT_TOKEN" ] ; then
   export BLACKFIRE_ENABLED=true
 fi
 
@@ -251,21 +254,27 @@ deploy_api() {
     echo ${EXIT_CODE}
   fi
 
-  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" --recreate-pods "$RELEASE" ./api/_helm/api \
+  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$RELEASE" ./api/_helm/api \
     --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
     --set php.corsAllowOrigin="${CORS_ALLOW_ORIGIN}" \
     --set php.trustedHosts="${TRUSTED_HOSTS}" \
     --set php.repository="${PHP_REPOSITORY}" \
-    --set php.jwt.secretKey="${JWT_SECRET_KEY}" \
-    --set php.jwt.publicKey="${JWT_PUBLIC_KEY}" \
-    --set php.jwt.passphrase="${JWT_PASSPHRASE}" \
-    --set php.varnishToken="${VARNISH_TOKEN}" \
-    --set php.websiteEmail="${WEBSITE_EMAIL}" \
-    --set php.mailerDsn="${MAILER_DSN}" \
+    --set php.mercure.jwtToken="${____TODO____}" \
+    --set php.databaseUrl="${DATABASE_URL}" \
     --set nginx.repository="${NGINX_REPOSITORY}" \
     --set varnish.repository="${VARNISH_REPOSITORY}" \
+    --set ingress.enabled="${INGRESS_ENABLED}" \
     --set ingress.host="${API_ENTRYPOINT}" \
-    --set ingress.secretName="${LETSENCRYPT_SECRET}"
+    --set ingress.secretName="${LETSENCRYPT_SECRET}" \
+    --set mercure.subscribeUrl="${MERCURE_SUBSCRIBE_URL}" \
+    --set blackfire.enabled="${BLACKFIRE_ENABLED}" \
+    --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
+    --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \
+    --set blackfire.client.id="${BLACKFIRE_CLIENT_ID}" \
+    --set blackfire.client.token="${BLACKFIRE_CLIENT_TOKEN}" \
+    --set labels."app\.gitlab\.com/app"="${CI_PROJECT_PATH_SLUG}" \
+    --set labels."app\.gitlab\.com/env"="${CI_ENVIRONMENT_SLUG}"
+#   ^^ COULD NOT WORK OUT HOW TO APPLY LABELS INTO THE LABELS HELPER - THIS WILL LINK DEPLOYMENT STATUS WITH GITLAB UI
 }
 
 persist_environment_url() {

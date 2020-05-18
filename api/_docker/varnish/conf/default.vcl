@@ -15,6 +15,16 @@ backend default {
   #}
 }
 
+acl profile {
+   # Authorized IPs, add your own IPs from which you want to profile.
+   # "x.y.z.w";
+
+   # Add the Blackfire.io IPs when using builds:
+   # Ref https://blackfire.io/docs/reference-guide/faq#how-should-i-configure-my-firewall-to-let-blackfire-access-my-apps
+   "46.51.168.2";
+   "54.75.240.245";
+}
+
 # Hosts allowed to send BAN requests
 acl invalidators {
   "localhost";
@@ -26,6 +36,21 @@ acl invalidators {
 }
 
 sub vcl_recv {
+  if (req.esi_level > 0) {
+    # ESI request should not be included in the profile.
+    # Instead you should profile them separately, each one
+    # in their dedicated profile.
+    # Removing the Blackfire header avoids to trigger the profiling.
+    # Not returning let it go trough your usual workflow as a regular
+    # ESI request without distinction.
+    unset req.http.X-Blackfire-Query;
+  }
+  # If it's a Blackfire query and the client is authorized,
+  # just pass directly to the application.
+  if (req.http.X-Blackfire-Query && client.ip ~ profile) {
+    return (pass);
+  }
+
   if (req.restarts > 0) {
     set req.hash_always_miss = true;
   }

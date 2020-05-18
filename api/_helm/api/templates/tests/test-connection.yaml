@@ -12,5 +12,5 @@ spec:
         -   name: wget
             image: busybox
             command: ['wget']
-            args: ['{{ if .Values.varnish.enabled }}{{ $fullName }}-varnish:{{ .Values.varnish.service.port }}{{ else }}{{ $fullName }}-nginx:{{ .Values.nginx.service.port }}{{ end }}']
+            args: ['{{ if .Values.vulcain.enabled }}{{ $fullName }}-vulcain:{{ .Values.vulcain.service.port }}{{ else if .Values.varnish.enabled }}{{ $fullName }}-varnish:{{ .Values.varnish.service.port }}{{ else }}{{ $fullName }}-nginx:{{ .Values.nginx.service.port }}{{ end }}']
     restartPolicy: Never

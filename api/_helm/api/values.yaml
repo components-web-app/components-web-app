@@ -36,6 +36,7 @@ nginx:
 
 varnish:
     enabled: true
+    url: ~
     image:
         repository: registry.gitlab.com/silverback-web-apps/cwa/varnish
         tag: latest
@@ -49,7 +50,7 @@ vulcain:
     enabled: true
     image:
         repository: dunglas/vulcain
-        tag: 0.1.4
+        tag: latest
         pullPolicy: Always
     replicaCount: 1
     service:
@@ -73,6 +74,19 @@ mercure:
         #  - secretName: mercure-example-tls
         #    hosts:
         #      - chart-example.local
+
+blackfire:
+    enabled: false
+    image:
+        repository: blackfire/blackfire
+        tag: latest
+        pullPolicy: Always
+    client:
+        id: ''
+        token: ''
+    server:
+        id: ''
+        token: ''
 
 imagePullSecrets: []
 nameOverride: ""
@@ -128,3 +142,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+labels: {}

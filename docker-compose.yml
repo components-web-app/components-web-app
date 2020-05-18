@@ -25,8 +25,10 @@ services:
       - db
       - dev-tls
     environment:
+      BLACKFIRE_CLIENT_ID: ~
+      BLACKFIRE_CLIENT_TOKEN: ~
       # TODO: Remove environment variable once recipe is added to recipes-contrib repository
-      SYMFONY_ENDPOINT: $SYMFONY_ENDPOINT
+      SYMFONY_ENDPOINT: ~
     volumes:
       - ./api:/srv/api:rw,cached
       - ./api/docker/php/conf.d/cwa.dev.ini:/usr/local/etc/php/conf.d/cwa.ini
@@ -117,6 +119,17 @@ services:
         published: 80
         protocol: tcp
 
+  blackfire:
+    image: blackfire/blackfire
+    ports: ["8707"]
+    environment:
+      # Exposes BLACKFIRE_* environment variables from the host
+      BLACKFIRE_SERVER_ID: ~
+      BLACKFIRE_SERVER_TOKEN: ~
+      BLACKFIRE_CLIENT_ID: ~
+      BLACKFIRE_CLIENT_TOKEN: ~
+      # BLACKFIRE_LOG_LEVEL: 4
+  
   #TODO: configure the front-end application service
 
 volumes:
