@@ -253,6 +253,7 @@ deploy_api() {
     helm delete --purge "$RELEASE" || EXIT_CODE=$? && true
     echo ${EXIT_CODE}
   fi
+  export INGRESS_SECRET_NAME="letsencrypt-${RELEASE}"
 
   helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$RELEASE" ./api/_helm/api \
     --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
@@ -266,7 +267,12 @@ deploy_api() {
     --set nginx.repository="${NGINX_REPOSITORY}" \
     --set varnish.repository="${VARNISH_REPOSITORY}" \
     --set ingress.enabled="${INGRESS_ENABLED}" \
-    --set ingress.host="${API_ENTRYPOINT}" \
+    --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
+    --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${INGRESS_SECRET_NAME}" \
+    --set ingress.hosts[0].host="${API_ENTRYPOINT}" \
+    --set ingress.hosts[0].paths[0]="/" \
+    --set ingress.tls[0].secretName="${INGRESS_SECRET_NAME}" \
+    --set ingress.tls[0].hosts[0]="${API_ENTRYPOINT}" \
     --set ingress.secretName="${LETSENCRYPT_SECRET}" \
     --set mercure.subscribeUrl="${MERCURE_SUBSCRIBE_URL}" \
     --set blackfire.enabled="${BLACKFIRE_ENABLED}" \

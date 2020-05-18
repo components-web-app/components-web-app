@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "api.fullname" . }}-{{ $name }}
+  name: {{ if .Values.varnish.enabled }}php{{ else }}{{ include "api.fullname" . }}-{{ $name }}{{ end }}
   labels:
     {{- include "api.labels" $data | nindent 4 }}
 spec:

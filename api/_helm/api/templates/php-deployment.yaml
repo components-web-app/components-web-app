@@ -116,7 +116,7 @@ spec:
               valueFrom:
                   secretKeyRef:
                       name: {{ $fullName }}
-                      key: api-seret-token
+                      key: api-secret-token
             - name: MAILER_EMAIL
               valueFrom:
                   configMapKeyRef:

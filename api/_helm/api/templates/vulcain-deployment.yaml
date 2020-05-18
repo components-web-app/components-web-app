@@ -33,14 +33,6 @@ spec:
             value: {{ if .Values.varnish.enabled }}http://varnish{{ else }}http://nginx{{ end }}
           ports:
             - containerPort: 443
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: 443
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 443
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
