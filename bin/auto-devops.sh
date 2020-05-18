@@ -261,6 +261,8 @@ deploy_api() {
     --set php.repository="${PHP_REPOSITORY}" \
     --set php.mercure.jwtToken="${____TODO____}" \
     --set php.databaseUrl="${DATABASE_URL}" \
+    --set php.apiSecretToken="${API_SECRET_TOKEN}" \
+    --set php.mailerEmail="${MAILER_EMAIL}" \
     --set nginx.repository="${NGINX_REPOSITORY}" \
     --set varnish.repository="${VARNISH_REPOSITORY}" \
     --set ingress.enabled="${INGRESS_ENABLED}" \

@@ -15,3 +15,5 @@ data:
   mercure-subscribe-url: {{ .Values.mercure.subscribeUrl | quote }}
   blackfire-client-id: {{ .Values.blackfire.client.id | quote }}
   blackfire-server-id: {{ .Values.blackfire.server.id | quote }}
+  jwt-public: {{ .Values.php.jwt.public | quote }}
+  jwt-public: {{ .Values.php.mailerEmail | quote }}

@@ -23,6 +23,12 @@ php:
         type: ClusterIP
         port: 9000
     databaseUrl: 'pgsql://'
+    mailerEmail: 'noreply@example.com'
+    apiSecretToken: '!ChangeMe!'
+    jwt:
+        secret: ''
+        public: ''
+        passphrase: ''
 
 nginx:
     image:
@@ -36,7 +42,6 @@ nginx:
 
 varnish:
     enabled: true
-    url: ~
     image:
         repository: registry.gitlab.com/silverback-web-apps/cwa/varnish
         tag: latest

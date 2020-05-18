@@ -97,6 +97,31 @@ spec:
                   secretKeyRef:
                       name: {{ $fullName }}
                       key: blackfire-client-token
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                  secretKeyRef:
+                      name: {{ $fullName }}
+                      key: jwt-secret
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                  configMapKeyRef:
+                      name: {{ $fullName }}
+                      key: jwt-public
+            - name: JWT_PASSPHRASE
+              valueFrom:
+                  secretKeyRef:
+                      name: {{ $fullName }}
+                      key: jwt-passphrase
+            - name: API_SECRET_TOKEN
+              valueFrom:
+                  secretKeyRef:
+                      name: {{ $fullName }}
+                      key: api-seret-token
+            - name: MAILER_EMAIL
+              valueFrom:
+                  configMapKeyRef:
+                      name: {{ $fullName }}
+                      key: mailer-email
           ports:
             - containerPort: 9000
           readinessProbe:
