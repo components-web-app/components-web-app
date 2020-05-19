@@ -29,6 +29,8 @@ stages:
     - cleanup
 
 before_script:
+    # we are echoing pwd because resuming pipeline for cleanup cannot find the auto-devops file - helping to trace issue
+    - echo $PWD
     - source ./bin/auto-devops.sh
 
 build:
@@ -72,8 +74,6 @@ build:
 #        - branches
 
 review:
-#    tags:
-#        - ci
     stage: review
     script:
         - check_kube_domain
@@ -92,7 +92,6 @@ review:
     only:
         refs:
             - branches
-        #kubernetes: active
     except:
         refs:
             - master
@@ -100,9 +99,7 @@ review:
             - $REVIEW_DISABLED == "true"
 
 dev:
-#    tags:
-#        - ci
-#    retry: 1
+    retry: 1
     stage: dev
     script:
         - check_kube_domain
@@ -113,11 +110,10 @@ dev:
         - deploy_api dev
     environment:
         name: dev
-        url: https://$KUBE_INGRESS_BASE_DOMAIN
+        url: https://dev.$KUBE_INGRESS_BASE_DOMAIN
     only:
         refs:
             - master
-        #kubernetes: active
         variables:
             - $STAGING_ENABLED == "true"
     allow_failure: false
@@ -173,11 +169,7 @@ performance:
             - $PERFORMANCE_DISABLED == "true"
 
 stop_review:
-#    tags:
-#        - ci
     stage: cleanup
-    variables:
-        GIT_STRATEGY: none
     script:
         - install_dependencies
         - delete
@@ -189,7 +181,6 @@ stop_review:
     only:
         refs:
             - branches
-        #kubernetes: active
     except:
         refs:
             - master

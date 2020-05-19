@@ -8,14 +8,14 @@
   },
   "builds": [
     {
-      "src": "app/nuxt.config.js",
+      "src": "nuxt.config.js",
       "use": "@nuxtjs/now-builder",
       "config": {
         "serverFiles": ["server/index.js"]
       }
     },
     {
-      "src": "app/static/**",
+      "src": "static/**",
       "use": "@now/static"
     }
   ],

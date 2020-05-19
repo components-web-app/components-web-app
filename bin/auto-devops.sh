@@ -16,8 +16,11 @@ if [ -z "$DEPLOYMENT_BRANCH" ]; then
 fi
 
 # Miscellaneous
+if [ -z "$CLUSTER_ISSUER" ]; then
+  export CLUSTER_ISSUER="letsencrypt-staging"
+fi
 if [ -z "$LETSENCRYPT_SECRET_NAME" ]; then
-  export LETSENCRYPT_SECRET_NAME="letsencrypt-staging"
+  export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
 fi
 if [ -z "$CORS_ALLOW_ORIGIN" ]; then
   export CORS_ALLOW_ORIGIN="^https?:\/\/(.*\.)?example\.com"
@@ -32,17 +35,19 @@ export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
+mercure_base_domain="${DOMAIN/api./mercure.}"
+
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=latest
-  export MERCURE_SUBSCRIBE_DOMAIN="mercure.${DOMAIN}"
+  export MERCURE_SUBSCRIBE_DOMAIN="${mercure_base_domain}"
 else
   if [ -n "$CI_ENVIRONMENT_SLUG" ] && [ -z "$RELEASE" ]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
   fi
   if [[ -z "$RELEASE" ]]; then echo 'RELEASE is not defined in your ci environment variables for non-production releases.'; fi
   export TAG=$RELEASE
-  export MERCURE_SUBSCRIBE_DOMAIN="mercure.${RELEASE}.${DOMAIN}"
+  export MERCURE_SUBSCRIBE_DOMAIN="${RELEASE}.${mercure_base_domain}"
 fi
 
 # To enable blackfire, set the environment variables
@@ -274,17 +279,20 @@ deploy_api() {
     --set varnish.repository="${VARNISH_REPOSITORY}" \
     --set ingress.enabled="${INGRESS_ENABLED}" \
     --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
-    --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${LETSENCRYPT_SECRET_NAME}" \
+    --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
     --set ingress.hosts[0].host="${DOMAIN}" \
-    --set ingress.hosts[0].paths[0].path="/" \
-    --set ingress.hosts[1].host="${MERCURE_SUBSCRIBE_DOMAIN}" \
-    --set ingress.hosts[1].paths[0].path="/" \
-    --set ingress.hosts[1].paths[0].backend.serviceName="mercure" \
-    --set ingress.hosts[1].paths[0].backend.servicePort="443" \
-    --set ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}" \
+    --set ingress.hosts[0].paths[0]="/" \
+    --set ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-api" \
     --set ingress.tls[0].hosts[0]="${DOMAIN}" \
     --set mercure.jwtKey="${MERCURE_JWT_SECRET}" \
     --set mercure.subscribeUrl="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure" \
+    --set mercure.ingress.enabled="${INGRESS_ENABLED}" \
+    --set mercure.ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
+    --set mercure.ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
+    --set mercure.ingress.hosts[0].host="${MERCURE_SUBSCRIBE_DOMAIN}" \
+    --set mercure.ingress.hosts[0].paths[0]="/" \
+    --set mercure.ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-mercure" \
+    --set mercure.ingress.tls[0].hosts[0]="${MERCURE_SUBSCRIBE_DOMAIN}" \
     --set blackfire.enabled="${BLACKFIRE_ENABLED}" \
     --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
     --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \
