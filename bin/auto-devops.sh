@@ -257,16 +257,19 @@ deploy_api() {
 
 	track="${1-stable}"
 	percentage="${2:-100}"
-	name="$CI_ENVIRONMENT_SLUG"
+	name="$RELEASE"
+	if [[ "$track" != "stable" ]]; then
+		name="$name-$track"
+	fi
 
 	replicas=$(get_replicas "$track" "$percentage")
 
   if [[ -n "$HELM_DELETE" ]]; then
-    helm delete "$RELEASE" || EXIT_CODE=$? && true
+    helm delete "$name" || EXIT_CODE=$? && true
     echo ${EXIT_CODE}
   fi
 
-  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$RELEASE" ./api/_helm/api \
+  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$name" ./api/_helm/api \
     --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
     --set php.corsAllowOrigin="${CORS_ALLOW_ORIGIN}" \
     --set php.trustedHosts="${TRUSTED_HOSTS}" \
@@ -353,13 +356,12 @@ clean() {
 
 function delete() {
 	track="${1-stable}"
-	name="$CI_ENVIRONMENT_SLUG"
+	name="$RELEASE"
 
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
 
-	if [[ -n "$(helm ls -q "^$name$")" ]]; then
-		helm delete "$name"
-	fi
+	helm delete "$name" || EXIT_CODE=$? && true
+  echo ${EXIT_CODE}
 }

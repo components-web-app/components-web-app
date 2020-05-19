@@ -1,11 +1,5 @@
 {
   "version": 2,
-  "build": {
-    "env": {
-      "HOST": "0.0.0.0",
-      "NODE_ENV": "production"
-    }
-  },
   "builds": [
     {
       "src": "nuxt.config.js",
