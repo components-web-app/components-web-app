@@ -35,19 +35,18 @@ export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
-mercure_base_domain="${DOMAIN/api./mercure.}"
+export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/api./mercure.}"
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=latest
-  export MERCURE_SUBSCRIBE_DOMAIN="${mercure_base_domain}"
 else
   if [ -n "$CI_ENVIRONMENT_SLUG" ] && [ -z "$RELEASE" ]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
   fi
-  if [[ -z "$RELEASE" ]]; then echo 'RELEASE is not defined in your ci environment variables for non-production releases.'; fi
-  export TAG=$RELEASE
-  export MERCURE_SUBSCRIBE_DOMAIN="${RELEASE}.${mercure_base_domain}"
+  if [[ -z "$RELEASE" ]]; then echo 'Helm RELEASE environment variable is not defined in your ci environment variables for non-production helm releases.'; fi
+  export TAG=${CI_COMMIT_REF_NAME:-dev}
+  echo "CONTAINER TAG: '${TAG}'"
 fi
 
 # To enable blackfire, set the environment variables
@@ -253,7 +252,6 @@ function get_replicas() {
 }
 
 deploy_api() {
-  echo "Installing/upgrading release '${RELEASE}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
 	track="${1-stable}"
 	percentage="${2:-100}"
@@ -261,25 +259,29 @@ deploy_api() {
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
+	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
 	replicas=$(get_replicas "$track" "$percentage")
 
-  if [[ -n "$HELM_DELETE" ]]; then
-    helm delete "$name" || EXIT_CODE=$? && true
+  if [[ -n "$HELM_UNINSTALL" ]]; then
+    helm uninstall "$name" || EXIT_CODE=$? && true
     echo ${EXIT_CODE}
   fi
 
   helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$name" ./api/_helm/api \
     --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
+    --set php.image.repository="${PHP_REPOSITORY}" \
+    --set php.image.tag="${TAG}" \
     --set php.corsAllowOrigin="${CORS_ALLOW_ORIGIN}" \
     --set php.trustedHosts="${TRUSTED_HOSTS}" \
-    --set php.repository="${PHP_REPOSITORY}" \
     --set php.mercure.jwtToken="${MERCURE_JWT_TOKEN}" \
     --set php.databaseUrl="${DATABASE_URL}" \
     --set php.apiSecretToken="${API_SECRET_TOKEN}" \
     --set php.mailerEmail="${MAILER_EMAIL}" \
-    --set nginx.repository="${NGINX_REPOSITORY}" \
-    --set varnish.repository="${VARNISH_REPOSITORY}" \
+    --set nginx.image.repository="${NGINX_REPOSITORY}" \
+    --set nginx.image.tag="${TAG}" \
+    --set varnish.image.repository="${VARNISH_REPOSITORY}" \
+    --set varnish.image.tag="${TAG}" \
     --set ingress.enabled="${INGRESS_ENABLED}" \
     --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
     --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
@@ -329,31 +331,6 @@ performance() {
   mv sitespeed-results/data/performance.json performance.json
 }
 
-clean() {
-	echo "Needs re-working and checking... perhaps it isn't necessary anymore?"
-#  # Get kubernetes namespaces
-#  NAMESPACES=$(kubectl get namespaces -l project=$PROJECT_NAME --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
-#	echo "namespaces: $NAMESPACES"
-#  # Get git repository branches
-#  BRANCHES=$(git ls-remote --heads origin | awk -F '	' '{print $2}' | sed -E 's#^refs/heads/(.*)#\1#g' | sed -E "s/\//-/g" | sed -e 's/\(.*\)/\L\1/')
-#	echo "branches: $BRANCHES"
-#  # Calculate differences between those 2 arrays
-#  DIFF=$(comm -3 <(echo "${NAMESPACES[*]}") <(echo "${BRANCHES[*]}"))
-#	echo "diff: $DIFF"
-#  # Only get existing namespaces
-#  NAMESPACES_TO_DELETE=($(comm -12 <(for X in "${DIFF[@]}"; do echo "${X}"; done|sort)  <(for X in "${NAMESPACES[@]}"; do echo "${X}"; done|sort)))
-#	echo "namespaces to delete: $NAMESPACES_TO_DELETE"
-#  # Remove useless kubernetes namespaces
-#  for i in "${NAMESPACES_TO_DELETE[@]}"; do
-#      if [[ $DEPLOYMENT_BRANCH != $i ]]
-#      then
-#          echo "Remove namespace/release $i"
-#          helm delete --purge $i || echo "Release $i does not exist"
-#          kubectl delete namespace $i --wait --cascade || echo "Namespace $i does not exist"
-#      fi
-#  done
-}
-
 function delete() {
 	track="${1-stable}"
 	name="$RELEASE"
@@ -362,6 +339,8 @@ function delete() {
 		name="$name-$track"
 	fi
 
-	helm delete "$name" || EXIT_CODE=$? && true
+	helm uninstall "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
+
+  # should we have a script to remove/clean unused namespaces - must be careful not to delete production!
 }

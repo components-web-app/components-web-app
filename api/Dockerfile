@@ -2,12 +2,10 @@
 # https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
 # https://docs.docker.com/compose/compose-file/#target
 
-
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG PHP_VERSION=7.4
 ARG OPENRESTY_VERSION=1.15.8.3
 ARG VARNISH_VERSION=6.4
-
 
 # "php" stage
 FROM php:${PHP_VERSION}-fpm-alpine AS cwa_php
@@ -151,6 +149,16 @@ COPY --from=cwa_php /srv/api/public ./
 # does not depend on any of the above stages, but placed here to keep everything in one Dockerfile
 FROM varnish:${VARNISH_VERSION} AS cwa_varnish
 
-COPY _docker/varnish/conf/default.vcl /etc/varnish/default.vcl
+RUN \
+  apt-get update \
+  && apt-get -y install gettext-base \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY _docker/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
+COPY _docker/varnish/persist-environment.sh /usr/local/bin/persist-environment
+
+RUN chmod +x /usr/local/bin/persist-environment
+ENTRYPOINT ["persist-environment", "docker-varnish-entrypoint"]
 
 CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K"]

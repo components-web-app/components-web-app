@@ -38,7 +38,7 @@ spec:
           imagePullPolicy: {{ .Values.nginx.image.pullPolicy }}
           env:
             - name: UPSTREAM
-              value: "{{ if .Values.varnish.enabled }}php{{ else }}{{ $fullName }}-php{{ end }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.php.service.port }}"
+              value: "{{ $fullName }}-php.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.php.service.port }}"
           ports:
             - name: http
               containerPort: 80
