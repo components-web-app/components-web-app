@@ -31,9 +31,12 @@ spec:
       http:
         paths:
         {{- range .paths }}
-          - path: {{ . }}
+          - path: {{ .path }}
             backend:
-              {{- if $.Values.vulcain.enabled }}
+              {{- if .backend }}
+              serviceName: {{ $fullName }}-{{ .backend.serviceName }}
+              servicePort: {{ .backend.servicePort }}
+              {{- else if $.Values.vulcain.enabled }}
               serviceName: {{ $fullName }}-vulcain
               servicePort: {{ $.Values.vulcain.service.port }}
               {{- else if $.Values.varnish.enabled }}

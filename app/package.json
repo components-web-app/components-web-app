@@ -1,0 +1,43 @@
+{
+  "name": "components-web-app",
+  "version": "0.0.1",
+  "description": "Starter Components Web App",
+  "license": "MIT",
+  "scripts": {
+    "build": "nuxt-ts build",
+    "generate": "nuxt-ts generate",
+    "dev": "nuxt-ts",
+    "lint": "eslint --ext .ts,.js,.vue .",
+    "lint-fix": "yarn lint --fix",
+    "start": "nuxt-ts start",
+    "test": "yarn lint && yarn build && nuxt build tests/fixture && jest"
+  },
+  "dependencies": {
+    "@cwamodules/cwa-next": "latest",
+    "@nuxt/typescript-runtime": "^0.4.7",
+    "@nuxtjs/auth-next": "^5.0.0-1589207846.e8f33bf",
+    "@nuxtjs/axios": "^5.10.3",
+    "consola": "^2.11.3",
+    "lodash": "^4.17.15",
+    "nuxt-edge": "latest"
+  },
+  "devDependencies": {
+    "@babel/core": "latest",
+    "@babel/preset-env": "latest",
+    "@babel/preset-typescript": "latest",
+    "@nuxt/types": "latest",
+    "@nuxt/typescript-build": "latest",
+    "@nuxtjs/eslint-config-typescript": "latest",
+    "@types/jest": "latest",
+    "@types/node": "latest",
+    "babel-jest": "latest",
+    "eslint": "latest",
+    "get-port": "latest",
+    "jest": "latest",
+    "jsdom": "latest",
+    "mock-json-schema": "latest",
+    "puppeteer": "latest",
+    "standard-version": "latest",
+    "typescript": "latest"
+  }
+}

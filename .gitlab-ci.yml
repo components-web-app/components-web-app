@@ -10,6 +10,7 @@ variables:
     CONTAINER_SCANNING_DISABLED: "true"
     DAST_DISABLED: "true"
     STAGING_ENABLED: "true"
+    CANARY_ENABLED: "true"
 
 cache:
     key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
@@ -22,6 +23,7 @@ stages:
     - review
     - dast
     - dev
+    - canary
     - production
     - performance
     - cleanup
@@ -83,7 +85,7 @@ review:
         - persist_environment_url
     environment:
         name: review/$CI_COMMIT_REF_NAME
-        url: https://$CI_PROJECT_PATH_SLUG-$CI_ENVIRONMENT_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
+        url: https://$CI_ENVIRONMENT_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
         on_stop: stop_review
     artifacts:
         paths: [environment_url.txt]
@@ -108,7 +110,7 @@ dev:
         - helm_init
         - ensure_namespace
         - create_secret
-        - deploy_api
+        - deploy_api dev
     environment:
         name: dev
         url: https://$KUBE_INGRESS_BASE_DOMAIN
@@ -129,6 +131,8 @@ production_api:
         - ensure_namespace
         - create_secret
         - deploy_api
+        - delete canary
+        - delete rollout
         - persist_environment_url
     environment:
         name: production
@@ -169,8 +173,8 @@ performance:
             - $PERFORMANCE_DISABLED == "true"
 
 stop_review:
-    tags:
-        - ci
+#    tags:
+#        - ci
     stage: cleanup
     variables:
         GIT_STRATEGY: none
@@ -191,3 +195,24 @@ stop_review:
             - master
         variables:
             - $REVIEW_DISABLED == "true"
+
+canary:
+    stage: canary
+    script:
+        - check_kube_domain
+        - install_dependencies
+        - download_chart
+        - ensure_namespace
+        - initialize_tiller
+        - create_secret
+        - deploy_api canary
+    environment:
+        name: production
+        url: http://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
+    when: manual
+    only:
+        refs:
+            - master
+        kubernetes: active
+        variables:
+            - $CANARY_ENABLED == "true"

@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "build": {
+    "env": {
+      "HOST": "0.0.0.0",
+      "NODE_ENV": "production"
+    }
+  },
+  "builds": [
+    {
+      "src": "app/nuxt.config.js",
+      "use": "@nuxtjs/now-builder",
+      "config": {
+        "serverFiles": ["server/index.js"]
+      }
+    },
+    {
+      "src": "app/static/**",
+      "use": "@now/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/images/(.*)",
+      "headers": { "cache-control": "public, max-age=120, s-maxage=604800" },
+      "dest": "/images/$1"
+    },
+    {
+      "src": "/icons/(.*)",
+      "headers": { "cache-control": "public, max-age=120, s-maxage=604800" },
+      "dest": "/icons/$1"
+    },
+    {
+      "src": "(/favicon\\.ico|/icon\\.(svg|png))",
+      "headers": { "cache-control": "public, max-age=120, s-maxage=604800" },
+      "dest": "$1"
+    }
+  ]
+}

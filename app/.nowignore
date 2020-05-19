@@ -1,0 +1,5 @@
+.nuxt
+_docker
+node_modules
+*.log
+README.md

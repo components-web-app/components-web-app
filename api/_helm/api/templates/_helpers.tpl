@@ -53,6 +53,15 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
+Common annotations
+*/}}
+{{- define "api.annotations" -}}
+{{- with .Values.annotations }}
+{{- toYaml . }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Create the name of the service account to use
 */}}
 {{- define "api.serviceAccountName" -}}
