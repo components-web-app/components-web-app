@@ -8,6 +8,8 @@ metadata:
   name: {{ include "api.fullname" . }}-{{ $name }}
   labels:
     {{- include "api.labels" $data | nindent 4 }}
+  annotations:
+    {{- include "api.annotations" $data | nindent 4 }}
 spec:
   replicas: {{ .Values.varnish.replicaCount }}
   selector:
@@ -17,6 +19,10 @@ spec:
     metadata:
       labels:
         {{- include "api.selectorLabels" $data | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        {{- include "api.annotations" $data | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

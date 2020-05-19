@@ -15,14 +15,9 @@ if [ -z "$DEPLOYMENT_BRANCH" ]; then
   export DEPLOYMENT_BRANCH=master
 fi
 
-# Configure your sub-domains for: api
-if [ -z "$API_SUBDOMAIN" ]; then
-  export API_SUBDOMAIN=api
-fi
-
 # Miscellaneous
-if [ -z "$LETSENCRYPT_SECRET" ]; then
-  export LETSENCRYPT_SECRET="letsencrypt-prod"
+if [ -z "$LETSENCRYPT_SECRET_NAME" ]; then
+  export LETSENCRYPT_SECRET_NAME="letsencrypt-staging"
 fi
 if [ -z "$CORS_ALLOW_ORIGIN" ]; then
   export CORS_ALLOW_ORIGIN="^https?:\/\/(.*\.)?example\.com"
@@ -31,7 +26,7 @@ if [ -z "$TRUSTED_HOSTS" ]; then
   export TRUSTED_HOSTS="^.*\.example\.com$"
 fi
 
-export DOMAIN=${KUBE_INGRESS_BASE_DOMAIN}
+export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
@@ -40,16 +35,14 @@ export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=latest
-  export API_ENTRYPOINT="${API_SUBDOMAIN}.${DOMAIN}"
-  export MERCURE_SUBSCRIBE_URL="https://mercure.${DOMAIN}/.well-known/mercure"
+  export MERCURE_SUBSCRIBE_DOMAIN="mercure.${DOMAIN}"
 else
   if [ -n "$CI_ENVIRONMENT_SLUG" ] && [ -z "$RELEASE" ]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
   fi
   if [[ -z "$RELEASE" ]]; then echo 'RELEASE is not defined in your ci environment variables for non-production releases.'; fi
   export TAG=$RELEASE
-  export API_ENTRYPOINT="${RELEASE}.${API_SUBDOMAIN}.${DOMAIN}"
-  export MERCURE_SUBSCRIBE_URL="https://${RELEASE}.mercure.${DOMAIN}/.well-known/mercure"
+  export MERCURE_SUBSCRIBE_DOMAIN="mercure.${RELEASE}.${DOMAIN}"
 fi
 
 # To enable blackfire, set the environment variables
@@ -103,6 +96,18 @@ install_dependencies() {
 
 		rm $JWT_SECRET_KEY_FILE
 	fi
+
+	echo "Checking/generating \$MERCURE_JWT_KEY"
+  # Generate random key & jwt for Mercure if not set
+  if [ -z $MERCURE_JWT_SECRET ]; then
+    MERCURE_JWT_SECRET="$(rand_str)"
+    export MERCURE_JWT_SECRET
+  fi
+  if [ -z $MERCURE_JWT_TOKEN ]; then
+    npm install --global "@clarketm/jwt-cli"
+    MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
+    export MERCURE_JWT_TOKEN
+  fi
 }
 
 # For Kubernetes environment gitlab runner use the localhost for DIND - see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
@@ -170,8 +175,8 @@ run_tests() {
 }
 
 check_kube_domain() {
-  if [ -z ${KUBE_INGRESS_BASE_DOMAIN+x} ]; then
-    echo "In order to deploy or use Review Apps, KUBE_INGRESS_BASE_DOMAIN variable must be set"
+  if [ -z ${CI_ENVIRONMENT_URL+x} ]; then
+    echo "In order to deploy or use Review Apps, CI_ENVIRONMENT_URL variable must be set"
     echo "You can do it in Auto DevOps project settings or defining a variable at group or project level"
     echo "You can also manually add it in .gitlab-ci.yml"
     false
@@ -210,57 +215,58 @@ create_secret() {
     -o yaml --dry-run | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
 }
 
-deploy_api() {
-  echo "Installing/upgrading release '${RELEASE}' on namespace '${KUBE_NAMESPACE}'"
+function get_replicas() {
+	track="${1:-stable}"
+	percentage="${2:-100}"
 
-#	track="${1-stable}"
-#	percentage="${2:-100}"
-#	name="$CI_ENVIRONMENT_SLUG"
-#
-#	replicas="1"
-#	service_enabled="true"
-#	database_enabled="$DATABASE_ENABLED"
-#	indexation_enabled="false"
-#
-#	# if track is different than stable,
-#	# re-use all attached resources
-#	if [[ "$track" != "stable" ]]; then
-#		name="$name-$track"
-#		service_enabled="false"
-#		database_enabled="false"
-#	fi
-#
-#	replicas=$(get_replicas "$track" "$percentage")
-#
-#	if [[ "$CI_PROJECT_VISIBILITY" != "public" ]]; then
-#		secret_name='gitlab-registry'
-#	else
-#		secret_name=''
-#	fi
-#	# helm delete --purge $name
-#	kubectl delete job indexation-job --ignore-not-found
-#	kubectl delete job ${name}-db-indexation --ignore-not-found
-#	kubectl delete job ${name}-db-migrate-job --ignore-not-found
-#	if [[ "$APP_ENV" != "prod" ]]; then
-#		PHP_APPLICATION_REPOSITORY=$CI_APPLICATION_REPOSITORY
-#		NGINX_APPLICATION_REPOSITORY="$CI_APPLICATION_REPOSITORY/nginx"
-#	else
-#		PHP_APPLICATION_REPOSITORY="$CI_APPLICATION_REPOSITORY/prod"
-#		NGINX_APPLICATION_REPOSITORY="$CI_APPLICATION_REPOSITORY/nginx-prod"
-#	fi
+	env_track=$( echo $track | tr -s  '[:lower:]'  '[:upper:]' )
+	env_slug=$( echo ${CI_ENVIRONMENT_SLUG//-/_} | tr -s  '[:lower:]'  '[:upper:]' )
+
+	if [[ "$track" == "stable" ]] || [[ "$track" == "rollout" ]]; then
+		# for stable track get number of replicas from `PRODUCTION_REPLICAS`
+		eval new_replicas=\$${env_slug}_REPLICAS
+		if [[ -z "$new_replicas" ]]; then
+			new_replicas=$REPLICAS
+		fi
+	else
+		# for all tracks get number of replicas from `CANARY_PRODUCTION_REPLICAS`
+		eval new_replicas=\$${env_track}_${env_slug}_REPLICAS
+		if [[ -z "$new_replicas" ]]; then
+			eval new_replicas=\${env_track}_REPLICAS
+		fi
+	fi
+
+	replicas="${new_replicas:-1}"
+	replicas="$(($replicas * $percentage / 100))"
+
+	# always return at least one replicas
+	if [[ $replicas -gt 0 ]]; then
+		echo "$replicas"
+	else
+		echo 1
+	fi
+}
+
+deploy_api() {
+  echo "Installing/upgrading release '${RELEASE}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
+
+	track="${1-stable}"
+	percentage="${2:-100}"
+	name="$CI_ENVIRONMENT_SLUG"
+
+	replicas=$(get_replicas "$track" "$percentage")
 
   if [[ -n "$HELM_DELETE" ]]; then
-    helm delete --purge "$RELEASE" || EXIT_CODE=$? && true
+    helm delete "$RELEASE" || EXIT_CODE=$? && true
     echo ${EXIT_CODE}
   fi
-  export INGRESS_SECRET_NAME="letsencrypt-${RELEASE}"
 
   helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$RELEASE" ./api/_helm/api \
     --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
     --set php.corsAllowOrigin="${CORS_ALLOW_ORIGIN}" \
     --set php.trustedHosts="${TRUSTED_HOSTS}" \
     --set php.repository="${PHP_REPOSITORY}" \
-    --set php.mercure.jwtToken="${____TODO____}" \
+    --set php.mercure.jwtToken="${MERCURE_JWT_TOKEN}" \
     --set php.databaseUrl="${DATABASE_URL}" \
     --set php.apiSecretToken="${API_SECRET_TOKEN}" \
     --set php.mailerEmail="${MAILER_EMAIL}" \
@@ -268,21 +274,24 @@ deploy_api() {
     --set varnish.repository="${VARNISH_REPOSITORY}" \
     --set ingress.enabled="${INGRESS_ENABLED}" \
     --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
-    --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${INGRESS_SECRET_NAME}" \
-    --set ingress.hosts[0].host="${API_ENTRYPOINT}" \
-    --set ingress.hosts[0].paths[0]="/" \
-    --set ingress.tls[0].secretName="${INGRESS_SECRET_NAME}" \
-    --set ingress.tls[0].hosts[0]="${API_ENTRYPOINT}" \
-    --set ingress.secretName="${LETSENCRYPT_SECRET}" \
-    --set mercure.subscribeUrl="${MERCURE_SUBSCRIBE_URL}" \
+    --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${LETSENCRYPT_SECRET_NAME}" \
+    --set ingress.hosts[0].host="${DOMAIN}" \
+    --set ingress.hosts[0].paths[0].path="/" \
+    --set ingress.hosts[1].host="${MERCURE_SUBSCRIBE_DOMAIN}" \
+    --set ingress.hosts[1].paths[0].path="/" \
+    --set ingress.hosts[1].paths[0].backend.serviceName="mercure" \
+    --set ingress.hosts[1].paths[0].backend.servicePort="443" \
+    --set ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}" \
+    --set ingress.tls[0].hosts[0]="${DOMAIN}" \
+    --set mercure.jwtKey="${MERCURE_JWT_SECRET}" \
+    --set mercure.subscribeUrl="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure" \
     --set blackfire.enabled="${BLACKFIRE_ENABLED}" \
     --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
     --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \
     --set blackfire.client.id="${BLACKFIRE_CLIENT_ID}" \
     --set blackfire.client.token="${BLACKFIRE_CLIENT_TOKEN}" \
-    --set labels."app\.gitlab\.com/app"="${CI_PROJECT_PATH_SLUG}" \
-    --set labels."app\.gitlab\.com/env"="${CI_ENVIRONMENT_SLUG}"
-#   ^^ COULD NOT WORK OUT HOW TO APPLY LABELS INTO THE LABELS HELPER - THIS WILL LINK DEPLOYMENT STATUS WITH GITLAB UI
+    --set annotations."app\.gitlab\.com/app"="${CI_PROJECT_PATH_SLUG}" \
+    --set annotations."app\.gitlab\.com/env"="${CI_ENVIRONMENT_SLUG}"
 }
 
 persist_environment_url() {
@@ -310,7 +319,7 @@ performance() {
 }
 
 clean() {
-	echo "Needs re-working and checking..."
+	echo "Needs re-working and checking... perhaps it isn't necessary anymore?"
 #  # Get kubernetes namespaces
 #  NAMESPACES=$(kubectl get namespaces -l project=$PROJECT_NAME --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
 #	echo "namespaces: $NAMESPACES"
@@ -343,6 +352,6 @@ function delete() {
 	fi
 
 	if [[ -n "$(helm ls -q "^$name$")" ]]; then
-		helm delete --purge "$name"
+		helm delete "$name"
 	fi
 }

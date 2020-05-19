@@ -1,4 +1,5 @@
 {{- if .Values.vulcain.enabled -}}
+{{- $fullName := include "api.fullname" . -}}
 {{- $name := "vulcain" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
 apiVersion: apps/v1
@@ -7,6 +8,8 @@ metadata:
   name: {{ include "api.fullname" . }}-{{ $name }}
   labels:
     {{- include "api.labels" $data | nindent 4 }}
+  annotations:
+    {{- include "api.annotations" $data | nindent 4 }}
 spec:
   replicas: {{ .Values.vulcain.replicaCount }}
   selector:
@@ -16,6 +19,8 @@ spec:
     metadata:
       labels:
         {{- include "api.selectorLabels" $data | nindent 8 }}
+      annotations:
+        {{- include "api.annotations" $data | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -30,7 +35,7 @@ spec:
           imagePullPolicy: {{ .Values.vulcain.image.pullPolicy }}
           env:
           - name: UPSTREAM
-            value: {{ if .Values.varnish.enabled }}http://varnish{{ else }}http://nginx{{ end }}
+            value: "{{ if .Values.varnish.enabled }}http://{{ $fullName }}-varnish{{ else }}http://{{ $fullName }}-nginx{{ end }}.{{ .Release.Namespace }}.svc.cluster.local:{{ if .Values.varnish.enabled }}{{ .Values.varnish.service.port }}{{ else }}{{ .Values.nginx.service.port }}{{ end }}"
           ports:
             - containerPort: 443
           resources:

@@ -124,7 +124,7 @@ ingress:
       # kubernetes.io/tls-acme: "true"
     hosts:
         -   host: api.example.com
-            paths: []
+            paths: [{path: '/'}]
     tls: []
     #  - secretName: api-example-tls
     #    hosts:
@@ -148,4 +148,4 @@ tolerations: []
 
 affinity: {}
 
-labels: {}
+annotations: {}

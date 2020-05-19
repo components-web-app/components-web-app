@@ -8,6 +8,9 @@ x-cache-from:
       - ${NGINX_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/nginx}
       - ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
       - ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
+  - &app-cache-from
+    cache_from:
+      - ${APP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/app}
 
 services:
   php:
@@ -129,8 +132,22 @@ services:
       BLACKFIRE_CLIENT_ID: ~
       BLACKFIRE_CLIENT_TOKEN: ~
       # BLACKFIRE_LOG_LEVEL: 4
-  
-  #TODO: configure the front-end application service
+
+  app:
+    build:
+      context: ./app
+      target: cwa_app
+      <<: *app-cache-from
+    image: ${APP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/app}
+    depends_on:
+      - dev-tls
+    volumes:
+      - ./app:/usr/src/app:rw,cached
+      - dev-certs:/certs:ro
+    ports:
+      - target: 3000
+        published: 443
+        protocol: tcp
 
 volumes:
   db-data: {}
