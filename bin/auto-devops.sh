@@ -53,8 +53,8 @@ else
 fi
 
 # To enable blackfire, set the environment variables
-if [ -n "$BLACKFIRE_SERVER_ID" ] && [ -n "$BLACKFIRE_SERVER_TOKEN" ] && [ -n "$BLACKFIRE_CLIENT_ID" ] && [ -n "$BLACKFIRE_CLIENT_TOKEN" ] ; then
-  export BLACKFIRE_ENABLED=true
+if [ -n "$BLACKFIRE_SERVER_ID" ] && [ -n "$BLACKFIRE_SERVER_TOKEN" ] ; then
+  export BLACKFIRE_SERVER_ENABLED=true
 fi
 
 rand_str() {
@@ -195,7 +195,6 @@ check_kube_domain() {
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
   helm repo add default https://kubernetes-charts.storage.googleapis.com
-  helm repo add blackfire https://tech.sparkfabrik.com/blackfire-chart/
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
 }
@@ -281,6 +280,8 @@ deploy_api() {
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public"${JWT_PUBLIC_KEY}" \
     --set php.jwt.passphrase"${JWT_PASSPHRASE}" \
+    --set php.blackfire.id="${BLACKFIRE_CLIENT_ID}" \
+    --set php.blackfire.token="${BLACKFIRE_CLIENT_TOKEN}" \
     --set nginx.image.repository="${NGINX_REPOSITORY}" \
     --set nginx.image.tag="${TAG}" \
     --set varnish.image.repository="${VARNISH_REPOSITORY}" \
@@ -301,11 +302,9 @@ deploy_api() {
     --set mercure.ingress.hosts[0].paths[0]="/" \
     --set mercure.ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-mercure" \
     --set mercure.ingress.tls[0].hosts[0]="${MERCURE_SUBSCRIBE_DOMAIN}" \
-    --set blackfire.enabled="${BLACKFIRE_ENABLED}" \
+    --set blackfire.enabled="${BLACKFIRE_SERVER_ENABLED}" \
     --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
     --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \
-    --set blackfire.client.id="${BLACKFIRE_CLIENT_ID}" \
-    --set blackfire.client.token="${BLACKFIRE_CLIENT_TOKEN}" \
     --set annotations."app\.gitlab\.com/app"="${CI_PROJECT_PATH_SLUG}" \
     --set annotations."app\.gitlab\.com/env"="${CI_ENVIRONMENT_SLUG}"
 }

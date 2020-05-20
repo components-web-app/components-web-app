@@ -13,7 +13,7 @@ data:
   trusted-proxies: {{ join "," .Values.php.trustedProxies }}
   mercure-publish-url: {{ .Values.mercure.publishUrl | quote }}
   mercure-subscribe-url: {{ .Values.mercure.subscribeUrl | quote }}
-  blackfire-client-id: {{ .Values.blackfire.client.id | quote }}
+  blackfire-client-id: {{ .Values.php.blackfire.id | quote }}
   blackfire-server-id: {{ .Values.blackfire.server.id | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
   mailer-email: {{ .Values.php.mailerEmail | quote }}

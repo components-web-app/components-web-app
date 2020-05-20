@@ -10,10 +10,10 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 8707
-      targetPort: http
+    - port: 80
+      targetPort: agent
       protocol: TCP
-      name: http
+      name: agent
   selector:
     {{- include "api.selectorLabels" $data | nindent 4 }}
 {{- end -}}

@@ -36,18 +36,16 @@ spec:
           image: "{{ .Values.blackfire.image.repository }}:{{ .Values.blackfire.image.tag }}"
           imagePullPolicy: {{ .Values.blackfire.image.pullPolicy }}
           ports:
-            - containerPort: 8707
+            - name: agent
+              containerPort: 8707
+              protocol: TCP
+          livenessProbe:
+              tcpSocket:
+                  port: agent
+          readinessProbe:
+              tcpSocket:
+                  port: agent
           env:
-            - name: BLACKFIRE_CLIENT_ID
-              valueFrom:
-                  configMapKeyRef:
-                      name: {{ $fullName }}
-                      key: blackfire-client-id
-            - name: BLACKFIRE_CLIENT_TOKEN
-              valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: blackfire-client-token
             - name: BLACKFIRE_SERVER_ID
               valueFrom:
                   configMapKeyRef:
@@ -59,9 +57,17 @@ spec:
                       name: {{ $fullName }}
                       key: blackfire-server-token
           resources:
-{{ toYaml .Values.resources | indent 12 }}
-    {{- if .Values.nodeSelector }}
+            {{- toYaml .Values.resources | nindent 12 }}
+    {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml .Values.nodeSelector | indent 8 }}
+        {{- toYaml . | nindent 8 }}
     {{- end }}
-{{- end -}}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+{{- end }}
