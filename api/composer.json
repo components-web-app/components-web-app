@@ -11,6 +11,7 @@
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "5.0.*",
         "symfony/mercure-bundle": "^0.2",
+        "symfony/monolog-bundle": "^3.5",
         "symfony/yaml": "5.0.*"
     },
     "require-dev": {
