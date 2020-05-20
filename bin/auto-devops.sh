@@ -22,12 +22,6 @@ fi
 if [ -z "$LETSENCRYPT_SECRET_NAME" ]; then
   export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
 fi
-if [ -z "$CORS_ALLOW_ORIGIN" ]; then
-  export CORS_ALLOW_ORIGIN="^https?:\/\/(.*\.)?example\.com"
-fi
-if [ -z "$TRUSTED_HOSTS" ]; then
-  export TRUSTED_HOSTS="^.*\.example\.com$"
-fi
 
 export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
@@ -36,6 +30,15 @@ export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
 export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/api./mercure.}"
+
+if [ -z "$CORS_ALLOW_ORIGIN" ]; then
+  echo "!!!! WARNING CORS_ALLOW_ORIGIN ENVIRONMENT IS NOT SET !!!!";
+  echo "Expected a regex string similar to ^https?:\/\/(.*\.)?example\.com"
+fi
+if [ -z "$TRUSTED_HOSTS" ]; then
+  echo '!!!! WARNING TRUSTED_HOSTS ENVIRONMENT IS NOT SET !!!!';
+  echo "Expected a regex string similar to ^.*\.example\.com$"
+fi
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
@@ -191,9 +194,7 @@ check_kube_domain() {
 
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
-  # helm init --client-only --skip-refresh
   helm repo add default https://kubernetes-charts.storage.googleapis.com
-  # helm repo add incubator https://storage.googleapis.com/kubernetes-charts-incubator
   helm repo add blackfire https://tech.sparkfabrik.com/blackfire-chart/
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
@@ -243,7 +244,7 @@ function get_replicas() {
 	replicas="${new_replicas:-1}"
 	replicas="$(($replicas * $percentage / 100))"
 
-	# always return at least one replicas
+	# always return at least one replica
 	if [[ $replicas -gt 0 ]]; then
 		echo "$replicas"
 	else
@@ -252,7 +253,6 @@ function get_replicas() {
 }
 
 deploy_api() {
-
 	track="${1-stable}"
 	percentage="${2:-100}"
 	name="$RELEASE"
@@ -278,6 +278,9 @@ deploy_api() {
     --set php.databaseUrl="${DATABASE_URL}" \
     --set php.apiSecretToken="${API_SECRET_TOKEN}" \
     --set php.mailerEmail="${MAILER_EMAIL}" \
+    --set php.jwt.secret="${JWT_SECRET_KEY}" \
+    --set php.jwt.public"${JWT_PUBLIC_KEY}" \
+    --set php.jwt.passphrase"${JWT_PASSPHRASE}" \
     --set nginx.image.repository="${NGINX_REPOSITORY}" \
     --set nginx.image.tag="${TAG}" \
     --set varnish.image.repository="${VARNISH_REPOSITORY}" \
