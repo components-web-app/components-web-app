@@ -43,7 +43,9 @@ spec:
           - name: PHP_SERVICE
             value: "{{ $fullName }}-php"
           ports:
-            - containerPort: 80
+            - name: http
+              containerPort: 80
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /healthz

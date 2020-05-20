@@ -63,7 +63,7 @@ vulcain:
     replicaCount: 1
     service:
         type: ClusterIP
-        port: 443
+        port: 80
 
 # Full configuration: https://github.com/helm/charts/tree/master/stable/mercure
 mercure:
