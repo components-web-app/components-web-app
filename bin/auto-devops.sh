@@ -11,15 +11,15 @@ export KUBERNETES_VERSION=1.18.2
 export HELM_VERSION=3.2.1
 
 # Choose the branch for production deploy.
-if [ -z "$DEPLOYMENT_BRANCH" ]; then
+if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
   export DEPLOYMENT_BRANCH=master
 fi
 
 # Miscellaneous
-if [ -z "$CLUSTER_ISSUER" ]; then
+if [[ -z "$CLUSTER_ISSUER" ]]; then
   export CLUSTER_ISSUER="letsencrypt-staging"
 fi
-if [ -z "$LETSENCRYPT_SECRET_NAME" ]; then
+if [[ -z "$LETSENCRYPT_SECRET_NAME" ]]; then
   export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
 fi
 
@@ -31,11 +31,11 @@ export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
 export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/api./mercure.}"
 
-if [ -z "$CORS_ALLOW_ORIGIN" ]; then
+if [[ -z "$CORS_ALLOW_ORIGIN" ]]; then
   echo "!!!! WARNING CORS_ALLOW_ORIGIN ENVIRONMENT IS NOT SET !!!!";
   echo "Expected a regex string similar to ^https?:\/\/(.*\.)?example\.com"
 fi
-if [ -z "$TRUSTED_HOSTS" ]; then
+if [[ -z "$TRUSTED_HOSTS" ]]; then
   echo '!!!! WARNING TRUSTED_HOSTS ENVIRONMENT IS NOT SET !!!!';
   echo "Expected a regex string similar to ^.*\.example\.com$"
 fi
@@ -44,7 +44,7 @@ if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=latest
 else
-  if [ -n "$CI_ENVIRONMENT_SLUG" ] && [ -z "$RELEASE" ]; then
+  if [[ -n "$CI_ENVIRONMENT_SLUG" ]] && [[ -z "$RELEASE" ]]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
   fi
   if [[ -z "$RELEASE" ]]; then echo 'Helm RELEASE environment variable is not defined in your ci environment variables for non-production helm releases.'; fi
@@ -53,7 +53,7 @@ else
 fi
 
 # To enable blackfire, set the environment variables
-if [ -n "$BLACKFIRE_SERVER_ID" ] && [ -n "$BLACKFIRE_SERVER_TOKEN" ] ; then
+if [[ -n "$BLACKFIRE_SERVER_ID" ]] && [[ -n "$BLACKFIRE_SERVER_TOKEN" ]] ; then
   export BLACKFIRE_SERVER_ENABLED=true
 fi
 
@@ -86,31 +86,31 @@ install_dependencies() {
   kubectl version --client
 
   # Generate random passphrase and keys for JWT signing if not set
-	if [ -z "$JWT_PASSPHRASE" ]; then
+	if [[ -z ${JWT_PASSPHRASE} ]]; then
 		JWT_PASSPHRASE="$(rand_str)"
 		export JWT_PASSPHRASE
 	fi
 
-	if [ -z "$JWT_SECRET_KEY" ]; then
+	if [[ -z ${JWT_SECRET_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
 
-		openssl genpkey -pass pass:"${JWT_PASSPHRASE}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out $JWT_SECRET_KEY_FILE
-		JWT_SECRET_KEY=$(cat $JWT_SECRET_KEY_FILE)
+		openssl genpkey -pass pass:"${JWT_PASSPHRASE}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
+		JWT_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
 		export JWT_SECRET_KEY
 
 		JWT_PUBLIC_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$JWT_PASSPHRASE" -pubout)
 		export JWT_PUBLIC_KEY
 
-		rm $JWT_SECRET_KEY_FILE
+		rm ${JWT_SECRET_KEY_FILE}
 	fi
 
 	echo "Checking/generating \$MERCURE_JWT_KEY"
   # Generate random key & jwt for Mercure if not set
-  if [ -z $MERCURE_JWT_SECRET ]; then
+  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
     MERCURE_JWT_SECRET="$(rand_str)"
     export MERCURE_JWT_SECRET
   fi
-  if [ -z $MERCURE_JWT_TOKEN ]; then
+  if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
     npm install --global "@clarketm/jwt-cli"
     MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
     export MERCURE_JWT_TOKEN
@@ -121,7 +121,7 @@ install_dependencies() {
 # Using shared runners for now.
 setup_docker() {
   if ! docker info &>/dev/null; then
-    if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
+    if [[ -z "$DOCKER_HOST" && "$KUBERNETES_PORT" ]]; then
       export DOCKER_HOST='tcp://localhost:2375'
     fi
   fi
@@ -129,7 +129,7 @@ setup_docker() {
 
 build() {
   # https://gitlab.com/help/ci/variables/predefined_variables.md
-  if [ -n "$CI_REGISTRY_USER" ]; then
+  if [[ -n "$CI_REGISTRY_USER" ]]; then
     echo "Logging to GitLab Container Registry with CI credentials..."
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     echo ""
@@ -149,8 +149,16 @@ build() {
   docker push $NGINX_REPOSITORY:$TAG
 }
 
+function launch_phpunit() {
+  echo "launch_phpunit function"
+  cd ./api || return
+  mkdir -p build/logs/phpunit/
+  composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
+}
+
 function setup_test_db() {
-  if [ -z ${KUBERNETES_PORT+x} ]; then
+  if [[ -z ${KUBERNETES_PORT+x} ]]; then
     DB_HOST=postgres
   else
     DB_HOST=localhost
@@ -158,14 +166,12 @@ function setup_test_db() {
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
 }
 
-run_tests() {
-	echo "run_tests function disabled - needs refactoring/checking"
-
-  if [ -n "$CI_REGISTRY_USER" ]; then
-    echo "Logging to GitLab Container Registry with CI credentials..."
-    docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    echo ""
-  fi
+function run_tests() {
+  echo "run_tests function"
+  cd ./api || return
+  mkdir -p build/logs/behat/
+  composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
 
 #  docker pull $PHP_REPOSITORY:$TAG
 #
@@ -182,7 +188,7 @@ run_tests() {
 }
 
 check_kube_domain() {
-  if [ -z ${CI_ENVIRONMENT_URL+x} ]; then
+  if [[ -z ${CI_ENVIRONMENT_URL+x} ]]; then
     echo "In order to deploy or use Review Apps, CI_ENVIRONMENT_URL variable must be set"
     echo "You can do it in Auto DevOps project settings or defining a variable at group or project level"
     echo "You can also manually add it in .gitlab-ci.yml"
@@ -204,7 +210,7 @@ ensure_namespace() {
 }
 
 create_secret() {
-  if [ "$CI_PROJECT_VISIBILITY" = "public" ]; then
+  if [[ "$CI_PROJECT_VISIBILITY" = "public" ]]; then
   	echo "Project is public - skipping secret creation"
     return
   fi
@@ -236,7 +242,7 @@ function get_replicas() {
 		# for all tracks get number of replicas from `CANARY_PRODUCTION_REPLICAS`
 		eval new_replicas=\$${env_track}_${env_slug}_REPLICAS
 		if [[ -z "$new_replicas" ]]; then
-			eval new_replicas=\${env_track}_REPLICAS
+			eval new_replicas=\$env_track_REPLICAS
 		fi
 	fi
 
@@ -322,8 +328,7 @@ performance() {
 
   mkdir sitespeed-results
 
-  if [ -f .gitlab-urls.txt ]
-  then
+  if [[ -f .gitlab-urls.txt ]]; then
     sed -i -e 's@^@'"$CI_ENVIRONMENT_URL"'@' .gitlab-urls.txt
     docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results .gitlab-urls.txt
   else
@@ -344,5 +349,11 @@ function delete() {
 	helm uninstall "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
-  # should we have a script to remove/clean unused namespaces - must be careful not to delete production!
+  # It appears the default service account does not have permissions for this.
+	if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
+	  echo "Deleting namespace $KUBE_NAMESPACE"
+		kubectl delete namespace $KUBE_NAMESPACE --grace-period=0
+	else
+	  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
+	fi
 }
