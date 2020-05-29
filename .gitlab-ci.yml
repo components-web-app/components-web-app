@@ -210,11 +210,10 @@ canary:
         - deploy_api canary
     environment:
         name: production
-        url: http://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
+        url: https://$KUBE_INGRESS_BASE_DOMAIN
     when: manual
     only:
         refs:
             - master
-        kubernetes: active
         variables:
             - $CANARY_ENABLED == "true"
