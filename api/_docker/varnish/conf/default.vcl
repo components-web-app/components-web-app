@@ -3,13 +3,13 @@ vcl 4.0;
 import std;
 
 backend default {
-  .host = "api";
-  .port = "80";
+  .host = "${UPSTREAM}";
+  .port = "${UPSTREAM_PORT}";
   # Health check
   #.probe = {
   #  .url = "/";
   #  .timeout = 5s;
-  #  .interval = 10s;
+  #  .interval = 30s;
   #  .window = 5;
   #  .threshold = 3;
   #}
@@ -28,7 +28,7 @@ acl profile {
 # Hosts allowed to send BAN requests
 acl invalidators {
   "localhost";
-  "php";
+  "${PHP_SERVICE}";
   # local Kubernetes network
   "10.0.0.0"/8;
   "172.16.0.0"/12;
@@ -45,11 +45,8 @@ sub vcl_recv {
     # ESI request without distinction.
     unset req.http.X-Blackfire-Query;
   }
-  # If it's a Blackfire query and the client is authorized,
-  # just pass directly to the application.
-  if (req.http.X-Blackfire-Query && client.ip ~ profile) {
-    return (pass);
-  }
+
+  set req.http.Surrogate-Capability = "abc=ESI/1.0";
 
   if (req.restarts > 0) {
     set req.hash_always_miss = true;
@@ -62,6 +59,12 @@ sub vcl_recv {
   # https://github.com/dunglas/vulcain/blob/master/docs/cache.md
   unset req.http.fields;
   unset req.http.preload;
+
+  # If it's a Blackfire query and the client is authorized,
+  # just pass directly to the application.
+  if (req.http.X-Blackfire-Query && client.ip ~ profile) {
+    return (pass);
+  }
 
   # To allow API Platform to ban by cache tags
   if (req.method == "BAN") {

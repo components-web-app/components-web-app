@@ -1,10 +1,11 @@
 {{- if .Values.varnish.enabled -}}
 {{- $name := "varnish" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
+{{- $fullName := include "api.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "api.fullname" . }}-{{ $name }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
     {{- include "api.labels" $data | nindent 4 }}
   annotations:
@@ -34,8 +35,17 @@ spec:
         - name: {{ .Chart.Name }}-{{ $name }}
           image: "{{ .Values.varnish.image.repository }}:{{ .Values.varnish.image.tag }}"
           imagePullPolicy: {{ .Values.varnish.image.pullPolicy }}
+          env:
+          - name: UPSTREAM
+            value: "{{ $fullName }}-nginx"
+          - name: UPSTREAM_PORT
+            value: "{{ .Values.nginx.service.port }}"
+          - name: PHP_SERVICE
+            value: "{{ $fullName }}-php"
           ports:
-            - containerPort: 80
+            - name: http
+              containerPort: 80
+              protocol: TCP
           livenessProbe:
             httpGet:
               path: /healthz

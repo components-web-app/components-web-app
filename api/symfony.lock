@@ -128,6 +128,9 @@
     "doctrine/reflection": {
         "version": "v1.0.0"
     },
+    "doctrine/sql-formatter": {
+        "version": "1.0.1"
+    },
     "easyrdf/easyrdf": {
         "version": "0.9.1"
     },
@@ -199,9 +202,6 @@
     "imagine/imagine": {
         "version": "1.2.3"
     },
-    "jdorn/sql-formatter": {
-        "version": "v1.2.17"
-    },
     "justinrainbow/json-schema": {
         "version": "5.2.9"
     },
@@ -243,6 +243,9 @@
     },
     "lorenzo/pinky": {
         "version": "1.0.5"
+    },
+    "monolog/monolog": {
+        "version": "2.0.2"
     },
     "namshi/jose": {
         "version": "7.2.3"
@@ -498,6 +501,23 @@
     },
     "symfony/mime": {
         "version": "v4.3.8"
+    },
+    "symfony/monolog-bridge": {
+        "version": "v5.0.8"
+    },
+    "symfony/monolog-bundle": {
+        "version": "3.3",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "3.3",
+            "ref": "a89f4cd8a232563707418eea6c2da36acd36a917"
+        },
+        "files": [
+            "config/packages/dev/monolog.yaml",
+            "config/packages/prod/monolog.yaml",
+            "config/packages/test/monolog.yaml"
+        ]
     },
     "symfony/options-resolver": {
         "version": "v4.3.8"

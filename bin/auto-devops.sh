@@ -11,22 +11,16 @@ export KUBERNETES_VERSION=1.18.2
 export HELM_VERSION=3.2.1
 
 # Choose the branch for production deploy.
-if [ -z "$DEPLOYMENT_BRANCH" ]; then
+if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
   export DEPLOYMENT_BRANCH=master
 fi
 
 # Miscellaneous
-if [ -z "$CLUSTER_ISSUER" ]; then
+if [[ -z "$CLUSTER_ISSUER" ]]; then
   export CLUSTER_ISSUER="letsencrypt-staging"
 fi
-if [ -z "$LETSENCRYPT_SECRET_NAME" ]; then
+if [[ -z "$LETSENCRYPT_SECRET_NAME" ]]; then
   export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
-fi
-if [ -z "$CORS_ALLOW_ORIGIN" ]; then
-  export CORS_ALLOW_ORIGIN="^https?:\/\/(.*\.)?example\.com"
-fi
-if [ -z "$TRUSTED_HOSTS" ]; then
-  export TRUSTED_HOSTS="^.*\.example\.com$"
 fi
 
 export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
@@ -35,24 +29,32 @@ export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
-mercure_base_domain="${DOMAIN/api./mercure.}"
+export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/api./mercure.}"
+
+if [[ -z "$CORS_ALLOW_ORIGIN" ]]; then
+  echo "!!!! WARNING CORS_ALLOW_ORIGIN ENVIRONMENT IS NOT SET !!!!";
+  echo "Expected a regex string similar to ^https?:\/\/(.*\.)?example\.com"
+fi
+if [[ -z "$TRUSTED_HOSTS" ]]; then
+  echo '!!!! WARNING TRUSTED_HOSTS ENVIRONMENT IS NOT SET !!!!';
+  echo "Expected a regex string similar to ^.*\.example\.com$"
+fi
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=latest
-  export MERCURE_SUBSCRIBE_DOMAIN="${mercure_base_domain}"
 else
-  if [ -n "$CI_ENVIRONMENT_SLUG" ] && [ -z "$RELEASE" ]; then
+  if [[ -n "$CI_ENVIRONMENT_SLUG" ]] && [[ -z "$RELEASE" ]]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
   fi
-  if [[ -z "$RELEASE" ]]; then echo 'RELEASE is not defined in your ci environment variables for non-production releases.'; fi
-  export TAG=$RELEASE
-  export MERCURE_SUBSCRIBE_DOMAIN="${RELEASE}.${mercure_base_domain}"
+  if [[ -z "$RELEASE" ]]; then echo 'Helm RELEASE environment variable is not defined in your ci environment variables for non-production helm releases.'; fi
+  export TAG=${CI_COMMIT_REF_NAME:-dev}
+  echo "CONTAINER TAG: '${TAG}'"
 fi
 
 # To enable blackfire, set the environment variables
-if [ -n "$BLACKFIRE_SERVER_ID" ] && [ -n "$BLACKFIRE_SERVER_TOKEN" ] && [ -n "$BLACKFIRE_CLIENT_ID" ] && [ -n "$BLACKFIRE_CLIENT_TOKEN" ] ; then
-  export BLACKFIRE_ENABLED=true
+if [[ -n "$BLACKFIRE_SERVER_ID" ]] && [[ -n "$BLACKFIRE_SERVER_TOKEN" ]] ; then
+  export BLACKFIRE_SERVER_ENABLED=true
 fi
 
 rand_str() {
@@ -84,31 +86,31 @@ install_dependencies() {
   kubectl version --client
 
   # Generate random passphrase and keys for JWT signing if not set
-	if [ -z "$JWT_PASSPHRASE" ]; then
+	if [[ -z ${JWT_PASSPHRASE} ]]; then
 		JWT_PASSPHRASE="$(rand_str)"
 		export JWT_PASSPHRASE
 	fi
 
-	if [ -z "$JWT_SECRET_KEY" ]; then
+	if [[ -z ${JWT_SECRET_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
 
-		openssl genpkey -pass pass:"${JWT_PASSPHRASE}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out $JWT_SECRET_KEY_FILE
-		JWT_SECRET_KEY=$(cat $JWT_SECRET_KEY_FILE)
+		openssl genpkey -pass pass:"${JWT_PASSPHRASE}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
+		JWT_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
 		export JWT_SECRET_KEY
 
 		JWT_PUBLIC_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$JWT_PASSPHRASE" -pubout)
 		export JWT_PUBLIC_KEY
 
-		rm $JWT_SECRET_KEY_FILE
+		rm ${JWT_SECRET_KEY_FILE}
 	fi
 
 	echo "Checking/generating \$MERCURE_JWT_KEY"
   # Generate random key & jwt for Mercure if not set
-  if [ -z $MERCURE_JWT_SECRET ]; then
+  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
     MERCURE_JWT_SECRET="$(rand_str)"
     export MERCURE_JWT_SECRET
   fi
-  if [ -z $MERCURE_JWT_TOKEN ]; then
+  if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
     npm install --global "@clarketm/jwt-cli"
     MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
     export MERCURE_JWT_TOKEN
@@ -119,7 +121,7 @@ install_dependencies() {
 # Using shared runners for now.
 setup_docker() {
   if ! docker info &>/dev/null; then
-    if [ -z "$DOCKER_HOST" -a "$KUBERNETES_PORT" ]; then
+    if [[ -z "$DOCKER_HOST" && "$KUBERNETES_PORT" ]]; then
       export DOCKER_HOST='tcp://localhost:2375'
     fi
   fi
@@ -127,7 +129,7 @@ setup_docker() {
 
 build() {
   # https://gitlab.com/help/ci/variables/predefined_variables.md
-  if [ -n "$CI_REGISTRY_USER" ]; then
+  if [[ -n "$CI_REGISTRY_USER" ]]; then
     echo "Logging to GitLab Container Registry with CI credentials..."
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     echo ""
@@ -147,8 +149,16 @@ build() {
   docker push $NGINX_REPOSITORY:$TAG
 }
 
+function launch_phpunit() {
+  echo "launch_phpunit function"
+  cd ./api || return
+  mkdir -p build/logs/phpunit/
+  composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
+}
+
 function setup_test_db() {
-  if [ -z ${KUBERNETES_PORT+x} ]; then
+  if [[ -z ${KUBERNETES_PORT+x} ]]; then
     DB_HOST=postgres
   else
     DB_HOST=localhost
@@ -156,14 +166,12 @@ function setup_test_db() {
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
 }
 
-run_tests() {
-	echo "run_tests function disabled - needs refactoring/checking"
-
-  if [ -n "$CI_REGISTRY_USER" ]; then
-    echo "Logging to GitLab Container Registry with CI credentials..."
-    docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
-    echo ""
-  fi
+function run_tests() {
+  echo "run_tests function"
+  cd ./api || return
+  mkdir -p build/logs/behat/
+  composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
 
 #  docker pull $PHP_REPOSITORY:$TAG
 #
@@ -180,7 +188,7 @@ run_tests() {
 }
 
 check_kube_domain() {
-  if [ -z ${CI_ENVIRONMENT_URL+x} ]; then
+  if [[ -z ${CI_ENVIRONMENT_URL+x} ]]; then
     echo "In order to deploy or use Review Apps, CI_ENVIRONMENT_URL variable must be set"
     echo "You can do it in Auto DevOps project settings or defining a variable at group or project level"
     echo "You can also manually add it in .gitlab-ci.yml"
@@ -192,10 +200,7 @@ check_kube_domain() {
 
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
-  # helm init --client-only --skip-refresh
   helm repo add default https://kubernetes-charts.storage.googleapis.com
-  # helm repo add incubator https://storage.googleapis.com/kubernetes-charts-incubator
-  helm repo add blackfire https://tech.sparkfabrik.com/blackfire-chart/
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
 }
@@ -205,7 +210,7 @@ ensure_namespace() {
 }
 
 create_secret() {
-  if [ "$CI_PROJECT_VISIBILITY" = "public" ]; then
+  if [[ "$CI_PROJECT_VISIBILITY" = "public" ]]; then
   	echo "Project is public - skipping secret creation"
     return
   fi
@@ -237,14 +242,14 @@ function get_replicas() {
 		# for all tracks get number of replicas from `CANARY_PRODUCTION_REPLICAS`
 		eval new_replicas=\$${env_track}_${env_slug}_REPLICAS
 		if [[ -z "$new_replicas" ]]; then
-			eval new_replicas=\${env_track}_REPLICAS
+			eval new_replicas=\$env_track_REPLICAS
 		fi
 	fi
 
 	replicas="${new_replicas:-1}"
 	replicas="$(($replicas * $percentage / 100))"
 
-	# always return at least one replicas
+	# always return at least one replica
 	if [[ $replicas -gt 0 ]]; then
 		echo "$replicas"
 	else
@@ -253,30 +258,40 @@ function get_replicas() {
 }
 
 deploy_api() {
-  echo "Installing/upgrading release '${RELEASE}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
-
 	track="${1-stable}"
 	percentage="${2:-100}"
-	name="$CI_ENVIRONMENT_SLUG"
+	name="$RELEASE"
+	if [[ "$track" != "stable" ]]; then
+		name="$name-$track"
+	fi
+	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
 	replicas=$(get_replicas "$track" "$percentage")
 
-  if [[ -n "$HELM_DELETE" ]]; then
-    helm delete "$RELEASE" || EXIT_CODE=$? && true
+  if [[ -n "$HELM_UNINSTALL" ]]; then
+    helm uninstall "$name" || EXIT_CODE=$? && true
     echo ${EXIT_CODE}
   fi
 
-  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$RELEASE" ./api/_helm/api \
+  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$name" ./api/_helm/api \
     --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
+    --set php.image.repository="${PHP_REPOSITORY}" \
+    --set php.image.tag="${TAG}" \
     --set php.corsAllowOrigin="${CORS_ALLOW_ORIGIN}" \
     --set php.trustedHosts="${TRUSTED_HOSTS}" \
-    --set php.repository="${PHP_REPOSITORY}" \
     --set php.mercure.jwtToken="${MERCURE_JWT_TOKEN}" \
     --set php.databaseUrl="${DATABASE_URL}" \
     --set php.apiSecretToken="${API_SECRET_TOKEN}" \
     --set php.mailerEmail="${MAILER_EMAIL}" \
-    --set nginx.repository="${NGINX_REPOSITORY}" \
-    --set varnish.repository="${VARNISH_REPOSITORY}" \
+    --set php.jwt.secret="${JWT_SECRET_KEY}" \
+    --set php.jwt.public"${JWT_PUBLIC_KEY}" \
+    --set php.jwt.passphrase"${JWT_PASSPHRASE}" \
+    --set php.blackfire.id="${BLACKFIRE_CLIENT_ID}" \
+    --set php.blackfire.token="${BLACKFIRE_CLIENT_TOKEN}" \
+    --set nginx.image.repository="${NGINX_REPOSITORY}" \
+    --set nginx.image.tag="${TAG}" \
+    --set varnish.image.repository="${VARNISH_REPOSITORY}" \
+    --set varnish.image.tag="${TAG}" \
     --set ingress.enabled="${INGRESS_ENABLED}" \
     --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
     --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
@@ -293,11 +308,9 @@ deploy_api() {
     --set mercure.ingress.hosts[0].paths[0]="/" \
     --set mercure.ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-mercure" \
     --set mercure.ingress.tls[0].hosts[0]="${MERCURE_SUBSCRIBE_DOMAIN}" \
-    --set blackfire.enabled="${BLACKFIRE_ENABLED}" \
+    --set blackfire.enabled="${BLACKFIRE_SERVER_ENABLED}" \
     --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
     --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \
-    --set blackfire.client.id="${BLACKFIRE_CLIENT_ID}" \
-    --set blackfire.client.token="${BLACKFIRE_CLIENT_TOKEN}" \
     --set annotations."app\.gitlab\.com/app"="${CI_PROJECT_PATH_SLUG}" \
     --set annotations."app\.gitlab\.com/env"="${CI_ENVIRONMENT_SLUG}"
 }
@@ -315,8 +328,7 @@ performance() {
 
   mkdir sitespeed-results
 
-  if [ -f .gitlab-urls.txt ]
-  then
+  if [[ -f .gitlab-urls.txt ]]; then
     sed -i -e 's@^@'"$CI_ENVIRONMENT_URL"'@' .gitlab-urls.txt
     docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results .gitlab-urls.txt
   else
@@ -326,40 +338,22 @@ performance() {
   mv sitespeed-results/data/performance.json performance.json
 }
 
-clean() {
-	echo "Needs re-working and checking... perhaps it isn't necessary anymore?"
-#  # Get kubernetes namespaces
-#  NAMESPACES=$(kubectl get namespaces -l project=$PROJECT_NAME --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
-#	echo "namespaces: $NAMESPACES"
-#  # Get git repository branches
-#  BRANCHES=$(git ls-remote --heads origin | awk -F '	' '{print $2}' | sed -E 's#^refs/heads/(.*)#\1#g' | sed -E "s/\//-/g" | sed -e 's/\(.*\)/\L\1/')
-#	echo "branches: $BRANCHES"
-#  # Calculate differences between those 2 arrays
-#  DIFF=$(comm -3 <(echo "${NAMESPACES[*]}") <(echo "${BRANCHES[*]}"))
-#	echo "diff: $DIFF"
-#  # Only get existing namespaces
-#  NAMESPACES_TO_DELETE=($(comm -12 <(for X in "${DIFF[@]}"; do echo "${X}"; done|sort)  <(for X in "${NAMESPACES[@]}"; do echo "${X}"; done|sort)))
-#	echo "namespaces to delete: $NAMESPACES_TO_DELETE"
-#  # Remove useless kubernetes namespaces
-#  for i in "${NAMESPACES_TO_DELETE[@]}"; do
-#      if [[ $DEPLOYMENT_BRANCH != $i ]]
-#      then
-#          echo "Remove namespace/release $i"
-#          helm delete --purge $i || echo "Release $i does not exist"
-#          kubectl delete namespace $i --wait --cascade || echo "Namespace $i does not exist"
-#      fi
-#  done
-}
-
 function delete() {
 	track="${1-stable}"
-	name="$CI_ENVIRONMENT_SLUG"
+	name="$RELEASE"
 
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
 
-	if [[ -n "$(helm ls -q "^$name$")" ]]; then
-		helm delete "$name"
+	helm uninstall "$name" || EXIT_CODE=$? && true
+  echo ${EXIT_CODE}
+
+  # It appears the default service account does not have permissions for this.
+	if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
+	  echo "Deleting namespace $KUBE_NAMESPACE"
+		kubectl delete namespace $KUBE_NAMESPACE --grace-period=0
+	else
+	  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
 	fi
 }

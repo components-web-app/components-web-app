@@ -1,0 +1,25 @@
+{
+  "projectName": "components-web-app",
+  "projectOwner": "silverback-web-apps/cwa",
+  "repoType": "gitlab",
+  "repoHost": "https://gitlab.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 60,
+  "commit": true,
+  "commitConvention": "none",
+  "contributors": [
+    {
+      "login": "pborreli",
+      "name": "Pascal Borreli",
+      "avatar_url": "https://secure.gravatar.com/avatar/5c299a02c11ce797f20df385f560a16a?s=80&d=identicon",
+      "profile": "https://gitlab.com/pborreli",
+      "contributions": [
+        "ideas",
+        "infra"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7
+}

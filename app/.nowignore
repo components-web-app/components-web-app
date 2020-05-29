@@ -1,8 +1,6 @@
-app/.nuxt
-app/_docker
-app/node_modules
-app/*.log
-app/README.md
-api/
-bin/
-docker/
+.nuxt
+_docker
+node_modules
+*.log
+README.md
+Dockerfile
