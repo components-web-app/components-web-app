@@ -22,15 +22,13 @@ stages:
     - test
     - review
     - dast
-    - dev
+    - staging
     - canary
     - production
     - performance
     - cleanup
 
 before_script:
-    # we are echoing pwd because resuming pipeline for cleanup cannot find the auto-devops file - helping to trace issue
-    - echo $PWD
     - source ./bin/auto-devops.sh
 
 build:
@@ -50,28 +48,42 @@ build:
         variables:
             - $BUILD_DISABLED == "true"
 
-#behat:
-#    stage: test
-#    image: docker:stable
-#    variables:
-#        DOCKER_DRIVER: overlay2
-#        DOCKER_TLS_CERTDIR: ""
-#        COMPOSER_PACKAGIST_TOKEN: 1548c14cbc7ef945787cad19913d10ef73068d7cdc61ff19513bfb4f72ea
-#        POSTGRES_USER: runner
-#        POSTGRES_PASSWORD: "password"
-#        POSTGRES_DB: test
-#        POSTGRES_HOST_AUTH_METHOD: trust
-#    allow_failure: false
-#    services:
-#        - docker:stable-dind
-#        - postgres:latest
-#    script:
-#        - setup_test_db
-#        - setup_docker
-#        - behat_tests
-#    dependencies: []
-#    only:
-#        - branches
+unit tests:
+    image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_NAME
+    stage: test
+    script:
+        - launch_phpunit
+    artifacts:
+        reports:
+            junit: api/build/logs/phpunit/junit.xml
+    except:
+        variables:
+            - $TEST_DISABLED == "true"
+
+behat tests:
+    stage: test
+    image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_NAME
+    variables:
+        COMPOSER_PACKAGIST_TOKEN: 1548c14cbc7ef945787cad19913d10ef73068d7cdc61ff19513bfb4f72ea
+        POSTGRES_USER: runner
+        POSTGRES_PASSWORD: "password"
+        POSTGRES_DB: test
+        POSTGRES_HOST_AUTH_METHOD: trust
+    allow_failure: false
+    services:
+        - postgres:latest
+    script:
+        - setup_test_db
+        - run_tests
+    dependencies: []
+    only:
+        - branches
+    artifacts:
+        reports:
+            junit: api/build/logs/behat/junit.xml
+    except:
+        variables:
+            - $TEST_DISABLED == "true"
 
 review:
     stage: review
@@ -85,7 +97,7 @@ review:
         - persist_environment_url
     environment:
         name: review/$CI_COMMIT_REF_NAME
-        url: https://$CI_ENVIRONMENT_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
+        url: https://$CI_COMMIT_REF_NAME-review.$KUBE_INGRESS_BASE_DOMAIN
         on_stop: stop_review
     artifacts:
         paths: [environment_url.txt]
@@ -98,19 +110,19 @@ review:
         variables:
             - $REVIEW_DISABLED == "true"
 
-dev:
+staging:
     retry: 1
-    stage: dev
+    stage: staging
     script:
         - check_kube_domain
         - install_dependencies
         - helm_init
         - ensure_namespace
         - create_secret
-        - deploy_api dev
+        - deploy_api staging
     environment:
-        name: dev
-        url: https://dev.$KUBE_INGRESS_BASE_DOMAIN
+        name: staging
+        url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     only:
         refs:
             - master

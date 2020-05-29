@@ -2,87 +2,16 @@
 # https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
 # https://docs.docker.com/compose/compose-file/#target
 
-
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG PHP_VERSION=7.4
 ARG OPENRESTY_VERSION=1.15.8.3
 ARG VARNISH_VERSION=6.4
 
-
 # "php" stage
-FROM php:${PHP_VERSION}-fpm-alpine AS cwa_php
-
-# persistent / runtime deps
-RUN apk add --no-cache \
-		acl \
-		fcgi \
-		file \
-		gettext \
-		git \
-	;
-
-ARG APCU_VERSION=5.1.18
-RUN set -eux; \
-	apk add --no-cache --virtual .build-deps \
-		$PHPIZE_DEPS \
-		icu-dev \
-		libzip-dev \
-		postgresql-dev \
-		zlib-dev \
-		libxslt-dev \
-		libpng-dev \
-		libjpeg-turbo-dev \
-		freetype-dev \
-	; \
-	\
-	docker-php-ext-configure zip; \
-	docker-php-ext-configure gd --with-freetype --with-jpeg; \
-	docker-php-ext-install -j$(nproc) \
-		intl \
-		pdo_pgsql \
-		zip \
-		exif \
-		xsl \
-		gd \
-	; \
-	pecl install \
-		apcu-${APCU_VERSION} \
-	; \
-	pecl clear-cache; \
-	docker-php-ext-enable \
-		apcu \
-		opcache \
-	; \
-	\
-	runDeps="$( \
-		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/lib/php/extensions \
-			| tr ',' '\n' \
-			| sort -u \
-			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
-	)"; \
-	apk add --no-cache --virtual .api-phpexts-rundeps $runDeps; \
-	\
-	apk del .build-deps
-
-# Enable Blackfire probe
-RUN version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
-    && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/alpine/amd64/$version \
-    && mkdir -p /tmp/blackfire \
-    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp/blackfire \
-    && mv /tmp/blackfire/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so \
-    && printf "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707\n" > $PHP_INI_DIR/conf.d/blackfire.ini \
-    && rm -rf /tmp/blackfire /tmp/blackfire-probe.tar.gz
-
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+FROM registry.gitlab.com/silverback-web-apps/cwa/docker/php:${PHP_VERSION}-fpm-alpine AS cwa_php
 
 RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
-COPY _docker/php/conf.d/api-platform.prod.ini $PHP_INI_DIR/conf.d/api-platform.ini
-
-RUN set -eux; \
-	{ \
-		echo '[www]'; \
-		echo 'ping.path = /ping'; \
-	} | tee /usr/local/etc/php-fpm.d/docker-healthcheck.conf
+COPY _docker/php/conf.d/cwa.prod.ini $PHP_INI_DIR/conf.d/cwa.prod.ini
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -91,8 +20,6 @@ RUN set -eux; \
 	composer global require "symfony/flex" --prefer-dist --no-progress --no-suggest --classmap-authoritative; \
 	composer clear-cache
 ENV PATH="${PATH}:/root/.composer/vendor/bin"
-
-WORKDIR /srv/api
 
 # build for production
 ARG APP_ENV=prod
@@ -120,18 +47,8 @@ RUN set -eux; \
 	composer dump-autoload --classmap-authoritative --no-dev; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync
+
 VOLUME /srv/api/var
-
-COPY _docker/php/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
-RUN chmod +x /usr/local/bin/docker-healthcheck
-
-HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD ["docker-healthcheck"]
-
-COPY _docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-RUN chmod +x /usr/local/bin/docker-entrypoint
-
-ENTRYPOINT ["docker-entrypoint"]
-CMD ["php-fpm"]
 
 
 # "nginx" stage
@@ -151,6 +68,16 @@ COPY --from=cwa_php /srv/api/public ./
 # does not depend on any of the above stages, but placed here to keep everything in one Dockerfile
 FROM varnish:${VARNISH_VERSION} AS cwa_varnish
 
-COPY _docker/varnish/conf/default.vcl /etc/varnish/default.vcl
+RUN \
+  apt-get update \
+  && apt-get -y install gettext-base \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY _docker/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
+COPY _docker/varnish/persist-environment.sh /usr/local/bin/persist-environment
+
+RUN chmod +x /usr/local/bin/persist-environment
+ENTRYPOINT ["persist-environment", "docker-varnish-entrypoint"]
 
 CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K"]

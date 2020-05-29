@@ -37,7 +37,9 @@ spec:
           - name: UPSTREAM
             value: "{{ if .Values.varnish.enabled }}http://{{ $fullName }}-varnish{{ else }}http://{{ $fullName }}-nginx{{ end }}.{{ .Release.Namespace }}.svc.cluster.local:{{ if .Values.varnish.enabled }}{{ .Values.varnish.service.port }}{{ else }}{{ .Values.nginx.service.port }}{{ end }}"
           ports:
-            - containerPort: 443
+            - name: http
+              containerPort: 80
+              protocol: TCP
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}

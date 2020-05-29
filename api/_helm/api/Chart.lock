@@ -1,6 +1,6 @@
 dependencies:
 - name: mercure
   repository: https://kubernetes-charts.storage.googleapis.com/
-  version: ~3.0.0
-digest: sha256:75cb4b51604b65319931de39a2df39cb4df4a8f8dfbd5b9dc94076d1643c2b3f
-generated: "2020-05-16T11:44:44.554443+01:00"
+  version: 3.0.0
+digest: sha256:76acf11abdb0b6d57d8fcc179986eb7074d1d12b10bb458be441fd7abc162e38
+generated: "2020-05-20T10:03:01.299185+01:00"

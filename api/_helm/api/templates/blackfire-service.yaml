@@ -4,16 +4,17 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "api.fullname" . }}-{{ $name }}
+  # must use a static name as this is hard-coded into the Dockerfile for the PHP probe. Must be 'blackfire'
+  name: {{ $name }}
   labels:
     {{- include "api.labels" $data | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
     - port: 8707
-      targetPort: http
+      targetPort: agent
       protocol: TCP
-      name: http
+      name: agent
   selector:
     {{- include "api.selectorLabels" $data | nindent 4 }}
 {{- end -}}
