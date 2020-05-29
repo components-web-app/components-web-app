@@ -29,6 +29,9 @@ php:
         secret: ''
         public: ''
         passphrase: ''
+    blackfire:
+        id: ''
+        token: ''
 
 nginx:
     image:
@@ -86,9 +89,6 @@ blackfire:
         repository: blackfire/blackfire
         tag: latest
         pullPolicy: Always
-    client:
-        id: ''
-        token: ''
     server:
         id: ''
         token: ''
