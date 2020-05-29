@@ -173,7 +173,7 @@ function setup_test_db() {
 }
 
 function run_phpunit() {
-  echo "launch_phpunit function"
+  echo "run_phpunit function"
   cd ./api || return
   mkdir -p build/logs/phpunit/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
@@ -181,7 +181,7 @@ function run_phpunit() {
 }
 
 function run_behat() {
-  echo "run_tests function"
+  echo "run_behat function"
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
@@ -324,7 +324,6 @@ persist_environment_url() {
 }
 
 performance() {
-	echo "performance function disabled - needs refactoring/checking"
   export CI_ENVIRONMENT_URL=$(cat environment_url.txt)
 
   mkdir gitlab-exporter
