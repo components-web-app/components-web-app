@@ -42,7 +42,7 @@ fi
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
-  export TAG=latest
+  export TAG=${CI_COMMIT_REF_NAME}
 else
   if [[ -n "$CI_ENVIRONMENT_SLUG" ]] && [[ -z "$RELEASE" ]]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
