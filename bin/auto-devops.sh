@@ -135,18 +135,32 @@ build() {
     echo ""
   fi
 
-  docker pull $VARNISH_REPOSITORY:$TAG || true
-  docker build --cache-from $VARNISH_REPOSITORY:$TAG --tag $VARNISH_REPOSITORY:$TAG --target cwa_varnish api
-
   docker pull $PHP_REPOSITORY:$TAG || true
-  docker build --cache-from $PHP_REPOSITORY:$TAG --tag $PHP_REPOSITORY:$TAG --target cwa_php api
+  docker build \
+  	--cache-from $PHP_REPOSITORY:$TAG \
+  	--tag $PHP_REPOSITORY:$TAG \
+  	--target cwa_php \
+  	"api"
 
   docker pull $NGINX_REPOSITORY:$TAG || true
-  docker build --cache-from $NGINX_REPOSITORY:$TAG --tag $NGINX_REPOSITORY:$TAG --target cwa_nginx api
+  docker build \
+  	--cache-from $PHP_REPOSITORY:$TAG \
+  	--cache-from $NGINX_REPOSITORY:$TAG \
+  	--tag $NGINX_REPOSITORY:$TAG \
+  	--target cwa_nginx \
+  	"api"
 
-  docker push $VARNISH_REPOSITORY:$TAG
+  docker pull $VARNISH_REPOSITORY:$TAG || true
+  docker build \
+  	--cache-from $PHP_REPOSITORY:$TAG \
+  	--cache-from $VARNISH_REPOSITORY:$TAG \
+  	--tag $VARNISH_REPOSITORY:$TAG \
+  	--target cwa_varnish \
+  	"api"
+
   docker push $PHP_REPOSITORY:$TAG
   docker push $NGINX_REPOSITORY:$TAG
+  docker push $VARNISH_REPOSITORY:$TAG
 }
 
 function setup_test_db() {
