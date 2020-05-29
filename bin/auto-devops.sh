@@ -265,6 +265,9 @@ deploy_api() {
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
+	if [[ "$track" == "canary" ]]; then
+		export BLACKFIRE_SERVER_ENABLED=false
+	fi
 	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
 	replicas=$(get_replicas "$track" "$percentage")
