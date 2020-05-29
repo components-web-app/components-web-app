@@ -149,14 +149,6 @@ build() {
   docker push $NGINX_REPOSITORY:$TAG
 }
 
-function launch_phpunit() {
-  echo "launch_phpunit function"
-  cd ./api || return
-  mkdir -p build/logs/phpunit/
-  composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
-  vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
-}
-
 function setup_test_db() {
   if [[ -z ${KUBERNETES_PORT+x} ]]; then
     DB_HOST=postgres
@@ -166,25 +158,20 @@ function setup_test_db() {
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
 }
 
-function run_tests() {
+function run_phpunit() {
+  echo "launch_phpunit function"
+  cd ./api || return
+  mkdir -p build/logs/phpunit/
+  composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
+}
+
+function run_behat() {
   echo "run_tests function"
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
   vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
-
-#  docker pull $PHP_REPOSITORY:$TAG
-#
-#  docker run --env DATABASE_URL --env APP_ENV=test --name php $PHP_REPOSITORY
-#
-#  docker cp api/behat.yml php:srv/api/behat.yml
-#  docker cp api/features php:srv/api/features
-#
-#  docker exec php sh -c "vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'"
-#
-#  docker rm -f php
-
-#  Need to run PHPUnit tests too
 }
 
 check_kube_domain() {
