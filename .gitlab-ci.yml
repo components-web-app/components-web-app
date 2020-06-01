@@ -49,7 +49,7 @@ build:
             - $BUILD_DISABLED == "true"
 
 unit tests:
-    image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_NAME
+    image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG
     stage: test
     script:
         - run_phpunit
@@ -62,7 +62,7 @@ unit tests:
 
 behat tests:
     stage: test
-    image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_NAME
+    image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG
     variables:
         COMPOSER_PACKAGIST_TOKEN: 1548c14cbc7ef945787cad19913d10ef73068d7cdc61ff19513bfb4f72ea
         POSTGRES_USER: runner
@@ -130,7 +130,7 @@ staging:
             - $STAGING_ENABLED == "true"
     allow_failure: false
 
-production_api:
+deploy production api:
     stage: production
     script:
         - check_kube_domain
@@ -180,7 +180,7 @@ performance:
         variables:
             - $PERFORMANCE_DISABLED == "true"
 
-stop_review:
+stop review:
     stage: cleanup
     script:
         - install_dependencies

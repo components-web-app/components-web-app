@@ -42,13 +42,13 @@ fi
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
-  export TAG=${CI_COMMIT_REF_NAME}
+  export TAG=${CI_COMMIT_REF_SLUG}
 else
   if [[ -n "$CI_ENVIRONMENT_SLUG" ]] && [[ -z "$RELEASE" ]]; then
     export RELEASE="${CI_ENVIRONMENT_SLUG}"
   fi
   if [[ -z "$RELEASE" ]]; then echo 'Helm RELEASE environment variable is not defined in your ci environment variables for non-production helm releases.'; fi
-  export TAG=${CI_COMMIT_REF_NAME:-dev}
+  export TAG=${CI_COMMIT_REF_SLUG:-dev}
   echo "CONTAINER TAG: '${TAG}'"
 fi
 
