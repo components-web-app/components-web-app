@@ -97,7 +97,7 @@ review:
         - persist_environment_url
     environment:
         name: review/$CI_COMMIT_REF_NAME
-        url: https://$CI_COMMIT_REF_NAME-review.$KUBE_INGRESS_BASE_DOMAIN
+        url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
         on_stop: stop review
     artifacts:
         paths: [environment_url.txt]
