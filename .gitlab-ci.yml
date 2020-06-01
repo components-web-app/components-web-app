@@ -80,7 +80,7 @@ behat tests:
         - branches
     artifacts:
         reports:
-            junit: api/build/logs/behat/junit.xml
+            junit: api/build/logs/behat/junit/default.xml
     except:
         variables:
             - $TEST_DISABLED == "true"
