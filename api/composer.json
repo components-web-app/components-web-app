@@ -6,13 +6,13 @@
         "guzzlehttp/guzzle": "^6.3",
         "liip/imagine-bundle": "^2.3",
         "silverbackis/api-components-bundle": "dev-master",
-        "symfony/console": "5.0.*",
-        "symfony/dotenv": "5.0.*",
+        "symfony/console": "5.*",
+        "symfony/dotenv": "5.*",
         "symfony/flex": "^1.1",
-        "symfony/framework-bundle": "5.0.*",
+        "symfony/framework-bundle": "5.*",
         "symfony/mercure-bundle": "^0.2",
         "symfony/monolog-bundle": "^3.5",
-        "symfony/yaml": "5.0.*"
+        "symfony/yaml": "5.*"
     },
     "require-dev": {
         "api-platform/schema-generator": "^2.1",

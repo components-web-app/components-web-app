@@ -185,6 +185,7 @@ function run_behat() {
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS citext;"
   vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
 }
 
@@ -288,8 +289,8 @@ deploy_api() {
     --set php.apiSecretToken="${API_SECRET_TOKEN}" \
     --set php.mailerEmail="${MAILER_EMAIL}" \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
-    --set php.jwt.public"${JWT_PUBLIC_KEY}" \
-    --set php.jwt.passphrase"${JWT_PASSPHRASE}" \
+    --set php.jwt.public="${JWT_PUBLIC_KEY}" \
+    --set php.jwt.passphrase="${JWT_PASSPHRASE}" \
     --set php.blackfire.id="${BLACKFIRE_CLIENT_ID}" \
     --set php.blackfire.token="${BLACKFIRE_CLIENT_TOKEN}" \
     --set nginx.image.repository="${NGINX_REPOSITORY}" \
