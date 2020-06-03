@@ -10,6 +10,7 @@ use Silverback\ApiComponentsBundle\Entity\Core\ComponentCollection;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentPosition;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
+use Silverback\ApiComponentsBundle\Entity\Core\Route;
 use Silverback\ApiComponentsBundle\Helper\Timestamped\TimestampedDataPersister;
 
 class HomePageFixture extends Fixture
@@ -45,6 +46,15 @@ class HomePageFixture extends Fixture
         $manager->persist($htmlContent);
 
         $position = $this->createComponentPosition($componentCollection, $htmlContent, 0);
+        $manager->persist($position);
+
+        $route = new Route();
+        $route
+            ->setPath('/home')
+            ->setName('home')
+            ->setPage($page)
+        ;
+        $this->timestampedDataPersister->persistTimestampedFields($route, true);
         $manager->persist($position);
     }
 
