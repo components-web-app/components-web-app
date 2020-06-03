@@ -27,4 +27,4 @@ silverback_api_components:
     publishable:
         permission: "is_granted('ROLE_ADMIN')"
     route_security:
-#        - { route: "/user-area*", security: "is_granted('ROLE_USER')" }
+        - { route: "/user-area*", security: "is_granted('ROLE_USER')" }

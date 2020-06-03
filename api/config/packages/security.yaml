@@ -32,9 +32,8 @@ security:
             guard:
                 authenticators:
                     - lexik_jwt_authentication.jwt_token_authenticator
-            # https://symfony.com/doc/current/security/impersonating_user.html
             switch_user: true
     access_control:
         - { path: ^/password/(reset|update), roles: IS_AUTHENTICATED_ANONYMOUSLY, methods: [POST] }
         - { path: ^/component/forms/(.*)/submit, roles: IS_AUTHENTICATED_ANONYMOUSLY, methods: [POST, PATCH] }
-#        - { path: ^/, roles: IS_AUTHENTICATED_FULLY, methods: [POST, PUT, PATCH, DELETE] }
+        - { path: ^/, roles: IS_AUTHENTICATED_FULLY, methods: [POST, PUT, PATCH, DELETE] }
