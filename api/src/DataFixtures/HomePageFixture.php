@@ -24,6 +24,8 @@ class HomePageFixture extends Fixture
     public function load(ObjectManager $manager): void
     {
         $layout = new Layout();
+        $layout->reference = 'primary';
+        $this->timestampedDataPersister->persistTimestampedFields($layout, true);
         $manager->persist($layout);
         $this->addHomePage($manager, $layout);
 
@@ -35,13 +37,12 @@ class HomePageFixture extends Fixture
         $page = $this->createPage('home', $layout);
         $manager->persist($page);
 
-        $componentCollection = $this->createComponentCollection($page);
+        $componentCollection = $this->createComponentCollection($page, 'primary');
         $manager->persist($componentCollection);
 
         $htmlContent = new HtmlContent();
         $htmlContent->html = '<p>Bonjour mon ami</p>';
-        $manager->persist($componentCollection);
-        $manager->flush();
+        $manager->persist($htmlContent);
 
         $position = $this->createComponentPosition($componentCollection, $htmlContent, 0);
         $manager->persist($position);
@@ -56,10 +57,10 @@ class HomePageFixture extends Fixture
         return $page;
     }
 
-    private function createComponentCollection(Page $page): ComponentCollection
+    private function createComponentCollection(Page $page, string $reference): ComponentCollection
     {
         $componentCollection = new ComponentCollection();
-        $componentCollection->addPage($page);
+        $componentCollection->setReference($reference)->addPage($page);
         $this->timestampedDataPersister->persistTimestampedFields($componentCollection, true);
         return $componentCollection;
     }
@@ -71,6 +72,7 @@ class HomePageFixture extends Fixture
             ->setComponent($component)
             ->setComponentCollection($componentCollection)
             ->setSortValue($sortValue);
+        $this->timestampedDataPersister->persistTimestampedFields($position, true);
         return $position;
     }
 }
