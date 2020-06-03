@@ -14,26 +14,26 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Entity;
 
 use PHPUnit\Framework\TestCase;
-use App\Entity\User;
+use App\Entity\AppUser;
 
 class UsersTest extends TestCase
 {
     public function test_instanciate_user(): void
     {
-        $user = new User();
-        $this->assertInstanceOf(User::class, $user);
+        $user = new AppUser();
+        $this->assertInstanceOf(AppUser::class, $user);
     }
 
     public function test_construct(): void
     {
-        $user = new User('username');
+        $user = new AppUser('username');
         $this->assertEquals('username', $user->getUsername()); // previsible (already tested in bundle)
         $this->assertEquals('username', $user->getEmailAddress());
     }
 
     public function test_set_username(): void
     {
-        $user = new User('username');
+        $user = new AppUser('username');
         $user->setUsername('new_username');
         $this->assertEquals('new_username', $user->getUsername()); // previsible (already tested in bundle)
         $this->assertEquals('new_username', $user->getEmailAddress());

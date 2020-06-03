@@ -23,10 +23,10 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
  *         "delete"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
  *     }
  * )
- * @ORM\Entity
- * @ORM\Table(name="`user`")
+ * @ORM\Entity()
+ * @ORM\Table(name="app_user")
  */
-class User extends AbstractUser
+class AppUser extends AbstractUser
 {
     public static function loadValidatorMetadata(ClassMetadata $metadata): void
     {
