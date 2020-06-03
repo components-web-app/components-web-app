@@ -55,7 +55,7 @@ class HomePageFixture extends Fixture
             ->setPage($page)
         ;
         $this->timestampedDataPersister->persistTimestampedFields($route, true);
-        $manager->persist($position);
+        $manager->persist($route);
     }
 
     private function createPage(string $reference, Layout $layout): Page
