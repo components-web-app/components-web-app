@@ -1,23 +1,40 @@
 security:
-    # https://symfony.com/doc/current/security.html#where-do-users-come-from-user-providers
+    role_hierarchy:
+        ROLE_ADMIN:       ROLE_USER
+        ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
+    encoders:
+        Silverback\ApiComponentsBundle\Entity\User\AbstractUser:
+            algorithm: auto
     providers:
-        users_in_memory: { memory: null }
+        user_provider:
+            entity:
+                class: Silverback\ApiComponentsBundle\Entity\User\AbstractUser
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        login:
+            pattern:  ^/login
+            stateless: true
+            anonymous: true
+            provider: user_provider
+            user_checker: Silverback\ApiComponentsBundle\Security\UserChecker
+            json_login:
+                check_path: /login
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
         main:
-            anonymous: lazy
-            provider: users_in_memory
-
-            # activate different ways to authenticate
-            # https://symfony.com/doc/current/security.html#firewalls-authentication
-
+            pattern:   ^/
+            stateless: true
+            anonymous: true
+            logout:
+                path: /logout
+            guard:
+                authenticators:
+                    - lexik_jwt_authentication.jwt_token_authenticator
             # https://symfony.com/doc/current/security/impersonating_user.html
-            # switch_user: true
-
-    # Easy way to control access for large sections of your site
-    # Note: Only the *first* access control that matches will be used
+            switch_user: true
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/password/(reset|update), roles: IS_AUTHENTICATED_ANONYMOUSLY, methods: [POST] }
+        - { path: ^/component/forms/(.*)/submit, roles: IS_AUTHENTICATED_ANONYMOUSLY, methods: [POST, PATCH] }
+        - { path: ^/, roles: IS_AUTHENTICATED_FULLY, methods: [POST, PUT, PATCH, DELETE] }
