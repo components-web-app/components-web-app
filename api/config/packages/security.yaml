@@ -9,6 +9,9 @@ security:
         user_provider:
             entity:
                 class: Silverback\ApiComponentsBundle\Entity\User\AbstractUser
+        jwt:
+            lexik_jwt:
+                class: App\Entity\User
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -16,7 +19,7 @@ security:
         login:
             pattern:  ^/login
             stateless: true
-            anonymous: true
+            anonymous: lazy
             provider: user_provider
             user_checker: Silverback\ApiComponentsBundle\Security\UserChecker
             json_login:
@@ -26,14 +29,18 @@ security:
         main:
             pattern:   ^/
             stateless: true
-            anonymous: true
+            anonymous: lazy
+            provider: jwt
             logout:
                 path: /logout
             guard:
                 authenticators:
                     - lexik_jwt_authentication.jwt_token_authenticator
+            # https://symfony.com/doc/current/security/impersonating_user.html
             switch_user: true
     access_control:
+        - { path: ^/token/refresh, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/password/(reset|update), roles: IS_AUTHENTICATED_ANONYMOUSLY, methods: [POST] }
+        # The 2 options below prevents anonymous users from making changes to your API resources while allowing form submissions
         - { path: ^/component/forms/(.*)/submit, roles: IS_AUTHENTICATED_ANONYMOUSLY, methods: [POST, PATCH] }
         - { path: ^/, roles: IS_AUTHENTICATED_FULLY, methods: [POST, PUT, PATCH, DELETE] }

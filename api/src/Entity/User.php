@@ -24,9 +24,9 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
  *     }
  * )
  * @ORM\Entity()
- * @ORM\Table(name="app_user")
+ * @ORM\Table(name="`user`")
  */
-class AppUser extends AbstractUser
+class User extends AbstractUser
 {
     public static function loadValidatorMetadata(ClassMetadata $metadata): void
     {
