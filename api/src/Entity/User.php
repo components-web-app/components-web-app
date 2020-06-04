@@ -37,13 +37,13 @@ class User extends AbstractUser
 
     public function __construct(
         string $username = '',
+        array $roles = ['ROLE_USER'],
         string $emailAddress = '',
         bool $emailAddressVerified = false,
-        array $roles = ['ROLE_USER'],
         string $password = '',
         bool $enabled = true
     ) {
-        parent::__construct($username, $emailAddress, $emailAddressVerified, $roles, $password, $enabled);
+        parent::__construct($username, $roles, $emailAddress, $emailAddressVerified, $password, $enabled);
         $this->emailAddress = $this->username;
     }
 
