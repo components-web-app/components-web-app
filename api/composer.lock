@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5f1ecefd83389059b9fd7573260443bc",
+    "content-hash": "66ba94448966223fdefff148ca7f1b34",
     "packages": [
         {
             "name": "api-platform/api-pack",
@@ -3550,12 +3550,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "ebcd0f23550b72cc0068e2697159ebb853cb1b51"
+                "reference": "5f58936"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/ebcd0f23550b72cc0068e2697159ebb853cb1b51",
-                "reference": "ebcd0f23550b72cc0068e2697159ebb853cb1b51",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/5f58936",
+                "reference": "5f58936",
                 "shasum": ""
             },
             "require": {
@@ -3633,7 +3633,7 @@
                 "MIT"
             ],
             "description": "Creates a flexible API for a website's structure, reusable components and common functionality.",
-            "time": "2020-06-05T12:07:43+00:00"
+            "time": "2020-06-05T12:12:35+00:00"
         },
         {
             "name": "symfony/asset",
