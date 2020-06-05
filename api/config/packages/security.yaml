@@ -23,7 +23,7 @@ security:
             pattern:  ^/login
             stateless: true
             anonymous: lazy
-            provider: user_provider
+            provider: database
             user_checker: Silverback\ApiComponentsBundle\Security\UserChecker
             json_login:
                 check_path: /login
