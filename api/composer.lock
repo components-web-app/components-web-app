@@ -3550,12 +3550,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "909732fa7b663b6edb9adc56fa8a70c95fa8ad6b"
+                "reference": "ebcd0f23550b72cc0068e2697159ebb853cb1b51"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/909732fa7b663b6edb9adc56fa8a70c95fa8ad6b",
-                "reference": "909732fa7b663b6edb9adc56fa8a70c95fa8ad6b",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/ebcd0f23550b72cc0068e2697159ebb853cb1b51",
+                "reference": "ebcd0f23550b72cc0068e2697159ebb853cb1b51",
                 "shasum": ""
             },
             "require": {
@@ -3633,7 +3633,7 @@
                 "MIT"
             ],
             "description": "Creates a flexible API for a website's structure, reusable components and common functionality.",
-            "time": "2020-06-04T15:32:29+00:00"
+            "time": "2020-06-05T12:07:43+00:00"
         },
         {
             "name": "symfony/asset",

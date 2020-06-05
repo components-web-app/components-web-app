@@ -6,6 +6,7 @@ silverback_api_components:
             class: Silverback\ApiComponentsBundle\Tests\Functional\TestBundle\Entity\RefreshToken
         cookie_name: api_component
         ttl: 604800 # 1 week
+        database_user_provider: database
     user:
         class_name: App\Entity\User
         email_verification:
