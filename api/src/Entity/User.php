@@ -23,7 +23,7 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
  *         "delete"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
  *     }
  * )
- * @ORM\Entity()
+ * @ORM\Entity
  * @ORM\Table(name="`user`")
  */
 class User extends AbstractUser

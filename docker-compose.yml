@@ -49,10 +49,6 @@ services:
       - php
     volumes:
       - ./api/public:/srv/api/public:ro
-    ports:
-        - target: 80
-          published: 8080
-          protocol: tcp
 
   cache-proxy:
     build:
