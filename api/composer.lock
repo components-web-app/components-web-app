@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6b1d902e25b03c8f043946e41dd219f3",
+    "content-hash": "26b0a54410c77b1ca94daeee7d144f64",
     "packages": [
         {
             "name": "api-platform/api-pack",
@@ -3546,16 +3546,16 @@
         },
         {
             "name": "silverbackis/api-components-bundle",
-            "version": "dev-master",
+            "version": "2.0.0-alpha.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "9f2f47e9eb16d2891c118d7808582be643c8d769"
+                "reference": "e5380685297990859ada57b78cf97ece2daa703b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/9f2f47e9eb16d2891c118d7808582be643c8d769",
-                "reference": "9f2f47e9eb16d2891c118d7808582be643c8d769",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/e5380685297990859ada57b78cf97ece2daa703b",
+                "reference": "e5380685297990859ada57b78cf97ece2daa703b",
                 "shasum": ""
             },
             "require": {
@@ -3571,7 +3571,7 @@
                 "ext-json": "*",
                 "ext-pdo": "*",
                 "ext-simplexml": "*",
-                "lexik/jwt-authentication-bundle": "dev-master",
+                "lexik/jwt-authentication-bundle": "dev-master#3074c41",
                 "liip/imagine-bundle": "^2.3",
                 "ocramius/proxy-manager": "^2.7",
                 "php": "^7.4",
@@ -3633,7 +3633,7 @@
                 "MIT"
             ],
             "description": "Creates a flexible API for a website's structure, reusable components and common functionality.",
-            "time": "2020-06-05T18:49:20+00:00"
+            "time": "2020-06-07T17:32:31+00:00"
         },
         {
             "name": "symfony/asset",
@@ -9775,12 +9775,12 @@
             "version": "0.9.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/njh/easyrdf.git",
+                "url": "https://github.com/easyrdf/easyrdf.git",
                 "reference": "acd09dfe0555fbcfa254291e433c45fdd4652566"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/njh/easyrdf/zipball/acd09dfe0555fbcfa254291e433c45fdd4652566",
+                "url": "https://api.github.com/repos/easyrdf/easyrdf/zipball/acd09dfe0555fbcfa254291e433c45fdd4652566",
                 "reference": "acd09dfe0555fbcfa254291e433c45fdd4652566",
                 "shasum": ""
             },
@@ -11213,7 +11213,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "silverbackis/api-components-bundle": 20,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,
