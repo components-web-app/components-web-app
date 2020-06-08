@@ -37,6 +37,5 @@ class UsersTest extends TestCase
         $user->setUsername('new_username');
         $this->assertEquals('new_username', $user->getUsername()); // previsible (already tested in bundle)
         $this->assertEquals('new_username', $user->getEmailAddress());
-
     }
 }
