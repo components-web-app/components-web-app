@@ -1,4 +1,10 @@
-# Components Web App Template [WIP]
+# Components Web App Template :warning: [WIP] :warning:
+
+## Live Demo
+- <a href="https://api.cwa.silverbackwebapps.com/" target="_blank" rel="noopener">API (API Components Bundle)</a>
+- <a href="https://cwa.silverbackwebapps.com/" target="_blank" rel="noopener">Front-end (Nuxt.js application with cwa-nuxt-module)</a>
+
+## Introduction
 
 This repository provides a starting template which consists of `API Component Bundle` for the API, and a Nuxt application configured to use `cwa-nuxt-module` for the application.
 

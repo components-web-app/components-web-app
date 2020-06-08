@@ -9,7 +9,7 @@ default:
 
   extensions:
     'FriendsOfBehat\SymfonyExtension':
-      bootstrap: 'config/bootstrap.php'
+      bootstrap: ~
       kernel:
         class: 'App\Kernel'
         path: 'src/Kernel.php'

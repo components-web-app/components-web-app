@@ -1,3 +1,4 @@
+/build/
 /_docker/db/data
 /_helm/api/charts
 

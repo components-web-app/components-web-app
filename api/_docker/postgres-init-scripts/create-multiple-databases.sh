@@ -11,6 +11,7 @@ function create_user_and_database() {
 	    CREATE DATABASE $database;
 	    GRANT ALL PRIVILEGES ON DATABASE $database TO $database;
 	    CREATE EXTENSION IF NOT EXISTS citext;
+	    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 EOSQL
 }
 
