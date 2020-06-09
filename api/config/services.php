@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
+use Silverback\ApiComponentsBundle\Helper\Route\RouteGenerator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 return function (ContainerConfigurator $configurator) {
