@@ -130,12 +130,12 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 9000
-            initialDelaySeconds: 60
+            initialDelaySeconds: 30
             periodSeconds: 3
           livenessProbe:
             tcpSocket:
               port: 9000
-            initialDelaySeconds: 60
+            initialDelaySeconds: 30
             periodSeconds: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

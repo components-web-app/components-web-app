@@ -8,7 +8,7 @@ data:
   env: {{ .Values.php.env | quote }}
   debug: {{ .Values.php.debug | quote }}
   cors-allow-origin: {{ .Values.php.corsAllowOrigin | quote }}
-  varnish-url: {{ if .Values.varnish.url }}{{ .Values.varnish.url | quote }}{{ else }}http://varnish{{ end }}
+  varnish-url: {{ if .Values.varnish.url }}{{ .Values.varnish.url | quote }}{{ else }}http://{{ include "api.fullname" . }}-varnish{{ end }}
   trusted-hosts: {{ .Values.php.trustedHosts | quote }}
   trusted-proxies: {{ join "," .Values.php.trustedProxies }}
   mercure-publish-url: {{ .Values.mercure.publishUrl | quote }}
