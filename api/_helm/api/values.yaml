@@ -10,6 +10,8 @@ php:
     replicaCount: 1
     mercure:
         jwtToken: ""
+        publishUrl: ~
+        subscribeUrl: https://mercure.example.com/.well-known/mercure
     env: prod
     debug: '0'
     secret: ""
@@ -64,11 +66,13 @@ vulcain:
 
 # Full configuration: https://github.com/helm/charts/tree/master/stable/mercure
 mercure:
+    image:
+        tag: v0.10.1
+    nameOverride: api-mercure
     enabled: true
-    publishUrl: http://mercure/.well-known/mercure
-    subscribeUrl: https://mercure.example.com/.well-known/mercure
-    allowAnonymous: "1"
-    corsAllowedOrigins: "^https?://.*?\\.example\\.com$"
+    allowAnonymous: true
+    corsAllowedOrigins: ["^https?://.*?\\.example\\.com$"]
+    publishAllowedOrigins: ["^https?://.*?-api-php$", "https://localhost:1337"]
     jwtKey: ""
     ingress:
         enabled: false

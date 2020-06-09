@@ -293,6 +293,7 @@ deploy_api() {
     --set php.jwt.passphrase="${JWT_PASSPHRASE}" \
     --set php.blackfire.id="${BLACKFIRE_CLIENT_ID}" \
     --set php.blackfire.token="${BLACKFIRE_CLIENT_TOKEN}" \
+    --set php.mercure.subscribeUrl="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure" \
     --set nginx.image.repository="${NGINX_REPOSITORY}" \
     --set nginx.image.tag="${TAG}" \
     --set varnish.image.repository="${VARNISH_REPOSITORY}" \
@@ -305,7 +306,6 @@ deploy_api() {
     --set ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-api" \
     --set ingress.tls[0].hosts[0]="${DOMAIN}" \
     --set mercure.jwtKey="${MERCURE_JWT_SECRET}" \
-    --set mercure.subscribeUrl="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure" \
     --set mercure.ingress.enabled="${INGRESS_ENABLED}" \
     --set mercure.ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
     --set mercure.ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
@@ -313,6 +313,7 @@ deploy_api() {
     --set mercure.ingress.hosts[0].paths[0]="/" \
     --set mercure.ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-mercure" \
     --set mercure.ingress.tls[0].hosts[0]="${MERCURE_SUBSCRIBE_DOMAIN}" \
+    --set mercure.corsAllowedOrigins[0]="${CORS_ALLOW_ORIGIN}" \
     --set blackfire.enabled="${BLACKFIRE_SERVER_ENABLED}" \
     --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
     --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \

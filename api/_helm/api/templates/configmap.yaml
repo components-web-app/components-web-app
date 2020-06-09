@@ -11,8 +11,8 @@ data:
   varnish-url: {{ if .Values.varnish.url }}{{ .Values.varnish.url | quote }}{{ else }}http://{{ include "api.fullname" . }}-varnish{{ end }}
   trusted-hosts: {{ .Values.php.trustedHosts | quote }}
   trusted-proxies: {{ join "," .Values.php.trustedProxies }}
-  mercure-publish-url: {{ .Values.mercure.publishUrl | quote }}
-  mercure-subscribe-url: {{ .Values.mercure.subscribeUrl | quote }}
+  mercure-publish-url: {{ if .Values.php.mercure.publishUrl }}{{ .Values.php.mercure.publishUrl | quote }}{{ else }}http://{{ include "api.fullname" . }}-mercure/.well-known/mercure{{ end }}
+  mercure-subscribe-url: {{ .Values.php.mercure.subscribeUrl | quote }}
   blackfire-client-id: {{ .Values.php.blackfire.id | quote }}
   blackfire-server-id: {{ .Values.blackfire.server.id | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
