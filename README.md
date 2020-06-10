@@ -32,6 +32,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://gitlab.com/pborreli"><img src="https://secure.gravatar.com/avatar/5c299a02c11ce797f20df385f560a16a?s=80&d=identicon" width="60px;" alt=""/><br /><sub><b>Pascal Borreli</b></sub></a><br /><a href="#ideas-pborreli" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-pborreli" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+    <td align="center"><a href="https://gitlab.com/soyuka"><img src="https://secure.gravatar.com/avatar/b1b2baa13e42a072bb8e5b3a0f3bdd64?s=80&d=identicon" width="60px;" alt=""/><br /><sub><b>Antoine Bluchet</b></sub></a><br /><a href="https://gitlab.com/silverback-web-apps/cwa/components-web-app/issues?author_username=soyuka" title="Bug reports">🐛</a></td>
   </tr>
 </table>
 

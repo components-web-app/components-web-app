@@ -19,6 +19,15 @@
         "ideas",
         "infra"
       ]
+    },
+    {
+      "login": "soyuka",
+      "name": "Antoine Bluchet",
+      "avatar_url": "https://secure.gravatar.com/avatar/b1b2baa13e42a072bb8e5b3a0f3bdd64?s=80&d=identicon",
+      "profile": "https://gitlab.com/soyuka",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7
