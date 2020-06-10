@@ -3710,12 +3710,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "31c3b6a3a938d6397eaa5b77bb89ea593124d1cd"
+                "reference": "2e04a7d10e310b10810510fc925f024a7b506cae"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/31c3b6a3a938d6397eaa5b77bb89ea593124d1cd",
-                "reference": "31c3b6a3a938d6397eaa5b77bb89ea593124d1cd",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/2e04a7d10e310b10810510fc925f024a7b506cae",
+                "reference": "2e04a7d10e310b10810510fc925f024a7b506cae",
                 "shasum": ""
             },
             "require": {
@@ -3793,7 +3793,7 @@
                 "MIT"
             ],
             "description": "Creates a flexible API for a website's structure, reusable components and common functionality.",
-            "time": "2020-06-09T20:04:36+00:00"
+            "time": "2020-06-10T09:51:23+00:00"
         },
         {
             "name": "symfony/asset",
@@ -10416,12 +10416,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "de6fda3af9b36c77fdeb62b968157032f7111b09"
+                "reference": "4f42b10e06af1f60cfb98f1960b8c9d49417feb5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/de6fda3af9b36c77fdeb62b968157032f7111b09",
-                "reference": "de6fda3af9b36c77fdeb62b968157032f7111b09",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/4f42b10e06af1f60cfb98f1960b8c9d49417feb5",
+                "reference": "4f42b10e06af1f60cfb98f1960b8c9d49417feb5",
                 "shasum": ""
             },
             "conflict": {
@@ -10436,7 +10436,7 @@
                 "bagisto/bagisto": "<0.1.5",
                 "barrelstrength/sprout-base-email": "<1.2.7",
                 "barrelstrength/sprout-forms": "<3.9",
-                "bolt/bolt": "<3.6.10",
+                "bolt/bolt": "<3.7.1",
                 "brightlocal/phpwhois": "<=4.2.5",
                 "buddypress/buddypress": "<5.1.2",
                 "bugsnag/bugsnag-laravel": ">=2,<2.0.2",
@@ -10691,7 +10691,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-06-04T00:00:55+00:00"
+            "time": "2020-06-10T00:01:14+00:00"
         },
         {
             "name": "symfony/browser-kit",

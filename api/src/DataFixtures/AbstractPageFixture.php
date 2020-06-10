@@ -59,12 +59,12 @@ abstract class AbstractPageFixture extends Fixture
 
     protected function createComponentCollection(Page $page, string $reference): ComponentCollection
     {
-        $fixtureRef = ComponentCollection::class . '_' . $reference;
+        $fixtureRef = ComponentCollection::class . '_' . $page->reference . '_' . $reference;
         if ($this->hasReference($fixtureRef)) {
             return $this->getReference($fixtureRef);
         }
         $componentCollection = new ComponentCollection();
-        $componentCollection->setReference($reference)->addPage($page);
+        $componentCollection->setReference($page->reference . '_' . $reference)->addPage($page);
         $this->timestampedDataPersister->persistTimestampedFields($componentCollection, true);
         $this->addReference($fixtureRef, $componentCollection);
         return $componentCollection;
