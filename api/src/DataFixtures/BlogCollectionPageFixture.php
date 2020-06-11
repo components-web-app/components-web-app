@@ -32,6 +32,7 @@ class BlogCollectionPageFixture extends AbstractPageFixture
     private function addBlogCollectionPage(ObjectManager $manager, Layout $layout): void
     {
         $page = $this->createPage('blog-list', 'PrimaryPageTemplate', $layout);
+        $page->setTitle('Blog')->setMetaDescription('A sample CWA Blog Articles page using the Collection component');
         $manager->persist($page);
 
         $collection = new Collection();

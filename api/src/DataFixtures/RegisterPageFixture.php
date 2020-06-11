@@ -21,6 +21,7 @@ class RegisterPageFixture extends AbstractPageFixture
     private function addRegisterPage(ObjectManager $manager, Layout $layout): void
     {
         $page = $this->createPage('register', 'PrimaryPageTemplate', $layout);
+        $page->setTitle('Register')->setMetaDescription('A sample CWA register page using a form');
         $manager->persist($page);
 
         $form = new Form();

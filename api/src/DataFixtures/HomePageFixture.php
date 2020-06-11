@@ -20,6 +20,7 @@ class HomePageFixture extends AbstractPageFixture
     private function addHomePage(ObjectManager $manager, Layout $layout): void
     {
         $page = $this->createPage('home', 'PrimaryPageTemplate', $layout);
+        $page->setTitle('Welcome to CWA')->setMetaDescription('A demo CWA website');
         $manager->persist($page);
 
         $htmlContent = new HtmlContent();
@@ -32,7 +33,7 @@ class HomePageFixture extends AbstractPageFixture
         $position = $this->createComponentPosition($componentCollection, $htmlContent, 0);
         $manager->persist($position);
 
-        $route = $this->createRoute('/home', 'home-page', $page);
+        $route = $this->createRoute('/', 'home-page', $page);
         $manager->persist($route);
     }
 }
