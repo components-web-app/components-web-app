@@ -8,9 +8,12 @@ fi
 
 if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	PHP_INI_RECOMMENDED="$PHP_INI_DIR/php.ini-production"
+	CWA_PHP_INI="$PHP_INI_DIR/cwa.prod.ini"
 	if [ "$APP_ENV" != 'prod' ]; then
 		PHP_INI_RECOMMENDED="$PHP_INI_DIR/php.ini-development"
+		CWA_PHP_INI="$PHP_INI_DIR/cwa.dev.ini"
 	fi
+	ln -sf "$CWA_PHP_INI" "$PHP_INI_DIR/conf.d/cwa.ini"
 	ln -sf "$PHP_INI_RECOMMENDED" "$PHP_INI_DIR/php.ini"
 
 	mkdir -p var/cache var/log

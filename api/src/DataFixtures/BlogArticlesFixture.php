@@ -46,10 +46,10 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
             $this->timestampedDataPersister->persistTimestampedFields($articleData, true);
             $manager->persist($articleData);
 
-            $route = $this->routeGenerator->create($articleData);
             $articleData->setParentRoute(
                 $this->getReference(sprintf(Route::class . '_%s', BlogCollectionPageFixture::ROUTE_NAME))
             );
+            $route = $this->routeGenerator->create($articleData);
             $manager->persist($route);
         }
     }

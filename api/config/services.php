@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
-use Silverback\ApiComponentsBundle\Helper\Route\RouteGenerator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-return function (ContainerConfigurator $configurator) {
+return static function (ContainerConfigurator $configurator) {
     $configurator->parameters()->set('locale', 'en');
     $services = $configurator->services();
     $services
@@ -22,5 +21,5 @@ return function (ContainerConfigurator $configurator) {
 
     $services
         ->load('App\\Controller\\', '../src/Controller')
-        ->tag('controller.service_arguments');
+        ->tag('controller.service_subscriber');
 };

@@ -11,7 +11,7 @@ ARG VARNISH_VERSION=6.4
 FROM registry.gitlab.com/silverback-web-apps/cwa/docker/php:${PHP_VERSION}-fpm-alpine AS cwa_php
 
 RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
-COPY _docker/php/conf.d/cwa.prod.ini $PHP_INI_DIR/conf.d/cwa.prod.ini
+COPY _docker/php/conf.d $PHP_INI_DIR/
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -50,6 +50,11 @@ RUN set -eux; \
 
 VOLUME /srv/api/var
 
+COPY _docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+RUN chmod +x /usr/local/bin/docker-entrypoint
+
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["php-fpm"]
 
 # "nginx" stage
 # depends on the "php" stage above
