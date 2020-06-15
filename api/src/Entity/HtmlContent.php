@@ -13,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @author Daniel West <daniel@silverback.is>
- * @ApiResource
+ * @ApiResource(mercure="true")
  * @ORM\Entity
  */
 class HtmlContent extends AbstractComponent

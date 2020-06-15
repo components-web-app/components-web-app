@@ -5,7 +5,7 @@
         "doctrine/doctrine-migrations-bundle": "^2.0",
         "guzzlehttp/guzzle": "^6.3",
         "liip/imagine-bundle": "^2.3",
-        "silverbackis/api-components-bundle": "dev-routing",
+        "silverbackis/api-components-bundle": "dev-master",
         "symfony/console": "^5.0",
         "doctrine/doctrine-fixtures-bundle": "^3.3",
         "symfony/dotenv": "^5.0",

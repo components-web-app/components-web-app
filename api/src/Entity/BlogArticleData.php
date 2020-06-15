@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * @author Daniel West <daniel@silverback.is>
  * @ORM\Entity()
- * @ApiResource()
+ * @ApiResource(mercure="true")
  */
 class BlogArticleData extends AbstractPageData
 {

@@ -344,15 +344,6 @@
     "roave/security-advisories": {
         "version": "dev-master"
     },
-    "silverbackis/api-components-bundle": {
-        "version": "2.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "934",
-            "version": "2.0",
-            "ref": ""
-        }
-    },
     "symfony/asset": {
         "version": "v4.3.8"
     },
