@@ -7,10 +7,6 @@
       "config": {
         "serverFiles": ["server/index.js"]
       }
-    },
-    {
-      "src": "static/**",
-      "use": "@now/static"
     }
   ],
   "routes": [
@@ -28,6 +24,15 @@
       "src": "(/favicon\\.ico|/icon\\.(svg|png))",
       "headers": { "cache-control": "public, max-age=120, s-maxage=604800" },
       "dest": "$1"
-    }
+    },
+    {
+      "src": "/sw.js",
+      "dest": "/_nuxt/static/sw.js",
+      "headers": {
+        "cache-control": "public, max-age=43200, immutable",
+        "Service-Worker-Allowed": "/"
+      }
+    },
+    { "src": "/_nuxt/.+", "headers": { "Cache-Control": "max-age=31557600" } }
   ]
 }

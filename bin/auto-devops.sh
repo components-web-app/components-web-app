@@ -287,7 +287,8 @@ deploy_api() {
     --set php.mercure.jwtToken="${MERCURE_JWT_TOKEN}" \
     --set php.databaseUrl="${DATABASE_URL}" \
     --set php.apiSecretToken="${API_SECRET_TOKEN}" \
-    --set php.mailerEmail="${MAILER_EMAIL}" \
+    --set php.mailer.email="${MAILER_EMAIL}" \
+    --set php.mailer.dsn="${MAILER_DSN}" \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
     --set php.jwt.passphrase="${JWT_PASSPHRASE}" \

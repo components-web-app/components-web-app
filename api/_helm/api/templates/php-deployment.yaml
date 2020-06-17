@@ -125,6 +125,11 @@ spec:
                   configMapKeyRef:
                       name: {{ $fullName }}
                       key: mailer-email
+            - name: MAILER_DSN
+              valueFrom:
+                  secretKeyRef:
+                      name: {{ $fullName }}
+                      key: mailer-dsn
           ports:
             - containerPort: 9000
           readinessProbe:
