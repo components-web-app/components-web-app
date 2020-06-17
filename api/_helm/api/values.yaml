@@ -28,11 +28,13 @@ php:
     mailer:
         email: 'noreply@example.com'
         dsn: 'smtp://'
-    apiSecretToken: '!ChangeMe!'
     jwt:
         secret: ''
         public: ''
         passphrase: ''
+    blackfire:
+        id: ''
+        token: ''
 
 nginx:
     image:
@@ -92,9 +94,6 @@ blackfire:
         repository: blackfire/blackfire
         tag: latest
         pullPolicy: Always
-    client:
-        id: ''
-        token: ''
     server:
         id: ''
         token: ''

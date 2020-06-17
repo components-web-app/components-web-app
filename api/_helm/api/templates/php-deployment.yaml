@@ -115,11 +115,6 @@ spec:
                   secretKeyRef:
                       name: {{ $fullName }}
                       key: jwt-passphrase
-            - name: API_SECRET_TOKEN
-              valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: api-secret-token
             - name: MAILER_EMAIL
               valueFrom:
                   configMapKeyRef:

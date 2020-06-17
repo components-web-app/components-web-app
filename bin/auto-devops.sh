@@ -291,7 +291,6 @@ php:
     jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
     subscribeUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   databaseUrl: ${DATABASE_URL:-"~"}
-  apiSecretToken: ${API_SECRET_TOKEN:-"~"}
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}
