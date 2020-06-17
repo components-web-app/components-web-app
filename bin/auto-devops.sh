@@ -278,48 +278,80 @@ deploy_api() {
     echo ${EXIT_CODE}
   fi
 
+  cat >values.tmp.yaml <<EOF
+imagePullSecrets:
+  - name: ${GITLAB_PULL_SECRET_NAME}
+php:
+  image:
+    repository: ${PHP_REPOSITORY}
+    tag: ${TAG}
+  corsAllowOrigin: ${CORS_ALLOW_ORIGIN}
+  trustedHosts: ${TRUSTED_HOSTS}
+  mercure:
+    jwtToken: ${MERCURE_JWT_TOKEN}
+    subscribeUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
+  databaseUrl: ${DATABASE_URL}
+  apiSecretToken: ${API_SECRET_TOKEN}
+  mailer:
+    dsn: ${MAILER_DSN}
+    email: ${MAILER_EMAIL}
+  jwt:
+    secret: ${JWT_SECRET_KEY}
+    public: ${JWT_PUBLIC_KEY}
+    passphrase: ${JWT_PASSPHRASE}
+  blackfire:
+    id: ${BLACKFIRE_CLIENT_ID}
+    token: ${BLACKFIRE_CLIENT_TOKEN}
+nginx:
+  image:
+    repository: ${NGINX_REPOSITORY}
+    tag: ${TAG}
+varnish:
+  image:
+    repository: ${VARNISH_REPOSITORY}
+    tag: ${TAG}
+ingress:
+  enabled: ${INGRESS_ENABLED}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: ${CLUSTER_ISSUER}
+  hosts:
+    - host: ${DOMAIN}
+      paths:
+        - /
+  tls:
+    - secretName: ${LETSENCRYPT_SECRET_NAME}-api
+      hosts:
+        - ${DOMAIN}
+mercure:
+  jwtKey: ${MERCURE_JWT_SECRET}
+  ingress:
+    enabled: ${INGRESS_ENABLED}
+    annotations:
+      kubernetes.io/ingress.class: nginx
+      certmanager.k8s.io/cluster-issuer: ${CLUSTER_ISSUER}
+    hosts:
+      - host: ${MERCURE_SUBSCRIBE_DOMAIN}
+        paths:
+          - /
+    tls:
+      - secretName: ${LETSENCRYPT_SECRET_NAME}-mercure
+        hosts:
+          - ${MERCURE_SUBSCRIBE_DOMAIN}
+  corsAllowedOrigins:
+    - ${CORS_ALLOW_ORIGIN}
+blackfire:
+  enabled: ${BLACKFIRE_SERVER_ENABLED}
+  server:
+    id: ${BLACKFIRE_SERVER_ID}
+    token: ${BLACKFIRE_SERVER_TOKEN}
+annotations:
+  app.gitlab.com/app: ${CI_PROJECT_PATH_SLUG}
+  app.gitlab.com/env: ${CI_ENVIRONMENT_SLUG}
+EOF
+
   helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$name" ./api/_helm/api \
-    --set imagePullSecrets[0].name="${GITLAB_PULL_SECRET_NAME}" \
-    --set php.image.repository="${PHP_REPOSITORY}" \
-    --set php.image.tag="${TAG}" \
-    --set php.corsAllowOrigin="${CORS_ALLOW_ORIGIN}" \
-    --set php.trustedHosts="${TRUSTED_HOSTS}" \
-    --set php.mercure.jwtToken="${MERCURE_JWT_TOKEN}" \
-    --set php.databaseUrl="${DATABASE_URL}" \
-    --set php.apiSecretToken="${API_SECRET_TOKEN}" \
-    --set php.mailer.email="${MAILER_EMAIL}" \
-    --set php.mailer.dsn="${MAILER_DSN}" \
-    --set php.jwt.secret="${JWT_SECRET_KEY}" \
-    --set php.jwt.public="${JWT_PUBLIC_KEY}" \
-    --set php.jwt.passphrase="${JWT_PASSPHRASE}" \
-    --set php.blackfire.id="${BLACKFIRE_CLIENT_ID}" \
-    --set php.blackfire.token="${BLACKFIRE_CLIENT_TOKEN}" \
-    --set php.mercure.subscribeUrl="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure" \
-    --set nginx.image.repository="${NGINX_REPOSITORY}" \
-    --set nginx.image.tag="${TAG}" \
-    --set varnish.image.repository="${VARNISH_REPOSITORY}" \
-    --set varnish.image.tag="${TAG}" \
-    --set ingress.enabled="${INGRESS_ENABLED}" \
-    --set ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
-    --set ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
-    --set ingress.hosts[0].host="${DOMAIN}" \
-    --set ingress.hosts[0].paths[0]="/" \
-    --set ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-api" \
-    --set ingress.tls[0].hosts[0]="${DOMAIN}" \
-    --set mercure.jwtKey="${MERCURE_JWT_SECRET}" \
-    --set mercure.ingress.enabled="${INGRESS_ENABLED}" \
-    --set mercure.ingress.annotations."kubernetes\.io/ingress\.class"="nginx" \
-    --set mercure.ingress.annotations."certmanager\.k8s\.io/cluster-issuer"="${CLUSTER_ISSUER}" \
-    --set mercure.ingress.hosts[0].host="${MERCURE_SUBSCRIBE_DOMAIN}" \
-    --set mercure.ingress.hosts[0].paths[0]="/" \
-    --set mercure.ingress.tls[0].secretName="${LETSENCRYPT_SECRET_NAME}-mercure" \
-    --set mercure.ingress.tls[0].hosts[0]="${MERCURE_SUBSCRIBE_DOMAIN}" \
-    --set mercure.corsAllowedOrigins[0]="${CORS_ALLOW_ORIGIN}" \
-    --set blackfire.enabled="${BLACKFIRE_SERVER_ENABLED}" \
-    --set blackfire.server.id="${BLACKFIRE_SERVER_ID}" \
-    --set blackfire.server.token="${BLACKFIRE_SERVER_TOKEN}" \
-    --set annotations."app\.gitlab\.com/app"="${CI_PROJECT_PATH_SLUG}" \
-    --set annotations."app\.gitlab\.com/env"="${CI_ENVIRONMENT_SLUG}"
+  	-f values.tmp.yaml
 }
 
 persist_environment_url() {
