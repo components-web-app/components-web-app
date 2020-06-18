@@ -291,16 +291,15 @@ php:
     jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
     subscribeUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   databaseUrl: ${DATABASE_URL:-"~"}
+  apiSecretToken: ${VARNISH_TOKEN:-"~"}
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}
   jwt:
-    secret: "${JWT_SECRET_KEY:-"~"}"
-    public: "${JWT_PUBLIC_KEY:-"~"}"
     passphrase: "${JWT_PASSPHRASE:-"~"}"
   blackfire:
-    id: ${BLACKFIRE_CLIENT_ID:-"~"}
-    token: ${BLACKFIRE_CLIENT_TOKEN:-"~"}
+    id: "${BLACKFIRE_CLIENT_ID}"
+    token: "${BLACKFIRE_CLIENT_TOKEN}"
 nginx:
   image:
     repository: ${NGINX_REPOSITORY}
@@ -312,8 +311,8 @@ varnish:
 ingress:
   enabled: ${INGRESS_ENABLED:-"false"}
   annotations:
-    kubernetes.io/ingress.class: nginx
-    certmanager.k8s.io/cluster-issuer: ${CLUSTER_ISSUER:-"~"}
+    "kubernetes.io/ingress.class": nginx
+    "certmanager.k8s.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
   hosts:
     - host: ${DOMAIN:-"~"}
       paths:
@@ -325,31 +324,37 @@ ingress:
 mercure:
   jwtKey: ${MERCURE_JWT_SECRET:-"~"}
   ingress:
-    enabled: ${INGRESS_ENABLED:-"false"}
+    enabled: ${INGRESS_ENABLED:-false}
     annotations:
-      kubernetes.io/ingress.class: nginx
-      certmanager.k8s.io/cluster-issuer: ${CLUSTER_ISSUER:-"~"}
+      "kubernetes.io/ingress.class": nginx
+      "certmanager.k8s.io/cluster-issuer": ${CLUSTER_ISSUER}
     hosts:
-      - host: ${MERCURE_SUBSCRIBE_DOMAIN:-"~"}
+      - host: "${MERCURE_SUBSCRIBE_DOMAIN}"
         paths:
           - /
     tls:
       - secretName: ${LETSENCRYPT_SECRET_NAME}-mercure
         hosts:
-          - ${MERCURE_SUBSCRIBE_DOMAIN:-"~"}
+          - "${MERCURE_SUBSCRIBE_DOMAIN}"
   corsAllowedOrigins:
     - ${CORS_ALLOW_ORIGIN:-"~"}
 blackfire:
-  enabled: ${BLACKFIRE_SERVER_ENABLED:-"false"}
+  enabled: ${BLACKFIRE_SERVER_ENABLED:-false}
   server:
-    id: ${BLACKFIRE_SERVER_ID:-"~"}
-    token: ${BLACKFIRE_SERVER_TOKEN:-"~"}
+    id: "${BLACKFIRE_SERVER_ID}"
+    token: "${BLACKFIRE_SERVER_TOKEN}"
 annotations:
-  app.gitlab.com/app: ${CI_PROJECT_PATH_SLUG:-"~"}
-  app.gitlab.com/env: ${CI_ENVIRONMENT_SLUG:-"~"}
+  app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
+  app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 EOF
 
-  helm upgrade --install --reset-values --force --namespace="$KUBE_NAMESPACE" "$name" ./api/_helm/api \
+  helm upgrade --install \
+    --reset-values \
+    --force \
+    --namespace="$KUBE_NAMESPACE" \
+    "$name" ./api/_helm/api \
+    --set php.jwt.secret="${JWT_SECRET_KEY}" \
+    --set php.jwt.public="${JWT_PUBLIC_KEY}" \
   	-f values.tmp.yaml
 }
 

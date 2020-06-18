@@ -90,16 +90,6 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: mercure-jwt-token
-            - name: BLACKFIRE_CLIENT_ID
-              valueFrom:
-                  configMapKeyRef:
-                      name: {{ $fullName }}
-                      key: blackfire-client-id
-            - name: BLACKFIRE_CLIENT_TOKEN
-              valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: blackfire-client-token
             - name: JWT_SECRET_KEY
               valueFrom:
                   secretKeyRef:
@@ -125,6 +115,18 @@ spec:
                   secretKeyRef:
                       name: {{ $fullName }}
                       key: mailer-dsn
+            {{- if .Values.blackfire.enabled -}}
+            - name: BLACKFIRE_CLIENT_ID
+              valueFrom:
+                  configMapKeyRef:
+                      name: {{ $fullName }}
+                      key: blackfire-client-id
+            - name: BLACKFIRE_CLIENT_TOKEN
+              valueFrom:
+                  secretKeyRef:
+                      name: {{ $fullName }}
+                      key: blackfire-client-token
+            {{- end }}
           ports:
             - containerPort: 9000
           readinessProbe:
