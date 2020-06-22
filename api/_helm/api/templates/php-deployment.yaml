@@ -92,41 +92,39 @@ spec:
                   key: mercure-jwt-token
             - name: JWT_SECRET_KEY
               valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: jwt-secret
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-secret
             - name: JWT_PUBLIC_KEY
               valueFrom:
-                  configMapKeyRef:
-                      name: {{ $fullName }}
-                      key: jwt-public
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-public
             - name: JWT_PASSPHRASE
               valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: jwt-passphrase
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-passphrase
             - name: MAILER_EMAIL
               valueFrom:
-                  configMapKeyRef:
-                      name: {{ $fullName }}
-                      key: mailer-email
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mailer-email
             - name: MAILER_DSN
               valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: mailer-dsn
-            {{- if .Values.blackfire.enabled -}}
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: mailer-dsn
             - name: BLACKFIRE_CLIENT_ID
               valueFrom:
-                  configMapKeyRef:
-                      name: {{ $fullName }}
-                      key: blackfire-client-id
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: blackfire-client-id
             - name: BLACKFIRE_CLIENT_TOKEN
               valueFrom:
-                  secretKeyRef:
-                      name: {{ $fullName }}
-                      key: blackfire-client-token
-            {{- end }}
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: blackfire-client-token
           ports:
             - containerPort: 9000
           readinessProbe:

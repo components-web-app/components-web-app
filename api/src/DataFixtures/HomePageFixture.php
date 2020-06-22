@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Button;
 use App\Entity\HtmlContent;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
@@ -35,5 +36,11 @@ class HomePageFixture extends AbstractPageFixture
 
         $route = $this->createRoute('/', 'home-page', $page);
         $manager->persist($route);
+
+        $button = new Button();
+        $button->label = 'your button';
+        $manager->persist($button);
+        $position = $this->createComponentPosition($componentCollection, $button, 1);
+        $manager->persist($position);
     }
 }
