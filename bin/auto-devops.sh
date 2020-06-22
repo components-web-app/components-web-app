@@ -323,6 +323,7 @@ ingress:
         - ${DOMAIN:-"~"}
 mercure:
   jwtKey: ${MERCURE_JWT_SECRET:-"~"}
+  corsAllowedOrigins: ["${MERCURE_CORS_ALLOW_ORIGIN:-"*"}"]
   ingress:
     enabled: ${INGRESS_ENABLED:-false}
     annotations:
@@ -336,8 +337,6 @@ mercure:
       - secretName: ${LETSENCRYPT_SECRET_NAME}-mercure
         hosts:
           - "${MERCURE_SUBSCRIBE_DOMAIN}"
-  corsAllowedOrigins:
-    - ${CORS_ALLOW_ORIGIN:-"~"}
 blackfire:
   enabled: ${BLACKFIRE_SERVER_ENABLED:-false}
   server:
