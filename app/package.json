@@ -38,8 +38,8 @@
     "nuxt-edge": "^2.13.0-26467214.85383688",
     "puppeteer": "^4.0.0",
     "sass-loader": "^8.0.2",
+    "sass-resources-loader": "^2.0.3",
     "standard-version": "latest",
-    "typescript": "^3.9.5",
-    "sass-resources-loader": "^2.0.3"
+    "typescript": "^3.9.5"
   }
 }
