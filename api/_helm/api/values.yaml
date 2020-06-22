@@ -27,7 +27,7 @@ php:
     databaseUrl: 'pgsql://'
     mailer:
         email: 'noreply@example.com'
-        dsn: 'smtp://'
+        dsn: 'null://null'
     jwt:
         secret: ''
         public: ''
