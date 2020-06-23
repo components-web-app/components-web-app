@@ -344,6 +344,9 @@
     "roave/security-advisories": {
         "version": "dev-master"
     },
+    "silverbackis/api-components-bundle": {
+        "version": "dev-master"
+    },
     "symfony/asset": {
         "version": "v4.3.8"
     },
