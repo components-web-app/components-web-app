@@ -34,7 +34,7 @@ services:
       SYMFONY_ENDPOINT: ~
     volumes:
       - ./api:/srv/api:rw,cached
-      - ./api/_docker/php/conf.d/cwa.dev.ini:/usr/local/etc/php/conf.d/cwa.ini
+      - ./api/_docker/php/conf.d/cwa.dev.ini:/usr/local/etc/php/cwa.dev.ini
       # if you develop on Linux, you may use a bind-mounted host directory instead
       # - ./api/var:/srv/api/var:rw
       - dev-certs:/certs:ro,nocopy
