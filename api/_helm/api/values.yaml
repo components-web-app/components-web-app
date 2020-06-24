@@ -64,6 +64,9 @@ vulcain:
         tag: latest
         pullPolicy: Always
     replicaCount: 1
+    externalName:
+        enabled: false
+        name: api.example.com
     service:
         type: ClusterIP
         port: 80

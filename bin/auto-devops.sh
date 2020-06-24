@@ -300,6 +300,11 @@ php:
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
+vulcain:
+  enabled: ${VULCAIN_ENABLED:-"false"}
+  externalName:
+    enabled: ${VULCAIN_ENABLE_EXTERNAL_NAME:-"false"}
+    name: ${DOMAIN:-"~"}
 nginx:
   image:
     repository: ${NGINX_REPOSITORY}
@@ -325,7 +330,7 @@ mercure:
   jwtKey: ${MERCURE_JWT_SECRET:-"~"}
   corsAllowedOrigins: ["${MERCURE_CORS_ALLOW_ORIGIN:-"*"}"]
   ingress:
-    enabled: ${INGRESS_ENABLED:-false}
+    enabled: ${MERCURE_INGRESS_ENABLED:-false}
     annotations:
       "kubernetes.io/ingress.class": nginx
       "certmanager.k8s.io/cluster-issuer": ${CLUSTER_ISSUER}
