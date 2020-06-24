@@ -1,5 +1,5 @@
-import https from 'https'
-import fs from 'fs'
+const https = require('https')
+const fs = require('fs')
 
 export default function ({ $axios }) {
   if (process.env.NODE_ENV === 'production') return

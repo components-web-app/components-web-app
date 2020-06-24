@@ -81,9 +81,10 @@ export default {
       config.resolve.plugins.push(new TsconfigPathsPlugin({ configFile: `${__dirname}/tsconfig.json` }))
 
       // fix for using fs import in axios plugin
-      config.node = {
-        fs: "empty"
+      if (!config.node) {
+        config.node = {}
       }
+      config.node.fs = "empty"
     }
   },
   // we are not using the correct node module name yet, awaiting resolution to cwa namespace being available or not

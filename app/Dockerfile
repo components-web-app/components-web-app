@@ -1,4 +1,6 @@
-FROM node:alpine AS cwa_app
+ARG NODE_VERSION=14.4
+
+FROM node:${NODE_VERSION}-alpine AS cwa_app
 
 # Cookie Secret environment required to build nuxt application
 # Other environment variables needed but are fine to include as build args as they would not be secret.
