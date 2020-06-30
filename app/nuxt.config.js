@@ -5,7 +5,7 @@ import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
 const API_URL = process.env.API_URL || API_URL_BROWSER
 
-const https = process.env.NODE_ENV === 'production' ? {} : {
+const https = process.env.NODE_ENV === 'production' && process.env.LOCAL_TLS !== '1' ? {} : {
   key: fs.readFileSync(path.resolve('/certs/localhost.key')),
   cert: fs.readFileSync(path.resolve('/certs/localhost.crt'))
 }
@@ -16,6 +16,9 @@ export default {
     host: '0.0.0.0',
     https
   },
+  serverMiddleware: [
+    '~/middleware/server/headers'
+  ],
   publicRuntimeConfig: {
     API_URL,
     API_URL_BROWSER
