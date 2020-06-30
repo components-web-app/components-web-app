@@ -5,7 +5,7 @@ import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
 const API_URL = process.env.API_URL || API_URL_BROWSER
 
-const https = process.env.NODE_ENV === 'production' ? {} : {
+const https = process.env.NODE_ENV === 'production' && process.env.LOCAL_TLS !== '1' ? {} : {
   key: fs.readFileSync(path.resolve('/certs/localhost.key')),
   cert: fs.readFileSync(path.resolve('/certs/localhost.crt'))
 }
@@ -16,6 +16,9 @@ export default {
     host: '0.0.0.0',
     https
   },
+  serverMiddleware: [
+    '~/middleware/server/headers'
+  ],
   publicRuntimeConfig: {
     API_URL,
     API_URL_BROWSER
@@ -34,7 +37,7 @@ export default {
     '@cwamodules/cwa-next'
   ],
   plugins: [
-    '~/plugins/axios'
+    { src: '~/plugins/axios', mode: 'server' }
   ],
   router: {
     middleware: ['auth', 'routeLoader']
@@ -79,12 +82,6 @@ export default {
 
       // fix for alias in tsconfig.js
       config.resolve.plugins.push(new TsconfigPathsPlugin({ configFile: `${__dirname}/tsconfig.json` }))
-
-      // fix for using fs import in axios plugin
-      if (!config.node) {
-        config.node = {}
-      }
-      config.node.fs = "empty"
     }
   },
   // we are not using the correct node module name yet, awaiting resolution to cwa namespace being available or not

@@ -149,6 +149,10 @@ services:
     volumes:
       - ./app:/usr/src/app:rw,cached
       - dev-certs:/certs:ro
+    environment:
+      NODE_ENV: ~
+      LOCAL_TLS: ~
+      NODE_TLS_REJECT_UNAUTHORIZED: ~
     ports:
       - target: 3000
         published: 443
