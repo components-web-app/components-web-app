@@ -8,7 +8,12 @@ metadata:
   labels:
     {{- include "api.labels" $data | nindent 4 }}
 spec:
+{{- if .Values.vulcain.externalName.enabled -}}
+  type: ExternalName
+  externalName: {{ .Values.vulcain.externalName.name }}
+{{- else -}}
   type: {{ .Values.vulcain.service.type }}
+{{- end -}}
   ports:
     - port: {{ .Values.vulcain.service.port }}
       targetPort: http
