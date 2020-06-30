@@ -1,91 +1,82 @@
 import fs from 'fs'
-import path, {join} from 'path'
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin'
+import path, { join } from 'path'
 
 const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
 const API_URL = process.env.API_URL || API_URL_BROWSER
 
-const https = process.env.NODE_ENV === 'production' && process.env.LOCAL_TLS !== '1' ? {} : {
-  key: fs.readFileSync(path.resolve('/certs/localhost.key')),
-  cert: fs.readFileSync(path.resolve('/certs/localhost.crt'))
-}
+const https =
+  process.env.NODE_ENV === 'production' && process.env.LOCAL_TLS !== '1'
+    ? {}
+    : {
+        key: fs.readFileSync(path.resolve('/certs/localhost.key')),
+        cert: fs.readFileSync(path.resolve('/certs/localhost.crt')),
+      }
 
 export default {
   mode: 'universal',
   server: {
     host: '0.0.0.0',
-    https
+    https,
   },
-  serverMiddleware: [
-    '~/middleware/server/headers'
-  ],
+  serverMiddleware: ['~/middleware/server/headers'],
   publicRuntimeConfig: {
     API_URL,
-    API_URL_BROWSER
+    API_URL_BROWSER,
   },
   typescript: {
     typeCheck: {
-      eslint: true
-    }
+      eslint: true,
+    },
   },
   buildModules: [
-    '@nuxt/typescript-build'
+    '@nuxt/typescript-build',
+    // Doc: https://github.com/nuxt-community/stylelint-module
+    '@nuxtjs/stylelint-module',
   ],
   modules: [
     '@nuxtjs/axios',
     '@nuxtjs/auth-next',
-    '@cwamodules/cwa-next'
+    '@nuxtjs/pwa',
+    '@cwamodules/cwa-next',
   ],
-  plugins: [
-    { src: '~/plugins/axios', mode: 'server' }
-  ],
+  plugins: [{ src: '~/plugins/axios', mode: 'server' }],
   router: {
-    middleware: ['auth', 'routeLoader']
+    middleware: ['auth', 'routeLoader'],
   },
   axios: {
     credentials: true,
-    progress: false
+    progress: false,
   },
   auth: {
     redirect: {
       login: '/login',
       logout: '/login',
       home: '/',
-      callback: false
+      callback: false,
     },
     strategies: {
       local: {
         user: {
           autoFetch: true,
-          property: ''
+          property: '',
         },
         endpoints: {
           login: { url: '/login', method: 'post' },
           logout: { url: '/logout', method: 'post' },
-          user: { url: '/me', method: 'get' }
+          user: { url: '/me', method: 'get' },
         },
         token: {
           global: false,
-          required: false
-        }
-      }
-    }
-  },
-  build: {
-    extend (config, _) {
-      if (!config.resolve) {
-        config.resolve = {}
-      }
-      if (!config.resolve.plugins) {
-        config.resolve.plugins = []
-      }
-
-      // fix for alias in tsconfig.js
-      config.resolve.plugins.push(new TsconfigPathsPlugin({ configFile: `${__dirname}/tsconfig.json` }))
-    }
+          required: false,
+        },
+      },
+    },
   },
   // we are not using the correct node module name yet, awaiting resolution to cwa namespace being available or not
   alias: {
-    '@cwa/nuxt-module': join(__dirname, 'node_modules/@cwamodules/cwa-next/dist')
-  }
+    '@cwa/nuxt-module': join(
+      __dirname,
+      'node_modules/@cwamodules/cwa-next/dist'
+    ),
+  },
 }

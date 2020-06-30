@@ -1,10 +1,16 @@
 <template>
   <div>
     <div>
-      <component-collection location="primary" v-bind="componentCollectionProps" />
+      <component-collection
+        location="primary"
+        v-bind="componentCollectionProps"
+      />
     </div>
     <div>
-      <component-collection location="secondary" v-bind="componentCollectionProps" />
+      <component-collection
+        location="secondary"
+        v-bind="componentCollectionProps"
+      />
     </div>
   </div>
 </template>
@@ -13,6 +19,6 @@
 import PageMixin from '@cwa/nuxt-module/core/mixins/PageMixin'
 
 export default {
-  mixins: [PageMixin]
+  mixins: [PageMixin],
 }
 </script>

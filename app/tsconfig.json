@@ -11,7 +11,9 @@
     "esModuleInterop": true,
     "allowJs": true,
     "sourceMap": true,
+    "strict": true,
     "noEmit": true,
+    "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
       "@cwa/nuxt-module": ["./node_modules/@cwamodules/cwa-next/dist/*"],
@@ -29,6 +31,8 @@
     ]
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    ".nuxt",
+    "dist"
   ]
 }

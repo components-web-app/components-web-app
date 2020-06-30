@@ -9,18 +9,18 @@ import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 export default {
   mixins: [ComponentMixin],
   computed: {
-    contextMenuData () {
+    contextMenuData() {
       return {
         Edit: {
-          callback: this.showEditView
-        }
+          callback: this.showEditView,
+        },
       }
-    }
+    },
   },
   methods: {
-    showEditView () {
+    showEditView() {
       alert('this will trigger edit view...')
-    }
-  }
+    },
+  },
 }
 </script>

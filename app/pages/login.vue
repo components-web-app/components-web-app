@@ -6,11 +6,11 @@
     <form @submit.prevent="userLogin">
       <div>
         <label>Username</label>
-        <input v-model="login.username" type="text">
+        <input v-model="login.username" type="text" />
       </div>
       <div>
         <label>Password</label>
-        <input v-model="login.password" type="password">
+        <input v-model="login.password" type="password" />
       </div>
       <div>
         <button type="submit">
@@ -25,21 +25,21 @@
 export default {
   cwa: false,
   layout: 'primary',
-  data () {
+  data() {
     return {
       login: {
         username: '',
-        password: ''
+        password: '',
       },
-      error: null
+      error: null,
     }
   },
   methods: {
-    userLogin () {
+    userLogin() {
       this.error = null
       return this.$auth
         .loginWith('local', {
-          data: this.login
+          data: this.login,
         })
         .catch((e) => {
           if (e.response && e.response.status === 401) {
@@ -48,7 +48,7 @@ export default {
           }
           this.error = e + ''
         })
-    }
-  }
+    },
+  },
 }
 </script>
