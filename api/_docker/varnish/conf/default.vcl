@@ -11,13 +11,13 @@ backend default {
   .between_bytes_timeout  = 2s;     # How long to wait between bytes received from our backend?
 
   # Health check
-  .probe = {
-    .url = "/";
-    .timeout = 5s;
-    .interval = 5s;
-    .window = 5;
-    .threshold = 3;
-  }
+#  .probe = {
+#    .url = "/";
+#    .timeout = 5s;
+#    .interval = 5s;
+#    .window = 5;
+#    .threshold = 3;
+#  }
 }
 
 acl profile {
