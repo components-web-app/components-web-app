@@ -45,6 +45,7 @@ acl invalidators {
 }
 
 sub vcl_recv {
+  unset req.http.x-cache;
   set req.http.grace = "none";
 
   if (req.esi_level > 0) {
@@ -99,6 +100,8 @@ sub vcl_recv {
 }
 
 sub vcl_hit {
+  set req.http.x-cache = "hit";
+
   if (obj.ttl >= 0s) {
     # A pure unadulterated hit, deliver it
     return (deliver);
@@ -130,7 +133,30 @@ sub vcl_hit {
   return (synth(503, "API is down"));
 }
 
+sub vcl_miss {
+	set req.http.x-cache = "miss";
+}
+
+sub vcl_pass {
+	set req.http.x-cache = "pass";
+}
+
+sub vcl_pipe {
+	set req.http.x-cache = "pipe uncacheable";
+}
+
+sub vcl_synth {
+	set resp.http.x-cache = "synth synth";
+}
+
 sub vcl_deliver {
+  if (obj.uncacheable) {
+		set req.http.x-cache = req.http.x-cache + " uncacheable" ;
+	} else {
+		set req.http.x-cache = req.http.x-cache + " cached" ;
+	}
+	set resp.http.x-cache = req.http.x-cache;
+
   set resp.http.grace = req.http.grace;
 
   # Don't send cache tags related headers to the client
