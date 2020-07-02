@@ -6,13 +6,13 @@ backend default {
   .host = "${UPSTREAM}";
   .port = "${UPSTREAM_PORT}";
   # Health check
-  #.probe = {
-  #  .url = "/";
-  #  .timeout = 5s;
-  #  .interval = 30s;
-  #  .window = 5;
-  #  .threshold = 3;
-  #}
+  .probe = {
+    .url = "/";
+    .timeout = 5s;
+    .interval = 30s;
+    .window = 5;
+    .threshold = 3;
+  }
 }
 
 acl profile {

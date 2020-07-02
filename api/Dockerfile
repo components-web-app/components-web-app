@@ -10,9 +10,6 @@ ARG VARNISH_VERSION=6.4
 # "php" stage
 FROM registry.gitlab.com/silverback-web-apps/cwa/docker/php:${PHP_VERSION}-fpm-alpine AS cwa_php
 
-RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
-COPY _docker/php/conf.d $PHP_INI_DIR/
-
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
 # install Symfony Flex globally to speed up download of Composer packages (parallelized prefetching)
@@ -23,6 +20,9 @@ ENV PATH="${PATH}:/root/.composer/vendor/bin"
 
 # build for production
 ARG APP_ENV=prod
+
+RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
+COPY _docker/php/conf.d $PHP_INI_DIR/cwa.conf.d/
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY composer.* symfony.lock ./
