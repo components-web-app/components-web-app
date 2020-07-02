@@ -100,7 +100,7 @@ jobs:
           docker-compose exec -T php security-checker security:check
       - name: Check HTTP reachability
         run: | # we have to connect to the "docker" hostname because of Docker-in-Docker
-          curl -fk -H 'Host: localhost' https://docker:8443 # API
+          curl -fk -H 'Host: varnish' https://docker:8443 # API
       - name: Login to registry
         if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
         run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login --username '${{ secrets.DOCKER_USERNAME }}' --password-stdin "$DOCKER_REGISTRY"
