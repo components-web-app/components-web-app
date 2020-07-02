@@ -5,11 +5,16 @@ import std;
 backend default {
   .host = "${UPSTREAM}";
   .port = "${UPSTREAM_PORT}";
+  .max_connections        = 300;
+  .first_byte_timeout     = 300s;   # How long to wait before we receive a first byte from our backend?
+  .connect_timeout        = 5s;     # How long to wait for a backend connection?
+  .between_bytes_timeout  = 2s;     # How long to wait between bytes received from our backend?
+
   # Health check
   .probe = {
     .url = "/";
     .timeout = 5s;
-    .interval = 30s;
+    .interval = 5s;
     .window = 5;
     .threshold = 3;
   }
@@ -36,6 +41,8 @@ acl invalidators {
 }
 
 sub vcl_recv {
+  set req.http.grace = "none";
+
   if (req.esi_level > 0) {
     # ESI request should not be included in the profile.
     # Instead you should profile them separately, each one
@@ -93,16 +100,23 @@ sub vcl_hit {
     return (deliver);
   }
 
+  # https://info.varnish-software.com/blog/grace-varnish-4-stale-while-revalidate-semantics-varnish
   if (std.healthy(req.backend_hint)) {
-    # The backend is healthy
-    # Fetch the object from the backend
-    return (restart);
+    # Backend is healthy. Limit age to 10s.
+    if (obj.ttl + 10s > 0s) {
+        set req.http.grace = "normal(limited)";
+        return (deliver);
+    } else {
+        # Fetch the object from the backend
+        return (restart);
+    }
   }
 
   # No fresh object and the backend is not healthy
   if (obj.ttl + obj.grace > 0s) {
     # Deliver graced object
     # Automatically triggers a background fetch
+    set req.http.grace = "full";
     return (deliver);
   }
 
@@ -113,6 +127,8 @@ sub vcl_hit {
 }
 
 sub vcl_deliver {
+  set resp.http.grace = req.http.grace;
+
   # Don't send cache tags related headers to the client
   unset resp.http.url;
   # Comment the following line to send the "Cache-Tags" header to the client (e.g. to use CloudFlare cache tags)
@@ -120,6 +136,9 @@ sub vcl_deliver {
 }
 
 sub vcl_backend_response {
+  # https://info.varnish-software.com/blog/grace-varnish-4-stale-while-revalidate-semantics-varnish
+  set beresp.ttl = 10s;
+
   # Ban lurker friendly header
   set beresp.http.url = bereq.url;
 
