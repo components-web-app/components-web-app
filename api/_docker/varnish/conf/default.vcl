@@ -45,9 +45,6 @@ acl invalidators {
 }
 
 sub vcl_recv {
-  unset req.http.x-cache;
-  set req.http.grace = "none";
-
   if (req.esi_level > 0) {
     # ESI request should not be included in the profile.
     # Instead you should profile them separately, each one
@@ -58,6 +55,8 @@ sub vcl_recv {
     unset req.http.X-Blackfire-Query;
   }
 
+  unset req.http.x-cache;
+  set req.http.grace = "none";
   set req.http.Surrogate-Capability = "abc=ESI/1.0";
 
   if (req.restarts > 0) {
@@ -91,6 +90,19 @@ sub vcl_recv {
     }
 
     return (synth(400, "ApiPlatform-Ban-Regex HTTP header must be set."));
+  }
+
+  if (req.http.Cookie) {
+      set req.http.Cookie = ";" + req.http.Cookie;
+      set req.http.Cookie = regsuball(req.http.Cookie, "; +", ";");
+      set req.http.Cookie = regsuball(req.http.Cookie, ";(api_component)=", "; \1=");
+      set req.http.Cookie = regsuball(req.http.Cookie, ";[^ ][^;]*", "");
+      set req.http.Cookie = regsuball(req.http.Cookie, "^[; ]+|[; ]+$", "");
+
+      if (req.http.Cookie == "") {
+          // If there are no more cookies, remove the header to get page cached.
+          unset req.http.Cookie;
+      }
   }
 
   # For health checks
