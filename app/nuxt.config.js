@@ -4,6 +4,8 @@ import path, { join } from 'path'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
 const API_URL = process.env.API_URL || API_URL_BROWSER
 const CERT_DIR = process.env.CERT_DIR || '/certs'
+const MERCURE_SUBSCRIBE_URL =
+  process.env.MERCURE_SUBSCRIBE_URL || 'https://localhost:1337'
 
 const https =
   process.env.NODE_ENV === 'production' && process.env.LOCAL_TLS !== '1'
@@ -43,6 +45,29 @@ export default {
   plugins: [{ src: '~/plugins/axios', mode: 'server' }],
   router: {
     middleware: ['auth', 'routeLoader'],
+  },
+  render: {
+    csp: {
+      reportOnly: false,
+      hashAlgorithm: 'sha256',
+      policies: {
+        'default-src': ["'self'"],
+        'img-src': ['https:', '*.google-analytics.com'],
+        'worker-src': ["'self'", `blob:`],
+        'style-src': ["'self'", "'unsafe-inline'"],
+        'script-src': ["'self'", "'unsafe-inline'", '*.google-analytics.com'],
+        'connect-src': [
+          "'self'",
+          API_URL_BROWSER,
+          MERCURE_SUBSCRIBE_URL,
+          '*.google-analytics.com',
+        ],
+        'form-action': ["'self'"],
+        'frame-ancestors': ["'none'"],
+        'object-src': ["'none'"],
+        'base-uri': [],
+      },
+    },
   },
   axios: {
     credentials: true,
