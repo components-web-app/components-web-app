@@ -40,7 +40,7 @@ export default {
     '@nuxtjs/axios',
     '@nuxtjs/auth-next',
     '@nuxtjs/pwa',
-    '@cwamodules/cwa-next',
+    '@cwa/nuxt-module-next',
   ],
   plugins: [{ src: '~/plugins/axios', mode: 'server' }],
   router: {

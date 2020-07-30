@@ -877,13 +877,13 @@
   resolved "https://registry.yarnpkg.com/@csstools/convert-colors/-/convert-colors-1.4.0.tgz#ad495dc41b12e75d588c6db8b9834f08fa131eb7"
   integrity sha512-5a6wqoJV/xEdbRNKVo6I4hO3VjyDq//8q2f9I6PBAvMesJHFauXDorcNCsr9RzvsZnaWi5NYCcfyqP1QeFHFbw==
 
-"@cwamodules/cwa-next@^1.0.0-1593519107.837946f":
-  version "1.0.0-1593519107.837946f"
-  resolved "https://registry.yarnpkg.com/@cwamodules/cwa-next/-/cwa-next-1.0.0-1593519107.837946f.tgz#53b0f8ecb7667dec25e23547f2f7736062db154c"
-  integrity sha512-iYpYH5J04PBEP/ROg/yeArR+E5YRL3nD4VyomlTtDTF0qFCHw4yVQGHjzyEh6+IDiHJO/HZrHE/olzHHb8vqdw==
+"@cwa/nuxt-module-next@^1.0.0-1596107482.e09c22a":
+  version "1.0.0-1596107482.e09c22a"
+  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1596107482.e09c22a.tgz#fa1b685b70c80b6a02423dee0f0ef75e230216db"
+  integrity sha512-3vmsqBU3aAEynhHY3XM7BgonlMWG7cRQIp/mpXoNfkJbTTlEVG4Uw1QneQLKp2apoKV5oe9/AD/XayEYXo2XMA==
   dependencies:
     "@nuxt/components" "^0.3.4"
-    "@nuxtjs/auth-next" latest
+    "@nuxtjs/auth-next" "^5.0.0-1595976864.509d9d6"
     "@nuxtjs/axios" "^5.11.0"
     bluebird "^3.7.2"
     consola "^2.13.0"
@@ -1448,23 +1448,23 @@
     webpack-node-externals "^1.7.2"
     webpackbar "^4.0.0"
 
-"@nuxtjs/auth-next@latest":
-  version "5.0.0-1593209609.63abc5f"
-  resolved "https://registry.yarnpkg.com/@nuxtjs/auth-next/-/auth-next-5.0.0-1593209609.63abc5f.tgz#0b53bfa7cbe4b821b110997b6af2b2d18acaae11"
-  integrity sha512-CK3W8OHjMbIL9tQrEC+VdR1++XJuUmb8zxhDlDFcp57uzo4LWBN30YEmHSDHkWJI3cfqJbDE2IlDmHVXEVF1cw==
+"@nuxtjs/auth-next@^5.0.0-1595976864.509d9d6":
+  version "5.0.0-1595976864.509d9d6"
+  resolved "https://registry.yarnpkg.com/@nuxtjs/auth-next/-/auth-next-5.0.0-1595976864.509d9d6.tgz#e3f826a390d1fccbdad9525febdd823c8e52ec90"
+  integrity sha512-jB6/ZzqIlgxY0KJ0Zj8IsB13iiWiRCsAtw9Ugis4sONzkyksWjqXnKtFqi3LE8PDveueL+25u3XAmN3pSSUc/w==
   dependencies:
-    "@nuxtjs/axios" "^5.10.1"
+    "@nuxtjs/axios" "^5.12.0"
     body-parser "^1.19.0"
-    consola "^2.11.3"
+    consola "^2.14.0"
     cookie "^0.4.1"
-    defu "^2.0.2"
+    defu "^2.0.4"
     js-cookie "^2.2.1"
     jwt-decode "^2.2.0"
-    lodash "^4.17.15"
-    nanoid "^3.1.3"
+    lodash "^4.17.19"
+    nanoid "^3.1.10"
     requrl "^2.0.1"
 
-"@nuxtjs/axios@^5.10.1", "@nuxtjs/axios@^5.11.0":
+"@nuxtjs/axios@^5.11.0":
   version "5.11.0"
   resolved "https://registry.yarnpkg.com/@nuxtjs/axios/-/axios-5.11.0.tgz#27d7297a69e11c39039b9cacac61e2e0d0e00f1f"
   integrity sha512-6M87KUXWWlAjRIwqBTXoollTwsUDnf8bdOR3qY1cVggvUP4hYgb2Oby7/Jr0u7bWGyb+/GuagwBBtubGTLsoyA==
@@ -1474,6 +1474,17 @@
     axios-retry "^3.1.8"
     consola "^2.11.3"
     defu "^2.0.2"
+
+"@nuxtjs/axios@^5.12.0":
+  version "5.12.0"
+  resolved "https://registry.yarnpkg.com/@nuxtjs/axios/-/axios-5.12.0.tgz#50692340e64ec838f167d292d59b1cc2a0e2dbef"
+  integrity sha512-VQI9Nnf12jWknldrgCNGzCQxnWO3/CvMwrkWKNUr3WtGYuOKryUOd1XXxDbaJmopfX4SGjKvDL1G6qTkWLiPew==
+  dependencies:
+    "@nuxtjs/proxy" "^2.0.0"
+    axios "^0.19.2"
+    axios-retry "^3.1.8"
+    consola "^2.14.0"
+    defu "^2.0.4"
 
 "@nuxtjs/eslint-config-typescript@^2.0.0":
   version "2.0.0"
@@ -7388,6 +7399,11 @@ lodash@^4.0.0, lodash@^4.15.0, lodash@^4.17.11, lodash@^4.17.13, lodash@^4.17.14
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
   integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
 
+lodash@^4.17.19:
+  version "4.17.19"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
+  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
+
 log-symbols@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/log-symbols/-/log-symbols-2.2.0.tgz#5740e1c5d6f0dfda4ad9323b5332107ef6b4c40a"
@@ -7877,7 +7893,7 @@ nan@^2.12.1, nan@^2.13.2:
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.1.tgz#d7be34dfa3105b91494c3147089315eff8874b01"
   integrity sha512-isWHgVjnFjh2x2yuJ/tj3JbwoHu3UC2dX5G/88Cm24yB6YopVgxvBObDY7n5xW6ExmFhJpSEQqFPvq9zaXc8Jw==
 
-nanoid@^3.1.10, nanoid@^3.1.3:
+nanoid@^3.1.10:
   version "3.1.10"
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.1.10.tgz#69a8a52b77892de0d11cede96bc9762852145bc4"
   integrity sha512-iZFMXKeXWkxzlfmMfM91gw7YhN2sdJtixY+eZh9V6QWJWTOiurhpKhBMgr82pfzgSqglQgqYSCowEYsz8D++6w==
