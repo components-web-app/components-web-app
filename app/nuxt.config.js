@@ -102,7 +102,7 @@ export default {
   alias: {
     '@cwa/nuxt-module': join(
       __dirname,
-      'node_modules/@cwamodules/cwa-next/dist'
+      'node_modules/@cwa/nuxt-module-next/dist'
     ),
   },
 }
