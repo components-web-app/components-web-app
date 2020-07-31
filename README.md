@@ -1,8 +1,8 @@
 # Components Web App Template :warning: [WIP] :warning:
 
 ## Live Demo
-- <a href="https://api.cwa.silverbackwebapps.com/" target="_blank" rel="noopener">API (API Components Bundle)</a>
-- <a href="https://cwa.silverbackwebapps.com/" target="_blank" rel="noopener">Front-end (Nuxt.js application with cwa-nuxt-module)</a>
+- <a href="https://api.cwa.rocks/" target="_blank" rel="noopener">API (API Components Bundle)</a>
+- <a href="https://demo.cwa.rocks/" target="_blank" rel="noopener">Front-end (Nuxt.js application with cwa-nuxt-module)</a>
 
 ## Introduction
 
