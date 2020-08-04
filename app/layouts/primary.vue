@@ -34,14 +34,8 @@
       </button>
     </div>
     <div class="container loading-message">
-      <p v-if="$cwa.$state.loadingRoute" class="loading">
-        Loading Route
-      </p>
-      <p v-else-if="$cwa.$state.error" class="error">
-        {{ $cwa.$resources.error }}
-      </p>
-      <p v-else class="loaded">
-        Route Loaded
+      <p v-if="$cwa.$state.error" class="error">
+        {{ $cwa.$state.error }}
       </p>
     </div>
     <nuxt />
@@ -52,13 +46,26 @@
 import consola from 'consola'
 
 export default {
+  data() {
+    return {
+      routes: [],
+    }
+  },
   computed: {
     sortedRoutes() {
       return [...this.routes].sort(this.dynamicSort('path'))
     },
-    routes() {
-      return this.$cwa.$storage.getState('routes')
-    },
+  },
+  async mounted() {
+    if (this.$cwa.$storage.getState('routes')) {
+      return
+    }
+    try {
+      const { data } = await this.$axios.get('/_/routes')
+      this.routes = data['hydra:member']
+    } catch (err) {
+      consola.error(err)
+    }
   },
   methods: {
     dynamicSort(property) {
@@ -78,28 +85,13 @@ export default {
       }
     },
   },
-  async middleware({ $axios, $cwa }) {
-    if ($cwa.$storage.getState('routes')) {
-      return
-    }
-    try {
-      const { data } = await $axios.get('/_/routes')
-      $cwa.$storage.setState('routes', data['hydra:member'])
-    } catch (err) {
-      consola.error(err)
-    }
-  },
 }
 </script>
 
 <style lang="sass" scoped>
 .loading-message
-  .loading
-    color: $color-warning
   .error
     color: $color-danger
-  .loaded
-    color: $color-success
 .refresh-bar
   display: flex
   justify-content: center
