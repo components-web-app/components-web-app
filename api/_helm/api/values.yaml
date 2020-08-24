@@ -131,8 +131,8 @@ ingress:
       # kubernetes.io/ingress.class: nginx
       # kubernetes.io/tls-acme: "true"
     hosts:
-        -   host: api.example.com
-            paths: []
+        - host: api.example.com
+          paths: []
     tls: []
     #  - secretName: api-example-tls
     #    hosts:

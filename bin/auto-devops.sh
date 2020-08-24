@@ -8,7 +8,7 @@ export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
 export KUBERNETES_VERSION=1.18.2
-export HELM_VERSION=3.2.1
+export HELM_VERSION=3.3.0
 
 # Choose the branch for production deploy.
 if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
@@ -78,7 +78,7 @@ install_dependencies() {
   curl "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
   mv linux-amd64/helm /usr/bin/
 
-  helm version --client
+  helm version
 
   echo "Intalling kubectl..."
   curl -L -o /usr/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
@@ -315,8 +315,7 @@ ingress:
     "certmanager.k8s.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
   hosts:
     - host: ${DOMAIN:-"~"}
-      paths:
-        - /
+      paths: ["/"]
   tls:
     - secretName: ${LETSENCRYPT_SECRET_NAME}-api
       hosts:
@@ -354,7 +353,6 @@ EOF
 
   helm upgrade --install \
     --reset-values \
-    --force \
     --namespace="$KUBE_NAMESPACE" \
     "$name" ./api/_helm/api \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
