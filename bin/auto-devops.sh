@@ -312,7 +312,7 @@ ingress:
   enabled: ${INGRESS_ENABLED:-"false"}
   annotations:
     "kubernetes.io/ingress.class": nginx
-    "certmanager.k8s.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
+    "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
   hosts:
     - host: ${DOMAIN:-"~"}
       paths: ["/"]
@@ -332,7 +332,7 @@ mercure:
     enabled: ${MERCURE_INGRESS_ENABLED:-false}
     annotations:
       "kubernetes.io/ingress.class": nginx
-      "certmanager.k8s.io/cluster-issuer": ${CLUSTER_ISSUER}
+      "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER}
     hosts:
       - host: "${MERCURE_SUBSCRIBE_DOMAIN}"
         paths:
