@@ -65,6 +65,9 @@ services:
       UPSTREAM: api
       UPSTREAM_PORT: 80
       PHP_SERVICE: php
+    # for cors_allow_origin env variable sharing
+    env_file:
+      - api/.env
     depends_on:
       - api
     tmpfs:

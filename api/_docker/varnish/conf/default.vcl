@@ -159,6 +159,7 @@ sub vcl_pipe {
 
 sub vcl_synth {
 	set resp.http.x-cache = "synth synth";
+	call cors;
 }
 
 sub vcl_deliver {
@@ -175,6 +176,8 @@ sub vcl_deliver {
   unset resp.http.url;
   # Comment the following line to send the "Cache-Tags" header to the client (e.g. to use CloudFlare cache tags)
   unset resp.http.Cache-Tags;
+
+  call cors;
 }
 
 sub vcl_backend_response {
@@ -186,4 +189,10 @@ sub vcl_backend_response {
 
   # Add a grace in case the backend is down
   set beresp.grace = 1h;
+}
+
+sub cors {
+  if (req.http.Origin ~ "${CORS_ALLOW_ORIGIN}") {
+      set resp.http.Access-Control-Allow-Origin = req.http.Origin;
+  }
 }
