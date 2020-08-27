@@ -12,27 +12,32 @@ import TextInput from '~/components/TextInput'
 export default {
   components: { TextInput },
   mixins: [ComponentMixin],
-  data () {
+  data() {
     return {
-      editing: false
+      editing: false,
     }
   },
   computed: {
-    contextMenuData () {
+    contextMenuData() {
       return {
         Edit: {
-          callback: this.showEditView
-        }
+          callback: this.showEditView,
+        },
       }
     },
-    displayHtml () {
-      return this.resource.html || (this.$cwa.isAdmin ? '<p style="font-style: italic">No content</p>' : '')
-    }
+    displayHtml() {
+      return (
+        this.resource.html ||
+        (this.$cwa.isAdmin
+          ? '<p style="font-style: italic">No content</p>'
+          : '')
+      )
+    },
   },
   methods: {
-    showEditView () {
+    showEditView() {
       this.editing = true
-    }
-  }
+    },
+  },
 }
 </script>
