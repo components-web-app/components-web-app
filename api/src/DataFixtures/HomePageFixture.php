@@ -26,6 +26,7 @@ class HomePageFixture extends AbstractPageFixture
 
         $htmlContent = new HtmlContent();
         $htmlContent->html = '<p>Bonjour mon ami</p>';
+        $htmlContent->setPublishedAt(new \DateTime());
         $manager->persist($htmlContent);
 
         $componentCollection = $this->createComponentCollection($page, 'primary');

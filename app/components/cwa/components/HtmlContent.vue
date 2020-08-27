@@ -1,8 +1,8 @@
 <template>
   <div>
-    <h4>My custom HtmlContent component. See the HTML below. That was easy!</h4>
-    <div v-if="!editing" @dblclick="showEditView" v-html="resource.html" />
+    <div v-if="!editing" @dblclick="showEditView" v-html="displayHtml" />
     <text-input v-else :iri="iri" field="html" @hide="editing = false" />
+    published: {{ published }}
   </div>
 </template>
 
@@ -12,24 +12,27 @@ import TextInput from '~/components/TextInput'
 export default {
   components: { TextInput },
   mixins: [ComponentMixin],
-  data() {
+  data () {
     return {
-      editing: false,
+      editing: false
     }
   },
   computed: {
-    contextMenuData() {
+    contextMenuData () {
       return {
         Edit: {
-          callback: this.showEditView,
-        },
+          callback: this.showEditView
+        }
       }
     },
+    displayHtml () {
+      return this.resource.html || (this.$cwa.isAdmin ? '<p style="font-style: italic">No content</p>' : '')
+    }
   },
   methods: {
-    showEditView() {
+    showEditView () {
       this.editing = true
-    },
-  },
+    }
+  }
 }
 </script>
