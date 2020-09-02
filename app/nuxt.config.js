@@ -37,12 +37,16 @@ export default {
     '@nuxtjs/stylelint-module',
   ],
   modules: [
+    '@nuxtjs/style-resources',
     '@nuxtjs/axios',
     '@nuxtjs/auth-next',
     '@nuxtjs/pwa',
     '@cwa/nuxt-module-next',
   ],
-  plugins: [{ src: '~/plugins/axios', mode: 'server' }],
+  plugins: [
+    { src: '~/plugins/axios', mode: 'server' },
+    { src: '~/plugins/quill', ssr: false },
+  ],
   router: {
     middleware: ['auth', 'routeLoader'],
   },
@@ -104,5 +108,8 @@ export default {
       __dirname,
       'node_modules/@cwa/nuxt-module-next/dist'
     ),
+  },
+  styleResources: {
+    sass: ['~/assets/sass/vars/*.sass'],
   },
 }

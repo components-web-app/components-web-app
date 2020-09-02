@@ -1,16 +1,20 @@
 <template>
   <div>
     <div v-if="!editing" @dblclick="showEditView" v-html="displayHtml" />
-    <text-input v-else :iri="iri" field="html" @hide="editing = false" />
-    published: {{ published }}
+    <quill-input
+      v-else
+      :iri="displayIri"
+      field="html"
+      @hide="editing = false"
+    />
   </div>
 </template>
 
 <script>
 import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
-import TextInput from '~/components/TextInput'
+import QuillInput from '~/components/QuillInput'
 export default {
-  components: { TextInput },
+  components: { QuillInput },
   mixins: [ComponentMixin],
   data() {
     return {
