@@ -21,6 +21,7 @@ export default {
     host: '0.0.0.0',
     https,
   },
+  css: ['~/assets/sass/main.sass'],
   serverMiddleware: ['~/server-middleware/headers'],
   publicRuntimeConfig: {
     API_URL,
@@ -34,7 +35,8 @@ export default {
   buildModules: [
     '@nuxt/typescript-build',
     // Doc: https://github.com/nuxt-community/stylelint-module
-    '@nuxtjs/stylelint-module',
+    // too many issues and not the nicest style lint handling. Many issues with the quill sass and with multiple style blocks and differing languages in a SFC
+    // '@nuxtjs/stylelint-module',
   ],
   modules: [
     '@nuxtjs/style-resources',

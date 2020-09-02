@@ -25,7 +25,7 @@ class HtmlContent extends AbstractComponent
 
     /**
      * @Assert\NotBlank(groups={"HtmlContent:published"})
-     * @ORM\Column(nullable=true)
+     * @ORM\Column(type="text", nullable=true)
      */
     public ?string $html = null;
 }
