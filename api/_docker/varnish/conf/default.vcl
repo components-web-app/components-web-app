@@ -64,7 +64,15 @@ sub vcl_recv {
   }
 
   # Remove the "Forwarded" HTTP header if exists (security)
-  unset req.http.forwarded;
+  # Removing this causes issues for development on same domain
+  # Logins fail, OPTIONS requests fails and more... need to find out why...
+  # unset req.http.forwarded;
+
+  # if (req.http.X-Forwarded-Proto == "https" ) {
+  #  set req.http.X-Forwarded-Port = "443";
+  # } else {
+  #   set req.http.X-Forwarded-Port = "80";
+  # }
 
   # Remove fields and preload headers used for vulcain
   # https://github.com/dunglas/vulcain/blob/master/docs/cache.md

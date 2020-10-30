@@ -15,8 +15,9 @@ const https =
         cert: fs.readFileSync(path.resolve(CERT_DIR + '/localhost.crt')),
       }
 
+const cwaNuxtModuleName = 'nuxt-module-next'
+
 export default {
-  mode: 'universal',
   server: {
     host: '0.0.0.0',
     https,
@@ -43,7 +44,7 @@ export default {
     '@nuxtjs/axios',
     '@nuxtjs/auth-next',
     '@nuxtjs/pwa',
-    '@cwa/nuxt-module-next',
+    `@cwa/${cwaNuxtModuleName}`,
   ],
   plugins: [
     { src: '~/plugins/axios', mode: 'server' },
@@ -58,7 +59,7 @@ export default {
       hashAlgorithm: 'sha256',
       policies: {
         'default-src': ["'self'"],
-        'img-src': ['https:', '*.google-analytics.com'],
+        'img-src': ['https:', '*.google-analytics.com', 'data:'],
         'worker-src': ["'self'", `blob:`],
         'style-src': ["'self'", "'unsafe-inline'"],
         'script-src': ["'self'", "'unsafe-inline'", '*.google-analytics.com'],
@@ -108,10 +109,13 @@ export default {
   alias: {
     '@cwa/nuxt-module': join(
       __dirname,
-      'node_modules/@cwa/nuxt-module-next/dist'
+      `node_modules/@cwa/${cwaNuxtModuleName}/dist`
     ),
   },
   styleResources: {
     sass: ['~/assets/sass/vars/*.sass'],
+  },
+  cwa: {
+    websiteName: 'CWA Demo Site',
   },
 }

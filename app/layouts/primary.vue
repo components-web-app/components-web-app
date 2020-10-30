@@ -43,7 +43,7 @@
 
 <script>
 import consola from 'consola'
-import CwaApiNotifications from '@cwa/nuxt-module/core/templates/cwa-api-notifications/cwa-api-notifications.vue'
+import CwaApiNotifications from '@cwa/nuxt-module/core/templates/components/cwa-api-notifications/cwa-api-notifications.vue'
 
 export default {
   components: { CwaApiNotifications },
