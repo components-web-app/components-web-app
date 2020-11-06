@@ -22,8 +22,6 @@ export default {
     host: '0.0.0.0',
     https,
   },
-  css: ['~/assets/sass/main.sass'],
-  serverMiddleware: ['~/server-middleware/headers'],
   publicRuntimeConfig: {
     API_URL,
     API_URL_BROWSER,
@@ -33,6 +31,13 @@ export default {
       eslint: true,
     },
   },
+  head: {
+    meta: [
+      { charset: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+    ],
+  },
+  css: ['~/assets/sass/main.sass'],
   buildModules: [
     '@nuxt/typescript-build',
     // Doc: https://github.com/nuxt-community/stylelint-module
@@ -50,6 +55,7 @@ export default {
     { src: '~/plugins/axios', mode: 'server' },
     { src: '~/plugins/quill', ssr: false },
   ],
+  serverMiddleware: ['~/server-middleware/headers'],
   router: {
     middleware: ['auth', 'routeLoader'],
   },

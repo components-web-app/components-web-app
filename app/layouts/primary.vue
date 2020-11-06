@@ -1,16 +1,9 @@
 <template>
   <div>
+    <cwa-admin-bar />
     <div class="navbar">
       <div class="container">
-        <ul v-if="routes" class="row">
-          <li v-for="route of sortedRoutes" :key="route['@id']" class="column">
-            <nuxt-link
-              :to="route.path"
-              :class="{ selected: route.path === $route.path }"
-            >
-              {{ route.name }}
-            </nuxt-link>
-          </li>
+        <ul class="row">
           <li class="column">
             <button v-if="$auth.loggedIn" @click="$auth.logout('local')">
               Logout
@@ -18,19 +11,16 @@
             <nuxt-link v-else to="/login" tag="button"> Login </nuxt-link>
           </li>
         </ul>
-        <ul v-else>
-          <li>
-            <span>Loading routes</span>
-          </li>
-        </ul>
       </div>
     </div>
+
     <div v-if="$cwa.resourcesOutdated" class="container refresh-bar">
       <span>The content on this page is outdated.</span>
       <button class="is-warning" @click="$cwa.mergeNewResources()">
         Update page
       </button>
     </div>
+
     <div class="container loading-message">
       <p v-if="$cwa.$state.error" class="error">
         {{ $cwa.$state.error }}
@@ -42,32 +32,11 @@
 </template>
 
 <script>
-import consola from 'consola'
 import CwaApiNotifications from '@cwa/nuxt-module/core/templates/components/cwa-api-notifications/cwa-api-notifications.vue'
+import CwaAdminBar from '@cwa/nuxt-module/core/templates/components/cwa-admin-bar.vue'
 
 export default {
-  components: { CwaApiNotifications },
-  data() {
-    return {
-      routes: [],
-    }
-  },
-  computed: {
-    sortedRoutes() {
-      return [...this.routes].sort(this.dynamicSort('path'))
-    },
-  },
-  async mounted() {
-    if (this.$cwa.$storage.getState('routes')) {
-      return
-    }
-    try {
-      const { data } = await this.$axios.get('/_/routes')
-      this.routes = data['hydra:member']
-    } catch (err) {
-      consola.error(err)
-    }
-  },
+  components: { CwaAdminBar, CwaApiNotifications },
   methods: {
     dynamicSort(property) {
       let sortOrder = 1
@@ -101,7 +70,6 @@ export default {
     margin: 0 0 0 1rem
 .navbar
   margin-bottom: 1.25rem
-  background-color: $color-secondary
   padding: 0 .75rem
   ul.row
     list-style-type: none
@@ -130,14 +98,14 @@ export default {
       a
         &:hover,
         &.selected
-          background-color: $color-primary
+          background-color: $cwa-color-primary
       button
         display: block
         margin: 0 0 0 1rem
         &:hover
-          border: 1px solid $color-primary
-          background: $color-initial
-          color: $color-primary
+          border: 1px solid $cwa-color-primary
+          background: $cwa-color-initial
+          color: $cwa-color-primary
 .cwa-notifications
   position: absolute
   bottom: 1rem
