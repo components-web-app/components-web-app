@@ -202,5 +202,6 @@ sub vcl_backend_response {
 sub cors {
   if (req.http.Origin ~ "${CORS_ALLOW_ORIGIN}") {
       set resp.http.Access-Control-Allow-Origin = req.http.Origin;
+      set resp.http.Access-Control-Allow-Credentials = true;
   }
 }
