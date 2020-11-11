@@ -100,10 +100,10 @@ jobs:
           docker-compose exec -T php security-checker security:check
       - name: Check PHP is ready to handle connections
         run: |
-          if grep -q "NOTICE: ready to handle connections" <<< "$(docker-compose logs php)"; then
-            exit 0;;
+          if echo "$(docker-compose logs php)" | grep -q "NOTICE: ready to handle connections"; then
+            exit 0
           else
-            sleep 1;;
+            sleep 1
           fi
       - name: Check HTTP reachability
         run: | # we have to connect to the "docker" hostname because of Docker-in-Docker
