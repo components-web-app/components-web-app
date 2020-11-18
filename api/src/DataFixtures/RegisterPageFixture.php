@@ -11,7 +11,7 @@ class RegisterPageFixture extends AbstractPageFixture
 {
     public function load(ObjectManager $manager): void
     {
-        $layout = $this->createLayout('primary', 'PrimaryLayout');
+        $layout = $this->createLayout('Main Layout', 'primary');
         $manager->persist($layout);
         $this->addRegisterPage($manager, $layout);
 
