@@ -8,7 +8,7 @@ export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
 export KUBERNETES_VERSION=1.18.2
-export HELM_VERSION=3.3.0
+export HELM_VERSION=3.4.1
 
 # Choose the branch for production deploy.
 if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
@@ -202,7 +202,7 @@ check_kube_domain() {
 
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
-  helm repo add default https://kubernetes-charts.storage.googleapis.com
+  helm repo add stable https://charts.helm.sh/stable
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
 }

@@ -1,11 +1,11 @@
 {{- if .Values.vulcain.enabled -}}
-{{- $fullName := include "api.fullname" . -}}
 {{- $name := "vulcain" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
+{{- $fullName := include "api.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "api.fullname" . }}-{{ $name }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
     {{- include "api.labels" $data | nindent 4 }}
   annotations:
@@ -20,6 +20,8 @@ spec:
       labels:
         {{- include "api.selectorLabels" $data | nindent 8 }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         {{- include "api.annotations" $data | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}

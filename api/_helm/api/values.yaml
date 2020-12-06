@@ -58,7 +58,7 @@ varnish:
         port: 80
 
 vulcain:
-    enabled: false
+    enabled: true
     image:
         repository: dunglas/vulcain
         tag: latest
