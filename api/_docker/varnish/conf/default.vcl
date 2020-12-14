@@ -14,7 +14,7 @@ backend default {
   .probe = {
     .request =
           "HEAD / HTTP/1.1"
-          "Host: varnish"
+          "Host: cache-proxy"
           "Connection: close"
           "User-Agent: Varnish Health Probe";
     .timeout = 5s;
