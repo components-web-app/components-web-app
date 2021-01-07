@@ -1,0 +1,12 @@
+app/.nuxt
+app/_docker
+app/node_modules
+app/*.log
+app/README.md
+app/Dockerfile
+.github/
+.nuxt/
+api/
+bin/
+docker/
+./*
