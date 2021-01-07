@@ -2,10 +2,10 @@
   "version": 2,
   "builds": [
     {
-      "src": "nuxt.config.js",
+      "src": "app/nuxt.config.js",
       "use": "@nuxtjs/now-builder",
       "config": {
-        "serverFiles": ["app/server-middleware/**"]
+        "serverFiles": ["server-middleware/**"]
       }
     }
   ],

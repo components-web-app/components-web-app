@@ -9,4 +9,3 @@ app/Dockerfile
 api/
 bin/
 docker/
-./*
