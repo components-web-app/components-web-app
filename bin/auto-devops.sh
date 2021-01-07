@@ -263,9 +263,6 @@ deploy_api() {
 	track="${1-stable}"
 	percentage="${2:-100}"
 	name="$RELEASE"
-	if [[ "$track" != "stable" ]]; then
-		name="$name-$track"
-	fi
 	if [[ "$track" == "canary" ]]; then
 		export BLACKFIRE_SERVER_ENABLED=false
 	fi
