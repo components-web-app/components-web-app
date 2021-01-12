@@ -26,6 +26,7 @@ fi
 export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
+export CADDY_BUILDER_REPOSITORY="${DOCKER_REPOSITORY}/caddy-builder"
 export CADDY_REPOSITORY="${DOCKER_REPOSITORY}/caddy"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
@@ -147,9 +148,17 @@ build() {
   	--target cwa_php \
   	"api"
 
+  docker pull $CADDY_BUILDER_REPOSITORY:$TAG || true
+  docker build \
+  	--cache-from $CADDY_BUILDER_REPOSITORY:$TAG \
+  	--tag $CADDY_REPOSITORY:$TAG \
+  	--target cwa_caddy_builder \
+  	"api"
+
   docker pull $CADDY_REPOSITORY:$TAG || true
   docker build \
   	--cache-from $PHP_REPOSITORY:$TAG \
+  	--cache-from $CADDY_BUILDER_REPOSITORY:$TAG \
   	--cache-from $CADDY_REPOSITORY:$TAG \
   	--tag $CADDY_REPOSITORY:$TAG \
   	--target cwa_caddy \
