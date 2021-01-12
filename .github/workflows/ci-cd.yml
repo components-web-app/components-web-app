@@ -68,8 +68,8 @@ jobs:
         run: |
           docker buildx bake \
             --pull \
-            --set api.args.BUILDKIT_INLINE_CACHE=1 \
-            --set api.output=type=docker \
+            --set caddy.args.BUILDKIT_INLINE_CACHE=1 \
+            --set caddy.output=type=docker \
             --set php.args.BUILDKIT_INLINE_CACHE=1 \
             --set php.output=type=docker \
             --set cache-proxy.args.BUILDKIT_INLINE_CACHE=1 \
@@ -115,7 +115,7 @@ jobs:
         if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
         run: |
           docker-compose push \
-            api \
+            caddy \
             php \
             cache-proxy \
 

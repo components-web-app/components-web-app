@@ -4,8 +4,9 @@
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG PHP_VERSION=7.4
-ARG OPENRESTY_VERSION=1.15.8.3
+ARG APCU_VERSION=5.1.19
 ARG VARNISH_VERSION=6.4
+ARG CADDY_VERSION=2
 
 # "php" stage
 FROM registry.gitlab.com/silverback-web-apps/cwa/docker/php:${PHP_VERSION}-fpm-alpine AS cwa_php
@@ -47,27 +48,41 @@ RUN set -eux; \
 
 VOLUME /srv/api/var
 
+## healthchech override for socket
+COPY _docker/php/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
+RUN chmod +x /usr/local/bin/docker-healthcheck
+
+HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD ["docker-healthcheck"]
+COPY _docker/php/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+## end healthchech override for socket
+
 COPY _docker/php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 RUN chmod +x /usr/local/bin/docker-entrypoint
+
+ENV SYMFONY_PHPUNIT_VERSION=9
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
 
-# "nginx" stage
+# "caddy" stage
 # depends on the "php" stage above
-# The OpenResty distribution of NGINX is only needed for Kubernetes compatiblity (dynamic upstream resolution)
-FROM openresty/openresty:${OPENRESTY_VERSION}-alpine AS cwa_nginx
+FROM caddy:${CADDY_VERSION}-builder-alpine AS cwa_caddy_builder
 
-RUN echo -e "env UPSTREAM;\n$(cat /usr/local/openresty/nginx/conf/nginx.conf)" > /usr/local/openresty/nginx/conf/nginx.conf
-COPY _docker/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+RUN xcaddy build \
+    --with github.com/dunglas/mercure/caddy \
+    --with github.com/dunglas/vulcain/caddy
 
-WORKDIR /srv/api/public
+FROM caddy:${CADDY_VERSION} AS cwa_caddy
 
-COPY --from=cwa_php /srv/api/public ./
+WORKDIR /srv/api
 
+COPY --from=dunglas/mercure:v0.11 /srv/public /srv/mercure-assets/
+COPY --from=cwa_caddy_builder /usr/bin/caddy /usr/bin/caddy
+COPY --from=cwa_php /srv/api/public public/
+COPY _docker/caddy/Caddyfile /etc/caddy/Caddyfile
 
 # "varnish" stage
-# does not depend on any of the above stages, but placed here to keep everything in one Dockerfile
+# does not depend on any of the above stages
 FROM varnish:${VARNISH_VERSION} AS cwa_varnish
 
 RUN \

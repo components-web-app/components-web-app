@@ -13,14 +13,14 @@ backend default {
   # Health check
   .probe = {
     .request =
-          "HEAD / HTTP/1.1"
+          "HEAD /health HTTP/1.1"
           "Host: cache-proxy"
           "Connection: close"
           "User-Agent: Varnish Health Probe";
     .timeout = 5s;
     .interval = 5s;
-    .window = 5;
-    .threshold = 3;
+    .window = 4;
+    .threshold = 2;
   }
 }
 
@@ -68,12 +68,6 @@ sub vcl_recv {
   # Logins fail, OPTIONS requests fails and more... need to find out why...
   # unset req.http.forwarded;
 
-  # if (req.http.X-Forwarded-Proto == "https" ) {
-  #  set req.http.X-Forwarded-Port = "443";
-  # } else {
-  #   set req.http.X-Forwarded-Port = "80";
-  # }
-
   # Remove fields and preload headers used for vulcain
   # https://github.com/dunglas/vulcain/blob/master/docs/cache.md
   unset req.http.fields;
@@ -114,7 +108,7 @@ sub vcl_recv {
   }
 
   # For health checks
-  if (req.method == "GET" && req.url == "/healthz") {
+  if (req.method == "GET" && req.url == "/health") {
     return (synth(200, "OK"));
   }
 }

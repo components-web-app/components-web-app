@@ -1,0 +1,55 @@
+{
+    # Debug
+    {$DEBUG}
+    # HTTP/3 support
+    servers {
+        protocol {
+            experimental_http3
+        }
+    }
+}
+
+{$SERVER_NAME}
+
+log
+
+@require_varnish expression ( \
+  !{request.Host}.matches('\\bcache-proxy\\b') \
+)
+
+route {
+    root * /srv/api/public
+    mercure {
+        # Transport to use (default to Bolt)
+        transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
+        # Publisher JWT key
+        publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
+        # Subscriber JWT key
+        subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+        # Allow anonymous subscribers (double-check that it's what you want)
+        anonymous
+        # Enable the subscription API (double-check that it's what you want)
+        subscriptions
+        # Extra directives
+        {$MERCURE_EXTRA_DIRECTIVES}
+    }
+    vulcain
+    push
+
+    respond /health "OK" 200
+
+    reverse_proxy @require_varnish {
+        to cache-proxy
+        health_path /health
+        health_interval 5s
+        health_timeout 1s
+        health_status 200
+        fail_duration 5s
+        max_fails 2
+        unhealthy_request_count 5
+    }
+
+    php_fastcgi unix//var/run/php/php-fpm.sock
+    encode zstd gzip
+    file_server
+}
