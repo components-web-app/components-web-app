@@ -108,13 +108,13 @@ jobs:
           else
             sleep 1
           fi
-# Removed for now - ssl error - curl: (35) error:14094438:SSL routines:ssl3_read_bytes:tlsv1 alert internal error. Probably caused by internal self-signed cert / ca and ca not being in this docker container too
       # -f = fail silently
       # -k = insecure
       # -v = verbose
       # -I = head, fetch headers only
       - name: Check HTTP reachability
         run: |
+          docker cp $(docker-compose ps -q caddy):/usr/local/share/ca-certificates /etc/ssl/certs
           curl -Ivfk -H 'Host: localhost' https://docker:8443 # API
       - name: Login to registry
         if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
