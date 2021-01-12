@@ -115,6 +115,7 @@ jobs:
       - name: Check HTTP reachability
         run: |
           docker cp $(docker-compose ps -q caddy):/usr/local/share/ca-certificates /usr/local/share/ca-certificates
+          rm -f /etc/ssl/certs/ca-certificates.crt
           curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates https://docker:8443
           curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates https://docker
       - name: Login to registry
