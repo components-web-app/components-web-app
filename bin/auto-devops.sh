@@ -110,16 +110,11 @@ install_dependencies() {
     MERCURE_JWT_SECRET="$(rand_str)"
     export MERCURE_JWT_SECRET
   fi
-  if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
-    npm install --global "@clarketm/jwt-cli"
-    MERCURE_SUBSCRIBER_JWT_KEY=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"subscribe": ["*"]}}' "$MERCURE_JWT_SECRET")
-    export MERCURE_SUBSCRIBER_JWT_KEY
-  fi
-  if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
-    npm install --global "@clarketm/jwt-cli"
-    MERCURE_PUBLISHER_JWT_KEY=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
-    export MERCURE_PUBLISHER_JWT_KEY
-  fi
+  if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
+		npm install --global "@clarketm/jwt-cli"
+		MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
+		export MERCURE_JWT_TOKEN
+	fi
 }
 
 # For Kubernetes environment gitlab runner use the localhost for DIND - see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
