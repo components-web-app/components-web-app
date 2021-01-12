@@ -33,16 +33,8 @@ spec:
         {{- range .paths }}
           - path: {{ . }}
             backend:
-              {{- if $.Values.vulcain.enabled }}
-              serviceName: {{ $fullName }}-vulcain
-              servicePort: {{ $.Values.vulcain.service.port }}
-              {{- else if $.Values.varnish.enabled }}
-              serviceName: {{ $fullName }}-varnish
-              servicePort: {{ $.Values.varnish.service.port }}
-              {{- else }}
-              serviceName: {{ $fullName }}-nginx
-              servicePort: {{ $.Values.nginx.service.port }}
-              {{- end }}
+              serviceName: {{ $fullName }}-caddy
+              servicePort: {{ $.Values.caddy.service.port }}
         {{- end }}
   {{- end }}
 {{- end }}

@@ -1,34 +1,34 @@
 {{- if .Values.varnish.enabled -}}
 {{- $name := "varnish" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
-{{- $fullName := include "api.fullname" . -}}
+{{- $fullName := include "cwa.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $fullName }}-{{ $name }}
   labels:
-    {{- include "api.labels" $data | nindent 4 }}
+    {{- include "cwa.labels" $data | nindent 4 }}
   annotations:
-    {{- include "api.annotations" $data | nindent 4 }}
+    {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
   replicas: {{ .Values.varnish.replicaCount }}
   selector:
     matchLabels:
-      {{- include "api.selectorLabels" $data | nindent 6 }}
+      {{- include "cwa.selectorLabels" $data | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "api.selectorLabels" $data | nindent 8 }}
+        {{- include "cwa.selectorLabels" $data | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- include "api.annotations" $data | nindent 8 }}
+        {{- include "cwa.annotations" $data | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "api.serviceAccountName" . }}
+      serviceAccountName: {{ include "cwa.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -37,22 +37,22 @@ spec:
           imagePullPolicy: {{ .Values.varnish.image.pullPolicy }}
           env:
           - name: UPSTREAM
-            value: "{{ $fullName }}-nginx"
+            value: "{{ $fullName }}"
           - name: UPSTREAM_PORT
-            value: "{{ .Values.nginx.service.port }}"
+            value: "{{ .Values.service.port }}"
           - name: PHP_SERVICE
-            value: "{{ $fullName }}-php"
+            value: "{{ $fullName }}"
           ports:
             - name: http
               containerPort: 80
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: 80
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /health
               port: 80
           resources:
 {{ toYaml .Values.resources | indent 12 }}

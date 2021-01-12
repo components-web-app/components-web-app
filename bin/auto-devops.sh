@@ -26,10 +26,10 @@ fi
 export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
-export NGINX_REPOSITORY="${DOCKER_REPOSITORY}/nginx"
+export CADDY_REPOSITORY="${DOCKER_REPOSITORY}/caddy"
 export VARNISH_REPOSITORY="${DOCKER_REPOSITORY}/varnish"
 
-export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/api./mercure.}"
+export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/caddy.}"
 
 if [[ -z "$CORS_ALLOW_ORIGIN" ]]; then
   echo "!!!! WARNING CORS_ALLOW_ORIGIN ENVIRONMENT IS NOT SET !!!!";
@@ -110,10 +110,15 @@ install_dependencies() {
     MERCURE_JWT_SECRET="$(rand_str)"
     export MERCURE_JWT_SECRET
   fi
-  if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
+  if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
     npm install --global "@clarketm/jwt-cli"
-    MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
-    export MERCURE_JWT_TOKEN
+    MERCURE_SUBSCRIBER_JWT_KEY=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"subscribe": ["*"]}}' "$MERCURE_JWT_SECRET")
+    export MERCURE_SUBSCRIBER_JWT_KEY
+  fi
+  if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
+    npm install --global "@clarketm/jwt-cli"
+    MERCURE_PUBLISHER_JWT_KEY=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
+    export MERCURE_PUBLISHER_JWT_KEY
   fi
 }
 
@@ -142,12 +147,12 @@ build() {
   	--target cwa_php \
   	"api"
 
-  docker pull $NGINX_REPOSITORY:$TAG || true
+  docker pull $CADDY_REPOSITORY:$TAG || true
   docker build \
   	--cache-from $PHP_REPOSITORY:$TAG \
-  	--cache-from $NGINX_REPOSITORY:$TAG \
-  	--tag $NGINX_REPOSITORY:$TAG \
-  	--target cwa_nginx \
+  	--cache-from $CADDY_REPOSITORY:$TAG \
+  	--tag $CADDY_REPOSITORY:$TAG \
+  	--target cwa_caddy \
   	"api"
 
   docker pull $VARNISH_REPOSITORY:$TAG || true
@@ -159,7 +164,7 @@ build() {
   	"api"
 
   docker push $PHP_REPOSITORY:$TAG
-  docker push $NGINX_REPOSITORY:$TAG
+  docker push $CADDY_REPOSITORY:$TAG
   docker push $VARNISH_REPOSITORY:$TAG
 }
 
@@ -284,10 +289,6 @@ php:
     tag: ${TAG}
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
-  mercure:
-    jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
-    subscribeUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
-  databaseUrl: ${DATABASE_URL:-"~"}
   apiSecretToken: ${VARNISH_TOKEN:-"~"}
   mailer:
     dsn: ${MAILER_DSN:-"~"}
@@ -297,9 +298,18 @@ php:
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
-nginx:
+postgresql:
+  url: ${DATABASE_URL:-"~"}
+mercure:
+  subscribeUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
+  publishUrl: ${MERCURE_PUBLISH_URL:-"~"}
+  jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
+  jwtKey:
+    subscriber: ${MERCURE_SUBSCRIBER_JWT_KEY:-"~"}
+    publisher: ${MERCURE_PUBLISHER_JWT_KEY:-"~"}
+caddy:
   image:
-    repository: ${NGINX_REPOSITORY}
+    repository: ${CADDY_REPOSITORY}
     tag: ${TAG}
 varnish:
   image:
@@ -317,27 +327,6 @@ ingress:
     - secretName: ${LETSENCRYPT_SECRET_NAME}-api
       hosts:
         - ${DOMAIN:-"~"}
-#vulcain:
-#  enabled: ${VULCAIN_ENABLED:-"false"}
-#  externalName:
-#    enabled: ${VULCAIN_ENABLE_EXTERNAL_NAME:-"false"}
-#    name: ${DOMAIN:-"~"}
-mercure:
-  jwtKey: ${MERCURE_JWT_SECRET:-"~"}
-  corsAllowedOrigins: ["${MERCURE_CORS_ALLOW_ORIGIN:-"*"}"]
-  ingress:
-    enabled: ${MERCURE_INGRESS_ENABLED:-false}
-    annotations:
-      "kubernetes.io/ingress.class": nginx
-      "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER}
-    hosts:
-      - host: "${MERCURE_SUBSCRIBE_DOMAIN}"
-        paths:
-          - /
-    tls:
-      - secretName: ${LETSENCRYPT_SECRET_NAME}-mercure
-        hosts:
-          - "${MERCURE_SUBSCRIBE_DOMAIN}"
 blackfire:
   enabled: ${BLACKFIRE_SERVER_ENABLED:-false}
   server:
