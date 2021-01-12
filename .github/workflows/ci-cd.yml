@@ -115,8 +115,8 @@ jobs:
       - name: Check HTTP reachability
         run: |
           docker cp $(docker-compose ps -q caddy):/usr/local/share/ca-certificates /usr/local/share/ca-certificates
-          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tlsv1.2 https://docker:8443
-          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tlsv1.2 https://docker
+          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tls-max 1.2 https://docker:8443
+          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tls-max 1.2 https://docker
       - name: Login to registry
         if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
         run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login --username '${{ secrets.DOCKER_USERNAME }}' --password-stdin "$DOCKER_REGISTRY"
