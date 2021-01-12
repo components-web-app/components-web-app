@@ -1,6 +1,0 @@
-dependencies:
-- name: mercure
-  repository: https://charts.helm.sh/stable
-  version: 4.0.3
-digest: sha256:79fb0a9773f338713aacbe3fe55d491de3b665562fb403671d50f404dad5121f
-generated: "2020-11-27T13:59:59.818529Z"
