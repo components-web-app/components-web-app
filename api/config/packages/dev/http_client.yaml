@@ -1,4 +1,0 @@
-framework:
-    http_client:
-        default_options:
-            cafile: /certs/rootCA.pem

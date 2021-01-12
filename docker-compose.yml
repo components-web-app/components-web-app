@@ -38,6 +38,7 @@ services:
       # if you develop on Linux, you may use a bind-mounted host directory instead
       # - ./api/var:/srv/api/var:rw
       - php_socket:/var/run/php
+      - caddy_ca:/usr/local/share/ca-certificates
   
   # essentially acting as a merged mercure/vulcain layer here with https
   caddy:
@@ -63,6 +64,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - caddy_certs:/data/caddy/certificates/local/localhost
+      - caddy_ca:/usr/local/share/ca-certificates
     ports:
       # HTTP
       - target: 80
@@ -107,6 +109,7 @@ services:
     volumes:
       - ./pwa:/usr/src/pwa:rw,cached
       - caddy_certs:/certs:ro
+      - caddy_ca:/ca-certs
     environment:
       NODE_ENV: ~
       LOCAL_TLS: ~
@@ -144,4 +147,5 @@ volumes:
   caddy_data:
   caddy_config:
   caddy_certs:
+  caddy_ca:
   db_data:

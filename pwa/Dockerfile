@@ -11,7 +11,7 @@ RUN apk add --no-cache \
   make \
   g++
 
-WORKDIR /usr/src/app
+WORKDIR /usr/src/pwa
 
 COPY package.json yarn.* ./
 RUN yarn install --network-timeout 60000
