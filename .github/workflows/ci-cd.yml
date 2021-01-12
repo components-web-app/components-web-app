@@ -112,9 +112,11 @@ jobs:
       # -k = insecure
       # -v = verbose
       # -I = head, fetch headers only
-      - name: Check HTTP reachability
+      - name: Copy container CA certificate
         run: |
           docker cp $(docker-compose ps -q caddy):/usr/local/share/ca-certificates /usr/local/share/ca-certificates
+      - name: Check HTTP reachability
+        run: |
           curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tls-max 1.2 https://docker:8443
           curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tls-max 1.2 https://docker
       - name: Login to registry
