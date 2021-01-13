@@ -311,11 +311,11 @@ mercure:
   jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
   jwtKey:
     subscriber:
-    	key: ${MERCURE_SUBSCRIBER_JWT_KEY:-"!ChangeMe!"}
-    	algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"~"}
+      key: ${MERCURE_SUBSCRIBER_JWT_KEY:-"!ChangeMe!"}
+      algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"~"}
     publisher:
-    	key: ${MERCURE_PUBLISHER_JWT_KEY:-"!ChangeMe!"}
-    	algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"~"}
+      key: ${MERCURE_PUBLISHER_JWT_KEY:-"!ChangeMe!"}
+      algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"~"}
 caddy:
   image:
     repository: ${CADDY_REPOSITORY}
