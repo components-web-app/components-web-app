@@ -7,7 +7,7 @@ metadata:
   # must use a static name as this is hard-coded into the Dockerfile for the PHP probe. Must be 'blackfire'
   name: {{ $name }}
   labels:
-    {{- include "api.labels" $data | nindent 4 }}
+    {{- include "cwa.labels" $data | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -16,5 +16,5 @@ spec:
       protocol: TCP
       name: agent
   selector:
-    {{- include "api.selectorLabels" $data | nindent 4 }}
+    {{- include "cwa.selectorLabels" $data | nindent 4 }}
 {{- end -}}

@@ -1,34 +1,34 @@
 {{- if .Values.blackfire.enabled -}}
 {{- $name := "blackfire" -}}
-{{- $fullName := include "api.fullname" . -}}
+{{- $fullName := include "cwa.fullname" . -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "api.fullname" . }}-{{ $name }}
+  name: {{ include "cwa.fullname" . }}-{{ $name }}
   labels:
-    {{- include "api.labels" $data | nindent 4 }}
+    {{- include "cwa.labels" $data | nindent 4 }}
   annotations:
-    {{- include "api.annotations" $data | nindent 4 }}
+    {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
   replicas: {{ .Values.varnish.replicaCount }}
   selector:
     matchLabels:
-      {{- include "api.selectorLabels" $data | nindent 6 }}
+      {{- include "cwa.selectorLabels" $data | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "api.selectorLabels" $data | nindent 8 }}
+        {{- include "cwa.selectorLabels" $data | nindent 8 }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- include "api.annotations" $data | nindent 8 }}
+        {{- include "cwa.annotations" $data | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "api.serviceAccountName" . }}
+      serviceAccountName: {{ include "cwa.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
