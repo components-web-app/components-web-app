@@ -7,7 +7,6 @@ x-cache-from:
     cache_from:
       - ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
       - ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
-      - ${CADDY_BUILDER_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/caddy-builder}
       - ${CADDY_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/caddy}
   - &pwa-cache-from
     cache_from:

@@ -292,6 +292,7 @@ php:
   image:
     repository: ${PHP_REPOSITORY}
     tag: ${TAG}
+    pullPolicy: Always
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   apiSecretToken: ${VARNISH_TOKEN:-"~"}
@@ -318,10 +319,12 @@ caddy:
   image:
     repository: ${CADDY_REPOSITORY}
     tag: ${TAG}
+    pullPolicy: Always
 varnish:
   image:
     repository: ${VARNISH_REPOSITORY}
     tag: ${TAG}
+    pullPolicy: Always
 ingress:
   enabled: ${INGRESS_ENABLED:-"false"}
   annotations:

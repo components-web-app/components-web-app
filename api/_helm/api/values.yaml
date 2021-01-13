@@ -5,7 +5,7 @@
 php:
   image:
     repository: registry.gitlab.com/silverback-web-apps/cwa/php
-    tag: latest
+    tag: ~
     pullPolicy: IfNotPresent
   replicaCount: 1
   env: prod
@@ -31,7 +31,7 @@ php:
 caddy:
   image:
     repository: registry.gitlab.com/silverback-web-apps/cwa/caddy
-    tag: latest
+    tag: ~
     pullPolicy: IfNotPresent
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
   replicaCount: 1

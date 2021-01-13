@@ -14,8 +14,7 @@
 log
 
 @require_varnish expression ( \
-  !{request.Host}.matches('\\bcache-proxy\\b') \
-  && !{header.forwarded}.matches('(?i)(?:^(.*-)varnish$))')
+  !{request.Host}.matches('\\b(cache-proxy|{env.VARNISH_SERVICE})\\b')
 )
 
 route {
