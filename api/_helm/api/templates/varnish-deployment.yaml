@@ -49,11 +49,17 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 80
+              port: http
+              httpHeaders:
+                - name: X-Forwarded-Host
+                  value: 'kubernetes-varnish'
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 80
+              port: http
+              httpHeaders:
+                - name: X-Forwarded-Host
+                  value: 'kubernetes-varnish'
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
