@@ -48,6 +48,16 @@ spec:
                 secretKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: mercure-subscriber-jwt-key
+            - name: MERCURE_PUBLISHER_JWT_ALG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cwa.fullname" . }}
+                  key: mercure-publisher-jwt-algorithm
+            - name: MERCURE_SUBSCRIBER_JWT_ALG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cwa.fullname" . }}
+                  key: mercure-subscriber-jwt-algorithm
           ports:
             - name: http
               containerPort: 80

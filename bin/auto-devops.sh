@@ -115,6 +115,26 @@ install_dependencies() {
 		MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
 		export MERCURE_JWT_TOKEN
 	fi
+	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
+		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
+    ssh-keygen -t rsa -b 4096 -m PEM -f $JWT_SECRET_KEY_FILE.key
+    openssl rsa -in $JWT_SECRET_KEY_FILE.key -pubout -outform PEM -out $JWT_SECRET_KEY_FILE.key.pub
+    MERCURE_SUBSCRIBER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.key.pub)
+    export MERCURE_SUBSCRIBER_JWT_KEY
+    rm -f ${JWT_SECRET_KEY_FILE}.*
+    MERCURE_SUBSCRIBER_JWT_ALG=RS256
+    export MERCURE_SUBSCRIBER_JWT_ALG
+	fi
+	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
+		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
+    ssh-keygen -t rsa -b 4096 -m PEM -f $JWT_SECRET_KEY_FILE.key
+    openssl rsa -in $JWT_SECRET_KEY_FILE.key -pubout -outform PEM -out $JWT_SECRET_KEY_FILE.key.pub
+    MERCURE_PUBLISHER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.key.pub)
+    export MERCURE_PUBLISHER_JWT_KEY
+    rm -f ${JWT_SECRET_KEY_FILE}.*
+    MERCURE_PUBLISHER_JWT_ALG=RS256
+    export MERCURE_PUBLISHER_JWT_ALG
+  fi
 }
 
 # For Kubernetes environment gitlab runner use the localhost for DIND - see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
@@ -300,8 +320,12 @@ mercure:
   publishUrl: ${MERCURE_PUBLISH_URL:-"~"}
   jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
   jwtKey:
-    subscriber: ${MERCURE_SUBSCRIBER_JWT_KEY:-"~"}
-    publisher: ${MERCURE_PUBLISHER_JWT_KEY:-"~"}
+    subscriber:
+    	key: ${MERCURE_SUBSCRIBER_JWT_KEY:-"!ChangeMe!"}
+    	algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"~"}
+    publisher:
+    	key: ${MERCURE_PUBLISHER_JWT_KEY:-"!ChangeMe!"}
+    	algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"~"}
 caddy:
   image:
     repository: ${CADDY_REPOSITORY}

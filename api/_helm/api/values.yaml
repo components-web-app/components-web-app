@@ -44,8 +44,12 @@ service:
 mercure:
   jwtToken: ~
   jwtKey:
-    subscriber: ~
-    publisher: ~
+    subscriber:
+      key: !ChangeMe!
+      algorithm: ~
+    publisher:
+      key: !ChangeMe!
+      algorithm: ~
   publishUrl: ~
   subscribeUrl: https://example.com/.well-known/mercure
 

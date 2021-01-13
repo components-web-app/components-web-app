@@ -12,6 +12,8 @@ data:
   php-trusted-proxies: {{ join "," .Values.php.trustedProxies }}
   mercure-publish-url: {{ .Values.mercure.publishUrl | default "http://127.0.0.1/.well-known/mercure" | quote }}
   mercure-subscribe-url: {{ .Values.mercure.subscribeUrl | quote }}
+  mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
+  mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   varnish-url: http://{{ include "cwa.fullname" . }}-varnish
   blackfire-client-id: {{ .Values.php.blackfire.id | quote }}
   blackfire-server-id: {{ .Values.blackfire.server.id | quote }}
