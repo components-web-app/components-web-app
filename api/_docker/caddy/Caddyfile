@@ -15,6 +15,7 @@ log
 
 @require_varnish expression ( \
   !{request.Host}.matches('\\bcache-proxy\\b') \
+  && !{header.forwarded}.matches('(?i)(?:^(.*-)varnish$))')
 )
 
 route {
@@ -39,7 +40,7 @@ route {
     respond /health "OK" 200
 
     reverse_proxy @require_varnish {
-        to cache-proxy
+        to {$VARNISH_SERVICE}
         health_path /health
         health_interval 5s
         health_timeout 1s
