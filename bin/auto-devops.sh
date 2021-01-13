@@ -350,8 +350,8 @@ EOF
     "$name" ./api/_helm/api \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
-    --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY:-\"CHANGE_ME\"}" \
-    --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY:-\"CHANGE_ME\"}" \
+    --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY}" \
+    --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY}" \
   	-f values.tmp.yaml
 }
 
