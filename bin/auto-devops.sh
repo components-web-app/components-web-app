@@ -311,10 +311,8 @@ mercure:
   jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
   jwtKey:
     subscriber:
-      key: ${MERCURE_SUBSCRIBER_JWT_KEY:-"CHANGE_ME"}
       algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"~"}
     publisher:
-      key: ${MERCURE_PUBLISHER_JWT_KEY:-"CHANGE_ME"}
       algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"~"}
 caddy:
   image:
@@ -352,6 +350,8 @@ EOF
     "$name" ./api/_helm/api \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
+    --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY:-\"CHANGE_ME\"}" \
+    --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY:-\"CHANGE_ME\"}" \
   	-f values.tmp.yaml
 }
 
