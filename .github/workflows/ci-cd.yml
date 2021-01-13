@@ -9,6 +9,7 @@ env:
   DOCKER_COMPOSE_VERSION: '1.25.4'
   DOCKER_REGISTRY: registry.gitlab.com
   SYMFONY_ENDPOINT: https://flex.symfony.com/r/github.com/symfony/recipes-contrib/934
+  SERVER_NAME: 'docker, caddy:80'
 
 jobs:
   docker-build-test-deploy:
@@ -82,11 +83,7 @@ jobs:
           fi
           docker-compose run --no-deps --entrypoint '' --rm -T php composer validate --no-check-publish
       - name: Start services
-        run: |
-          cat >.env <<EOF
-            SERVER_NAME="docker, caddy:80"
-          EOF
-          docker-compose up -d
+        run: docker-compose up -d
       - name: Wait for services
         run: |
           while status="$(docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" "$(docker-compose ps -q php)")"; do
