@@ -10,7 +10,6 @@
             experimental_http3
         }
     }
-    auto_https disable_redirects
 }
 
 # define single site using environment variable
@@ -55,14 +54,12 @@ route {
 
     # do the cache pass
     reverse_proxy @do_varnish_pass {
-        to {$VARNISH_URL:"cache-proxy"}
+        to {$VARNISH_UPSTREAM:"cache-proxy"}
         health_path /healthz
         health_interval 5s
         health_timeout 20s
-        health_status 200
         fail_duration 5s
-        max_fails 2
-        unhealthy_request_count 5
+        header_up X-Caddy-Forwarded 1
     }
 
     php_fastcgi unix//var/run/php/php-fpm.sock
