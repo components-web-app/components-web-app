@@ -15,7 +15,7 @@ data:
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   varnish-url: http://{{ include "cwa.fullname" . }}-varnish
-  varnish-upstream: {{ join include "cwa.fullname" . "-varnish:" .Values.varnish.service.port }}
+  varnish-upstream: {{ include "cwa.fullname" . }}{{ join "-varnish:" .Values.varnish.service.port }}
   blackfire-client-id: {{ .Values.php.blackfire.id | quote }}
   blackfire-server-id: {{ .Values.blackfire.server.id | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
