@@ -311,10 +311,10 @@ mercure:
   jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
   jwtKey:
     subscriber:
-      key: ${MERCURE_SUBSCRIBER_JWT_KEY:-"!ChangeMe!"}
+      key: ${MERCURE_SUBSCRIBER_JWT_KEY:-"CHANGE_ME"}
       algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"~"}
     publisher:
-      key: ${MERCURE_PUBLISHER_JWT_KEY:-"!ChangeMe!"}
+      key: ${MERCURE_PUBLISHER_JWT_KEY:-"CHANGE_ME"}
       algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"~"}
 caddy:
   image:
@@ -331,7 +331,7 @@ ingress:
     "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
   hosts:
     - host: ${DOMAIN:-"~"}
-      paths: ["/"]
+      paths: [ "/" ]
   tls:
     - secretName: ${LETSENCRYPT_SECRET_NAME}-api
       hosts:
