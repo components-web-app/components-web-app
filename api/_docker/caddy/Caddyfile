@@ -14,7 +14,7 @@
 log
 
 @require_varnish expression ( \
-  !{request.Host}.matches('\\b(cache-proxy|{env.VARNISH_SERVICE})\\b')
+  !{request.Host}.matches('\\b(cache-proxy|{$VARNISH_SERVICE})\\b')
 )
 
 route {
