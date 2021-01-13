@@ -87,19 +87,15 @@ install_dependencies() {
 
   # Generate random passphrase and keys for JWT signing if not set
 	if [[ -z ${JWT_PASSPHRASE} ]]; then
-		JWT_PASSPHRASE="$(rand_str)"
-		export JWT_PASSPHRASE
+		export JWT_PASSPHRASE="$(rand_str)"
 	fi
 
 	if [[ -z ${JWT_SECRET_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
 
 		openssl genpkey -pass pass:"${JWT_PASSPHRASE}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
-		JWT_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
-		export JWT_SECRET_KEY
-
-		JWT_PUBLIC_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$JWT_PASSPHRASE" -pubout)
-		export JWT_PUBLIC_KEY
+		export JWT_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
+		export JWT_PUBLIC_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$JWT_PASSPHRASE" -pubout)
 
 		rm ${JWT_SECRET_KEY_FILE}
 	fi
@@ -107,33 +103,27 @@ install_dependencies() {
 	echo "Checking/generating \$MERCURE_JWT_KEY"
   # Generate random key & jwt for Mercure if not set
   if [[ -z ${MERCURE_JWT_SECRET} ]]; then
-    MERCURE_JWT_SECRET="$(rand_str)"
-    export MERCURE_JWT_SECRET
+    export MERCURE_JWT_SECRET="$(rand_str)"
   fi
   if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
 		npm install --global "@clarketm/jwt-cli"
-		MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
-		export MERCURE_JWT_TOKEN
+		export MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
 	fi
 	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
-    ssh-keygen -t rsa -b 4096 -m PEM -f $JWT_SECRET_KEY_FILE.key
-    openssl rsa -in $JWT_SECRET_KEY_FILE.key -pubout -outform PEM -out $JWT_SECRET_KEY_FILE.key.pub
-    MERCURE_SUBSCRIBER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.key.pub)
-    export MERCURE_SUBSCRIBER_JWT_KEY
-    rm -f ${JWT_SECRET_KEY_FILE}.*
-    MERCURE_SUBSCRIBER_JWT_ALG=RS256
-    export MERCURE_SUBSCRIBER_JWT_ALG
+		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
+		MERCURE_SUBSCRIBER_JWT_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$MERCURE_JWT_SECRET" -pubout)
+		export MERCURE_SUBSCRIBER_JWT_KEY
+    export MERCURE_SUBSCRIBER_JWT_ALG=RS256
+    rm -f ${JWT_SECRET_KEY_FILE}
 	fi
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
-    ssh-keygen -t rsa -b 4096 -m PEM -f $JWT_SECRET_KEY_FILE.key
-    openssl rsa -in $JWT_SECRET_KEY_FILE.key -pubout -outform PEM -out $JWT_SECRET_KEY_FILE.key.pub
-    MERCURE_PUBLISHER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.key.pub)
-    export MERCURE_PUBLISHER_JWT_KEY
-    rm -f ${JWT_SECRET_KEY_FILE}.*
-    MERCURE_PUBLISHER_JWT_ALG=RS256
-    export MERCURE_PUBLISHER_JWT_ALG
+		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
+		MERCURE_PUBLISHER_JWT_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$MERCURE_JWT_SECRET" -pubout)
+		export MERCURE_PUBLISHER_JWT_KEY
+    export MERCURE_PUBLISHER_JWT_ALG=RS256
+    rm -f ${JWT_SECRET_KEY_FILE}
   fi
 }
 
