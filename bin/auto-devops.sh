@@ -100,7 +100,7 @@ install_dependencies() {
 		rm ${JWT_SECRET_KEY_FILE}
 	fi
 
-	echo "Checking/generating \$MERCURE_JWT_KEY"
+	echo "Checking/generating mercure secrets and JWT keys"
   # Generate random key & jwt for Mercure if not set
   if [[ -z ${MERCURE_JWT_SECRET} ]]; then
     export MERCURE_JWT_SECRET="$(rand_str)"

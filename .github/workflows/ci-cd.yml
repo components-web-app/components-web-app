@@ -21,6 +21,7 @@ jobs:
         DOCKER_CLI_EXPERIMENTAL: enabled
         DOCKER_HOST: tcp://docker:2376
         DOCKER_TLS_VERIFY: '1'
+        SERVER_NAME: docker
       options: >-
         -v /tmp/docker/certs/client:/certs/client
     services:
@@ -99,7 +100,7 @@ jobs:
           docker-compose exec -T php chmod +x /usr/local/bin/security-checker
           docker-compose exec -T php security-checker security:check
       - name: Check PHP is ready to handle connections
-        # we have to connect to the "docker" hostname because of Docker-in-Docker - wait 5 seconds for varnish probe
+        # wait 5 seconds for varnish probe
         run: |
           if echo "$(docker-compose logs php)" | grep -q "NOTICE: ready to handle connections"; then
             update-ca-certificates
@@ -112,21 +113,14 @@ jobs:
       # -k = insecure
       # -v = verbose
       # -I = head, fetch headers only
-      - name: Check Caddy is ready to handle connections
-        # we have to connect to the "docker" hostname because of Docker-in-Docker - wait 5 seconds for varnish probe
-        run: |
-          if echo "$(docker-compose logs caddy)" | grep -q "serving initial configuration"; then
-            exit 0
-          else
-            sleep 1
-          fi
       - name: Copy container CA certificate
         run: |
           docker cp $(docker-compose ps -q caddy):/usr/local/share/ca-certificates /usr/local/share/ca-certificates
+      # we have to connect to the "https://docker" not https://localhost because of Docker-in-Docker
       - name: Check HTTP reachability
         run: |
-          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tls-max 1.2 https://docker:8443
-          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates --tls-max 1.2 https://docker
+          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates https://docker:8443
+          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates https://docker
       - name: Login to registry
         if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
         run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login --username '${{ secrets.DOCKER_USERNAME }}' --password-stdin "$DOCKER_REGISTRY"
