@@ -119,8 +119,8 @@ jobs:
       # we have to connect to the "https://docker" not https://localhost because of Docker-in-Docker
       - name: Check HTTP reachability
         run: |
-          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates https://docker:8443
-          curl -Ivfk -H 'Host: localhost' --capath /usr/local/share/ca-certificates https://docker
+          curl -Ivfk --capath /usr/local/share/ca-certificates https://docker:8443
+          curl -Ivfk --capath /usr/local/share/ca-certificates https://docker
       - name: Login to registry
         if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
         run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login --username '${{ secrets.DOCKER_USERNAME }}' --password-stdin "$DOCKER_REGISTRY"
