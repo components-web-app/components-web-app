@@ -217,6 +217,9 @@
     "laminas/laminas-zendframework-bridge": {
         "version": "1.0.3"
     },
+    "lcobucci/clock": {
+        "version": "2.0.0"
+    },
     "lcobucci/jwt": {
         "version": "3.3.1"
     },

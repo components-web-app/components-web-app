@@ -112,6 +112,14 @@ jobs:
       # -k = insecure
       # -v = verbose
       # -I = head, fetch headers only
+      - name: Check Caddy is ready to handle connections
+        # we have to connect to the "docker" hostname because of Docker-in-Docker - wait 5 seconds for varnish probe
+        run: |
+          if echo "$(docker-compose logs caddy)" | grep -q "serving initial configuration"; then
+            exit 0
+          else
+            sleep 1
+          fi
       - name: Copy container CA certificate
         run: |
           docker cp $(docker-compose ps -q caddy):/usr/local/share/ca-certificates /usr/local/share/ca-certificates
