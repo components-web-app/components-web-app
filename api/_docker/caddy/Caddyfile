@@ -55,7 +55,7 @@ route {
 
     # do the cache pass
     reverse_proxy @do_varnish_pass {
-        to {$VARNISH_SERVICE:"cache-proxy"}
+        to {$VARNISH_URL:"cache-proxy"}
         health_path /healthz
         health_interval 5s
         health_timeout 20s

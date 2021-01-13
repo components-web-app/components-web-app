@@ -52,7 +52,7 @@ services:
       - pwa
       - cache-proxy
     environment:
-      VARNISH_SERVICE: ${VARNISH_SERVICE:-cache-proxy}
+      VARNISH_URL: ${VARNISH_URL:-cache-proxy}
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, :80}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-!ChangeMe!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-!ChangeMe!}

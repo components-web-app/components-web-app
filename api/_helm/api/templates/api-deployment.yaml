@@ -58,11 +58,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: mercure-subscriber-jwt-algorithm
-            - name: VARNISH_SERVICE
+            - name: VARNISH_URL
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
-                  key: varnish-service
+                  key: varnish-url
           ports:
             - name: http
               containerPort: 80
