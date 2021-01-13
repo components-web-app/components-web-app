@@ -80,8 +80,8 @@ spec:
               httpHeaders:
                 - name: Host
                   value: 'caddy-probe'
-                - name: X-Forwarded-Host
-                  value: 'kubernetes-caddy'
+                - name: X-Kubernetes-Liveness
+                  value: {{ include "cwa.fullname" . }}
           readinessProbe:
             httpGet:
               path: /health-check
@@ -89,8 +89,8 @@ spec:
               httpHeaders:
                 - name: Host
                   value: 'caddy-probe'
-                - name: X-Forwarded-Host
-                  value: 'kubernetes-caddy'
+                - name: X-Kubernetes-Readiness
+                  value: {{ include "cwa.fullname" . }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-php
