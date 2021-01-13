@@ -13,8 +13,8 @@ backend default {
   # Health check
   .probe = {
     .request =
-          "HEAD /health HTTP/1.1"
-          "Host: cache-proxy"
+          "HEAD /health-check HTTP/1.1"
+          "Host: caddy-probe"
           "Connection: close"
           "User-Agent: Varnish Health Probe";
     .timeout = 5s;
@@ -66,7 +66,7 @@ sub vcl_recv {
   # Remove the "Forwarded" HTTP header if exists (security)
   # Removing this causes issues for development on same domain
   # Logins fail, OPTIONS requests fails and more... need to find out why...
-  # unset req.http.forwarded;
+  unset req.http.forwarded;
 
   # Remove fields and preload headers used for vulcain
   # https://github.com/dunglas/vulcain/blob/master/docs/cache.md
@@ -108,7 +108,7 @@ sub vcl_recv {
   }
 
   # For health checks
-  if (req.method == "GET" && req.url == "/health") {
+  if (req.method == "GET" && req.url == "/healthz") {
     return (synth(200, "OK"));
   }
 }

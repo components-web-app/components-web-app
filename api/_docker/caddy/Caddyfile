@@ -1,3 +1,6 @@
+# Info: Reload in live Docker using `caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile`
+
+# Global
 {
     # Debug
     {$DEBUG}
@@ -7,18 +10,32 @@
             experimental_http3
         }
     }
+    auto_https disable_redirects
 }
 
-{$SERVER_NAME}
+# define single site using environment variable
+{$SERVER_NAME}, caddy-probe:80
 
-log
+# named matchers
+@do_varnish_pass {
+    header !X-Varnish
+}
+@health_check {
+    expression {host}.matches('\\bcaddy-probe\\b')
+    path /health-check
+}
 
-@require_varnish expression ( \
-  !{request.Host}.matches('\\b(cache-proxy|{$VARNISH_SERVICE})\\b')
-)
+# customisable log level with environment
+log {
+    level {$LOG_LEVEL:"info"}
+}
 
+# preserve orders
 route {
+    respond @health_check "OK" 200
+
     root * /srv/api/public
+
     mercure {
         # Transport to use (default to Bolt)
         transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
@@ -36,13 +53,12 @@ route {
     vulcain
     push
 
-    respond /health "OK" 200
-
-    reverse_proxy @require_varnish {
-        to {env.VARNISH_SERVICE}
-        health_path /health
+    # do the cache pass
+    reverse_proxy @do_varnish_pass {
+        to {$VARNISH_SERVICE:"cache-proxy"}
+        health_path /healthz
         health_interval 5s
-        health_timeout 1s
+        health_timeout 20s
         health_status 200
         fail_duration 5s
         max_fails 2

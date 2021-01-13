@@ -48,11 +48,11 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: 80
           readinessProbe:
             httpGet:
-              path: /health
+              path: /healthz
               port: 80
           resources:
 {{ toYaml .Values.resources | indent 12 }}

@@ -52,8 +52,8 @@ services:
       - pwa
       - cache-proxy
     environment:
-      VARNISH_SERVICE: ${VARNISH_SERVICE:-"cache-proxy"}
-      SERVER_NAME: ${SERVER_NAME:-localhost, caddy:80}
+      VARNISH_SERVICE: ${VARNISH_SERVICE:-cache-proxy}
+      SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, :80}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-!ChangeMe!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-!ChangeMe!}
       MERCURE_EXTRA_DIRECTIVES: |
@@ -65,6 +65,7 @@ services:
       - caddy_config:/config
       - caddy_certs:/data/caddy/certificates/local/localhost
       - caddy_ca:/usr/local/share/ca-certificates
+      - ./api/_docker/caddy/Caddyfile:/etc/caddy/Caddyfile:rw
     ports:
       # HTTP
       - target: 80

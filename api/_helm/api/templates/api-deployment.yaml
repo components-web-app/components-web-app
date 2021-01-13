@@ -73,14 +73,20 @@ spec:
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket
-          #livenessProbe:
-          #  httpGet:
-          #    path: /
-          #    port: admin
-          #readinessProbe:
-          #  httpGet:
-          #    path: /
-          #    port: admin
+          livenessProbe:
+            httpGet:
+              path: /health-check
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: 'caddy-probe'
+          readinessProbe:
+            httpGet:
+              path: /health-check
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: 'caddy-probe'
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-php

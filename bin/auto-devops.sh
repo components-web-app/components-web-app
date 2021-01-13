@@ -212,7 +212,6 @@ check_kube_domain() {
 
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
-  helm repo add stable https://charts.helm.sh/stable
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
 }
