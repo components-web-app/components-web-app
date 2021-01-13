@@ -86,7 +86,7 @@ services:
       context: ./api
       target: cwa_varnish
       <<: *api-cache-from
-    image: ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/cache-proxy}
+    image: ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
     restart: unless-stopped
     environment:
       UPSTREAM: caddy
