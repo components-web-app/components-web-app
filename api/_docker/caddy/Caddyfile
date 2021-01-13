@@ -40,7 +40,7 @@ route {
     respond /health "OK" 200
 
     reverse_proxy @require_varnish {
-        to {$VARNISH_SERVICE}
+        to {env.VARNISH_SERVICE}
         health_path /health
         health_interval 5s
         health_timeout 1s
