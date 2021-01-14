@@ -13,12 +13,10 @@ spec:
       {{- include "cwa.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "cwa.annotations" . | nindent 8 }}
       labels:
         {{- include "cwa.selectorLabels" . | nindent 8 }}
     spec:
