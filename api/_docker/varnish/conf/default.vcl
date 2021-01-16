@@ -14,7 +14,7 @@ backend default {
   .probe = {
     .request =
           "HEAD /health-check HTTP/1.1"
-          "Host: caddy-probe"
+          "Host: caddy-probe.local"
           "Connection: close"
           "User-Agent: Varnish Health Probe";
     .timeout = 5s;

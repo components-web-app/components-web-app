@@ -13,7 +13,7 @@
 }
 
 # define single site using environment variable
-caddy-probe:80, {$SERVER_NAME}
+caddy-probe.local:80, {$SERVER_NAME}
 
 # named matchers
 @do_varnish_pass {
