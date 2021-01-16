@@ -111,18 +111,18 @@ install_dependencies() {
 	fi
 	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
-		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
+		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
 		MERCURE_SUBSCRIBER_JWT_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$MERCURE_JWT_SECRET" -pubout)
 		export MERCURE_SUBSCRIBER_JWT_KEY
-    export MERCURE_SUBSCRIBER_JWT_ALG=RS256
+   # export MERCURE_SUBSCRIBER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
 	fi
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
-		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
+		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
 		MERCURE_PUBLISHER_JWT_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$MERCURE_JWT_SECRET" -pubout)
 		export MERCURE_PUBLISHER_JWT_KEY
-    export MERCURE_PUBLISHER_JWT_ALG=RS256
+  #  export MERCURE_PUBLISHER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
   fi
 }
@@ -311,9 +311,9 @@ mercure:
   jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
   jwtKey:
     subscriber:
-      algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"~"}
+      algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"HS256"}
     publisher:
-      algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"~"}
+      algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"HS256"}
 caddy:
   image:
     repository: ${CADDY_REPOSITORY}
