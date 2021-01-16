@@ -45,6 +45,11 @@ acl invalidators {
 }
 
 sub vcl_recv {
+  # For health checks
+  if (req.method == "GET" && req.url == "/healthz") {
+    return (synth(200, "OK"));
+  }
+
   if (req.esi_level > 0) {
     # ESI request should not be included in the profile.
     # Instead you should profile them separately, each one
@@ -105,11 +110,6 @@ sub vcl_recv {
           // If there are no more cookies, remove the header to get page cached.
           unset req.http.Cookie;
       }
-  }
-
-  # For health checks
-  if (req.method == "GET" && req.url == "/healthz") {
-    return (synth(200, "OK"));
   }
 }
 

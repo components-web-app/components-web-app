@@ -17,7 +17,7 @@ caddy-probe:80, {$SERVER_NAME}
 
 # named matchers
 @do_varnish_pass {
-    header !X-Varnish
+    header !X-Caddy-Forwarded
 }
 @health_check {
     expression {host}.matches('\\bcaddy-probe\\b')
