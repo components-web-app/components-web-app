@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "cwa.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end }}
 
 {{/*
@@ -58,16 +58,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Selector labels
 */}}
 {{- define "cwa.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "cwa.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/part-of: {{ include "cwa.name" . }}
-{{- end }}
-
-{{/*
-Selector labels PWA
-*/}}
-{{- define "cwa.selectorLabelsPWA" -}}
-app.kubernetes.io/name: {{ include "cwa.name" . }}-pwa
+app.kubernetes.io/name: {{ include "cwa.name" . }}{{- if .name -}}-{{- .name -}}{{- end }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/part-of: {{ include "cwa.name" . }}
 {{- end }}
