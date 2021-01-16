@@ -5,7 +5,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cwa.fullname" . }}-{{ $name }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
     {{- include "cwa.labels" $data | nindent 4 }}
   annotations:
