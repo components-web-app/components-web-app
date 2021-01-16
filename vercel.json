@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "app/nuxt.config.js",
+      "src": "pwa/nuxt.config.js",
       "use": "@nuxtjs/now-builder",
       "config": {
         "serverFiles": ["server-middleware/**"]

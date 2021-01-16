@@ -1,9 +1,9 @@
-app/.nuxt
-app/_docker
-app/node_modules
-app/*.log
-app/README.md
-app/Dockerfile
+pwa/.nuxt
+pwa/_docker
+pwa/node_modules
+pwa/*.log
+pwa/README.md
+pwa/Dockerfile
 .github/
 .nuxt/
 api/
