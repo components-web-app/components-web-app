@@ -37,11 +37,11 @@ spec:
           imagePullPolicy: {{ .Values.varnish.image.pullPolicy }}
           env:
           - name: UPSTREAM
-            value: "{{ $fullName }}"
+            value: "{{ $fullName }}-api"
           - name: UPSTREAM_PORT
             value: "{{ .Values.service.port }}"
           - name: PHP_SERVICE
-            value: "{{ $fullName }}"
+            value: "{{ $fullName }}-api"
           - name: CORS_ALLOW_ORIGIN
             valueFrom:
                 configMapKeyRef:

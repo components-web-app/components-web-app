@@ -82,7 +82,7 @@ spec:
               port: http
               httpHeaders:
                 - name: Host
-                  value: 'caddy-probe'
+                  value: 'caddy-probe.local'
                 - name: X-Kubernetes-Liveness
                   value: {{ $fullName }}
           readinessProbe:
@@ -91,7 +91,7 @@ spec:
               port: http
               httpHeaders:
                 - name: Host
-                  value: 'caddy-probe'
+                  value: 'caddy-probe.local'
                 - name: X-Kubernetes-Readiness
                   value: {{ $fullName }}
           resources:
