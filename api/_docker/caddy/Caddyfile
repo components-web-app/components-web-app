@@ -30,7 +30,9 @@ log {
 
 # preserve orders
 route {
-    respond @health_check "OK" 200
+    respond @health_check "OK" 200 {
+        close
+    }
 
     root * /srv/api/public
 
