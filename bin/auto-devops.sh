@@ -110,18 +110,18 @@ install_dependencies() {
 		export MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "$MERCURE_JWT_SECRET")
 	fi
 	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
-		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
-		ssh-keygen -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -N "${MERCURE_JWT_SECRET}"
-		MERCURE_SUBSCRIBER_JWT_KEY=$(openssl rsa -in "$JWT_SECRET_KEY_FILE" -pubout -outform PEM -passin pass:"$MERCURE_JWT_SECRET")
-		export MERCURE_SUBSCRIBER_JWT_KEY
+    JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
+		ssh-keygen -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
+		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"$MERCURE_JWT_SECRET"
+		export MERCURE_SUBSCRIBER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.pub)
     export MERCURE_SUBSCRIBER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
 	fi
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
-		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
-		ssh-keygen -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -N "${MERCURE_JWT_SECRET}"
-		MERCURE_PUBLISHER_JWT_KEY=$(openssl rsa -in "$JWT_SECRET_KEY_FILE" -pubout -outform PEM -passin pass:"$MERCURE_JWT_SECRET")
-		export MERCURE_PUBLISHER_JWT_KEY
+		JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
+		ssh-keygen -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
+		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"$MERCURE_JWT_SECRET"
+		export MERCURE_PUBLISHER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.pub)
     export MERCURE_PUBLISHER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
   fi
