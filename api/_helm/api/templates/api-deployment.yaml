@@ -44,27 +44,27 @@ spec:
             - name: MERCURE_PUBLISHER_JWT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-publisher-jwt-key
             - name: MERCURE_SUBSCRIBER_JWT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-subscriber-jwt-key
             - name: MERCURE_PUBLISHER_JWT_ALG
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-publisher-jwt-algorithm
             - name: MERCURE_SUBSCRIBER_JWT_ALG
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-subscriber-jwt-algorithm
             - name: VARNISH_UPSTREAM
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: varnish-upstream
           ports:
             - name: http
@@ -84,7 +84,7 @@ spec:
                 - name: Host
                   value: 'caddy-probe'
                 - name: X-Kubernetes-Liveness
-                  value: $fullName
+                  value: {{ $fullName }}
           readinessProbe:
             httpGet:
               path: /health-check
@@ -93,7 +93,7 @@ spec:
                 - name: Host
                   value: 'caddy-probe'
                 - name: X-Kubernetes-Readiness
-                  value: $fullName
+                  value: {{ $fullName }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-php
@@ -105,92 +105,92 @@ spec:
             - name: TRUSTED_HOSTS
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: php-trusted-hosts
             - name: TRUSTED_PROXIES
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: php-trusted-proxies
             - name: APP_ENV
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: php-app-env
             - name: APP_DEBUG
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: php-app-debug
             - name: CORS_ALLOW_ORIGIN
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: php-cors-allow-origin
             - name: VARNISH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: varnish-url
             - name: APP_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: secret
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: database-url
             - name: MERCURE_PUBLISH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-publish-url
             - name: MERCURE_SUBSCRIBE_URL
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-subscribe-url
             - name: MERCURE_JWT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mercure-jwt-token
             - name: JWT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: jwt-secret
             - name: JWT_PUBLIC_KEY
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: jwt-public
             - name: JWT_PASSPHRASE
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: jwt-passphrase
             - name: MAILER_EMAIL
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mailer-email
             - name: MAILER_DSN
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: mailer-dsn
             - name: BLACKFIRE_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: blackfire-client-id
             - name: BLACKFIRE_CLIENT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: $fullName
+                  name: {{ $fullName }}
                   key: blackfire-client-token
           volumeMounts:
             - mountPath: /var/run/php
