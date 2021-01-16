@@ -114,7 +114,7 @@ install_dependencies() {
 		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
 		MERCURE_SUBSCRIBER_JWT_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$MERCURE_JWT_SECRET" -pubout)
 		export MERCURE_SUBSCRIBER_JWT_KEY
-   # export MERCURE_SUBSCRIBER_JWT_ALG=RS256
+    export MERCURE_SUBSCRIBER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
 	fi
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
@@ -122,7 +122,7 @@ install_dependencies() {
 		openssl genpkey -pass pass:"${MERCURE_JWT_SECRET}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
 		MERCURE_PUBLISHER_JWT_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$MERCURE_JWT_SECRET" -pubout)
 		export MERCURE_PUBLISHER_JWT_KEY
-  #  export MERCURE_PUBLISHER_JWT_ALG=RS256
+    export MERCURE_PUBLISHER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
   fi
 }
