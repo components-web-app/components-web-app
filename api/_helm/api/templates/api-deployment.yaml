@@ -1,24 +1,29 @@
+{{- $name := "api" -}}
+{{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
+{{- $fullName := include "cwa.fullname" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cwa.fullname" . }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
-    {{- include "cwa.labels" . | nindent 4 }}
+    {{- include "cwa.labels" $data | nindent 4 }}
+  annotations:
+    {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "cwa.selectorLabels" . | nindent 6 }}
+      {{- include "cwa.selectorLabels" $data | nindent 6 }}
   template:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- include "cwa.annotations" . | nindent 8 }}
+        {{- include "cwa.annotations" $data | nindent 8 }}
       labels:
-        {{- include "cwa.selectorLabels" . | nindent 8 }}
+        {{- include "cwa.selectorLabels" $data | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -39,27 +44,27 @@ spec:
             - name: MERCURE_PUBLISHER_JWT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-publisher-jwt-key
             - name: MERCURE_SUBSCRIBER_JWT_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-subscriber-jwt-key
             - name: MERCURE_PUBLISHER_JWT_ALG
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-publisher-jwt-algorithm
             - name: MERCURE_SUBSCRIBER_JWT_ALG
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-subscriber-jwt-algorithm
             - name: VARNISH_UPSTREAM
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: varnish-upstream
           ports:
             - name: http
@@ -79,7 +84,7 @@ spec:
 #                - name: Host
 #                  value: 'caddy-probe'
 #                - name: X-Kubernetes-Liveness
-#                  value: {{ include "cwa.fullname" . }}
+#                  value: $fullName
 #          readinessProbe:
 #            httpGet:
 #              path: /health-check
@@ -88,7 +93,7 @@ spec:
 #                - name: Host
 #                  value: 'caddy-probe'
 #                - name: X-Kubernetes-Readiness
-#                  value: {{ include "cwa.fullname" . }}
+#                  value: $fullName
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-php
@@ -100,92 +105,92 @@ spec:
             - name: TRUSTED_HOSTS
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: php-trusted-hosts
             - name: TRUSTED_PROXIES
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: php-trusted-proxies
             - name: APP_ENV
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: php-app-env
             - name: APP_DEBUG
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: php-app-debug
             - name: CORS_ALLOW_ORIGIN
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: php-cors-allow-origin
             - name: VARNISH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: varnish-url
             - name: APP_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: secret
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: database-url
             - name: MERCURE_PUBLISH_URL
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-publish-url
             - name: MERCURE_SUBSCRIBE_URL
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-subscribe-url
             - name: MERCURE_JWT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mercure-jwt-token
             - name: JWT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: jwt-secret
             - name: JWT_PUBLIC_KEY
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: jwt-public
             - name: JWT_PASSPHRASE
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: jwt-passphrase
             - name: MAILER_EMAIL
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mailer-email
             - name: MAILER_DSN
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: mailer-dsn
             - name: BLACKFIRE_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: blackfire-client-id
             - name: BLACKFIRE_CLIENT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: blackfire-client-token
           volumeMounts:
             - mountPath: /var/run/php

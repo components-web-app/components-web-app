@@ -45,7 +45,7 @@ spec:
           - name: CORS_ALLOW_ORIGIN
             valueFrom:
                 configMapKeyRef:
-                  name: {{ include "cwa.fullname" . }}
+                  name: $fullName
                   key: php-cors-allow-origin
           ports:
             - name: http

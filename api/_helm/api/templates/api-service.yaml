@@ -1,9 +1,12 @@
+{{- $name := "api" -}}
+{{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
+{{- $fullName := include "cwa.fullname" . -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "cwa.fullname" . }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
-    {{- include "cwa.labels" . | nindent 4 }}
+    {{- include "cwa.labels" $data | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +15,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "cwa.selectorLabels" . | nindent 4 }}
+    {{- include "cwa.selectorLabels" $data | nindent 4 }}

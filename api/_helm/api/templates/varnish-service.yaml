@@ -1,10 +1,11 @@
 {{- if .Values.varnish.enabled -}}
 {{- $name := "varnish" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
+{{- $fullName := include "cwa.fullname" . -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "cwa.fullname" . }}-{{ $name }}
+  name: {{ $fullName }}-{{ $name }}
   labels:
     {{- include "cwa.labels" $data | nindent 4 }}
 spec:
