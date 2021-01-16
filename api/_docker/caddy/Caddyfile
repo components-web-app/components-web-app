@@ -20,7 +20,8 @@ caddy-probe.local:80, {$SERVER_NAME}
     header !X-Caddy-Forwarded
 }
 @health_check {
-    expression {host}.matches('\\bcaddy-probe\\.local\\b') && {path} == '/health-check'
+    host caddy-probe.local
+    path /health-check
 }
 
 # customisable log level with environment
