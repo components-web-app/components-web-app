@@ -71,24 +71,24 @@ spec:
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket
-          livenessProbe:
-            httpGet:
-              path: /health-check
-              port: http
-              httpHeaders:
-                - name: Host
-                  value: 'caddy-probe'
-                - name: X-Kubernetes-Liveness
-                  value: {{ include "cwa.fullname" . }}
-          readinessProbe:
-            httpGet:
-              path: /health-check
-              port: http
-              httpHeaders:
-                - name: Host
-                  value: 'caddy-probe'
-                - name: X-Kubernetes-Readiness
-                  value: {{ include "cwa.fullname" . }}
+#          livenessProbe:
+#            httpGet:
+#              path: /health-check
+#              port: http
+#              httpHeaders:
+#                - name: Host
+#                  value: 'caddy-probe'
+#                - name: X-Kubernetes-Liveness
+#                  value: {{ include "cwa.fullname" . }}
+#          readinessProbe:
+#            httpGet:
+#              path: /health-check
+#              port: http
+#              httpHeaders:
+#                - name: Host
+#                  value: 'caddy-probe'
+#                - name: X-Kubernetes-Readiness
+#                  value: {{ include "cwa.fullname" . }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: {{ .Chart.Name }}-php

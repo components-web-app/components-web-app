@@ -51,20 +51,20 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-              httpHeaders:
-                - name: X-Kubernetes-Liveness
-                  value: {{ $name }}
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-              httpHeaders:
-                - name: X-Kubernetes-Liveness
-                  value: {{ $name }}
+#          livenessProbe:
+#            httpGet:
+#              path: /healthz
+#              port: http
+#              httpHeaders:
+#                - name: X-Kubernetes-Liveness
+#                  value: {{ $name }}
+#          readinessProbe:
+#            httpGet:
+#              path: /healthz
+#              port: http
+#              httpHeaders:
+#                - name: X-Kubernetes-Liveness
+#                  value: {{ $name }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
     {{- if .Values.nodeSelector }}
