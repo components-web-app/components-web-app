@@ -57,6 +57,7 @@ if [[ -n "$BLACKFIRE_SERVER_ID" ]] && [[ -n "$BLACKFIRE_SERVER_TOKEN" ]] ; then
   export BLACKFIRE_SERVER_ENABLED=true
 fi
 
+# hBipH0zBIp98alQOCfB4IecnWudKxFbw
 rand_str() {
   len=32
   head -c 256 /dev/urandom > /tmp/urandom.out
@@ -114,7 +115,7 @@ install_dependencies() {
 		ssh-keygen -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
 		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"$MERCURE_JWT_SECRET"
 		export MERCURE_SUBSCRIBER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.pub)
-    export MERCURE_SUBSCRIBER_JWT_ALG=RS256
+    #export MERCURE_SUBSCRIBER_JWT_ALG=HS256
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
 	fi
@@ -123,7 +124,7 @@ install_dependencies() {
 		ssh-keygen -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
 		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"$MERCURE_JWT_SECRET"
 		export MERCURE_PUBLISHER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.pub)
-    export MERCURE_PUBLISHER_JWT_ALG=RS256
+    #export MERCURE_PUBLISHER_JWT_ALG=HS256
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
   fi
