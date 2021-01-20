@@ -19,6 +19,7 @@ caddy-probe.local:80, {$SERVER_NAME}
 @do_varnish_pass {
     header !X-Caddy-Forwarded
 }
+
 @health_check {
     host caddy-probe.local
     path /health-check
@@ -37,7 +38,7 @@ route {
 
     root * /srv/api/public
 
-    mercure {
+    mercure @do_varnish_pass {
         # Transport to use (default to Bolt)
         transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
         # Publisher JWT key
@@ -51,8 +52,8 @@ route {
         # Extra directives
         {$MERCURE_EXTRA_DIRECTIVES}
     }
-    vulcain
-    push
+    vulcain @do_varnish_pass
+    push @do_varnish_pass
 
     # do the cache pass
     reverse_proxy @do_varnish_pass {
