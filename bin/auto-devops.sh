@@ -132,7 +132,7 @@ install_dependencies() {
     echo "Generate MERCURE_JWT_TOKEN..."
 		# create HS256 JWT token with the secret
 		npm install --global "@clarketm/jwt-cli"
-		MERCURE_PUBLISHER_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
+		MERCURE_PUBLISHER_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE} | openssl base64)
 		export MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" --algorithm "RS256" '{"mercure": {"publish": ["*"]}}' "${MERCURE_PUBLISHER_SECRET_KEY}")
 
     rm -f ${JWT_SECRET_KEY_FILE}
