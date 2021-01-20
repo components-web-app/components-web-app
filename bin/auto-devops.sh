@@ -109,8 +109,9 @@ install_dependencies() {
   	echo "Generate MERCURE_JWT_SECRET..."
     export MERCURE_JWT_SECRET="$(rand_str)"
   fi
+
 	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
-  	echo "Generate MERCURE_SUBSCRIBER_JWT_KEY..."
+  	echo "Generate MERCURE_SUBSCRIBER_JWT_KEY (IF YOU ARE RESTRICTING SUBSCRIBERS YOU SHOULD REALLY HAVE PROVIDED THIS PUBLIC KEY ALREADY)..."
     JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
 		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
 		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET}"
@@ -119,6 +120,7 @@ install_dependencies() {
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
 	fi
+
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
   	echo "Generate MERCURE_PUBLISHER_JWT_KEY..."
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
@@ -126,14 +128,19 @@ install_dependencies() {
 		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET}"
 		export MERCURE_PUBLISHER_JWT_KEY=$(cat ${JWT_SECRET_KEY_FILE}.pub)
     export MERCURE_PUBLISHER_JWT_ALG=RS256
+
+    echo "Generate MERCURE_JWT_TOKEN..."
+		# create HS256 JWT token with the secret
+		npm install --global "@clarketm/jwt-cli"
+		MERCURE_PUBLISHER_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
+		export MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" --algorithm "RS256" '{"mercure": {"publish": ["*"]}}' "${MERCURE_PUBLISHER_SECRET_KEY}")
+
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
   fi
+
   if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
-  	echo "Generate MERCURE_JWT_TOKEN..."
-  	# create HS256 JWT token with the secret
-		npm install --global "@clarketm/jwt-cli"
-		export MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn "100 years" '{"mercure": {"publish": ["*"]}}' "${MERCURE_PUBLISHER_JWT_KEY}")
+  	echo "!!! MERCURE_JWT_TOKEN DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
 	fi
 }
 
