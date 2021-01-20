@@ -51,8 +51,8 @@ VOLUME /srv/api/var
 ## healthchech override for socket
 COPY _docker/php/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
 RUN chmod +x /usr/local/bin/docker-healthcheck
-
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD ["docker-healthcheck"]
+
 COPY _docker/php/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 ## end healthchech override for socket instead of port
 

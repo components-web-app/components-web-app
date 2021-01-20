@@ -199,14 +199,14 @@ spec:
             exec:
               command:
                 - docker-healthcheck
-            initialDelaySeconds: 30
-            periodSeconds: 3
+            initialDelaySeconds: 90
+            periodSeconds: 5
           livenessProbe:
             exec:
               command:
                 - docker-healthcheck
-            initialDelaySeconds: 30
-            periodSeconds: 3
+            initialDelaySeconds: 90
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
