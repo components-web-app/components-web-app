@@ -116,6 +116,7 @@ install_dependencies() {
 		export MERCURE_SUBSCRIBER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.pub)
     export MERCURE_SUBSCRIBER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
+    rm -f ${JWT_SECRET_KEY_FILE}.pub
 	fi
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
@@ -124,6 +125,7 @@ install_dependencies() {
 		export MERCURE_PUBLISHER_JWT_KEY=$(cat $JWT_SECRET_KEY_FILE.pub)
     export MERCURE_PUBLISHER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
+    rm -f ${JWT_SECRET_KEY_FILE}.pub
   fi
 }
 
