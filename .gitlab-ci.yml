@@ -110,7 +110,7 @@ review:
     variables:
       - $REVIEW_DISABLED == "true"
 
-deploy staging pwa:
+staging pwa:
   stage: staging
   script:
     - deploy_vercel_pwa staging
@@ -121,7 +121,7 @@ deploy staging pwa:
       - $STAGING_ENABLED == "true"
   allow_failure: false
 
-deploy staging api:
+staging api:
   retry: 1
   stage: staging
   script:
@@ -141,7 +141,7 @@ deploy staging api:
       - $STAGING_ENABLED == "true"
   allow_failure: false
 
-deploy production pwa:
+production pwa:
   stage: production
   script:
     - deploy_vercel_pwa
@@ -155,7 +155,7 @@ deploy production pwa:
     variables:
       - $PRODUCTION_PWA_DISABLED == "true"
 
-deploy production api:
+production api:
   stage: production
   script:
     - check_kube_domain

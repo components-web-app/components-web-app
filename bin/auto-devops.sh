@@ -286,8 +286,13 @@ function get_replicas() {
 }
 
 deploy_vercel_pwa() {
+	echo "Adding nodejs nodejs-npm ..."
+  # upgrade for curl fix https://github.com/curl/curl/issues/4357
+  apk add --update-cache --upgrade --no-cache -U openssl nodejs nodejs-npm
+	echo "Installing Vercel CLI ..."
 	npm i -g vercel
 
+  echo "Setting up Vercel environment ..."
   track="${1-stable}"
 	SCOPE = ""
 	NODE_ENV="prod"
@@ -303,12 +308,11 @@ deploy_vercel_pwa() {
 		PROD_FLAG="--prod"
 	fi
 
-	echo "Deploying Vercel with API ${DOMAIN} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL}"
-
+	echo "Deploying Vercel with API ${DOMAIN} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
 	vercel --no-clipboard --token="$VERCEL_TOKEN" ${PROD_FLAG} ${SCOPE} \
-		-A vercel.json \
+		-A ./${VERCEL_CONFIG_PATH:-"vercel.json"} \
 		-e API_URL="${DOMAIN}" \
 		-e API_URL_BROWSER="${DOMAIN}" \
 		-e NODE_ENV="${NODE_ENV}" \
@@ -317,6 +321,7 @@ deploy_vercel_pwa() {
 		-b NODE_ENV="${NODE_ENV}"
 
 	if [[ "$track" == "stable" ]]; then
+		echo "Safe removing old deployments ..."
 		vercel remove --safe --yes
 	fi
 }
