@@ -140,6 +140,7 @@ install_dependencies() {
 
   if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
   	echo "!!! MERCURE_JWT_TOKEN DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
+  	false
 	fi
 }
 
@@ -284,6 +285,42 @@ function get_replicas() {
 	fi
 }
 
+deploy_vercel_pwa() {
+	npm i -g vercel
+
+  track="${1-stable}"
+	SCOPE = ""
+	NODE_ENV="prod"
+	MERCURE_SUBSCRIBE_URL="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure"
+	if [[ -n "$VERCEL_SCOPE" ]]; then
+		SCOPE = "--scope $VERCEL_SCOPE"
+	fi
+	if [[ -z "$VERCEL_ORG_ID" ]] || [[ -z "$VERCEL_PROJECT_ID" ]] || [[ -z "$VERCEL_TOKEN" ]] ; then
+	  echo 'You must define the $VERCEL_ORG_ID $VERCEL_PROJECT_ID and $VERCEL_TOKEN environment variables to deploy to Vercel'
+		false
+	fi
+	if [[ "$track" == "stable" ]]; then
+		PROD_FLAG="--prod"
+	fi
+
+	echo "Deploying Vercel with API ${DOMAIN} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL}"
+
+	VERCEL_ORG_ID="$VERCEL_ORG_ID"
+	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
+	vercel --no-clipboard --token="$VERCEL_TOKEN" ${PROD_FLAG} ${SCOPE} \
+		-A vercel.json \
+		-e API_URL="${DOMAIN}" \
+		-e API_URL_BROWSER="${DOMAIN}" \
+		-e NODE_ENV="${NODE_ENV}" \
+		-b API_URL="${DOMAIN}" \
+		-b API_URL_BROWSER="${DOMAIN}" \
+		-b NODE_ENV="${NODE_ENV}"
+
+	if [[ "$track" == "stable" ]]; then
+		vercel remove --safe --yes
+	fi
+}
+
 deploy_api() {
 	track="${1-stable}"
 	percentage="${2:-100}"
@@ -341,7 +378,7 @@ varnish:
     tag: ${TAG}
     pullPolicy: Always
 ingress:
-  enabled: ${INGRESS_ENABLED:-"false"}ell-known/mercu
+  enabled: ${INGRESS_ENABLED:-"false"}
   annotations:
     "kubernetes.io/ingress.class": nginx
     "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
