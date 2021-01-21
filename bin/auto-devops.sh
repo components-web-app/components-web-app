@@ -286,8 +286,16 @@ function get_replicas() {
 }
 
 deploy_vercel_pwa() {
-	if [[ -z "$VERCEL_ORG_ID" || -z "$VERCEL_PROJECT_ID" || -z "$VERCEL_TOKEN" ]]; then
-	  echo 'You must define the $VERCEL_ORG_ID $VERCEL_PROJECT_ID and $VERCEL_TOKEN environment variables to deploy to Vercel'
+	if [[ -z "$VERCEL_ORG_ID" ]]; then
+	  echo 'You must define $VERCEL_ORG_ID to deploy to Vercel'
+		false
+	fi
+	if [[ -z "$VERCEL_PROJECT_ID" ]]; then
+		echo 'You must define $VERCEL_PROJECT_ID to deploy to Vercel'
+		false
+	fi
+	if [[ -z "$VERCEL_TOKEN" ]]; then
+		echo 'You must define $VERCEL_TOKEN to deploy to Vercel'
 		false
 	fi
 
