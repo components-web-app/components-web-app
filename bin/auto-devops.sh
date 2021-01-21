@@ -294,11 +294,11 @@ deploy_vercel_pwa() {
 
   echo "Setting up Vercel environment ..."
   track="${1-stable}"
-	SCOPE = ""
+	SCOPE=""
 	NODE_ENV="prod"
 	MERCURE_SUBSCRIBE_URL="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure"
 	if [[ -n "$VERCEL_SCOPE" ]]; then
-		SCOPE = "--scope $VERCEL_SCOPE"
+		SCOPE="--scope $VERCEL_SCOPE"
 	fi
 	if [[ -z "$VERCEL_ORG_ID" ]] || [[ -z "$VERCEL_PROJECT_ID" ]] || [[ -z "$VERCEL_TOKEN" ]] ; then
 	  echo 'You must define the $VERCEL_ORG_ID $VERCEL_PROJECT_ID and $VERCEL_TOKEN environment variables to deploy to Vercel'
