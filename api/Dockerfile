@@ -3,13 +3,13 @@
 # https://docs.docker.com/compose/compose-file/#target
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
-# in dev incompatible packages are
+# in dev incompatible packages are (for PHP 8.0)
 # friends-of-behat/mink 1.8.0
 # friends-of-behat/mink-browserkit-driver 1.4.0
 # friends-of-behat/mink-extension 2.4.0
 # friends-of-behat/symfony-extension (dev supports it)
 # behatch/contexts requires friends-of-behat/mink-extension ^2.3.1
-ARG PHP_VERSION=8.0
+ARG PHP_VERSION=7.4
 ARG APCU_VERSION=5.1.19
 ARG VARNISH_VERSION=6.4
 ARG CADDY_VERSION=2
@@ -31,7 +31,7 @@ COPY _docker/php/conf.d $PHP_INI_DIR/cwa.conf.d/
 # prevent the reinstallation of vendors at every changes in the source code
 COPY composer.* symfony.lock ./
 RUN set -eux; \
-	composer install --prefer-dist --no-dev --no-scripts --no-progress --no-suggest; \
+	composer install --prefer-dist --no-dev --no-scripts --no-progress; \
 	composer clear-cache
 
 # do not use .env files in production

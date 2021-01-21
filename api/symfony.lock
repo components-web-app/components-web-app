@@ -28,6 +28,9 @@
     "behat/transliterator": {
         "version": "v1.3.0"
     },
+    "behatch/contexts": {
+        "version": "3.3.0"
+    },
     "brick/math": {
         "version": "0.8.15"
     },
@@ -143,6 +146,15 @@
     "fig/link-util": {
         "version": "1.0.0"
     },
+    "friends-of-behat/mink": {
+        "version": "v1.8.0"
+    },
+    "friends-of-behat/mink-browserkit-driver": {
+        "version": "v1.4.0"
+    },
+    "friends-of-behat/mink-extension": {
+        "version": "v2.5.0"
+    },
     "friends-of-behat/symfony-extension": {
         "version": "2.0",
         "recipe": {
@@ -195,6 +207,9 @@
     },
     "imagine/imagine": {
         "version": "1.2.3"
+    },
+    "justinrainbow/json-schema": {
+        "version": "5.2.10"
     },
     "laminas/laminas-code": {
         "version": "3.4.1"
