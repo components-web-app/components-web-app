@@ -286,6 +286,11 @@ function get_replicas() {
 }
 
 deploy_vercel_pwa() {
+	if [[ -z "$VERCEL_ORG_ID" || -z "$VERCEL_PROJECT_ID" || -z "$VERCEL_TOKEN" ]]; then
+	  echo 'You must define the $VERCEL_ORG_ID $VERCEL_PROJECT_ID and $VERCEL_TOKEN environment variables to deploy to Vercel'
+		false
+	fi
+
 	echo "Adding nodejs nodejs-npm ..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
   apk add --update-cache --upgrade --no-cache -U openssl nodejs nodejs-npm
@@ -299,10 +304,6 @@ deploy_vercel_pwa() {
 	MERCURE_SUBSCRIBE_URL="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure"
 	if [[ -n "$VERCEL_SCOPE" ]]; then
 		SCOPE="--scope $VERCEL_SCOPE"
-	fi
-	if [[ -z "$VERCEL_ORG_ID" ]] || [[ -z "$VERCEL_PROJECT_ID" ]] || [[ -z "$VERCEL_TOKEN" ]] ; then
-	  echo 'You must define the $VERCEL_ORG_ID $VERCEL_PROJECT_ID and $VERCEL_TOKEN environment variables to deploy to Vercel'
-		false
 	fi
 	if [[ "$track" == "stable" ]]; then
 		PROD_FLAG="--prod"
@@ -321,7 +322,7 @@ deploy_vercel_pwa() {
 		-b NODE_ENV="${NODE_ENV}"
 
 	if [[ "$track" == "stable" ]]; then
-		echo "Safe removing old deployments ..."
+		echo "Removing old deployments with --safe flag ..."
 		vercel remove --safe --yes
 	fi
 }
