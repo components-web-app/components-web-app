@@ -9,7 +9,6 @@ export default function ({ $axios }) {
   const httpsAgent = new https.Agent({ ca: caCrt, keepAlive: false })
 
   $axios.onRequest((config) => {
-    console.log('do axios...', config.baseURL)
     config.httpsAgent = httpsAgent
   })
 }

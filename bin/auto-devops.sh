@@ -316,17 +316,18 @@ deploy_vercel_pwa() {
 	if [[ "$track" == "stable" ]]; then
 		PROD_FLAG="--prod"
 	fi
+	API_ENDPOINT="https://${DOMAIN}"
 
-	echo "Deploying Vercel with API ${DOMAIN} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
+	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
 	vercel --no-clipboard --token="$VERCEL_TOKEN" ${PROD_FLAG} ${SCOPE} \
 		-A ./${VERCEL_CONFIG_PATH:-"vercel.json"} \
-		-e API_URL="${DOMAIN}" \
-		-e API_URL_BROWSER="${DOMAIN}" \
+		-e API_URL="${API_ENDPOINT}" \
+		-e API_URL_BROWSER="${API_ENDPOINT}" \
 		-e NODE_ENV="${NODE_ENV}" \
-		-b API_URL="${DOMAIN}" \
-		-b API_URL_BROWSER="${DOMAIN}" \
+		-b API_URL="${API_ENDPOINT}" \
+		-b API_URL_BROWSER="${API_ENDPOINT}" \
 		-b NODE_ENV="${NODE_ENV}"
 
 	if [[ "$track" == "stable" ]]; then
