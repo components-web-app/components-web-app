@@ -332,10 +332,10 @@ deploy_vercel_pwa() {
 		-b API_URL_BROWSER="${API_ENDPOINT}" \
 		-b NODE_ENV="${NODE_ENV}"
 
-	if [[ "$track" == "stable" ]]; then
-		echo "Removing old deployments with --safe flag ..."
-		vercel remove --safe --yes --token="$VERCEL_TOKEN"
-	fi
+# if [[ "$track" == "stable" ]]; then
+#		echo "Removing old deployments with --safe flag ..."
+#		vercel remove --safe --yes --token="$VERCEL_TOKEN"
+#	fi
 }
 
 deploy_api() {
