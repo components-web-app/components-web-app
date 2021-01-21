@@ -308,7 +308,7 @@ deploy_vercel_pwa() {
   echo "Setting up Vercel environment ..."
   track="${1-stable}"
 	SCOPE=""
-	NODE_ENV="prod"
+	NODE_ENV="production"
 	MERCURE_SUBSCRIBE_URL="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure"
 	if [[ -n "$VERCEL_SCOPE" ]]; then
 		SCOPE="--scope $VERCEL_SCOPE"
