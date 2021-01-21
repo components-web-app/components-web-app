@@ -90,7 +90,6 @@ review pwa:
   script:
     - deploy_vercel_pwa review
   environment:
-    name: review/$CI_COMMIT_REF_NAME
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
   only:
     refs:
@@ -131,7 +130,6 @@ staging pwa:
   script:
     - deploy_vercel_pwa staging
   environment:
-    name: staging
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
   only:
     refs:
@@ -165,7 +163,6 @@ production pwa:
   script:
     - deploy_vercel_pwa
   environment:
-    name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
   retry: 1
