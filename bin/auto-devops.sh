@@ -321,7 +321,9 @@ deploy_vercel_pwa() {
 	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
-	vercel --no-clipboard --token="$VERCEL_TOKEN" ${PROD_FLAG} ${SCOPE} \
+	vercel --no-clipboard \
+	  ${PROD_FLAG} ${SCOPE} \
+	  --token="$VERCEL_TOKEN" \
 		-A ./${VERCEL_CONFIG_PATH:-"vercel.json"} \
 		-e API_URL="${API_ENDPOINT}" \
 		-e API_URL_BROWSER="${API_ENDPOINT}" \
@@ -332,7 +334,7 @@ deploy_vercel_pwa() {
 
 	if [[ "$track" == "stable" ]]; then
 		echo "Removing old deployments with --safe flag ..."
-		vercel remove --safe --yes
+		vercel remove --safe --yes --token="$VERCEL_TOKEN"
 	fi
 }
 
