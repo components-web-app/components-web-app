@@ -49,11 +49,10 @@ services:
     image: ${CADDY_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/caddy}
     depends_on:
       - php
-      - pwa
       - cache-proxy
     environment:
       VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy}
-      SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, :80}
+      SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-!ChangeMe!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-!ChangeMe!}
       MERCURE_EXTRA_DIRECTIVES: |
@@ -115,10 +114,16 @@ services:
       NODE_ENV: ~
       LOCAL_TLS: ~
       NODE_TLS_REJECT_UNAUTHORIZED: ~
+      # we have to allow the https port as axios module will change http to https
+      # so caddy must also accept this host with ssl
+      API_URL: https://caddy.local
+      API_URL_BROWSER: https://localhost:8443
     ports:
       - target: 3000
         published: 443
         protocol: tcp
+    links:
+      - "caddy:caddy.local"
 
   db:
     image: postgres:12.2-alpine

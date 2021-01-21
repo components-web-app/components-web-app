@@ -3,6 +3,7 @@ import path, { join } from 'path'
 
 const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
 const API_URL = process.env.API_URL || API_URL_BROWSER
+
 const CERT_DIR = process.env.CERT_DIR || '/certs'
 const MERCURE_SUBSCRIBE_URL =
   process.env.MERCURE_SUBSCRIBE_URL || 'https://localhost:1337'
