@@ -1,4 +1,6 @@
 # Info: Reload in live Docker using `caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile`
+# Future: Give some nicer server errors with HTML responses https://caddyserver.com/docs/caddyfile/directives/handle_errors
+# 502 for php is down, 404 file server file not found etc.
 
 # Global
 {

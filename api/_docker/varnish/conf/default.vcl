@@ -13,10 +13,10 @@ backend default {
   # Health check
   .probe = {
     .request =
-          "HEAD /health-check HTTP/1.1"
-          "Host: caddy-probe.local"
-          "Connection: close"
-          "User-Agent: Varnish Health Probe";
+      "HEAD /health-check HTTP/1.1"
+      "Host: caddy-probe.local"
+      "Connection: close"
+      "User-Agent: Varnish Health Probe";
     .timeout = 5s;
     .interval = 5s;
     .window = 4;
@@ -171,9 +171,7 @@ sub vcl_deliver {
 		set req.http.x-cache = req.http.x-cache + " cached" ;
 	}
 	set resp.http.x-cache = req.http.x-cache;
-
   set resp.http.grace = req.http.grace;
-
   # Don't send cache tags related headers to the client
   unset resp.http.url;
   # Comment the following line to send the "Cache-Tags" header to the client (e.g. to use CloudFlare cache tags)
@@ -185,10 +183,8 @@ sub vcl_deliver {
 sub vcl_backend_response {
   # https://info.varnish-software.com/blog/grace-varnish-4-stale-while-revalidate-semantics-varnish
   set beresp.ttl = 10s;
-
   # Ban lurker friendly header
   set beresp.http.url = bereq.url;
-
   # Add a grace in case the backend is down
   set beresp.grace = 1h;
 }
