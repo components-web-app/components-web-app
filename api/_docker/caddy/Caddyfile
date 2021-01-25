@@ -51,6 +51,8 @@ route {
         anonymous
         # Enable the subscription API (double-check that it's what you want)
         subscriptions
+        # Cors origins
+        cors_origins {$MERCURE_CORS_ORIGIN:*}
         # Extra directives
         {$MERCURE_EXTRA_DIRECTIVES}
     }

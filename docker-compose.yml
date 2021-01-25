@@ -54,6 +54,7 @@ services:
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-!ChangeMe!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-!ChangeMe!}
+      MERCURE_CORS_ORIGIN: "*"
       MERCURE_EXTRA_DIRECTIVES: |
         demo /srv/mercure-assets/
     restart: unless-stopped
