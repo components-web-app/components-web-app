@@ -17,10 +17,10 @@
     "@nuxt/typescript-runtime": "^0.4.10",
     "@nuxtjs/axios": "^5.11.0",
     "@nuxtjs/pwa": "^3.0.0-beta.20",
-    "nuxt": "^2.13.0"
+    "nuxt": "^2.15"
   },
   "devDependencies": {
-    "@cwa/nuxt-module-next": "^1.0.0-1603926074.77ecde6",
+    "@cwa/nuxt-module-next": "^1.0.0-1615076443.3edc0e3",
     "@nuxt/typescript-build": "^1.0.3",
     "@nuxtjs/eslint-config": "^3.0.0",
     "@nuxtjs/eslint-config-typescript": "^2.0.0",
@@ -39,7 +39,7 @@
     "node-sass": "^4.14.1",
     "prettier": "^2.0.5",
     "quill": "^1.3.7",
-    "sass-loader": "^8.0.2",
+    "sass-loader": "^10.1.1",
     "stylelint": "^13.6.1",
     "stylelint-config-prettier": "^8.0.1",
     "stylelint-config-standard": "^20.0.0",
