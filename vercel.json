@@ -3,7 +3,7 @@
   "builds": [
     {
       "src": "pwa/nuxt.config.js",
-      "use": "@nuxtjs/now-builder",
+      "use": "@nuxtjs/vercel-builder",
       "config": {
         "serverFiles": ["server-middleware/**"]
       }

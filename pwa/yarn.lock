@@ -8383,7 +8383,7 @@ number-is-nan@^1.0.0:
   resolved "https://registry.yarnpkg.com/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"
   integrity sha1-CXtgK1NCKlIsGvuHkDGDNpQaAR0=
 
-nuxt@^2.15:
+nuxt@^2.15, nuxt@^2.15.3:
   version "2.15.3"
   resolved "https://registry.yarnpkg.com/nuxt/-/nuxt-2.15.3.tgz#6262707de8a824df0718fc88653c74a916aa5122"
   integrity sha512-zeeOr7KxTYE0nbztUvH3YtcU+V5cZxuIhErBFt+ckFJ1R7uiptrfFrtVPouPm2uU4Kj+8MdARCQq+hzdfwUQig==
