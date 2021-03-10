@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\OrderFilter;
 use Doctrine\ORM\Mapping as ORM;
 use Silverback\ApiComponentsBundle\Entity\User\AbstractUser;
+use Silverback\ApiComponentsBundle\Filter\OrSearchFilter;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Mapping\ClassMetadata;
 
@@ -23,6 +26,8 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
  *         "delete"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
  *     }
  * )
+ * @ApiFilter(OrderFilter::class, properties={"createdAt", "username"}, arguments={"orderParameterName"="order"})
+ * @ApiFilter(OrSearchFilter::class, properties={"username"="ipartial", "emailAddress"="ipartial"})
  * @ORM\Entity
  * @ORM\Table(name="`user`")
  */

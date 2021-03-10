@@ -150,6 +150,12 @@ services:
       BLACKFIRE_SERVER_ID: ~
       BLACKFIRE_SERVER_TOKEN: ~
       # BLACKFIRE_LOG_LEVEL: 4
+  
+  smtp-relay:
+    image: namshi/smtp
+    restart: always
+    ports:
+      - "25:25"
 
 volumes:
   php_socket:
