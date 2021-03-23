@@ -1,6 +1,6 @@
 <script>
-import login from '@cwa/nuxt-module/core/templates/pages/login.vue'
+import LoginPage from '@cwa/nuxt-module/core/templates/pages/login.vue'
 export default {
-  mixins: [login],
+  mixins: [LoginPage]
 }
 </script>
