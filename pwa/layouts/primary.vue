@@ -2,24 +2,21 @@
   <div class="primary-layout">
     <div class="top">
       <cwa-admin-bar />
-      <div>
-        <component-collection
-          location="top"
-          v-bind="componentCollectionProps"
-        />
-      </div>
-
-      <div v-if="$cwa.resourcesOutdated" class="container refresh-bar">
-        <span>The content on this page is outdated.</span>
-        <button class="is-warning" @click="$cwa.mergeNewResources()">
-          Update page
-        </button>
+      <div class="refresh-bar-holder">
+        <cwa-refresh-bar />
       </div>
 
       <div class="container loading-message">
         <p v-if="$cwa.$state.error" class="error">
           {{ $cwa.$state.error }}
         </p>
+      </div>
+
+      <div>
+        <component-collection
+          location="top"
+          v-bind="componentCollectionProps"
+        />
       </div>
 
       <nuxt />
@@ -35,8 +32,10 @@
 
 <script>
 import LayoutMixin from '@cwa/nuxt-module/core/mixins/LayoutMixin'
+import CwaRefreshBar from '@cwa/nuxt-module/core/templates/components/admin/cwa-refresh-bar.vue'
 
 export default {
+  components: { CwaRefreshBar },
   mixins: [LayoutMixin],
 }
 </script>
@@ -48,13 +47,9 @@ export default {
   flex-direction: column
   > .top
     flex-grow: 1
-.loading-message
-  .error
-    color: $color-danger
-.refresh-bar
-  display: flex
-  justify-content: center
-  align-items: center
-  button
-    margin: 0 0 0 1rem
+    .refresh-bar-holder
+      position: relative
+  .loading-message
+    .error
+      color: $color-danger
 </style>
