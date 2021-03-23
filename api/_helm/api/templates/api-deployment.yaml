@@ -1,6 +1,7 @@
 {{- $name := "api" -}}
 {{- $data := dict "name" $name "Chart" .Chart "Release" .Release "Values" .Values -}}
 {{- $fullName := include "cwa.fullname" . -}}
+{{- $primaryHost := index .Values.ingress.hosts 0 }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -42,7 +43,7 @@ spec:
             - name: SERVER_NAME
               value: :80
             - name: BROWSER_SERVER_NAME
-              value: {{ .Values.ingress.hosts.0.host | quote }}
+              value: {{ $primaryHost.host | quote }}
             - name: MERCURE_PUBLISHER_JWT_KEY
               valueFrom:
                 secretKeyRef:
