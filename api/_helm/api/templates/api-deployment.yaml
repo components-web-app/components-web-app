@@ -41,6 +41,8 @@ spec:
           env:
             - name: SERVER_NAME
               value: :80
+            - name: BROWSER_SERVER_NAME
+              value: {{ .Values.ingress.hosts.0.host | quote }}
             - name: MERCURE_PUBLISHER_JWT_KEY
               valueFrom:
                 secretKeyRef:

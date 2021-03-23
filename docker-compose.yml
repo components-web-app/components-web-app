@@ -52,6 +52,7 @@ services:
     environment:
       VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy}
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
+      BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-!ChangeMe!}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-!ChangeMe!}
       MERCURE_CORS_ORIGIN: "*"

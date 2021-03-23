@@ -125,4 +125,7 @@ export default {
   cwa: {
     websiteName: 'CWA Demo Site',
   },
+  loading: {
+    color: '#E30A6C',
+  },
 }

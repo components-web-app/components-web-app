@@ -917,9 +917,9 @@
   integrity sha512-5a6wqoJV/xEdbRNKVo6I4hO3VjyDq//8q2f9I6PBAvMesJHFauXDorcNCsr9RzvsZnaWi5NYCcfyqP1QeFHFbw==
 
 "@cwa/nuxt-module-next@^1.0.0-1615076443.3edc0e3":
-  version "1.0.0-1616512626.fd29bf6"
-  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1616512626.fd29bf6.tgz#ab93c46aeb7811d79709d394e4e4375c9a2c8408"
-  integrity sha512-p75AEo53AJlPYDd1a6suPlIp4LUxb4j4SO1HfXr2eROL48N72fU6wMRB7xeVAuW9dP50S8+ACkrrbuStfssVfA==
+  version "1.0.0-1616514960.673b3de"
+  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1616514960.673b3de.tgz#88fe578f1d95d19fecc5dfe46bd1b8e07f45b989"
+  integrity sha512-O+GTN1LWdeokH/Kb3Wwrt11Cad0cAQHeWOWsEj2U7C2ozwNBef7UYznOilJXImfSrSU0zEJEpcEo4aI5AGs5lw==
   dependencies:
     "@nuxt/components" "^2.1.2"
     "@nuxtjs/auth-next" "^5.0.0-1613647907.37b1156"
@@ -1245,16 +1245,16 @@
     wrap-ansi "^7.0.0"
 
 "@nuxt/components@^2.1.2":
-  version "2.1.3"
-  resolved "https://registry.yarnpkg.com/@nuxt/components/-/components-2.1.3.tgz#5be51bf3f1aea0aef218abfc12c41a9e733d0d1b"
-  integrity sha512-MXChq9y2VGIwT3DKVrxRhJZT2RqRNjyMtKlMWF+VnOa1vJ82A5tAXFKxCvSv9RfVx+nS7bXYAk1Mpp4Qzqm3zQ==
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/@nuxt/components/-/components-2.1.4.tgz#6d3774704be9b3f692a9bb6d994b1261351799d8"
+  integrity sha512-V3AMoZz2ADhI0SbbUoX1U70eulL/xDwWpV5L/PLmoUHN7NuzsvBbOIl8JBXxf+Vp/d5TZwO0I2x7cHiukydfmA==
   dependencies:
     chalk "^4.1.0"
     chokidar "^3.5.1"
     glob "^7.1.6"
-    globby "^11.0.2"
+    globby "^11.0.3"
     scule "^0.1.1"
-    semver "^7.3.4"
+    semver "^7.3.5"
     upath "^2.0.1"
     vue-template-compiler "^2.6.12"
 
@@ -4613,9 +4613,9 @@ ee-first@1.1.1:
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
 electron-to-chromium@^1.3.649:
-  version "1.3.695"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.695.tgz#955f419cf99137226180cc4cca2e59015a4e248d"
-  integrity sha512-lz66RliUqLHU1Ojxx1A4QUxKydjiQ79Y4dZyPobs2Dmxj5aVL2TM3KoQ2Gs7HS703Bfny+ukI3KOxwAB0xceHQ==
+  version "1.3.696"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.696.tgz#f38485644ff23d55955d9d68901051c6e72d1c14"
+  integrity sha512-yuKKvBuXe+IWRp6DxqbGUxbPtamh5C+mEC38vZ0KLxQFpGG9TQn0DbPL9WhWhQnfNhLyzxmPYlCzShbs8QxGbA==
 
 elliptic@^6.5.3:
   version "6.5.4"
@@ -5806,7 +5806,7 @@ globals@^9.18.0:
   resolved "https://registry.yarnpkg.com/globals/-/globals-9.18.0.tgz#aa3896b3e69b487f17e31ed2143d69a8e30c2d8a"
   integrity sha512-S0nG3CLEQiY/ILxqtztTWH/3iRRdyBLw6KMDxnKMchrtbj2OFmehVh0WUCfW3DUrIgx/qFrJPICrq4Z4sTR9UQ==
 
-globby@^11.0.2:
+globby@^11.0.2, globby@^11.0.3:
   version "11.0.3"
   resolved "https://registry.yarnpkg.com/globby/-/globby-11.0.3.tgz#9b1f0cb523e171dd1ad8c7b2a9fb4b644b9593cb"
   integrity sha512-ffdmosjA807y7+lA1NM0jELARVmYul/715xiILEjo3hBLPTcirgQNnXECn5g3mtR8TOLCVbkfua1Hpen25/Xcg==
@@ -10588,7 +10588,7 @@ semver@7.0.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.0.0.tgz#5f3ca35761e47e05b206c6daff2cf814f0316b8e"
   integrity sha512-+GB6zVA9LWh6zovYQLALHwv5rb2PHGlJi3lfiqIHxR0uuwCgefcOJc59v9fv1w8GbStwxuuqqAjI9NMAOOgq1A==
 
-semver@7.x, semver@^7.2.1, semver@^7.3.2, semver@^7.3.4:
+semver@7.x, semver@^7.2.1, semver@^7.3.2, semver@^7.3.4, semver@^7.3.5:
   version "7.3.5"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.3.5.tgz#0b621c879348d8998e4b0e4be94b3f12e6018ef7"
   integrity sha512-PoeGJYh8HK4BTO/a9Tf6ZG3veo/A7ZVsYrSA6J8ny9nb3B1VrpkuN+z9OE5wfE5p6H4LchYZsegiQgbJD94ZFQ==
