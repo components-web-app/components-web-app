@@ -14,12 +14,11 @@ final class Version20200902154814 extends AbstractMigration
 {
     public function getDescription() : string
     {
-        return '';
+        return 'Initial schema';
     }
 
     public function up(Schema $schema) : void
     {
-        // this up() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'postgresql', 'Migration can only be executed safely on \'postgresql\'.');
 
         $this->addSql('CREATE TABLE "user" (id UUID NOT NULL, username VARCHAR(255) NOT NULL, email_address VARCHAR(255) NOT NULL, roles TEXT NOT NULL, enabled BOOLEAN NOT NULL, password VARCHAR(255) NOT NULL, new_password_confirmation_token VARCHAR(255) DEFAULT NULL, password_requested_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, password_updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, new_email_address VARCHAR(255) DEFAULT NULL, new_email_verification_token VARCHAR(255) DEFAULT NULL, new_email_address_change_requested_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, email_address_verified BOOLEAN NOT NULL, restore_access_token VARCHAR(255) DEFAULT NULL, email_last_updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, modified_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY(id))');
@@ -123,10 +122,8 @@ final class Version20200902154814 extends AbstractMigration
 
     public function down(Schema $schema) : void
     {
-        // this down() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'postgresql', 'Migration can only be executed safely on \'postgresql\'.');
 
-        $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE refresh_token DROP CONSTRAINT FK_C74F2195A76ED395');
         $this->addSql('ALTER TABLE _acb_route DROP CONSTRAINT FK_9BFEB786C30C9E2B');
         $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF323AB211837');

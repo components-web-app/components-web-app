@@ -1,5 +1,4 @@
 /.env
 /docker-compose.override.yaml
 /docker-compose.override.yml
-/.nuxt
 .vercel
