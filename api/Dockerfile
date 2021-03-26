@@ -45,6 +45,7 @@ COPY config config/
 COPY public public/
 COPY src src/
 COPY assets assets/
+COPY migrations migrations/
 
 RUN set -eux; \
 	mkdir -p var/cache var/log; \
