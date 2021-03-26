@@ -79,8 +79,8 @@ export default {
 }
 </script>
 
+<style lang="stylus" src="quill/assets/snow.styl" />
 <style lang="sass">
-@import "~assets/sass/quill.sass"
 .ql-container
   font-size: inherit
   height: auto
@@ -97,7 +97,7 @@ export default {
           color: inherit
         &[data-value='primary']::before
           content: 'Primary'
-          color: $cwa-color-primary
+          color: $color-primary
         &[data-value='success']::before
           content: 'Success'
           color: $color-success
@@ -109,12 +109,12 @@ export default {
         &[data-value='7']::before
           content: 'Small'
           font-size: .7rem
-    //&.ql-font
-    //  .ql-picker-item,
-    //  .ql-picker-label
-    //    ::before
-    //      content: 'Font'
-    //    &[data-value='monda']::before
-    //      content: 'Monda'
-    //      font-family: 'Monda'
+//&.ql-font
+//  .ql-picker-item,
+//  .ql-picker-label
+//    ::before
+//      content: 'Font'
+//    &[data-value='monda']::before
+//      content: 'Monda'
+//      font-family: 'Monda'
 </style>
