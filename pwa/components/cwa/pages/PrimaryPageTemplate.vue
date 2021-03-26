@@ -21,6 +21,6 @@
 import PageMixin from '@cwa/nuxt-module/core/mixins/PageMixin'
 
 export default {
-  mixins: [PageMixin],
+  mixins: [PageMixin]
 }
 </script>

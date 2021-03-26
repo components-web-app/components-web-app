@@ -1,6 +1,7 @@
 <template>
   <div>
     <button class="button-outline" @click="$emit('hide')">Close editor</button>
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div ref="quill" v-html="quillModel" />
     <div v-if="outdated && !error">
       <span>saving...</span>
@@ -24,25 +25,25 @@ export default {
                 { header: [false, 1, 2, 3, 4] },
                 { size: [false, '7'] },
                 {
-                  'theme-color': [false, 'primary', 'success'],
-                },
+                  'theme-color': [false, 'primary', 'success']
+                }
               ],
               ['bold', 'italic', 'underline'],
               [
                 { align: '' },
                 { align: 'center' },
                 { align: 'justify' },
-                { align: 'right' },
+                { align: 'right' }
               ],
               [{ list: 'ordered' }, { list: 'bullet' }],
               ['link'],
-              ['clean'],
-            ],
-          },
+              ['clean']
+            ]
+          }
         },
-        theme: 'snow',
+        theme: 'snow'
       },
-      quillModel: null,
+      quillModel: null
     }
   },
   async mounted() {
@@ -59,7 +60,7 @@ export default {
         delta.ops.forEach((op) => {
           if (op.insert && typeof op.insert === 'string') {
             ops.push({
-              insert: op.insert,
+              insert: op.insert
             })
           }
         })
@@ -74,13 +75,12 @@ export default {
 
       this.editor.enable(true)
     })
-  },
+  }
 }
 </script>
 
-<style lang="stylus" src="quill/assets/snow.styl" />
-
 <style lang="sass">
+@import "~assets/sass/quill.sass"
 .ql-container
   font-size: inherit
   height: auto
@@ -97,7 +97,7 @@ export default {
           color: inherit
         &[data-value='primary']::before
           content: 'Primary'
-          color: $color-primary
+          color: $cwa-color-primary
         &[data-value='success']::before
           content: 'Success'
           color: $color-success

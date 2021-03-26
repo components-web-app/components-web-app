@@ -36,7 +36,7 @@ import CwaRefreshBar from '@cwa/nuxt-module/core/templates/components/admin/cwa-
 
 export default {
   components: { CwaRefreshBar },
-  mixins: [LayoutMixin],
+  mixins: [LayoutMixin]
 }
 </script>
 

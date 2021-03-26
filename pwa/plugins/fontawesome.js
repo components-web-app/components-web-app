@@ -4,9 +4,9 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 // import { faGithub } from '@fortawesome/free-brands-svg-icons/faGithub'
 import {
   faCheck,
-  faExclamationTriangle,
+  faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(faCheck, faExclamationTriangle)
 
-Vue.component('font-awesome-icon', FontAwesomeIcon)
+Vue.component('FontAwesomeIcon', FontAwesomeIcon)

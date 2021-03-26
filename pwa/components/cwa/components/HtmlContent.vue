@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div v-if="!editing" @dblclick="showEditView" v-html="displayHtml" />
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div v-if="!editing" v-html="displayHtml" />
     <quill-input
       v-else
       :iri="displayIri"
@@ -19,16 +20,18 @@ export default {
   data() {
     return {
       editing: false,
+      componentManager: {
+        name: 'HTML Content',
+        tabs: [
+          {
+            label: 'Tab label',
+            component: () => import('../admin-dialog/HtmlContent.vue')
+          }
+        ]
+      }
     }
   },
   computed: {
-    contextMenuData() {
-      return {
-        Edit: {
-          callback: this.showEditView,
-        },
-      }
-    },
     displayHtml() {
       return (
         this.resource.html ||
@@ -36,12 +39,12 @@ export default {
           ? '<p style="font-style: italic">No content</p>'
           : '')
       )
-    },
+    }
   },
   methods: {
     showEditView() {
       this.editing = true
-    },
-  },
+    }
+  }
 }
 </script>

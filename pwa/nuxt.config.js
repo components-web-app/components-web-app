@@ -13,7 +13,7 @@ const https =
     ? {}
     : {
         key: fs.readFileSync(path.resolve(CERT_DIR + '/localhost.key')),
-        cert: fs.readFileSync(path.resolve(CERT_DIR + '/localhost.crt')),
+        cert: fs.readFileSync(path.resolve(CERT_DIR + '/localhost.crt'))
       }
 
 const cwaNuxtModuleName = 'nuxt-module-next'
@@ -21,26 +21,26 @@ const cwaNuxtModuleName = 'nuxt-module-next'
 export default {
   server: {
     host: '0.0.0.0',
-    https,
+    https
   },
   publicRuntimeConfig: {
     API_URL,
-    API_URL_BROWSER,
+    API_URL_BROWSER
   },
   typescript: {
     typeCheck: {
-      eslint: true,
-    },
+      eslint: true
+    }
   },
   head: {
     meta: [
       { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-    ],
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' }
+    ]
   },
   css: ['~/assets/sass/main.sass'],
   buildModules: [
-    '@nuxt/typescript-build',
+    '@nuxt/typescript-build'
     // Doc: https://github.com/nuxt-community/stylelint-module
     // too many issues and not the nicest style lint handling. Many issues with the quill sass and with multiple style blocks and differing languages in a SFC
     // '@nuxtjs/stylelint-module',
@@ -50,15 +50,15 @@ export default {
     '@nuxtjs/axios',
     '@nuxtjs/auth-next',
     '@nuxtjs/pwa',
-    `@cwa/${cwaNuxtModuleName}`,
+    `@cwa/${cwaNuxtModuleName}`
   ],
   plugins: [
     { src: '~/plugins/axios', mode: 'server' },
-    { src: '~/plugins/quill', ssr: false },
+    { src: '~/plugins/quill', ssr: false }
   ],
   serverMiddleware: ['~/server-middleware/headers'],
   router: {
-    middleware: ['auth', 'routeLoader'],
+    middleware: ['auth', 'routeLoader']
   },
   render: {
     csp: {
@@ -74,58 +74,59 @@ export default {
           "'self'",
           API_URL_BROWSER,
           MERCURE_SUBSCRIBE_URL,
-          '*.google-analytics.com',
+          '*.google-analytics.com'
         ],
         'form-action': ["'self'"],
         'frame-ancestors': ["'none'"],
         'object-src': ["'none'"],
-        'base-uri': [],
-      },
-    },
+        'base-uri': []
+      }
+    }
   },
   axios: {
     credentials: true,
-    progress: false,
+    progress: false
   },
   auth: {
     redirect: {
       login: '/login',
       logout: '/login',
       home: '/',
-      callback: false,
+      callback: false
     },
     strategies: {
-      local: {
+      cookie: {
         user: {
           autoFetch: true,
-          property: '',
+          property: ''
         },
         endpoints: {
           login: { url: '/login', method: 'post' },
           logout: { url: '/logout', method: 'post' },
-          user: { url: '/me', method: 'get' },
+          user: { url: '/me', method: 'get' }
         },
         token: {
           global: false,
           required: false,
-        },
-      },
-    },
+          type: false
+        }
+      }
+    }
   },
   // we are not using the correct node module name yet, awaiting resolution to cwa namespace being available or not
   alias: {
     '@cwa/nuxt-module': join(
       __dirname,
       `node_modules/@cwa/${cwaNuxtModuleName}/dist`
-    ),
+    )
   },
   styleResources: {
-    sass: ['~/assets/sass/vars/*.sass'],
+    sass: ['~/assets/sass/vars/*.sass']
   },
   cwa: {
-    websiteName: 'CWA Demo Site',
+    websiteName: 'CWA Demo Site'
   },
   loading: {
-    color: '#E30A6C',
-  },
+    color: '#E30A6C'
+  }
 }

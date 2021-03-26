@@ -10,7 +10,7 @@ const Parchment = Quill.import('parchment')
 
 const SizeClass = new Parchment.Attributor.Class('size', 'is-size', {
   scope: Parchment.Scope.INLINE,
-  whitelist: ['1', '2', '3', '4', '5', '6', '7'],
+  whitelist: ['1', '2', '3', '4', '5', '6', '7']
 })
 Quill.register(SizeClass, true)
 
@@ -19,7 +19,7 @@ const ThemeColorClass = new Parchment.Attributor.Class(
   'has-color',
   {
     scope: Parchment.Scope.INLINE,
-    whitelist: ['primary', 'success'],
+    whitelist: ['primary', 'success']
   }
 )
 Quill.register(ThemeColorClass, true)
@@ -27,7 +27,7 @@ Quill.register(ThemeColorClass, true)
 // class conflict with has-text above
 const AlignClass = new Parchment.Attributor.Class('align', 'text-align', {
   scope: Parchment.Scope.BLOCK,
-  whitelist: ['right', 'center', 'justify'],
+  whitelist: ['right', 'center', 'justify']
 })
 Quill.register(AlignClass)
 

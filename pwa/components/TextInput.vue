@@ -15,6 +15,6 @@
 import InputMixin from '@cwa/nuxt-module/core/mixins/InputMixin'
 
 export default {
-  mixins: [InputMixin],
+  mixins: [InputMixin]
 }
 </script>
