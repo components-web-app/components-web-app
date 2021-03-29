@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use App\Entity\BlogArticleData;
 use App\Entity\HtmlContent;
+use App\Lipsum\LipsumContentProvider;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
@@ -16,10 +17,10 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 {
     private RouteGeneratorInterface $routeGenerator;
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, RouteGeneratorInterface $routeGenerator)
+    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, RouteGeneratorInterface $routeGenerator)
     {
         $this->routeGenerator = $routeGenerator;
-        parent::__construct($timestampedDataPersister);
+        parent::__construct($timestampedDataPersister, $lipsumContentProvider);
     }
 
     public function load(ObjectManager $manager): void

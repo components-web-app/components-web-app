@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use ApiPlatform\Core\Api\IriConverterInterface;
 use App\Entity\BlogArticleData;
+use App\Lipsum\LipsumContentProvider;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Component\Collection;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
@@ -14,10 +15,10 @@ class BlogCollectionPageFixture extends AbstractPageFixture
     public const ROUTE_NAME = 'blog-articles-page';
     private IriConverterInterface $iriConverter;
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, IriConverterInterface $iriConverter)
+    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, IriConverterInterface $iriConverter)
     {
         $this->iriConverter = $iriConverter;
-        parent::__construct($timestampedDataPersister);
+        parent::__construct($timestampedDataPersister, $lipsumContentProvider);
     }
 
     public function load(ObjectManager $manager): void

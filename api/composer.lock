@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ffeca25816d04796d72f9cce89ec3446",
+    "content-hash": "f6ccc0ce3227639809b6bddb3df835a5",
     "packages": [
         {
             "name": "api-platform/api-pack",
@@ -2870,16 +2870,16 @@
         },
         {
             "name": "laminas/laminas-code",
-            "version": "4.0.0",
+            "version": "4.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laminas/laminas-code.git",
-                "reference": "28a6d70ea8b8bca687d7163300e611ae33baf82a"
+                "reference": "5b553c274b94af3f880cbaaf8fbab047f279a31c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-code/zipball/28a6d70ea8b8bca687d7163300e611ae33baf82a",
-                "reference": "28a6d70ea8b8bca687d7163300e611ae33baf82a",
+                "url": "https://api.github.com/repos/laminas/laminas-code/zipball/5b553c274b94af3f880cbaaf8fbab047f279a31c",
+                "reference": "5b553c274b94af3f880cbaaf8fbab047f279a31c",
                 "shasum": ""
             },
             "require": {
@@ -2937,7 +2937,7 @@
                     "type": "community_bridge"
                 }
             ],
-            "time": "2020-12-30T16:16:14+00:00"
+            "time": "2021-03-27T13:55:31+00:00"
         },
         {
             "name": "laminas/laminas-eventmanager",
@@ -4410,12 +4410,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "82e43b93ac9ff12ca853c717cda4a6f4128df113"
+                "reference": "f7657667affb5c0abe9bbd1dbb96536ea61f74df"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/82e43b93ac9ff12ca853c717cda4a6f4128df113",
-                "reference": "82e43b93ac9ff12ca853c717cda4a6f4128df113",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/f7657667affb5c0abe9bbd1dbb96536ea61f74df",
+                "reference": "f7657667affb5c0abe9bbd1dbb96536ea61f74df",
                 "shasum": ""
             },
             "require": {
@@ -4502,7 +4502,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/master"
             },
-            "time": "2021-03-25T11:00:06+00:00"
+            "time": "2021-03-28T17:34:36+00:00"
         },
         {
             "name": "symfony/asset",

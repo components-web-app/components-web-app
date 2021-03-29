@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace App\DataFixtures;
 
 
+use App\Lipsum\LipsumContentProvider;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractComponent;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractPageData;
@@ -22,10 +23,12 @@ use Silverback\ApiComponentsBundle\Helper\Timestamped\TimestampedDataPersister;
 abstract class AbstractPageFixture extends Fixture
 {
     protected TimestampedDataPersister $timestampedDataPersister;
+    protected LipsumContentProvider $lipsumContentProvider;
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister)
+    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider)
     {
         $this->timestampedDataPersister = $timestampedDataPersister;
+        $this->lipsumContentProvider = $lipsumContentProvider;
     }
 
     protected function createLayout(string $reference, string $uiComponent): Layout

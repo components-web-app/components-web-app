@@ -2,7 +2,6 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Button;
 use App\Entity\HtmlContent;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
@@ -25,7 +24,7 @@ class HomePageFixture extends AbstractPageFixture
         $manager->persist($page);
 
         $htmlContent = new HtmlContent();
-        $htmlContent->html = '<p>Bonjour mon ami</p>';
+        $htmlContent->html = $this->lipsumContentProvider->generate();
         $htmlContent->setPublishedAt(new \DateTime());
         $manager->persist($htmlContent);
 

@@ -1,4 +1,6 @@
 {
+    "name": "components-web-app/component-web-app-api",
+    "description": "",
     "license": "MIT",
     "require": {
         "php": "^7.4 || ^8.0",
