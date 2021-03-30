@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="['html-component', resource.uiClassNames]">
     <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-if="!editing" v-html="displayHtml" />
     <quill-input
@@ -20,14 +20,11 @@ export default {
   data() {
     return {
       editing: false,
-      componentManager: {
-        name: 'HTML Content',
-        tabs: [
-          {
-            label: 'Tab label',
-            component: () => import('../admin-dialog/HtmlContent.vue')
-          }
-        ]
+      componentManagerContext: {
+        componentTab: {
+          UiClassNames: ['is-feature', 'has-cwa-color'],
+          UiComponents: [{ label: 'Logo Layout', value: 'HtmlContentWithLogo' }]
+        }
       }
     }
   },
@@ -48,3 +45,14 @@ export default {
   }
 }
 </script>
+
+<style lang="sass">
+.html-component
+  padding: .5rem
+  &.is-feature
+    padding: 1rem .5rem
+    font-size: 2.1rem
+    text-align: center
+  &.has-cwa-color
+    color: $cwa-color-primary
+</style>

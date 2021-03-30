@@ -45,13 +45,7 @@ export default {
     // too many issues and not the nicest style lint handling. Many issues with the quill sass and with multiple style blocks and differing languages in a SFC
     // '@nuxtjs/stylelint-module',
   ],
-  modules: [
-    '@nuxtjs/style-resources',
-    '@nuxtjs/axios',
-    '@nuxtjs/auth-next',
-    '@nuxtjs/pwa',
-    `@cwa/${cwaNuxtModuleName}`
-  ],
+  modules: ['@nuxtjs/pwa', `@cwa/${cwaNuxtModuleName}`],
   plugins: [
     { src: '~/plugins/axios', mode: 'server' },
     { src: '~/plugins/quill', ssr: false }
@@ -80,36 +74,6 @@ export default {
         'frame-ancestors': ["'none'"],
         'object-src': ["'none'"],
         'base-uri': []
-      }
-    }
-  },
-  axios: {
-    credentials: true,
-    progress: false
-  },
-  auth: {
-    redirect: {
-      login: '/login',
-      logout: '/login',
-      home: '/',
-      callback: false
-    },
-    strategies: {
-      cookie: {
-        user: {
-          autoFetch: true,
-          property: ''
-        },
-        endpoints: {
-          login: { url: '/login', method: 'post' },
-          logout: { url: '/logout', method: 'post' },
-          user: { url: '/me', method: 'get' }
-        },
-        token: {
-          global: false,
-          required: false,
-          type: false
-        }
       }
     }
   },

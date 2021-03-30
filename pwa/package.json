@@ -20,7 +20,7 @@
     "nuxt": "^2.15.3"
   },
   "devDependencies": {
-    "@cwa/nuxt-module-next": "^1.0.0-1615076443.3edc0e3",
+    "@cwa/nuxt-module-next": "^1.0.0-1617126520.26acdbe",
     "@nuxt/typescript-build": "^1.0.3",
     "@nuxtjs/eslint-config": "^6.0.0",
     "@nuxtjs/eslint-config-typescript": "^6.0.0",
