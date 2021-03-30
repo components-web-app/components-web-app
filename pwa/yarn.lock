@@ -914,10 +914,10 @@
   resolved "https://registry.yarnpkg.com/@csstools/convert-colors/-/convert-colors-1.4.0.tgz#ad495dc41b12e75d588c6db8b9834f08fa131eb7"
   integrity sha512-5a6wqoJV/xEdbRNKVo6I4hO3VjyDq//8q2f9I6PBAvMesJHFauXDorcNCsr9RzvsZnaWi5NYCcfyqP1QeFHFbw==
 
-"@cwa/nuxt-module-next@^1.0.0-1617127953.ce50d60":
-  version "1.0.0-1617127953.ce50d60"
-  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1617127953.ce50d60.tgz#e10f63e29e8cab58c44350dcc5ba13f80ff90459"
-  integrity sha512-hTb3BfqbcJNKSG1Xc3lO2gYkfJaiJ+7uD3pmtg0n/pWSrp2VvlX0WMblaf+xXIeZe/7TglhCNNzUcIIF9tQawA==
+"@cwa/nuxt-module-next@^1.0.0-1617139124.133a2b6":
+  version "1.0.0-1617139124.133a2b6"
+  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1617139124.133a2b6.tgz#b8d741760a4b7a16efaeac80fb2f694f1f7d5e7b"
+  integrity sha512-mOUp8OQhKsfYmEVe2U6dEFrFriRmhhGbx7pAI15jhXUjVaon0sfnlvIPsncuc16b4AauGeqopJs9ffGERDG3OQ==
   dependencies:
     "@nuxt/components" "^2.1.2"
     "@nuxtjs/auth-next" "^5.0.0-1613647907.37b1156"
