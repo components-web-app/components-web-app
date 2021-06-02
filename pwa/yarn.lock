@@ -952,9 +952,9 @@
   integrity sha512-5a6wqoJV/xEdbRNKVo6I4hO3VjyDq//8q2f9I6PBAvMesJHFauXDorcNCsr9RzvsZnaWi5NYCcfyqP1QeFHFbw==
 
 "@cwa/nuxt-module-next@^1.0.0-1617147943.72a13cb":
-  version "1.0.0-1622652990.f921c1c"
-  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1622652990.f921c1c.tgz#5def27b9bf8a6648166b30b8665380bca94b6919"
-  integrity sha512-BX/eL6uIkOstSyyK94g11Huygq5mEci8a6P7poniJ3B1asg/0eqVo+7P7rui7xvHXIbwZ9EDPaKkvPn/bwSoaA==
+  version "1.0.0-1622661328.5ff847d"
+  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1622661328.5ff847d.tgz#78c193f007a7820aefb65104f35c50ba399e3760"
+  integrity sha512-GUq1UNtLvTcDYWacUorZYITKxELHu5auBKfZWAbBZGUiuZ0ITdg64st6uOfqyP4uK4ePoLZYGk6BXJOJBOKXRA==
   dependencies:
     "@nuxt/components" "^2.1.2"
     "@nuxtjs/auth-next" "^5.0.0-1613647907.37b1156"
@@ -5493,9 +5493,9 @@ execa@^4.0.0:
     strip-final-newline "^2.0.0"
 
 execa@^5.0.0:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/execa/-/execa-5.0.1.tgz#aee63b871c9b2cb56bc9addcd3c70a785c6bf0d1"
-  integrity sha512-4hFTjFbFzQa3aCLobpbPJR/U+VoL1wdV5ozOWjeet0AWDeYr9UFGM1eUFWHX+VtOWFq4p0xXUXfW1YxUaP4fpw==
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/execa/-/execa-5.1.0.tgz#3ea50ee863d226bfa323528cce1684e7481dfe46"
+  integrity sha512-CkdUB7s2y6S+d4y+OM/+ZtQcJCiKUCth4cNImGMqrt2zEVtW2rfHGspQBE1GDo6LjeNIQmTPKXqTCKjqFKyu3A==
   dependencies:
     cross-spawn "^7.0.3"
     get-stream "^6.0.0"
