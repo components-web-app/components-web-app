@@ -301,7 +301,7 @@ deploy_vercel_pwa() {
 
 	echo "Adding nodejs nodejs-npm ..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
-  apk add --update-cache --upgrade --no-cache -U openssl nodejs nodejs-npm
+  apk add --update-cache --upgrade --no-cache -U openssl nodejs
 	echo "Installing Vercel CLI ..."
 	npm i -g vercel
 
