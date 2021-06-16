@@ -481,9 +481,6 @@
     "symfony/http-kernel": {
         "version": "v4.3.8"
     },
-    "symfony/intl": {
-        "version": "v5.0.8"
-    },
     "symfony/mailer": {
         "version": "4.3",
         "recipe": {
