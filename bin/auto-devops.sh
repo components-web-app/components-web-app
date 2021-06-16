@@ -66,9 +66,9 @@ rand_str() {
 }
 
 install_dependencies() {
-  echo "Adding openssl curl tar gzip ca-certificates git nodejs nodejs-npm ..."
+  echo "Adding openssl curl tar gzip ca-certificates git nodejs npm ..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
-  apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs nodejs-npm openssh-keygen
+  apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm openssh-keygen
 
   wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
   wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.28-r0/glibc-2.28-r0.apk
@@ -299,9 +299,9 @@ deploy_vercel_pwa() {
 		false
 	fi
 
-	echo "Adding nodejs nodejs-npm ..."
+	echo "Adding nodejs npm ..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
-  apk add --update-cache --upgrade --no-cache -U openssl nodejs
+  apk add --update-cache --upgrade --no-cache -U openssl nodejs npm
 	echo "Installing Vercel CLI ..."
 	npm i -g vercel
 
