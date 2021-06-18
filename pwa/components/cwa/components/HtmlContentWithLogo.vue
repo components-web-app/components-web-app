@@ -3,12 +3,7 @@
     <cwa-logo class="cwa-logo" />
     <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-if="!editing" v-html="displayHtml" />
-    <quill-input
-      v-else
-      :iri="displayIri"
-      field="html"
-      @hide="editing = false"
-    />
+    <quill-input v-else :iri="iri" field="html" @hide="editing = false" />
   </div>
 </template>
 
