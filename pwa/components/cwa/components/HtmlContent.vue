@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts">
-import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
+import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin.js'
 import QuillInput from '~/components/QuillInput.vue'
 export default {
   components: { QuillInput },
