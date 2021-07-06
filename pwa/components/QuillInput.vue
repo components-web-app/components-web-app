@@ -1,11 +1,7 @@
 <template>
   <div>
-    <button class="button-outline" @click="$emit('hide')">Close editor</button>
     <!-- eslint-disable-next-line vue/no-v-html -->
     <div ref="quill" v-html="quillModel" />
-    <div v-if="outdated && !error">
-      <span>saving...</span>
-    </div>
   </div>
 </template>
 
@@ -79,7 +75,8 @@ export default {
 }
 </script>
 
-<style lang="stylus" src="quill/assets/snow.styl" />
+<!--<style lang="stylus" src="quill/assets/snow.styl" />-->
+<style lang="sass" src="assets/sass/quill.sass" />
 <style lang="sass">
 .ql-container
   font-size: inherit

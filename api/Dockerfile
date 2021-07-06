@@ -4,10 +4,10 @@
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 # in dev incompatible packages are (for PHP 8.0)
-# friends-of-behat/mink 1.8.0
-# friends-of-behat/mink-browserkit-driver 1.4.0
-# friends-of-behat/mink-extension 2.4.0
-# friends-of-behat/symfony-extension (dev supports it)
+# friends-of-behat/mink 1.8.0 1.9
+# friends-of-behat/mink-browserkit-driver 1.4.0 1.5
+# friends-of-behat/mink-extension 2.4.0 2.5
+# friends-of-behat/symfony-extension (dev supports it) 2.2
 # behatch/contexts requires friends-of-behat/mink-extension ^2.3.1
 ARG PHP_VERSION=7.4
 ARG APCU_VERSION=5.1.19
@@ -26,7 +26,7 @@ ENV PATH="${PATH}:/root/.composer/vendor/bin"
 ARG APP_ENV=prod
 
 RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
-COPY _docker/php/conf.d $PHP_INI_DIR/cwa.conf.d/
+COPY _docker/php/conf.d $PHP_INI_DIR/conf.d/cwa/
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY composer.* symfony.lock ./
@@ -59,9 +59,10 @@ VOLUME /srv/api/var
 COPY _docker/php/docker-healthcheck.sh /usr/local/bin/docker-healthcheck
 RUN chmod +x /usr/local/bin/docker-healthcheck
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 CMD ["docker-healthcheck"]
-
-COPY _docker/php/php-fpm.d/zz-docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 ## end healthchech override for socket instead of port
+
+# custom php-fpm config inc define the socket path
+COPY _docker/php/php-fpm.d/www2.cwa.conf /usr/local/etc/php-fpm.d/zzzzzz-www2.cwa.conf
 
 VOLUME /var/run/php
 

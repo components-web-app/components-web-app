@@ -74,6 +74,8 @@ route {
         health_timeout 20s
         fail_duration 5s
         header_up X-Caddy-Forwarded 1
+        # required to ensure we have 8443 for example if we are using this
+        header_up X-Forwarded-Port {http.request.port}
     }
 
     php_fastcgi unix//var/run/php/php-fpm.sock

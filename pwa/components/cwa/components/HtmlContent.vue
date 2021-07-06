@@ -2,12 +2,18 @@
   <div :class="['html-component', resource.uiClassNames]">
     <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-if="!editing" v-html="displayHtml" />
-    <quill-input v-else :iri="iri" field="html" @hide="editing = false" />
+    <quill-input
+      v-else
+      :iri="iri"
+      field="html"
+      notification-category="components-manager"
+      @hide="editing = false"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin.js'
+import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import QuillInput from '~/components/QuillInput.vue'
 export default {
   components: { QuillInput },

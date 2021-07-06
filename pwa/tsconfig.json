@@ -16,7 +16,7 @@
     "experimentalDecorators": true,
     "baseUrl": ".",
     "paths": {
-      "@cwa/nuxt-module": ["./node_modules/@cwa/nuxt-module-next/dist/*"],
+      "@cwa/nuxt-module/*": ["./node_modules/@cwa/nuxt-module-next/dist/*"],
       "~/*": [
         "./*"
       ],
@@ -27,7 +27,8 @@
     "types": [
       "@types/node",
       "@nuxt/types",
-      "types"
+      "types",
+      "@cwa/nuxt-module-next/types"
     ]
   },
   "exclude": [
