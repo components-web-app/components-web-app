@@ -13,9 +13,11 @@
 </template>
 
 <script lang="ts">
+import Vue from 'vue'
 import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import QuillInput from '~/components/QuillInput.vue'
-export default {
+
+export default Vue.extend({
   components: { QuillInput },
   mixins: [ComponentMixin],
   data() {
@@ -62,7 +64,7 @@ export default {
       this.editing = show
     }
   }
-}
+})
 </script>
 
 <style lang="sass">
