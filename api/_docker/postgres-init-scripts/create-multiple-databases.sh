@@ -15,7 +15,7 @@ EOSQL
 			CREATE EXTENSION IF NOT EXISTS citext SCHEMA public;
 			CREATE EXTENSION IF NOT EXISTS "uuid-ossp" SCHEMA public;
 			SELECT * FROM pg_extension;
-	EOSQL
+EOSQL
 }
 
 if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then
