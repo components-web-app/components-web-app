@@ -5,10 +5,11 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue'
 import InputMixin from '@cwa/nuxt-module/core/mixins/InputMixin'
 
-export default {
+export default Vue.extend({
   mixins: [InputMixin],
   data() {
     return {
@@ -42,8 +43,27 @@ export default {
       quillModel: null
     }
   },
+  computed: {
+    cleanedInputValue() {
+      return this.inputValue ? this.inputValue.trim() : this.inputValue
+    }
+  },
+  watch: {
+    // when published becomes a draft...
+    iri() {
+      this.$nextTick(() => {
+        const selection = this.editor.getSelection()
+        this.editor.root.innerHTML = this.cleanedInputValue
+        if (selection) {
+          this.$nextTick(() => {
+            this.editor.setSelection(selection.index, selection.length)
+          })
+        }
+      })
+    }
+  },
   async mounted() {
-    this.quillModel = this.inputValue ? this.inputValue.trim() : this.inputValue
+    this.quillModel = this.cleanedInputValue
     const { default: Quill } = await import('quill')
     this.editor = new Quill(this.$refs.quill, this.editorOptions)
 
@@ -72,7 +92,7 @@ export default {
       this.editor.enable(true)
     })
   }
-}
+})
 </script>
 
 <!--<style lang="stylus" src="quill/assets/snow.styl" />-->

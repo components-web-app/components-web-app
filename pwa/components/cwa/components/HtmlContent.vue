@@ -1,28 +1,24 @@
 <template>
   <div :class="['html-component', resource.uiClassNames]">
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-if="!editing" v-html="displayHtml" />
+    <div v-if="!cmValue('showEditor')" v-html="displayHtml" />
     <quill-input
       v-else
       :iri="iri"
       field="html"
       notification-category="components-manager"
-      @hide="editing = false"
     />
   </div>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
 import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import QuillInput from '~/components/QuillInput.vue'
-
-export default Vue.extend({
+export default {
   components: { QuillInput },
   mixins: [ComponentMixin],
   data() {
     return {
-      editing: false,
       componentManagerContext: {
         componentTab: {
           UiClassNames: ['is-feature', 'has-cwa-color'],
@@ -49,22 +45,8 @@ export default Vue.extend({
           : '')
       )
     }
-  },
-  mounted() {
-    this.$cwa.$eventBus.$on('show-html-editor', this.handleEditorEvent)
-  },
-  methods: {
-    showEditView() {
-      this.editing = true
-    },
-    handleEditorEvent({ iri, show }: { iri: string; show: boolean }) {
-      if (iri !== this.iri) {
-        return
-      }
-      this.editing = show
-    }
   }
-})
+}
 </script>
 
 <style lang="sass">

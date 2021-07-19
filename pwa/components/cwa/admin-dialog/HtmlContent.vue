@@ -12,11 +12,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue'
 import ComponentManagerTabMixin from '@cwa/nuxt-module/core/mixins/ComponentManagerTabMixin'
 import CwaAdminToggle from '@cwa/nuxt-module/core/templates/components/admin/input/cwa-admin-toggle.vue'
+import {
+  COMPONENT_MANAGER_EVENTS,
+  PublishableToggledEvent,
+  SaveStateEvent
+} from '@cwa/nuxt-module/core/events'
 
-export default {
+export default Vue.extend({
   components: { CwaAdminToggle },
   mixins: [ComponentManagerTabMixin],
   data() {
@@ -25,9 +31,33 @@ export default {
     }
   },
   watch: {
-    showEditor(show) {
-      this.$cwa.$eventBus.$emit('show-html-editor', { iri: this.iri, show })
+    showEditor(value) {
+      this.$cwa.$eventBus.$emit(COMPONENT_MANAGER_EVENTS.saveState, {
+        iri: this.iri,
+        name: 'showEditor',
+        value
+      } as SaveStateEvent)
+    }
+  },
+  mounted() {
+    this.showEditor = this.cmValue('showEditor')
+    this.$cwa.$eventBus.$on(
+      COMPONENT_MANAGER_EVENTS.publishableToggled,
+      this.handlePublishableToggled
+    )
+  },
+  beforeDestroy() {
+    this.$cwa.$eventBus.$off(
+      COMPONENT_MANAGER_EVENTS.publishableToggled,
+      this.handlePublishableToggled
+    )
+  },
+  methods: {
+    handlePublishableToggled(event: PublishableToggledEvent) {
+      if ([event.draftIri, event.publishedIri].includes(this.iri)) {
+        this.showEditor = null
+      }
     }
   }
-}
+})
 </script>
