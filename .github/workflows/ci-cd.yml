@@ -71,10 +71,10 @@ jobs:
           docker buildx bake \
             --pull \
             --set php.output=type=docker \
-            --set caddy.args.BUILDKIT_INLINE_CACHE=1 \
-            --set caddy.output=type=docker \
-            --set cache-proxy.args.BUILDKIT_INLINE_CACHE=1 \
-            --set cache-proxy.output=type=docker \
+            --set cwa_caddy.args.BUILDKIT_INLINE_CACHE=1 \
+            --set cwa_caddy.output=type=docker \
+            --set cwa_varnish.args.BUILDKIT_INLINE_CACHE=1 \
+            --set cwa_varnish.output=type=docker \
       - name: Validate composer.json
         run: |
           if jq -e '.extra.symfony.id != null' api/composer.json > /dev/null; then
