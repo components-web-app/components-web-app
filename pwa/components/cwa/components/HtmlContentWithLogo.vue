@@ -1,5 +1,12 @@
 <template>
-  <div :class="['html-component', resource.uiClassNames]">
+  <div
+    :class="[
+      'html-component',
+      resource.uiClassNames,
+      { 'has-error': !!fieldNotifications.html.length }
+    ]"
+    @dblclick="toggleEditor"
+  >
     <cwa-logo class="cwa-logo" />
     <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-if="!cmValue('showEditor')" v-html="displayHtml" />
