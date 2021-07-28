@@ -6,7 +6,7 @@ on:
 
 env:
   DOCKER_BUILDX_VERSION: '0.3.1'
-  DOCKER_COMPOSE_VERSION: '1.25.4'
+  DOCKER_COMPOSE_VERSION: '1.29.2'
   DOCKER_REGISTRY: registry.gitlab.com
   SYMFONY_ENDPOINT: https://flex.symfony.com/r/github.com/symfony/recipes-contrib/934
   SERVER_NAME: 'docker, caddy:80'
