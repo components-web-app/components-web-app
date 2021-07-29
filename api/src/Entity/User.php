@@ -17,7 +17,8 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
  * @author Daniel West <daniel@silverback.is>
  * @ApiResource(
  *     collectionOperations={
- *         "get"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
+ *         "get"={"security"="is_granted('ROLE_SUPER_ADMIN')"},
+ *         "post"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
  *     },
  *     itemOperations={
  *         "get"={"security"="is_granted('ROLE_SUPER_ADMIN') or object == user"},
@@ -40,17 +41,17 @@ class User extends AbstractUser
 //        ]));
 //    }
 
-    public function __construct(
-        string $username = '',
-        string $emailAddress = '',
-        bool $emailAddressVerified = false,
-        array $roles = ['ROLE_USER'],
-        string $password = '',
-        bool $enabled = true
-    ) {
-        parent::__construct($username, $emailAddress, $emailAddressVerified, $roles, $password, $enabled);
-        $this->emailAddress = $this->username;
-    }
+//    public function __construct(
+//        string $username = '',
+//        string $emailAddress = '',
+//        bool $emailAddressVerified = false,
+//        array $roles = ['ROLE_USER'],
+//        string $password = '',
+//        bool $enabled = true
+//    ) {
+//        parent::__construct($username, $emailAddress, $emailAddressVerified, $roles, $password, $enabled);
+//        $this->emailAddress = $this->username;
+//    }
 
     public function setUsername(?string $username): User
     {
