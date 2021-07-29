@@ -13,7 +13,7 @@
         "friends-of-behat/symfony-extension": "^2.1",
         "guzzlehttp/guzzle": "^6.3",
         "liip/imagine-bundle": "2.x-dev",
-        "silverbackis/api-components-bundle": "dev-master#d4613e3f",
+        "silverbackis/api-components-bundle": "dev-master",
         "symfony/console": "^5.0",
         "symfony/dotenv": "^5.0",
         "symfony/flex": "^1.1",

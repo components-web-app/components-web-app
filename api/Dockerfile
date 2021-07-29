@@ -3,13 +3,8 @@
 # https://docs.docker.com/compose/compose-file/#target
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
-# in dev incompatible packages are (for PHP 8.0)
-# friends-of-behat/mink 1.8.0 1.9
-# friends-of-behat/mink-browserkit-driver 1.4.0 1.5
-# friends-of-behat/mink-extension 2.4.0 2.5
-# friends-of-behat/symfony-extension (dev supports it) 2.2
-# behatch/contexts requires friends-of-behat/mink-extension ^2.3.1
-ARG PHP_VERSION=7.4
+
+ARG PHP_VERSION=8.0
 ARG APCU_VERSION=5.1.19
 ARG VARNISH_VERSION=6.4
 ARG CADDY_VERSION=2
