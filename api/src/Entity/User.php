@@ -53,10 +53,10 @@ class User extends AbstractUser
 //        $this->emailAddress = $this->username;
 //    }
 
-    public function setUsername(?string $username): User
-    {
-        parent::setUsername($username);
-        $this->setEmailAddress($username);
-        return $this;
-    }
+//    public function setUsername(?string $username): User
+//    {
+//        parent::setUsername($username);
+//        $this->setEmailAddress($username);
+//        return $this;
+//    }
 }

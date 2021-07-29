@@ -24,18 +24,18 @@ class UsersTest extends TestCase
         $this->assertInstanceOf(User::class, $user);
     }
 
-    public function test_construct(): void
-    {
-        $user = new User('username');
-        $this->assertEquals('username', $user->getUsername()); // previsible (already tested in bundle)
-        $this->assertEquals('username', $user->getEmailAddress());
-    }
+//    public function test_construct(): void
+//    {
+//        $user = new User('username');
+//        $this->assertEquals('username', $user->getUsername()); // previsible (already tested in bundle)
+//        $this->assertEquals('username', $user->getEmailAddress());
+//    }
 
-    public function test_set_username(): void
-    {
-        $user = new User('username');
-        $user->setUsername('new_username');
-        $this->assertEquals('new_username', $user->getUsername()); // previsible (already tested in bundle)
-        $this->assertEquals('new_username', $user->getEmailAddress());
-    }
+//    public function test_set_username(): void
+//    {
+//        $user = new User('username');
+//        $user->setUsername('new_username');
+//        $this->assertEquals('new_username', $user->getUsername()); // previsible (already tested in bundle)
+//        $this->assertEquals('new_username', $user->getEmailAddress());
+//    }
 }
