@@ -35,7 +35,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 
     private function addBlogArticles(ObjectManager $manager, Page $page): void
     {
-        for($x=0; $x<2; $x++) {
+        for($x=0; $x<80; $x++) {
             $htmlContent = new HtmlContent();
             $htmlContent->html = sprintf('<p>Bonjour mon ami %d</p>', $x);
             $manager->persist($htmlContent);
