@@ -1,16 +1,15 @@
 <template>
   <div>
-    <!-- eslint-disable-next-line vue/no-v-html -->
     <div ref="quill" v-html="quillModel" />
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import InputMixin from '@cwa/nuxt-module/core/mixins/InputMixin'
+import ApiInputMixin from '@cwa/nuxt-module/core/mixins/ApiInputMixin'
 
 export default Vue.extend({
-  mixins: [InputMixin],
+  mixins: [ApiInputMixin],
   data() {
     return {
       editor: null,
@@ -49,7 +48,7 @@ export default Vue.extend({
     }
   },
   watch: {
-    // when published becomes a draft...
+    // when published becomes a draft... need to update content
     iri() {
       this.$nextTick(() => {
         const selection = this.editor.getSelection()
@@ -95,9 +94,8 @@ export default Vue.extend({
 })
 </script>
 
-<!--<style lang="stylus" src="quill/assets/snow.styl" />-->
-<style lang="sass" src="assets/sass/quill.sass" />
 <style lang="sass">
+@import '~assets/sass/quill.sass'
 .ql-container
   font-size: inherit
   height: auto
@@ -114,7 +112,7 @@ export default Vue.extend({
           color: inherit
         &[data-value='primary']::before
           content: 'Primary'
-          color: $color-primary
+          color: $cwa-color-primary
         &[data-value='success']::before
           content: 'Success'
           color: $color-success
@@ -126,12 +124,12 @@ export default Vue.extend({
         &[data-value='7']::before
           content: 'Small'
           font-size: .7rem
-//&.ql-font
-//  .ql-picker-item,
-//  .ql-picker-label
-//    ::before
-//      content: 'Font'
-//    &[data-value='monda']::before
-//      content: 'Monda'
-//      font-family: 'Monda'
+    //&.ql-font
+    //  .ql-picker-item,
+    //  .ql-picker-label
+    //    ::before
+    //      content: 'Font'
+    //    &[data-value='monda']::before
+    //      content: 'Monda'
+    //      font-family: 'Monda'
 </style>

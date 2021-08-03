@@ -11,7 +11,7 @@
             1 ..
           </a>
         </li>
-        <li v-for="navPage in pageNavigation" :key="`goto-page-${navPage}`">
+        <li v-for="navPage in pageNavigation" :key="`page-link-${navPage}`">
           <a
             :aria-label="`Goto page ${navPage}`"
             :aria-current="page === navPage ? 'page' : null"

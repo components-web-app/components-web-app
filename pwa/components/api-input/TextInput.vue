@@ -12,9 +12,9 @@
 </template>
 
 <script>
-import InputMixin from '@cwa/nuxt-module/core/mixins/InputMixin'
+import ApiInputMixin from '@cwa/nuxt-module/core/mixins/ApiInputMixin'
 
 export default {
-  mixins: [InputMixin]
+  mixins: [ApiInputMixin]
 }
 </script>
