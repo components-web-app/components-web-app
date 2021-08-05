@@ -26,7 +26,7 @@ export default Vue.extend({
   },
   computed: {
     route() {
-      return this.$cwa.getResource(this.resource.route)
+      return this.resource.route
     }
   }
 })

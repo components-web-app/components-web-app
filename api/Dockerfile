@@ -75,7 +75,6 @@ FROM caddy:${CADDY_VERSION} AS cwa_caddy
 
 WORKDIR /srv/api
 
-COPY --from=dunglas/mercure:v0.11 /srv/public /srv/mercure-assets/
 COPY --from=registry.gitlab.com/silverback-web-apps/cwa/docker/caddy-builder:mercure-vulcain /usr/bin/caddy /usr/bin/caddy
 COPY --from=cwa_php /srv/api/public public/
 COPY _docker/caddy/Caddyfile /etc/caddy/Caddyfile

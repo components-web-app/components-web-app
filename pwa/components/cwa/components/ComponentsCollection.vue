@@ -89,7 +89,9 @@ export default Vue.extend({
   mixins: [CollectionComponentMixin],
   data() {
     return {
-      collectionSubResourceKeys: ['route'],
+      // we can ask the front-end to dynamically load iris and save them in storage
+      // ideally we get the API to return serialized objects
+      collectionSubResourceKeys: [],
       componentManagerContext: {
         componentTab: {
           UiClassNames: [],

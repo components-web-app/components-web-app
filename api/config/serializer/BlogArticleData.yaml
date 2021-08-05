@@ -1,0 +1,8 @@
+App\Entity\BlogArticleData:
+  attributes:
+    title:
+      groups: ['Collection:cwa_resource:read']
+    route:
+      groups: [ 'Collection:cwa_resource:read' ]
+    createdAt:
+      groups: [ 'Collection:cwa_resource:read' ]

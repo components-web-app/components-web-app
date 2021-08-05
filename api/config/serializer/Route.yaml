@@ -1,0 +1,4 @@
+Silverback\ApiComponentsBundle\Entity\Core\Route:
+  attributes:
+    path:
+      groups: ['Collection:cwa_resource:read']
