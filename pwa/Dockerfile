@@ -1,4 +1,4 @@
-ARG NODE_VERSION=14.4
+ARG NODE_VERSION=16
 
 FROM node:${NODE_VERSION}-alpine AS cwa_pwa
 
@@ -7,9 +7,11 @@ FROM node:${NODE_VERSION}-alpine AS cwa_pwa
 
 RUN apk add --no-cache \
   git \
-  python \
+  python3 \
   make \
   g++
+
+RUN ln -sf python3 /usr/bin/python
 
 WORKDIR /usr/src/pwa
 

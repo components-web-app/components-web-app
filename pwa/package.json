@@ -20,7 +20,7 @@
     "nuxt": "^2.15.7"
   },
   "devDependencies": {
-    "@cwa/nuxt-module-next": "^1.0.0-1625669908.706cd99",
+    "@cwa/nuxt-module-next": "latest",
     "@nuxt/typescript-build": "^1.0.3",
     "@nuxtjs/eslint-config": "^6.0.0",
     "@nuxtjs/eslint-config-typescript": "^6.0.0",
@@ -37,10 +37,9 @@
     "eslint-plugin-prettier": "^3.3.1",
     "fibers": "^5.0.0",
     "jest": "^26.0.1",
-    "node-sass": "^4.14.1",
     "prettier": "^2.2.1",
     "quill": "^1.3.7",
-    "sass": "^1.32.8",
+    "sass": "^1.37",
     "sass-loader": "10",
     "stylelint": "^13.6.1",
     "stylelint-config-prettier": "^8.0.2",
