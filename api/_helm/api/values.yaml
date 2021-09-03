@@ -46,10 +46,10 @@ mercure:
   jwtToken: ~
   jwtKey:
     subscriber:
-      key: '!ChangeMe!'
+      key: 'CHANGE_ME'
       algorithm: ~
     publisher:
-      key: '!ChangeMe!'
+      key: 'CHANGE_ME'
       algorithm: ~
   publishUrl: ~
   subscribeUrl: https://example.com/.well-known/mercure

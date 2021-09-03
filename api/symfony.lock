@@ -482,9 +482,6 @@
             "config/packages/dev/debug.yaml"
         ]
     },
-    "symfony/debug-pack": {
-        "version": "v1.0.8"
-    },
     "symfony/dependency-injection": {
         "version": "v4.3.8"
     },
@@ -674,9 +671,6 @@
     "symfony/process": {
         "version": "v4.3.8"
     },
-    "symfony/profiler-pack": {
-        "version": "v1.0.4"
-    },
     "symfony/property-access": {
         "version": "v4.3.8"
     },
@@ -741,9 +735,6 @@
     },
     "symfony/templating": {
         "version": "v5.0.8"
-    },
-    "symfony/test-pack": {
-        "version": "v1.0.6"
     },
     "symfony/translation": {
         "version": "3.3",

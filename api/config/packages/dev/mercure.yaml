@@ -1,0 +1,6 @@
+mercure:
+    hubs:
+        default:
+            jwt:
+              secret: '%env(MERCURE_JWT_SECRET)%'
+              publish: '*'

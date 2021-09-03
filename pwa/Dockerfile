@@ -1,4 +1,4 @@
-ARG NODE_VERSION=16
+ARG NODE_VERSION=lts
 
 FROM node:${NODE_VERSION}-alpine AS cwa_pwa
 

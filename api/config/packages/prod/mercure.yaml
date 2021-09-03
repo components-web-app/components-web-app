@@ -1,0 +1,4 @@
+mercure:
+    hubs:
+        default:
+            jwt: '%env(MERCURE_JWT_TOKEN)%'

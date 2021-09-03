@@ -1,23 +1,12 @@
 ## This has been modified from the API Platform template implementation
 ## More specifically from https://github.com/dunglas/demo-vulcain-api-platform
-version: '3.7'
-
-x-cache-from:
-  - &api-cache-from
-    cache_from:
-      - ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
-      - ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
-      - ${CADDY_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/caddy}
-  - &pwa-cache-from
-    cache_from:
-      - ${APP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/pwa}
+version: '3.9'
 
 services:
   php:
     build:
       context: ./api
       target: cwa_php
-      <<: *api-cache-from
     image: ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
     healthcheck:
       interval: 10s
@@ -45,7 +34,6 @@ services:
     build:
       context: api/
       target: cwa_caddy
-      <<: *api-cache-from
     image: ${CADDY_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/caddy}
     depends_on:
       - php
@@ -53,8 +41,8 @@ services:
       VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy}
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
       BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost:8443}
-      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-!ChangeMe!}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-!ChangeMe!}
+      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-CHANGE_ME}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-CHANGE_ME}
       MERCURE_CORS_ORIGIN: "*"
       MERCURE_EXTRA_DIRECTIVES: |
         demo /srv/mercure-assets/
@@ -85,7 +73,6 @@ services:
     build:
       context: ./api
       target: cwa_varnish
-      <<: *api-cache-from
     image: ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
     restart: unless-stopped
     depends_on:
@@ -107,7 +94,6 @@ services:
     build:
       context: ./pwa
       target: cwa_pwa
-      <<: *pwa-cache-from
     image: ${PWA_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/pwa}
     restart: unless-stopped
     volumes:
@@ -134,7 +120,7 @@ services:
     environment:
       - POSTGRES_MULTIPLE_DATABASES=api,api_test
       - POSTGRES_USER=api-platform
-      - POSTGRES_PASSWORD=!ChangeMe!
+      - POSTGRES_PASSWORD=CHANGE_ME
     volumes:
       - ./api/_docker/postgres-init-scripts:/docker-entrypoint-initdb.d
       - db_data:/var/lib/postgresql/data:rw,delegated
