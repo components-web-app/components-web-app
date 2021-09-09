@@ -4352,12 +4352,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "9fd305f541870a58f0511812164f10c248f91f4a"
+                "reference": "5f9bf9a97e2c6b53c6312b43c88dbe5260c41373"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/9fd305f541870a58f0511812164f10c248f91f4a",
-                "reference": "9fd305f541870a58f0511812164f10c248f91f4a",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/5f9bf9a97e2c6b53c6312b43c88dbe5260c41373",
+                "reference": "5f9bf9a97e2c6b53c6312b43c88dbe5260c41373",
                 "shasum": ""
             },
             "require": {
@@ -4445,7 +4445,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/master"
             },
-            "time": "2021-08-05T20:37:44+00:00"
+            "time": "2021-09-09T21:25:40+00:00"
         },
         {
             "name": "symfony/asset",
@@ -5848,16 +5848,16 @@
         },
         {
             "name": "symfony/flex",
-            "version": "v1.15.1",
+            "version": "v1.15.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/flex.git",
-                "reference": "c2605222ee4984899bdc93b3e56f502fc79bafc6"
+                "reference": "f16f10772422ace36dc76d5d5c7a682c8b925c0c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/flex/zipball/c2605222ee4984899bdc93b3e56f502fc79bafc6",
-                "reference": "c2605222ee4984899bdc93b3e56f502fc79bafc6",
+                "url": "https://api.github.com/repos/symfony/flex/zipball/f16f10772422ace36dc76d5d5c7a682c8b925c0c",
+                "reference": "f16f10772422ace36dc76d5d5c7a682c8b925c0c",
                 "shasum": ""
             },
             "require": {
@@ -5896,7 +5896,7 @@
             "description": "Composer plugin for Symfony",
             "support": {
                 "issues": "https://github.com/symfony/flex/issues",
-                "source": "https://github.com/symfony/flex/tree/v1.15.1"
+                "source": "https://github.com/symfony/flex/tree/v1.15.3"
             },
             "funding": [
                 {
@@ -5912,7 +5912,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-08-30T14:55:05+00:00"
+            "time": "2021-09-06T12:45:00+00:00"
         },
         {
             "name": "symfony/form",
@@ -11645,17 +11645,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "9bde1f75f1638675ff82a403e8e89d3a35382e4a"
+                "reference": "8cebf1673eccd7e6552732142039c147c1023214"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/9bde1f75f1638675ff82a403e8e89d3a35382e4a",
-                "reference": "9bde1f75f1638675ff82a403e8e89d3a35382e4a",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/8cebf1673eccd7e6552732142039c147c1023214",
+                "reference": "8cebf1673eccd7e6552732142039c147c1023214",
                 "shasum": ""
             },
             "conflict": {
                 "3f/pygmentize": "<1.2",
                 "adodb/adodb-php": "<5.20.12",
+                "akaunting/akaunting": "<2.1.13",
                 "alterphp/easyadmin-extension-bundle": ">=1.2,<1.2.11|>=1.3,<1.3.1",
                 "amazing/media2click": ">=1,<1.3.3",
                 "amphp/artax": "<1.0.6|>=2,<2.0.6",
@@ -11725,7 +11726,7 @@
                 "ezsystems/ezplatform-rest": ">=1.2,<=1.2.2|>=1.3,<=1.3.1",
                 "ezsystems/ezplatform-user": ">=1,<1.0.1",
                 "ezsystems/ezpublish-kernel": "<=6.13.8.1|>=7,<=7.5.15.1",
-                "ezsystems/ezpublish-legacy": ">=5.3,<5.3.12.6|>=5.4,<5.4.14.2|>=2011,<2017.12.7.3|>=2018.6,<2018.6.1.4|>=2018.9,<2018.9.1.3|>=2019.3,<2019.3.5.1",
+                "ezsystems/ezpublish-legacy": "<=2017.12.7.3|>=2018.6,<=2019.3.5.1",
                 "ezsystems/platform-ui-assets-bundle": ">=4.2,<4.2.3",
                 "ezsystems/repository-forms": ">=2.3,<2.3.2.1",
                 "ezyang/htmlpurifier": "<4.1.1",
@@ -11738,7 +11739,7 @@
                 "flarum/tags": "<=0.1-beta.13",
                 "fluidtypo3/vhs": "<5.1.1",
                 "fooman/tcpdf": "<6.2.22",
-                "forkcms/forkcms": "<5.8.3",
+                "forkcms/forkcms": "<=5.9.2",
                 "fossar/tcpdf-parser": "<6.2.22",
                 "francoisjacquet/rosariosis": "<6.5.1",
                 "friendsofsymfony/oauth2-php": "<1.3",
@@ -11756,6 +11757,7 @@
                 "grumpydictator/firefly-iii": "<5.6",
                 "guzzlehttp/guzzle": ">=4-rc.2,<4.2.4|>=5,<5.3.1|>=6,<6.2.1",
                 "helloxz/imgurl": "<=2.31",
+                "icecoder/icecoder": "<=8",
                 "illuminate/auth": ">=4,<4.0.99|>=4.1,<=4.1.31|>=4.2,<=4.2.22|>=5,<=5.0.35|>=5.1,<=5.1.46|>=5.2,<=5.2.45|>=5.3,<=5.3.31|>=5.4,<=5.4.36|>=5.5,<5.5.10",
                 "illuminate/cookie": ">=4,<=4.0.11|>=4.1,<=4.1.99999|>=4.2,<=4.2.99999|>=5,<=5.0.99999|>=5.1,<=5.1.99999|>=5.2,<=5.2.99999|>=5.3,<=5.3.99999|>=5.4,<=5.4.99999|>=5.5,<=5.5.49|>=5.6,<=5.6.99999|>=5.7,<=5.7.99999|>=5.8,<=5.8.99999|>=6,<6.18.31|>=7,<7.22.4",
                 "illuminate/database": "<6.20.26|>=7,<8.40",
@@ -11776,7 +11778,6 @@
                 "la-haute-societe/tcpdf": "<6.2.22",
                 "laminas/laminas-http": "<2.14.2",
                 "laravel/framework": "<6.20.26|>=7,<8.40",
-                "laravel/laravel": "<8.4.4",
                 "laravel/socialite": ">=1,<1.0.99|>=2,<2.0.10",
                 "lavalite/cms": "<=5.8",
                 "league/commonmark": "<0.18.3",
@@ -11866,7 +11867,7 @@
                 "shopware/core": "<=6.4.3",
                 "shopware/platform": "<=6.4.3",
                 "shopware/production": "<=6.3.5.2",
-                "shopware/shopware": "<=5.6.9",
+                "shopware/shopware": "<5.6.10",
                 "showdoc/showdoc": "<=2.9.8",
                 "silverstripe/admin": ">=1.0.3,<1.0.4|>=1.1,<1.1.1",
                 "silverstripe/assets": ">=1,<1.4.7|>=1.5,<1.5.2",
@@ -11894,6 +11895,7 @@
                 "ssddanbrown/bookstack": "<0.29.2",
                 "stormpath/sdk": ">=0,<9.9.99",
                 "studio-42/elfinder": "<2.1.59",
+                "subrion/cms": "<=4.2.1",
                 "sulu/sulu": "<1.6.41|>=2,<2.0.10|>=2.1,<2.1.1",
                 "swiftmailer/swiftmailer": ">=4,<5.4.5",
                 "sylius/admin-bundle": ">=1,<1.0.17|>=1.1,<1.1.9|>=1.2,<1.2.2",
@@ -12034,7 +12036,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2021-09-02T18:03:40+00:00"
+            "time": "2021-09-09T17:11:22+00:00"
         },
         {
             "name": "sebastian/cli-parser",
