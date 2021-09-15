@@ -63,7 +63,15 @@ export default {
         'img-src': ['https:', '*.google-analytics.com', 'data:'],
         'worker-src': ["'self'", `blob:`],
         'style-src': ["'self'", "'unsafe-inline'"],
-        'script-src': ["'self'", "'unsafe-inline'", '*.google-analytics.com'],
+        'script-src': [
+          "'self'",
+          "'unsafe-inline'",
+          // for realtime compiling of html component ... is this a security concern?
+          // the content should only be editable by admin... but what if the admin is hacked...
+          // do we need to consider this as a weakness?
+          "'unsafe-eval'",
+          '*.google-analytics.com'
+        ],
         'connect-src': [
           "'self'",
           API_URL_BROWSER,
@@ -92,5 +100,12 @@ export default {
   },
   loading: {
     color: '#E30A6C'
+  },
+  build: {
+    extend(config) {
+      // required for HTML component to convert anchor links to cwa-nuxt-link components
+      // enables runtime compiler
+      config.resolve.alias.vue = 'vue/dist/vue.common'
+    }
   }
 }

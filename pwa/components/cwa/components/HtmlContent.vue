@@ -7,8 +7,12 @@
     ]"
     @dblclick="toggleEditor"
   >
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-if="!cmValue('showEditor')" v-html="displayHtml" />
+    <component
+      :is="htmlComponent"
+      v-if="!cmValue('showEditor')"
+      v-bind="$props"
+      class="cwa-html-content"
+    ></component>
     <quill-input
       v-else
       :iri="iri"
@@ -19,6 +23,7 @@
 </template>
 
 <script lang="ts">
+import Vue from 'vue'
 import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManagerMixin'
 import NotificationListenerMixin from '@cwa/nuxt-module/core/mixins/NotificationListenerMixin'
@@ -28,6 +33,7 @@ export default {
   mixins: [ComponentMixin, NotificationListenerMixin],
   data() {
     return {
+      isMounted: false,
       componentManagerContext: {
         componentTab: {
           UiClassNames: ['is-feature', 'has-cwa-color'],
@@ -47,14 +53,35 @@ export default {
         }
       ]
     },
-    displayHtml(): string {
-      return (
+    htmlComponent() {
+      let html =
         this.resource.html ||
         (this.$cwa.isAdmin
           ? '<p style="font-style: italic">No content</p>'
           : '')
-      )
+      if (this.isMounted) {
+        const div = document.createElement('div')
+        div.innerHTML = html
+        const anchors = div.getElementsByTagName('a')
+        Array.from(anchors).forEach((anchor) => {
+          anchor.parentNode.replaceChild(this.convertAnchor(anchor), anchor)
+        })
+        html = div.innerHTML
+      }
+      return Vue.extend({
+        components: {
+          CwaNuxtLink: () =>
+            import(
+              '@cwa/nuxt-module/core/templates/components/utils/cwa-nuxt-link.vue'
+            )
+        },
+        props: this.$options.props,
+        template: '<div>' + html + '</div>'
+      })
     }
+  },
+  mounted() {
+    this.isMounted = true
   },
   created() {
     this.addFieldNotificationListener('html', this.iri)
@@ -62,6 +89,18 @@ export default {
   methods: {
     toggleEditor() {
       this.saveCmValue('showEditor', !this.cmValue('showEditor'))
+    },
+    convertAnchor(anchor) {
+      // console.log(anchor, anchor.attributes, anchor.innerHTML)
+      const newLink = document.createElement('cwa-nuxt-link')
+      newLink.setAttribute('to', anchor.getAttribute('href'))
+      for (const attr of anchor.attributes) {
+        if (!['href', 'target', 'rel'].includes(attr.name)) {
+          newLink.setAttribute(attr.name, anchor[attr.name])
+        }
+      }
+      newLink.innerHTML = anchor.innerHTML
+      return newLink
     }
   }
 }

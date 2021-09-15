@@ -8,8 +8,12 @@
     @dblclick="toggleEditor"
   >
     <cwa-logo class="cwa-logo" />
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <div v-if="!cmValue('showEditor')" v-html="displayHtml" />
+    <component
+      :is="htmlComponent"
+      v-if="!cmValue('showEditor')"
+      v-bind="$props"
+      class="cwa-html-content"
+    ></component>
     <quill-input
       v-else
       :iri="iri"
