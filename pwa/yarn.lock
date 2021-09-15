@@ -952,9 +952,9 @@
   integrity sha512-5a6wqoJV/xEdbRNKVo6I4hO3VjyDq//8q2f9I6PBAvMesJHFauXDorcNCsr9RzvsZnaWi5NYCcfyqP1QeFHFbw==
 
 "@cwa/nuxt-module-next@^1.0.0-1628507142.4c398c9":
-  version "1.0.0-1631637794.347311b"
-  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1631637794.347311b.tgz#01f50fd82eab5a2b5102e730efb29bcd1503f752"
-  integrity sha512-0spb/Bl6lVj0QYlc/UifQar5zBSLu56OS3CuNyKKJTWSTEHKc8NQVcGNloWSqim8FrqsPc7gXN4KNrhkl/WjBQ==
+  version "1.0.0-1631724493.d911a69"
+  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1631724493.d911a69.tgz#4a554eafc96fed358bae71a1398aa4c39c6df3c8"
+  integrity sha512-yiYjXZRHovCEghR/UfSIqqFYJ+mRRkHk2GLwByKTMEBYfEuAmhVaXO8lqRhNQX2rxOPbNoK4Q8pKA3oWzNoaKw==
   dependencies:
     "@nuxt/components" "^2.1.2"
     "@nuxtjs/auth-next" "^5.0.0-1613647907.37b1156"
@@ -1973,9 +1973,9 @@
   integrity sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==
 
 "@types/node@^12.12.47":
-  version "12.20.24"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.24.tgz#c37ac69cb2948afb4cef95f424fa0037971a9a5c"
-  integrity sha512-yxDeaQIAJlMav7fH5AQqPH1u8YIuhYJXYBzxaQ4PifsU0GDO38MSdmEDeRlIxrKbC6NbEaaEHDanWb+y30U8SQ==
+  version "12.20.25"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.25.tgz#882bea2ca0d2ec22126b92b4dd2dc24b35a07469"
+  integrity sha512-hcTWqk7DR/HrN9Xe7AlJwuCaL13Vcd9/g/T54YrJz4Q3ESM5mr33YCzW2bOfzSIc3aZMeGBvbLGvgN6mIJ0I5Q==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.1"
@@ -4623,9 +4623,9 @@ ee-first@1.1.1:
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
 electron-to-chromium@^1.3.830:
-  version "1.3.838"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.838.tgz#d178b34a268c750c0444ba69e4c94d4c4fb3aa0d"
-  integrity sha512-65O6UJiyohFAdX/nc6KJ0xG/4zOn7XCO03kQNNbCeMRGxlWTLzc6Uyi0tFNQuuGWqySZJi8CD2KXPXySVYmzMA==
+  version "1.3.839"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.839.tgz#27a5b21468e9fefb0e328a029403617f20acec9c"
+  integrity sha512-0O7uPs9LJNjQ/U5mW78qW8gXv9H6Ba3DHZ5/yt8aBsvomOWDkV3MddT7enUYvLQEUVOURjWmgJJWVZ3K98tIwQ==
 
 elliptic@^6.5.3:
   version "6.5.4"
@@ -7874,9 +7874,9 @@ minipass-pipeline@^1.2.2:
     minipass "^3.0.0"
 
 minipass@^3.0.0, minipass@^3.1.1:
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/minipass/-/minipass-3.1.3.tgz#7d42ff1f39635482e15f9cdb53184deebd5815fd"
-  integrity sha512-Mgd2GdMVzY+x3IJ+oHnVM+KG3lA5c8tnabyJKmHSaG2kAGpudxuOf8ToDkhumF7UzME7DecbQE9uOZhNm7PuJg==
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/minipass/-/minipass-3.1.5.tgz#71f6251b0a33a49c01b3cf97ff77eda030dff732"
+  integrity sha512-+8NzxD82XQoNKNrl1d/FSi+X8wAEWR+sbYAfIvub4Nz0d22plFG72CEVVaufV8PNf4qSslFTD8VMOxNVhHCjTw==
   dependencies:
     yallist "^4.0.0"
 
@@ -10251,9 +10251,9 @@ sass-resources-loader@^2.0.3, sass-resources-loader@^2.2.4:
     loader-utils "^2.0.0"
 
 sass@^1.37:
-  version "1.40.1"
-  resolved "https://registry.yarnpkg.com/sass/-/sass-1.40.1.tgz#55d3fc38fe9dc579e7324ce0eb9185bede7992a9"
-  integrity sha512-M6WskYLzTfdZdb09W9SftIScjudL8jNkhdh9z96U+olQaKIcw2Knb6QLL9bUhnuSm4VD+1yJVaO2/ENDPMTtAQ==
+  version "1.41.0"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.41.0.tgz#f7b41dc00336a4c03429c37b9680b86758af61d4"
+  integrity sha512-wb8nT60cjo9ZZMcHzG7TzdbFtCAmHEKWrH+zAdScPb4ZxL64WQBnGdbp5nwlenW5wJPcHva1JWmVa0h6iqA5eg==
   dependencies:
     chokidar ">=3.0.0 <4.0.0"
 
