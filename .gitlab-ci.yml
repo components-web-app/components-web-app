@@ -1,6 +1,7 @@
 image: alpine:latest
 
 variables:
+  BUILD_DISABLED: "false"
   TEST_DISABLED: "false"
   CODE_QUALITY_DISABLED: "false"
   LICENSE_MANAGEMENT_DISABLED: "true"

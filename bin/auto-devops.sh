@@ -381,7 +381,6 @@ postgresql:
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: ${MERCURE_PUBLIC_URL:-"~"}
-  jwtSecret: ${MERCURE_JWT_SECRET_TOKEN:-"~"}
   jwtKey:
     subscriber:
       algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"HS256"}
@@ -419,8 +418,6 @@ annotations:
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 EOF
 
-	cat values.tmp.yaml
-
   helm upgrade --install \
     --reset-values \
     --namespace="$KUBE_NAMESPACE" \
@@ -429,6 +426,7 @@ EOF
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY}" \
+    --set mercure.jwtSecret="${MERCURE_JWT_SECRET_TOKEN}" \
   	-f values.tmp.yaml
 }
 
