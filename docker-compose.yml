@@ -1,6 +1,6 @@
 ## This has been modified from the API Platform template implementation
 ## More specifically from https://github.com/dunglas/demo-vulcain-api-platform
-version: '3.9'
+version: '3.8'
 
 services:
   php:
