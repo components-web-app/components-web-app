@@ -107,41 +107,42 @@ install_dependencies() {
 
 
   # Generate random key & jwt for Mercure if not set
-  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
-  	echo "Generate MERCURE_JWT_SECRET..."
-    export MERCURE_JWT_SECRET="$(rand_str)"
+  if [[ -z ${MERCURE_JWT_SECRET_KEY} ]]; then
+  	echo "Generate MERCURE_JWT_SECRET_KEY..."
+    export MERCURE_JWT_SECRET_KEY="$(rand_str)"
   fi
 
 	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
   	echo "Generate MERCURE_SUBSCRIBER_JWT_KEY (IF YOU ARE RESTRICTING SUBSCRIBERS YOU SHOULD REALLY HAVE PROVIDED THIS PUBLIC KEY ALREADY)..."
     JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
-		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
-		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET}"
+		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET_KEY}"
+		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET_KEY}"
 		export MERCURE_SUBSCRIBER_JWT_KEY=$(cat ${JWT_SECRET_KEY_FILE}.pub)
     export MERCURE_SUBSCRIBER_JWT_ALG=RS256
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
 	fi
 
+  # If the secret key is defined and and token is not we will generate a token with the key
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
   	echo "Generate MERCURE_PUBLISHER_JWT_KEY..."
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
-		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET}"
-		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET}"
+		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET_KEY}"
+		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET_KEY}"
 		export MERCURE_PUBLISHER_JWT_KEY=$(cat ${JWT_SECRET_KEY_FILE}.pub)
     export MERCURE_PUBLISHER_JWT_ALG=RS256
 
-    echo "Generate MERCURE_JWT_TOKEN..."
+    echo "Generate MERCURE_JWT_SECRET_TOKEN..."
 		npm install --global "@clarketm/jwt-cli"
 		MERCURE_PUBLISHER_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
-		export MERCURE_JWT_TOKEN=$(jwt sign --noCopy --expiresIn '100 years' --algorithm 'RS256' --passphrase "$MERCURE_JWT_SECRET"  -- '{"mercure": {"publish": ["*"]}}' "$MERCURE_PUBLISHER_SECRET_KEY")
+		export MERCURE_JWT_SECRET_TOKEN=$(jwt sign --noCopy --expiresIn '100 years' --algorithm 'RS256' --passphrase "$MERCURE_JWT_SECRET"  -- '{"mercure": {"publish": ["*"]}}' "$MERCURE_PUBLISHER_SECRET_KEY")
 
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
   fi
 
-  if [[ -z ${MERCURE_JWT_TOKEN} ]]; then
-  	echo "!!! MERCURE_JWT_TOKEN DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
+  if [[ -z ${MERCURE_JWT_SECRET_TOKEN} ]]; then
+  	echo "!!! MERCURE_JWT_SECRET_TOKEN DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
   	false
 	fi
 }
@@ -378,9 +379,9 @@ php:
 postgresql:
   url: ${DATABASE_URL:-"~"}
 mercure:
-  subscribeUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
-  publishUrl: ${MERCURE_PUBLISH_URL:-"~"}
-  jwtToken: ${MERCURE_JWT_TOKEN:-"~"}
+  url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
+  publicUrl: ${MERCURE_PUBLIC_URL:-"~"}
+  jwtSecret: ${MERCURE_JWT_SECRET_TOKEN:-"~"}
   jwtKey:
     subscriber:
       algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"HS256"}

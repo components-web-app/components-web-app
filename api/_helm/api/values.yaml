@@ -43,7 +43,7 @@ service:
 
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
-  jwtToken: ~
+  jwtSecret: ~
   jwtKey:
     subscriber:
       key: 'CHANGE_ME'
@@ -51,8 +51,8 @@ mercure:
     publisher:
       key: 'CHANGE_ME'
       algorithm: ~
-  publishUrl: ~
-  subscribeUrl: https://example.com/.well-known/mercure
+  publicUrl: ~
+  url: https://example.com/.well-known/mercure
 
 postgresql:
   url: 'pgsql://'
