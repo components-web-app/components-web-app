@@ -108,12 +108,12 @@ install_dependencies() {
 
   # Generate random key & jwt for Mercure if not set
   if [[ -z ${MERCURE_JWT_SECRET_KEY} ]]; then
-  	echo "Generate MERCURE_JWT_SECRET_KEY..."
+  	echo "Generating MERCURE_JWT_SECRET_KEY..."
     export MERCURE_JWT_SECRET_KEY="$(rand_str)"
   fi
 
 	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
-  	echo "Generate MERCURE_SUBSCRIBER_JWT_KEY (IF YOU ARE RESTRICTING SUBSCRIBERS YOU SHOULD REALLY HAVE PROVIDED THIS PUBLIC KEY ALREADY)..."
+  	echo "!! Generating MERCURE_SUBSCRIBER_JWT_KEY !! (IF YOU ARE RESTRICTING SUBSCRIBERS YOU SHOULD HAVE SET THIS PUBLIC KEY ALREADY)"
     JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
 		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET_KEY}"
 		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET_KEY}"
@@ -125,7 +125,7 @@ install_dependencies() {
 
   # If the secret key is defined and and token is not we will generate a token with the key
 	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
-  	echo "Generate MERCURE_PUBLISHER_JWT_KEY..."
+  	echo "Generating MERCURE_PUBLISHER_JWT_KEY..."
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
 		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET_KEY}"
 		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET_KEY}"
@@ -418,6 +418,8 @@ annotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 EOF
+
+	cat values.tmp.yaml
 
   helm upgrade --install \
     --reset-values \

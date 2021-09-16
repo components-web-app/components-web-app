@@ -145,16 +145,16 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: database-url
-            - name: MERCURE_PUBLIC_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $fullName }}
-                  key: mercure-public-url
             - name: MERCURE_URL
               valueFrom:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: mercure-url
+            - name: MERCURE_PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-public-url
             - name: MERCURE_JWT_SECRET_TOKEN
               valueFrom:
                 secretKeyRef:
