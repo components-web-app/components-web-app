@@ -19,7 +19,7 @@ services:
     environment:
       BLACKFIRE_CLIENT_ID: ~
       BLACKFIRE_CLIENT_TOKEN: ~
-      # TODO: Remove environment variable once recipe is added to recipes-contrib repository
+      # TODO: Remove environment variable once recipe is added to recipes-contrib repository - exposes environment variable for flex PR endpoint
       SYMFONY_ENDPOINT: ~
     volumes:
       - ./api:/srv/api:rw,cached
