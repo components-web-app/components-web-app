@@ -26,7 +26,12 @@ export default Vue.extend({
   },
   computed: {
     route() {
-      return this.resource.route
+      if (!this.resource.route) {
+        return null
+      }
+      return this.resource.route['@id']
+        ? this.resource.route
+        : this.$cwa.getResource(this.resource.route)
     }
   }
 })
