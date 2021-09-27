@@ -381,7 +381,7 @@ postgresql:
   url: ${DATABASE_URL:-"~"}
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
-  publicUrl: ${MERCURE_PUBLIC_URL:-"~"}
+  publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   jwtKey:
     subscriber:
       algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"HS256"}
