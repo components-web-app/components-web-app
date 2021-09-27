@@ -333,7 +333,8 @@ deploy_vercel_pwa() {
 		-e NODE_ENV="${NODE_ENV}" \
 		-b API_URL="${API_ENDPOINT}" \
 		-b API_URL_BROWSER="${API_ENDPOINT}" \
-		-b NODE_ENV="${NODE_ENV}"
+		-b NODE_ENV="${NODE_ENV}" \
+		-b MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}"
 
 # if [[ "$track" == "stable" ]]; then
 #		echo "Removing old deployments with --safe flag ..."
