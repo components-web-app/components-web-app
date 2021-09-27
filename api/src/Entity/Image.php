@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use ApiPlatform\Core\Annotation\ApiResource;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Silverback\ApiComponentsBundle\Annotation as Silverback;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractComponent;
-use Silverback\ApiComponentsBundle\Entity\Utility\ImagineFiltersInterface;
 use Silverback\ApiComponentsBundle\Entity\Utility\PublishableTrait;
 use Silverback\ApiComponentsBundle\Entity\Utility\UploadableTrait;
 use Symfony\Component\HttpFoundation\File\File;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @author Daniel West <daniel@silverback.is>
@@ -22,18 +20,18 @@ use Symfony\Component\HttpFoundation\Request;
  * @ApiResource(mercure="true")
  * @ORM\Entity
  */
-class Image extends AbstractComponent implements ImagineFiltersInterface
+class Image extends AbstractComponent
 {
     use PublishableTrait;
     use UploadableTrait;
 
     /**
-     * @Silverback\UploadableField(adapter="local")
+     * @Silverback\UploadableField(adapter="local", imagineFilters={})
+     * @Assert\File(maxSize="5M")
+     * @Assert\Image(
+     *     maxWidth = 2000,
+     *     maxHeight = 2000
+     * )
      */
     public ?File $file = null;
-
-    public function getImagineFilters(string $property, ?Request $request): array
-    {
-        return ['thumbnail', 'square_thumbnail'];
-    }
 }
