@@ -223,8 +223,14 @@
     "lcobucci/jwt": {
         "version": "3.3.1"
     },
+    "league/flysystem": {
+        "version": "2.3.0"
+    },
     "league/html-to-markdown": {
         "version": "4.9.0"
+    },
+    "league/mime-type-detection": {
+        "version": "1.8.0"
     },
     "lexik/jwt-authentication-bundle": {
         "version": "2.5",

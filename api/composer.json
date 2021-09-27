@@ -12,6 +12,7 @@
         "friends-of-behat/mink-extension": "^2.5",
         "friends-of-behat/symfony-extension": "^2.1",
         "guzzlehttp/guzzle": "^6.3",
+        "league/flysystem": "^2",
         "liip/imagine-bundle": "2.x-dev",
         "silverbackis/api-components-bundle": "dev-master",
         "symfony/console": "^5.0",
