@@ -2,14 +2,19 @@
   <div class="image-tab">
     <div class="row">
       <div class="column is-narrow">
-        <cm-upload
-          :id="inputId('image')"
-          :iri="resource['@id']"
-          field="file"
-          label="Upload"
-          accept="image/*"
-        />
-        <span class="help">max. 2000px x 2000px (5MB)</span>
+        <span v-if="isNew">
+          Please add as a draft in order to upload a file
+        </span>
+        <template v-else>
+          <cm-upload
+            :id="inputId('image')"
+            :iri="resource['@id']"
+            field="file"
+            label="Upload"
+            accept="image/*"
+          />
+          <span class="help">max. 000px x 000px (0MB)</span>
+        </template>
       </div>
     </div>
   </div>

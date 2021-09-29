@@ -29,11 +29,13 @@ export default {
     },
     imageSrc() {
       return this.resource._metadata?.media_objects?.file?.[0]?.contentUrl
+    },
+    imageId() {
+      return this.resource._metadata?.media_objects?.file?.[0]?.['@id']
     }
   },
   watch: {
-    'resource._metadata.media_objects': {
-      deep: true,
+    imageId: {
       handler() {
         this.refreshImage()
       }
