@@ -57,6 +57,7 @@ unit tests:
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml
+  needs: [ 'build' ]
   except:
     variables:
       - $TEST_DISABLED == "true"
@@ -77,6 +78,7 @@ behat tests:
     - setup_test_db
     - run_behat
   dependencies: [ ]
+  needs: [ 'build' ]
   only:
     - branches
   artifacts:
@@ -96,6 +98,7 @@ review pwa:
   only:
     refs:
       - branches
+  needs: []
   except:
     refs:
       - master
@@ -121,6 +124,7 @@ review api:
   only:
     refs:
       - branches
+  needs: ['unit tests', 'behat tests']
   except:
     refs:
       - master
@@ -134,6 +138,7 @@ staging pwa:
   environment:
     name: staging/pwa
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
+  needs: []
   only:
     refs:
       - master
@@ -154,6 +159,7 @@ staging api:
   environment:
     name: staging
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
+  needs: [ 'behat tests', 'unit tests']
   only:
     refs:
       - master
@@ -174,6 +180,7 @@ production pwa:
   only:
     refs:
       - master
+  needs: ['staging pwa']
   except:
     variables:
       - $PRODUCTION_PWA_DISABLED == "true"
@@ -198,6 +205,7 @@ production api:
   when: manual
   retry: 1
   allow_failure: false
+  needs: ['staging api']
   only:
     refs:
       - master
@@ -224,6 +232,7 @@ performance:
     refs:
       - branches
     kubernetes: active
+  needs: ['production api']
   except:
     variables:
       - $PERFORMANCE_DISABLED == "true"
@@ -241,13 +250,14 @@ stop review:
   only:
     refs:
       - branches
+  needs: ['review api']
   except:
     refs:
       - master
     variables:
       - $REVIEW_DISABLED == "true"
 
-canary:
+canary api:
   stage: canary
   script:
     - check_kube_domain
@@ -260,6 +270,7 @@ canary:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
+  needs: ['staging api']
   only:
     refs:
       - master
