@@ -13,7 +13,7 @@
             label="Upload"
             accept="image/*"
           />
-          <span class="help">max. 000px x 000px (0MB)</span>
+          <span class="help">max. 2000 x 2000px (5MB)</span>
         </template>
       </div>
     </div>
