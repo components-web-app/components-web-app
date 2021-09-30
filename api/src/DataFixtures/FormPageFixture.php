@@ -6,7 +6,6 @@ use App\Form\ExampleFormType;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Component\Form;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
-use Silverback\ApiComponentsBundle\Form\Type\User\UserRegisterType;
 
 class FormPageFixture extends AbstractPageFixture
 {

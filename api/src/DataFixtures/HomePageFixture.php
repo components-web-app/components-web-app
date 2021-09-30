@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use App\Entity\HtmlContent;
+use DateTime;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 
@@ -33,7 +34,7 @@ class HomePageFixture extends AbstractPageFixture
             'headers',
             'link',
         ]);
-        $htmlContent->setPublishedAt(new \DateTime());
+        $htmlContent->setPublishedAt(new DateTime());
         $manager->persist($htmlContent);
         $position = $this->createComponentPosition($componentCollection, $htmlContent, 0);
         $manager->persist($position);
@@ -44,7 +45,7 @@ class HomePageFixture extends AbstractPageFixture
             'medium',
             'link',
         ]);
-        $htmlContent->setPublishedAt(new \DateTime());
+        $htmlContent->setPublishedAt(new DateTime());
         $manager->persist($htmlContent);
         $position = $this->createComponentPosition($componentCollection, $htmlContent, 1);
         $manager->persist($position);
