@@ -3,7 +3,7 @@
     <div class="row">
       <div class="column is-narrow">
         <cm-text
-          :id="`perpage-${resource['@id']}`"
+          :id="inputId('perpage')"
           :iri="resource['@id']"
           field="perPage"
           type="number"
