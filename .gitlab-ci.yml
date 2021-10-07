@@ -232,7 +232,7 @@ performance:
     refs:
       - branches
     kubernetes: active
-  needs: ['production api']
+  when: manual
   except:
     variables:
       - $PERFORMANCE_DISABLED == "true"

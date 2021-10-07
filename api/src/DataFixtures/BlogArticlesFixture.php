@@ -25,8 +25,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 
     public function load(ObjectManager $manager): void
     {
-        $layout = $this->createLayout('Main Layout', 'primary');
-        $manager->persist($layout);
+        $layout = $this->createLayout($manager, 'Main Layout', 'primary');
         $page = $this->addArticlePage($manager, $layout);
         $this->addBlogArticles($manager, $page);
 
@@ -38,6 +37,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         for($x=0; $x<80; $x++) {
             $htmlContent = new HtmlContent();
             $htmlContent->html = sprintf('<p>Bonjour mon ami %d</p>', $x);
+            $htmlContent->setPublishedAt(new \DateTime());
             $manager->persist($htmlContent);
 
             $articleData = new BlogArticleData();
@@ -63,7 +63,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         $page = $this->createPage('blog-template', 'PrimaryPageTemplate', $layout);
         $manager->persist($page);
 
-        $componentCollection = $this->createComponentCollection($page, 'primary');
+        $componentCollection = $this->createComponentCollection('primary', $page);
         $manager->persist($componentCollection);
 
 //        $htmlContent = new HtmlContent();

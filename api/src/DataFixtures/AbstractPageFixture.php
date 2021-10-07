@@ -6,8 +6,10 @@ declare(strict_types=1);
 namespace App\DataFixtures;
 
 
+use App\Entity\HtmlContent;
 use App\Lipsum\LipsumContentProvider;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractComponent;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractPageData;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentCollection;
@@ -31,7 +33,7 @@ abstract class AbstractPageFixture extends Fixture
         $this->lipsumContentProvider = $lipsumContentProvider;
     }
 
-    protected function createLayout(string $reference, string $uiComponent): Layout
+    protected function createLayout(ObjectManager $manager, string $reference, string $uiComponent): Layout
     {
         $fixtureRef = Layout::class . '_' . $reference;
         if ($this->hasReference($fixtureRef)) {
@@ -41,8 +43,29 @@ abstract class AbstractPageFixture extends Fixture
         $layout->reference = $reference;
         $layout->uiComponent = $uiComponent;
         $this->timestampedDataPersister->persistTimestampedFields($layout, true);
+
+        $componentCollectionTop = $this->createComponentCollection( 'top', null, $layout);
+
+        $htmlContent = new HtmlContent();
+        $htmlContent->html = '<h1>Welcome to CWA</h1><p><a href="/">Home</a> | <a href="/blog-articles">Blog</a> | <a href="/form">Form</a></p>';
+        $htmlContent->uiClassNames = ['is-feature'];
+        $htmlContent->setPublishedAt(new \DateTime());
+
+        $position = $this->createComponentPosition($componentCollectionTop, $htmlContent, 0);
+
+        $return = [ $layout, $componentCollectionTop, $htmlContent, $position];
+        foreach ($return as $item) {
+            $manager->persist($item);
+        }
         $this->addReference($fixtureRef, $layout);
         return $layout;
+    }
+
+    protected function persistArray(ObjectManager $manager, $array)
+    {
+        foreach ($array as $item) {
+            $manager->persist($item);
+        }
     }
 
     protected function createPage(string $reference, string $uiComponent, Layout $layout): Page
@@ -60,18 +83,30 @@ abstract class AbstractPageFixture extends Fixture
         return $page;
     }
 
-    protected function createComponentCollection(Page $page, string $reference): ComponentCollection
+    protected function createComponentCollection(string $reference, ?Page $page = null, ?Layout $layout = null): ComponentCollection
     {
-        $fixtureRef = ComponentCollection::class . '_' . $page->reference . '_' . $reference;
+        $ref = $reference;
+        if ($page) {
+            $ref .= '_' . $page->reference;
+        }
+        if ($layout) {
+            $ref .= '_' . $layout->reference;
+        }
+        $fixtureRef = ComponentCollection::class . '_' . $ref;
         if ($this->hasReference($fixtureRef)) {
             return $this->getReference($fixtureRef);
         }
         $componentCollection = new ComponentCollection();
         $componentCollection
-            ->setReference($page->reference . '_' . $reference)
-            ->addPage($page)
+            ->setReference($ref)
             ->setLocation($reference)
         ;
+        if ($page) {
+            $componentCollection->addPage($page);
+        }
+        if ($layout) {
+            $componentCollection->addLayout($layout);
+        }
         $this->timestampedDataPersister->persistTimestampedFields($componentCollection, true);
         $this->addReference($fixtureRef, $componentCollection);
         return $componentCollection;
