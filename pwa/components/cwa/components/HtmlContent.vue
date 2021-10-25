@@ -126,4 +126,6 @@ export default {
     text-align: center
   &.has-cwa-color
     color: $cwa-color-primary
+  .cwa-html-content p:last-child
+    margin: 0
 </style>

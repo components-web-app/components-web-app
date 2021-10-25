@@ -17,14 +17,14 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @author Daniel West <daniel@silverback.is>
  * @ORM\Entity()
  * @ApiResource(mercure="true", attributes={"order"={"createdAt": "DESC"}, "pagination_items_per_page"=10})
- * @ApiFilter(SearchFilter::class, properties={"title": "partial"})
+ * @ApiFilter(SearchFilter::class, properties={"title": "ipartial"})
  * @ApiFilter(OrderFilter::class, properties={"title", "createdAt"})
  */
 class BlogArticleData extends AbstractPageData
 {
     /**
-     * @Assert\NotBlank()
      * @ORM\ManyToOne(targetEntity=HtmlContent::class)
+     * @ORM\JoinColumn(nullable=true)
      */
     public ?HtmlContent $htmlContent = null;
 }
