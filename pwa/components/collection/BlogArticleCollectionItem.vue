@@ -27,7 +27,9 @@ export default Vue.extend({
   computed: {
     route() {
       if (!this.resource.route) {
-        return null
+        return {
+          path: { name: '_cwa_page_data_iri', params: { iri: this.iri } }
+        }
       }
       return this.resource.route['@id']
         ? this.resource.route

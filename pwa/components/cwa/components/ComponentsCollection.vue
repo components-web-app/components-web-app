@@ -44,6 +44,9 @@
         />
       </div>
     </div>
+    <div v-if="$cwa.isAdmin">
+      <button @click="showNewResourceModal = true">Add</button>
+    </div>
     <div class="collection-items">
       <div v-if="fetching" class="loading-overlay">&nbsp;</div>
       <div class="row row-wrap">
@@ -67,6 +70,14 @@
       v-if="resource.collection"
       :collection="resource.collection"
     />
+    <cwa-add-dynamic-page-modal
+      v-if="showNewResourceModal"
+      :default-data="{}"
+      :endpoint="resourceIri"
+      resource-name="Blog Article"
+      @close="showNewResourceModal = false"
+      @refresh="refreshCollection"
+    />
   </div>
 </template>
 
@@ -74,6 +85,7 @@
 import Vue from 'vue'
 import CollectionComponentMixin from '@cwa/nuxt-module/core/mixins/CollectionComponentMixin'
 import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManagerMixin'
+import CwaAddDynamicPageModal from '@cwa/nuxt-module/core/templates/components/admin/cwa-add-dynamic-page-modal.vue'
 import BlogArticleCollectionItem from '~/components/collection/BlogArticleCollectionItem.vue'
 import CollectionPagination from '~/components/collection/CollectionPagination.vue'
 import CollectionSearchInput from '~/components/collection/CollectionSearchInput.vue'
@@ -81,6 +93,7 @@ import CollectionSelectInput from '~/components/collection/CollectionSelectInput
 
 export default Vue.extend({
   components: {
+    CwaAddDynamicPageModal,
     CollectionSelectInput,
     CollectionSearchInput,
     CollectionPagination,
@@ -88,6 +101,7 @@ export default Vue.extend({
   },
   mixins: [CollectionComponentMixin],
   data() {
+    const resourceIri = '/page_data/blog_article_datas'
     return {
       // we can ask the front-end to dynamically load iris and save them in storage
       // ideally we get the API to return serialized objects
@@ -97,7 +111,13 @@ export default Vue.extend({
           UiClassNames: [],
           UiComponents: []
         }
-      }
+      },
+      collectionResourceData: {},
+      showNewResourceModal: false,
+      resourceIri
+      // defaultData: {
+      //   resourceIri: '/page_data/blog_article_datas'
+      // }
     }
   },
   computed: {
@@ -150,9 +170,7 @@ export default Vue.extend({
     }
   },
   created() {
-    this.$emit('initial-data', {
-      resourceIri: '/page_data/blog_article_datas'
-    })
+    // this.$emit('initial-data', this.defaultData)
   }
 })
 </script>
