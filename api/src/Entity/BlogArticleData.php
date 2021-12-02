@@ -24,7 +24,7 @@ class BlogArticleData extends AbstractPageData
 {
     /**
      * @ORM\ManyToOne(targetEntity=HtmlContent::class)
-     * @ORM\JoinColumn(nullable=true)
+     * @ORM\JoinColumn(nullable=true, onDelete="SET NULL")
      */
     public ?HtmlContent $htmlContent = null;
 }

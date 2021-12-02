@@ -20,7 +20,10 @@
     "nuxt": "^2.15.7"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.15.8",
+    "@babel/preset-typescript": "^7.15.0",
     "@cwa/nuxt-module-next": "^1.0.0-1628507142.4c398c9",
+    "@nuxt/types": "^2.15.8",
     "@nuxt/typescript-build": "^1.0.3",
     "@nuxtjs/eslint-config": "^6.0.0",
     "@nuxtjs/eslint-config-typescript": "^6.0.0",
@@ -33,7 +36,7 @@
     "babel-jest": "^26.0.1",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-nuxt": "^2.0.0",
+    "eslint-plugin-nuxt": "^3.0.0",
     "eslint-plugin-prettier": "^3.3.1",
     "fibers": "^5.0.0",
     "jest": "^26.0.1",
