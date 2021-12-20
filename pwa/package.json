@@ -11,7 +11,8 @@
     "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
     "lint:style": "stylelint **/*.{css,sass} --ignore-path .gitignore",
     "lint": "yarn lint:js && yarn lint:style",
-    "test": "jest"
+    "test": "jest",
+    "vercel-build-cmd": "nuxt build --standalone --no-lock --config-file ./nuxt.config.js ./"
   },
   "dependencies": {
     "@nuxt/typescript-runtime": "^0.4.10",
@@ -40,9 +41,9 @@
     "eslint-plugin-prettier": "^3.3.1",
     "fibers": "^5.0.0",
     "jest": "^26.0.1",
+    "node-sass": "^7.0.0",
     "prettier": "^2.2.1",
     "quill": "^1.3.7",
-    "sass": "^1.37",
     "sass-loader": "^10",
     "stylelint": "^13.6.1",
     "stylelint-config-prettier": "^8.0.2",
