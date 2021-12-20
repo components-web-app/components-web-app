@@ -60,7 +60,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 
     private function addArticlePage(ObjectManager $manager, Layout $layout): Page
     {
-        $page = $this->createPage('blog-template', 'PrimaryPageTemplate', $layout);
+        $page = $this->createPage('blog-template', 'PrimaryPageTemplate', $layout, true);
         $manager->persist($page);
 
         $componentCollection = $this->createComponentCollection('primary', $page);

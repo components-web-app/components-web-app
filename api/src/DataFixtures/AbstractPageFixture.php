@@ -68,13 +68,14 @@ abstract class AbstractPageFixture extends Fixture
         }
     }
 
-    protected function createPage(string $reference, string $uiComponent, Layout $layout): Page
+    protected function createPage(string $reference, string $uiComponent, Layout $layout, bool $isTemplate = false): Page
     {
         $fixtureRef = Page::class . '_' . $reference;
         if ($this->hasReference($fixtureRef)) {
             return $this->getReference($fixtureRef);
         }
         $page = new Page();
+        $page->isTemplate = $isTemplate;
         $page->reference = $reference;
         $page->uiComponent = $uiComponent;
         $page->layout = $layout;
