@@ -48,7 +48,7 @@ export default {
   modules: ['@nuxtjs/pwa', `@cwa/${cwaNuxtModuleName}`],
   plugins: [
     { src: '~/plugins/axios', mode: 'server' },
-    { src: '~/plugins/quill', ssr: false }
+    { src: '~/plugins/quill', mode: 'client' }
   ],
   serverMiddleware: ['~/server-middleware/headers'],
   router: {
