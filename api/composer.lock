@@ -4640,12 +4640,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "f3c9921af1fb71ddd75e9016242eaeaefb0031cf"
+                "reference": "c67ae5aa2a10ea636308db3f4cd4dbfc7ad7ec83"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/f3c9921af1fb71ddd75e9016242eaeaefb0031cf",
-                "reference": "f3c9921af1fb71ddd75e9016242eaeaefb0031cf",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/c67ae5aa2a10ea636308db3f4cd4dbfc7ad7ec83",
+                "reference": "c67ae5aa2a10ea636308db3f4cd4dbfc7ad7ec83",
                 "shasum": ""
             },
             "require": {
@@ -4739,7 +4739,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/master"
             },
-            "time": "2022-01-01T22:12:05+00:00"
+            "time": "2022-01-03T00:32:26+00:00"
         },
         {
             "name": "symfony/asset",
