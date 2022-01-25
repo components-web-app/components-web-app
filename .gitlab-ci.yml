@@ -111,6 +111,7 @@ review api:
     - check_kube_domain
     - install_dependencies
     - helm_init
+    - apply_kube_context
     - ensure_namespace
     - create_secret
     - deploy_api
@@ -153,6 +154,7 @@ staging api:
     - check_kube_domain
     - install_dependencies
     - helm_init
+    - apply_kube_context
     - ensure_namespace
     - create_secret
     - deploy_api staging
@@ -191,6 +193,7 @@ production api:
     - check_kube_domain
     - install_dependencies
     - helm_init
+    - apply_kube_context
     - ensure_namespace
     - create_secret
     - deploy_api
@@ -241,6 +244,7 @@ stop review:
   stage: cleanup
   script:
     - install_dependencies
+    - apply_kube_context
     - delete
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -264,6 +268,7 @@ canary api:
     - install_dependencies
     - ensure_namespace
     - helm_init
+    - apply_kube_context
     - create_secret
     - deploy_api canary
   environment:

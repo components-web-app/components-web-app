@@ -236,7 +236,16 @@ helm_init() {
   helm dependency build api/_helm/api
 }
 
+apply_kube_context() {
+	kubectl config get-contexts
+  if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi
+}
+
 ensure_namespace() {
+	if [[ -z "$KUBE_NAMESPACE" ]]; then
+    export KUBE_NAMESPACE="$CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG"
+  fi
+	echo "Ensuring namespace: $KUBE_NAMESPACE"
   kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
 }
 
