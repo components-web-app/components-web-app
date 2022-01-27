@@ -12,6 +12,11 @@ metadata:
     {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
   replicas: {{ .Values.varnish.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "cwa.selectorLabels" $data | nindent 6 }}
