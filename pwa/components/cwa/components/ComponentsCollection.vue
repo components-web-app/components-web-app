@@ -114,10 +114,10 @@ export default Vue.extend({
       },
       collectionResourceData: {},
       showNewResourceModal: false,
-      resourceIri
-      // defaultData: {
-      //   resourceIri: '/page_data/blog_article_datas'
-      // }
+      resourceIri,
+      defaultData: {
+        resourceIri: '/page_data/blog_article_datas'
+      }
     }
   },
   computed: {
@@ -170,7 +170,7 @@ export default Vue.extend({
     }
   },
   created() {
-    // this.$emit('initial-data', this.defaultData)
+    this.$emit('initial-data', this.defaultData)
   }
 })
 </script>

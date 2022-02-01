@@ -28,10 +28,6 @@ class Image extends AbstractComponent
     /**
      * @Silverback\UploadableField(adapter="local", imagineFilters={})
      * @Assert\File(maxSize="5M")
-     * @Assert\Image(
-     *     maxWidth = 2000,
-     *     maxHeight = 2000
-     * )
      */
     public ?File $file = null;
 }

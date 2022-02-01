@@ -327,6 +327,8 @@ deploy_vercel_pwa() {
 	fi
 	if [[ "$track" == "stable" ]]; then
 		PROD_FLAG="--prod"
+  else
+    PROD_FLAG="--target $track"
 	fi
 	API_ENDPOINT="https://${DOMAIN}"
 
@@ -363,7 +365,7 @@ deploy_api() {
 	replicas=$(get_replicas "$track" "$percentage")
 
   if [[ -n "$HELM_UNINSTALL" ]]; then
-    helm uninstall "$name" || EXIT_CODE=$? && true
+    helm uninstall --namespace="$KUBE_NAMESPACE" "$name" || EXIT_CODE=$? && true
     echo ${EXIT_CODE}
   fi
 
