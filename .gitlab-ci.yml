@@ -101,7 +101,7 @@ review pwa:
   needs: []
   except:
     refs:
-      - master
+      - main
     variables:
       - $REVIEW_DISABLED == "true"
 
@@ -128,7 +128,7 @@ review api:
   needs: ['unit tests', 'behat tests']
   except:
     refs:
-      - master
+      - main
     variables:
       - $REVIEW_DISABLED == "true"
 
@@ -142,7 +142,7 @@ staging pwa:
   needs: []
   only:
     refs:
-      - master
+      - main
     variables:
       - $STAGING_ENABLED == "true"
   allow_failure: false
@@ -164,7 +164,7 @@ staging api:
   needs: [ 'behat tests', 'unit tests']
   only:
     refs:
-      - master
+      - main
     variables:
       - $STAGING_ENABLED == "true"
   allow_failure: false
@@ -181,7 +181,7 @@ production pwa:
   allow_failure: false
   only:
     refs:
-      - master
+      - main
   needs: ['staging pwa']
   except:
     variables:
@@ -211,7 +211,7 @@ production api:
   needs: ['staging api']
   only:
     refs:
-      - master
+      - main
   except:
     variables:
       - $PRODUCTION_API_DISABLED == "true"
@@ -257,7 +257,7 @@ stop review:
   needs: ['review api']
   except:
     refs:
-      - master
+      - main
     variables:
       - $REVIEW_DISABLED == "true"
 
@@ -278,6 +278,6 @@ canary api:
   needs: ['staging api']
   only:
     refs:
-      - master
+      - main
     variables:
       - $CANARY_ENABLED == "true"

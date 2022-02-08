@@ -1,6 +1,6 @@
 #!/bin/sh
 
-## Based on API Platform update script: https://github.com/api-platform/api-platform/blob/master/update-deps.sh
+## Based on API Platform update script: https://github.com/api-platform/api-platform/blob/main/update-deps.sh
 
 # Update Docker images
 docker-compose pull

@@ -13,7 +13,7 @@ export GLIBC_VERSION=2.33-r0
 
 # Choose the branch for production deploy.
 if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
-  export DEPLOYMENT_BRANCH=master
+  export DEPLOYMENT_BRANCH=main
 fi
 
 # Miscellaneous

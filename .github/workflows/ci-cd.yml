@@ -122,10 +122,10 @@ jobs:
 #          curl -Ivfk -H 'Host: localhost' https://docker:8443
 #          curl -Ivfk -H 'Host: localhost' https://docker
       - name: Login to registry
-        if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/main'
         run: echo '${{ secrets.DOCKER_PASSWORD }}' | docker login --username '${{ secrets.DOCKER_USERNAME }}' --password-stdin "$DOCKER_REGISTRY"
       - name: Push images
-        if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.repository == 'components-web-app/components-web-app' && github.ref == 'refs/heads/main'
         run: |
           docker-compose push \
             caddy \
