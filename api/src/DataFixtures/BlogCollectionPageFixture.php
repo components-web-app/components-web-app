@@ -15,13 +15,6 @@ use Silverback\ApiComponentsBundle\Helper\Timestamped\TimestampedDataPersister;
 class BlogCollectionPageFixture extends AbstractPageFixture implements DependentFixtureInterface
 {
     public const ROUTE_NAME = 'blog-articles-page';
-    private IriConverterInterface $iriConverter;
-
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, IriConverterInterface $iriConverter)
-    {
-        $this->iriConverter = $iriConverter;
-        parent::__construct($timestampedDataPersister, $lipsumContentProvider);
-    }
 
     public function load(ObjectManager $manager): void
     {
@@ -46,11 +39,6 @@ class BlogCollectionPageFixture extends AbstractPageFixture implements Dependent
 
         $position = $this->createComponentPosition($componentCollection, $collection, 0);
         $manager->persist($position);
-
-        $componentCollection2 = $this->createComponentCollection( 'secondary', $page);
-        $manager->persist($componentCollection2);
-        $position2 = $this->createComponentPosition($componentCollection2, $this->getReference('side_html'), 0);
-        $manager->persist($position2);
 
         $route = $this->createRoute('/blog-articles', self::ROUTE_NAME, $page);
         $manager->persist($route);

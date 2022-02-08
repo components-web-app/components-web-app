@@ -6,7 +6,8 @@ declare(strict_types=1);
 namespace App\DataFixtures;
 
 
-use App\Entity\HtmlContent;
+use ApiPlatform\Core\Api\IriConverterInterface;
+use App\Entity\NavigationLink;
 use App\Lipsum\LipsumContentProvider;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -26,11 +27,13 @@ abstract class AbstractPageFixture extends Fixture
 {
     protected TimestampedDataPersister $timestampedDataPersister;
     protected LipsumContentProvider $lipsumContentProvider;
+    protected IriConverterInterface $iriConverter;
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider)
+    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, IriConverterInterface $iriConverter)
     {
         $this->timestampedDataPersister = $timestampedDataPersister;
         $this->lipsumContentProvider = $lipsumContentProvider;
+        $this->iriConverter = $iriConverter;
     }
 
     protected function createLayout(ObjectManager $manager, string $reference, string $uiComponent): Layout
@@ -45,20 +48,31 @@ abstract class AbstractPageFixture extends Fixture
         $this->timestampedDataPersister->persistTimestampedFields($layout, true);
 
         $componentCollectionTop = $this->createComponentCollection( 'top', null, $layout);
+        $componentCollectionTop->addAllowedComponent($this->iriConverter->getIriFromResourceClass(NavigationLink::class));
 
-        $htmlContent = new HtmlContent();
-        $htmlContent->html = '<h1>Welcome to CWA</h1><p><a href="/">Home</a> | <a href="/blog-articles">Blog</a> | <a href="/form">Form</a></p>';
-        $htmlContent->uiClassNames = ['is-feature'];
-        $htmlContent->setPublishedAt(new \DateTime());
+        $this->addNavigationLink($manager, $componentCollectionTop, 'Home', '/', HomePageFixture::ROUTE_NAME, 1);
+        $this->addNavigationLink($manager, $componentCollectionTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);
+        $this->addNavigationLink($manager, $componentCollectionTop, 'Form', '/form', FormPageFixture::ROUTE_NAME, 3);
 
-        $position = $this->createComponentPosition($componentCollectionTop, $htmlContent, 0);
+        $manager->persist($layout);
+        $manager->persist($componentCollectionTop);
 
-        $return = [ $layout, $componentCollectionTop, $htmlContent, $position];
-        foreach ($return as $item) {
-            $manager->persist($item);
-        }
         $this->addReference($fixtureRef, $layout);
         return $layout;
+    }
+
+    private function addNavigationLink(ObjectManager $manager, ComponentCollection $collection, string $label, string $path, string $routeName, int $sort = 0): void
+    {
+        $route = $this->createRoute($path, $routeName);
+        $manager->persist($route);
+
+        $navigationLink = new NavigationLink();
+        $navigationLink->label = $label;
+        $navigationLink->route = $route;
+        $navigationLink->setPublishedAt(new \DateTime());
+        $position = $this->createComponentPosition($collection, $navigationLink, $sort);
+        $manager->persist($navigationLink);
+        $manager->persist($position);
     }
 
     protected function persistArray(ObjectManager $manager, $array)
@@ -130,17 +144,22 @@ abstract class AbstractPageFixture extends Fixture
     {
         $fixtureRef = Route::class . '_' . $name;
         if ($this->hasReference($fixtureRef)) {
-            return $this->getReference($fixtureRef);
+            $route = $this->getReference($fixtureRef);
+        } else {
+            $route = new Route();
+            $this->timestampedDataPersister->persistTimestampedFields($route, true);
+            $this->addReference($fixtureRef, $route);
         }
-        $route = new Route();
         $route
             ->setPath($path)
             ->setName($name)
-            ->setPage($page)
-            ->setPageData($pageData)
         ;
-        $this->timestampedDataPersister->persistTimestampedFields($route, true);
-        $this->addReference($fixtureRef, $route);
+        if ($page) {
+            $route->setPage($page);
+        }
+        if ($pageData) {
+            $route->setPageData($pageData);
+        }
         return $route;
     }
 }

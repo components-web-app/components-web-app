@@ -10,6 +10,8 @@ use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 
 class FormPageFixture extends AbstractPageFixture implements DependentFixtureInterface
 {
+    public const ROUTE_NAME = 'form-page';
+
     public function load(ObjectManager $manager): void
     {
         $layout = $this->createLayout($manager, 'Main Layout', 'primary');
@@ -34,12 +36,7 @@ class FormPageFixture extends AbstractPageFixture implements DependentFixtureInt
         $position = $this->createComponentPosition($componentCollection, $form, 0);
         $manager->persist($position);
 
-        $componentCollection2 = $this->createComponentCollection( 'secondary', $page);
-        $manager->persist($componentCollection2);
-        $position2 = $this->createComponentPosition($componentCollection2, $this->getReference('side_html'), 0);
-        $manager->persist($position2);
-
-        $route = $this->createRoute('/form', 'form-page', $page);
+        $route = $this->createRoute('/form', self::ROUTE_NAME, $page);
         $manager->persist($route);
     }
 

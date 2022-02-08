@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use ApiPlatform\Core\Api\IriConverterInterface;
 use App\Entity\BlogArticleData;
 use App\Entity\HtmlContent;
 use App\Lipsum\LipsumContentProvider;
@@ -17,10 +18,10 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 {
     private RouteGeneratorInterface $routeGenerator;
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, RouteGeneratorInterface $routeGenerator)
+    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, IriConverterInterface $iriConverter, RouteGeneratorInterface $routeGenerator)
     {
         $this->routeGenerator = $routeGenerator;
-        parent::__construct($timestampedDataPersister, $lipsumContentProvider);
+        parent::__construct($timestampedDataPersister, $lipsumContentProvider, $iriConverter);
     }
 
     public function load(ObjectManager $manager): void
