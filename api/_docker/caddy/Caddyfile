@@ -4,81 +4,89 @@
 
 # Global
 {
-    # Debug
-    {$DEBUG}
-    # HTTP/3 support
-    servers {
-        protocol {
-            experimental_http3
-        }
+	# Debug
+	{$DEBUG}
+	# HTTP/3 support
+	servers {
+		protocol {
+			experimental_http3
+		}
+	}
+	# Custom global directives
+    {$GLOBAL_DIRECTIVES}
+}
+
+caddy-probe.local:80 {
+	@health_check {
+		host caddy-probe.local
+		path /health-check
+	}
+	# customisable log level with environment
+    log {
+        level {$LOG_LEVEL:"error"}
+    }
+    respond @health_check 200 {
+        close
     }
 }
 
 # define single site using environment variable
-caddy-probe.local:80, {$SERVER_NAME}
+{$SERVER_NAME} {
+	# named matchers
+	@do_varnish_pass {
+		header !X-Caddy-Forwarded
+	}
 
-# named matchers
-@do_varnish_pass {
-    header !X-Caddy-Forwarded
-}
+	@internal {
+		header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
+	}
 
-@health_check {
-    host caddy-probe.local
-    path /health-check
-}
+	# customisable log level with environment
+	log {
+		level {$LOG_LEVEL:"info"}
+	}
 
-@internal {
-    header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
-}
+	# preserve orders
+	route {
+		root * /srv/api/public
 
-# customisable log level with environment
-log {
-    level {$LOG_LEVEL:"info"}
-}
+		# matcher broken - @internal - https://github.com/caddyserver/caddy/issues/4084
+		# request_header host {$BROWSER_SERVER_NAME}
+		request_header @internal host {$BROWSER_SERVER_NAME}
 
-# preserve orders
-route {
-    respond @health_check 200 {
-        close
-    }
+		mercure @do_varnish_pass {
+			# Transport to use (default to Bolt)
+			transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
+			# Publisher JWT key
+			publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
+			# Subscriber JWT key
+			subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+			# Allow anonymous subscribers (double-check that it's what you want)
+			anonymous
+			# Enable the subscription API (double-check that it's what you want)
+			subscriptions
+			# Cors origins
+			cors_origins {$MERCURE_CORS_ORIGIN:*}
+			# Extra directives
+			{$MERCURE_EXTRA_DIRECTIVES}
+		}
+		vulcain @do_varnish_pass
+		push @do_varnish_pass
 
-    root * /srv/api/public
+		# do the cache pass
+		reverse_proxy @do_varnish_pass {
+			to {$VARNISH_UPSTREAM}
+			health_uri /healthz
+			health_interval 5s
+			health_timeout 20s
+			fail_duration 5s
+			header_up X-Caddy-Forwarded 1
+			# required to ensure we have 8443 for example if we are using this
+			header_up X-Forwarded-Port {http.request.port}
+		}
 
-    # matcher broken - @internal - https://github.com/caddyserver/caddy/issues/4084
-    request_header host {$BROWSER_SERVER_NAME}
-
-    mercure @do_varnish_pass {
-        # Transport to use (default to Bolt)
-        transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
-        # Publisher JWT key
-        publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
-        # Subscriber JWT key
-        subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
-        # Allow anonymous subscribers (double-check that it's what you want)
-        anonymous
-        # Enable the subscription API (double-check that it's what you want)
-        subscriptions
-        # Cors origins
-        cors_origins {$MERCURE_CORS_ORIGIN:*}
-        # Extra directives
-        {$MERCURE_EXTRA_DIRECTIVES}
-    }
-    vulcain @do_varnish_pass
-    push @do_varnish_pass
-
-    # do the cache pass
-    reverse_proxy @do_varnish_pass {
-        to {$VARNISH_UPSTREAM}
-        health_path /healthz
-        health_interval 5s
-        health_timeout 20s
-        fail_duration 5s
-        header_up X-Caddy-Forwarded 1
-        # required to ensure we have 8443 for example if we are using this
-        header_up X-Forwarded-Port {http.request.port}
-    }
-
-    php_fastcgi unix//var/run/php/php-fpm.sock
-    encode zstd gzip
-    file_server
+		php_fastcgi unix//var/run/php/php-fpm.sock
+		encode zstd gzip
+		file_server
+	}
 }

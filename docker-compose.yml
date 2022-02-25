@@ -38,6 +38,8 @@ services:
     depends_on:
       - php
     environment:
+      GLOBAL_DIRECTIVES: "auto_https disable_redirects"
+      DEBUG: ~ # ~ or debug
       VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy}
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
       BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost:8443}
@@ -57,15 +59,15 @@ services:
     ports:
       # HTTP
       - target: 80
-        published: 8080
+        published: ${HTTP_PORT:-8080}
         protocol: tcp
       # HTTPS
       - target: 443
-        published: 8443
+        published: ${HTTPS_PORT:-8443}
         protocol: tcp
       # HTTP/3
       - target: 443
-        published: 8443
+        published: ${HTTP3_PORT:-8443}
         protocol: udp
 
   # Directs back to caddy which will send to php
