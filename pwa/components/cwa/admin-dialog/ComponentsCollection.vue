@@ -1,6 +1,6 @@
 <template>
   <div class="collection-tab">
-    <div class="row">
+    <div class="row tab-row">
       <div class="column is-narrow">
         <cm-text
           :id="inputId('perpage')"

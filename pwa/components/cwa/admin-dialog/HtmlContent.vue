@@ -1,12 +1,13 @@
 <template>
   <div class="html-content-tab">
-    <div class="row">
+    <div class="row tab-row">
       <div class="column is-narrow">
         <cwa-admin-toggle
           :id="`component-toggle-html-${iri}`"
           v-model="showEditor"
           :notifications="fieldErrors.notifications['html']"
           label="Edit HTML"
+          error-label="HTML"
         />
       </div>
     </div>

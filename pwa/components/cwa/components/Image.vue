@@ -5,9 +5,11 @@
   </div>
 </template>
 <script lang="ts">
+import Vue from 'vue'
 import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManagerMixin'
-export default {
+
+export default Vue.extend({
   mixins: [ComponentMixin],
   data() {
     return {
@@ -52,7 +54,7 @@ export default {
       })
     }
   }
-}
+})
 </script>
 
 <style lang="sass">

@@ -5,7 +5,6 @@
       resource.uiClassNames,
       { 'has-error': !!fieldNotifications.html.length }
     ]"
-    @dblclick="toggleEditor"
   >
     <cwa-logo class="cwa-logo" />
     <component

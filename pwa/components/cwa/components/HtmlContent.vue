@@ -5,7 +5,6 @@
       resource.uiClassNames,
       { 'has-error': !!fieldNotifications.html.length }
     ]"
-    @dblclick="toggleEditor"
   >
     <component
       :is="htmlComponent"
@@ -28,7 +27,8 @@ import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManagerMixin'
 import NotificationListenerMixin from '@cwa/nuxt-module/core/mixins/NotificationListenerMixin'
 import QuillInput from '~/components/api-input/QuillInput.vue'
-export default {
+// eslint-disable-next-line vue/one-component-per-file
+export default Vue.extend({
   components: { QuillInput },
   mixins: [ComponentMixin, NotificationListenerMixin],
   data() {
@@ -48,7 +48,7 @@ export default {
         {
           label: 'HTML Content',
           component: () => import('../admin-dialog/HtmlContent.vue'),
-          priority: 2,
+          priority: 0,
           inputFieldsUsed: ['html']
         }
       ]
@@ -68,6 +68,7 @@ export default {
         })
         html = div.innerHTML
       }
+      // eslint-disable-next-line vue/one-component-per-file
       return Vue.extend({
         components: {
           CwaNuxtLink: () =>
@@ -103,23 +104,22 @@ export default {
       return newLink
     }
   }
-}
+})
 </script>
 
 <style lang="sass">
 .html-component
-  padding: .5rem
   position: relative
-  &.has-error::after
-    content: ''
-    position: absolute
-    bottom: 100%
-    right: 100%
-    width: 16px
-    height: 16px
-    border-radius: 50%
-    background: $cwa-danger
-    transform: translate(8px, 8px)
+  //&.has-error::after
+  //  content: ''
+  //  position: absolute
+  //  bottom: 100%
+  //  right: 100%
+  //  width: 16px
+  //  height: 16px
+  //  border-radius: 50%
+  //  background: $cwa-danger
+  //  transform: translate(8px, 8px)
   &.is-feature
     padding: 1rem .5rem
     font-size: 2.1rem

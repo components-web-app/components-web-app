@@ -1,6 +1,6 @@
 <template>
   <div class="image-tab">
-    <div class="row">
+    <div class="row tab-row">
       <div class="column is-narrow">
         <span v-if="isNew">
           Please add as a draft in order to upload a file

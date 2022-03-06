@@ -6,17 +6,26 @@
         <cwa-refresh-bar />
       </div>
 
-      <div class="container loading-message">
-        <p v-if="$cwa.$state.error" class="error">
+      <div v-if="$cwa.$state.error" class="container loading-message">
+        <p class="error">
           {{ $cwa.$state.error }}
         </p>
       </div>
 
-      <div>
-        <component-collection
-          location="top"
-          v-bind="componentCollectionProps"
-        />
+      <div class="navigation">
+        <div class="container">
+          <div class="row">
+            <div class="column is-narrow">
+              <img src="/logo.svg" alt="CWA Logo" />
+            </div>
+            <div class="column">
+              <component-collection
+                location="top"
+                v-bind="componentCollectionProps"
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <nuxt />
@@ -42,7 +51,7 @@ export default {
 }
 </script>
 
-<style lang="sass" scoped>
+<style lang="sass">
 .primary-layout
   display: flex
   min-height: 100vh
@@ -51,6 +60,12 @@ export default {
     flex-grow: 1
     .refresh-bar-holder
       position: relative
+    .navigation
+      padding: 2rem 0
+    .component-collection.top_main-layout
+      .positions-container
+        display: flex
+        justify-content: flex-end
   .loading-message
     .error
       color: $color-danger
