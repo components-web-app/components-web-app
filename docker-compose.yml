@@ -108,8 +108,8 @@ services:
       NODE_TLS_REJECT_UNAUTHORIZED: ~
       # we have to allow the https port as axios module will change http to https
       # so caddy must also accept this host with ssl
-      API_URL: https://caddy.local
-      API_URL_BROWSER: https://localhost:8443
+      API_URL: ${API_URL:-https://caddy.local}
+      API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost:8443}
     ports:
       - target: 3000
         published: 443

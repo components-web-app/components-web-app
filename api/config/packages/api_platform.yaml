@@ -8,11 +8,13 @@ api_platform:
         versions: [3]
     # Mercure integration, remove if unwanted
     mercure: ~
+    defaults:
+      cache_headers:
+        max_age: 0
+        shared_max_age: 3600
+        vary: ['Content-Type', 'Authorization', 'Path']
     http_cache:
         invalidation:
             enabled: true
             varnish_urls: ['%env(VARNISH_URL)%']
-        max_age: 0
-        shared_max_age: 3600
-        vary: ['Content-Type', 'Authorization', 'Path']
         public: true
