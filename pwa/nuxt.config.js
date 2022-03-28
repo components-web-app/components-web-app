@@ -4,7 +4,8 @@ import path, { join } from 'path'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
 const API_URL = process.env.API_URL || API_URL_BROWSER
 
-const CERT_DIR = process.env.CERT_DIR || '/certs'
+const CERT_DOMAIN = process.env.CERT_DOMAIN || 'localhost'
+const CERT_DIR = process.env.CERT_DIR || `/certs/${CERT_DOMAIN}`
 const MERCURE_SUBSCRIBE_URL =
   process.env.MERCURE_SUBSCRIBE_URL || 'https://localhost:1337'
 
@@ -12,8 +13,8 @@ const https =
   process.env.NODE_ENV === 'production' && process.env.LOCAL_TLS !== '1'
     ? {}
     : {
-        key: fs.readFileSync(path.resolve(CERT_DIR + '/localhost.key')),
-        cert: fs.readFileSync(path.resolve(CERT_DIR + '/localhost.crt'))
+        key: fs.readFileSync(path.resolve(`${CERT_DIR}/${CERT_DOMAIN}.key`)),
+        cert: fs.readFileSync(path.resolve(`${CERT_DIR}/${CERT_DOMAIN}.crt`))
       }
 
 const cwaNuxtModuleName = 'nuxt-module-next'

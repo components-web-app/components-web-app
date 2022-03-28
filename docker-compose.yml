@@ -53,7 +53,7 @@ services:
       - php_socket:/var/run/php
       - caddy_data:/data
       - caddy_config:/config
-      - caddy_certs:/data/caddy/certificates/local/localhost
+      - caddy_certs:/data/caddy/certificates/local
       - caddy_ca:/usr/local/share/ca-certificates
       - ./api/_docker/caddy/Caddyfile:/etc/caddy/Caddyfile:rw
     ports:
