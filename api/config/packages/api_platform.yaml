@@ -17,4 +17,8 @@ api_platform:
         invalidation:
             enabled: true
             varnish_urls: ['%env(VARNISH_URL)%']
+            xkey:
+                enabled: true
+                glue: ', '
+            http_tags: false
         public: true
