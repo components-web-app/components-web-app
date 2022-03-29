@@ -84,11 +84,18 @@ RUN caddy fmt /etc/caddy/Caddyfile
 # does not depend on any of the above stages
 FROM varnish:${VARNISH_VERSION} AS cwa_varnish
 
-RUN \
-  apt-get update \
-  && apt-get -y install gettext-base \
+RUN apt-get update && \
+	apt-get install -y git varnish-dev make automake libtool python-sphinx gettext-base \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --branch 6.4 --single-branch https://github.com/varnish/varnish-modules.git /varnish-modules && \
+	cd /varnish-modules && \
+	./bootstrap && \
+  ./configure && \
+	make && \
+	make check -j 4 && \
+	make install
 
 COPY _docker/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
 COPY _docker/varnish/persist-environment.sh /usr/local/bin/persist-environment

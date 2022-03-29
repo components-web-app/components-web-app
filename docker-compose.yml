@@ -89,6 +89,8 @@ services:
       - api/.env
     tmpfs:
       - /usr/local/var/varnish:exec
+    volumes:
+      - ./api/_docker/varnish/conf/default.vcl:/tmp/varnish/conf/default.vcl:rw
 
   # In production the pwa is deployed separately so we will not put behind caddy
   # We will use the caddy certs for localhost though in dev to serve over https
