@@ -165,6 +165,11 @@ sub vcl_recv {
       set req.http.Cookie = regsuball(req.http.Cookie, ";(api_component)=", "; \1=");
       set req.http.Cookie = regsuball(req.http.Cookie, ";[^ ][^;]*", "");
       set req.http.Cookie = regsuball(req.http.Cookie, "^[; ]+|[; ]+$", "");
+
+      # Ensure no cookies will always match the same cache - SSR loads will not have the header at all
+      if (req.http.Cookie == "") {
+        unset req.http.Cookie;
+      }
   }
 
   # See builtin.vcl https://github.com/varnishcache/varnish-cache/blob/master/bin/varnishd/builtin.vcl
