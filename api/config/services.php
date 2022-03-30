@@ -33,6 +33,9 @@ return static function (ContainerConfigurator $configurator) {
         ])
         ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
 
+    $services
+        ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
+
 //    $services
 //        ->set(FlysystemCacheResolver::class)
 //        ->args([
