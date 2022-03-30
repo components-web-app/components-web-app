@@ -53,7 +53,7 @@ export default {
   ],
   serverMiddleware: ['~/server-middleware/headers'],
   router: {
-    middleware: ['auth', 'routeLoader']
+    middleware: ['auth', 'cwa']
   },
   render: {
     csp: {
