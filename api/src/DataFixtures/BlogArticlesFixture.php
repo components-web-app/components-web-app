@@ -2,7 +2,7 @@
 
 namespace App\DataFixtures;
 
-use ApiPlatform\Core\Api\IriConverterInterface;
+use ApiPlatform\Api\IriConverterInterface;
 use App\Entity\BlogArticleData;
 use App\Entity\HtmlContent;
 use App\Lipsum\LipsumContentProvider;

@@ -4,34 +4,34 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use ApiPlatform\Core\Annotation\ApiFilter;
-use ApiPlatform\Core\Annotation\ApiResource;
-use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use Doctrine\ORM\Mapping as ORM;
 use Silverback\ApiComponentsBundle\Entity\User\AbstractUser;
 use Silverback\ApiComponentsBundle\Filter\OrSearchFilter;
-use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 /**
  * @author Daniel West <daniel@silverback.is>
- * @ApiResource(
- *     collectionOperations={
- *         "get"={"security"="is_granted('ROLE_SUPER_ADMIN')"},
- *         "post"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
- *     },
- *     itemOperations={
- *         "get"={"security"="is_granted('ROLE_SUPER_ADMIN') or object == user"},
- *         "put"={"security"="is_granted('ROLE_SUPER_ADMIN') or object == user"},
- *         "patch"={"security"="is_granted('ROLE_SUPER_ADMIN') or object == user"},
- *         "delete"={"security"="is_granted('ROLE_SUPER_ADMIN')"}
- *     }
- * )
- * @ApiFilter(OrderFilter::class, properties={"createdAt", "username"}, arguments={"orderParameterName"="order"})
- * @ApiFilter(OrSearchFilter::class, properties={"username"="ipartial", "emailAddress"="ipartial"})
- * @ORM\Entity
- * @ORM\Table(name="`user`")
  */
+#[ApiResource(operations: [
+    new GetCollection( security: "is_granted('ROLE_SUPER_ADMIN')" ),
+    new Post( security: "is_granted('ROLE_SUPER_ADMIN')" ),
+    new Get( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
+    new Put( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
+    new Patch( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
+    new Delete( security: "is_granted('ROLE_SUPER_ADMIN')" )
+])]
+#[ApiFilter(OrderFilter::class, properties: ['createdAt', 'username'], arguments: [ 'orderParameterName' => 'order' ])]
+#[ApiFilter(OrSearchFilter::class, properties: [ 'username' => 'ipartial', 'emailAddress' => 'ipartial' ])]
+#[ORM\Entity]
+#[ORM\Table(name: "`user`")]
 class User extends AbstractUser
 {
 //    public static function loadValidatorMetadata(ClassMetadata $metadata): void

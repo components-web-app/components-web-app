@@ -2,15 +2,11 @@
 
 namespace App\DataFixtures;
 
-use ApiPlatform\Core\Api\IriConverterInterface;
 use App\Entity\BlogArticleData;
-use App\Entity\HtmlContent;
-use App\Lipsum\LipsumContentProvider;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Component\Collection;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
-use Silverback\ApiComponentsBundle\Helper\Timestamped\TimestampedDataPersister;
 
 class BlogCollectionPageFixture extends AbstractPageFixture implements DependentFixtureInterface
 {

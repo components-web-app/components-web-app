@@ -5,26 +5,27 @@ declare(strict_types=1);
 namespace App\Entity;
 
 
-use ApiPlatform\Core\Annotation\ApiFilter;
-use ApiPlatform\Core\Annotation\ApiResource;
-use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\OrderFilter;
-use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
 use Doctrine\ORM\Mapping as ORM;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractPageData;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @author Daniel West <daniel@silverback.is>
- * @ORM\Entity()
- * @ApiResource(mercure="true", attributes={"order"={"createdAt": "DESC"}, "pagination_items_per_page"=10})
- * @ApiFilter(SearchFilter::class, properties={"title": "ipartial"})
- * @ApiFilter(OrderFilter::class, properties={"title", "createdAt"})
  */
+#[Orm\Entity]
+#[ApiResource(
+    mercure: true,
+    order: [ 'createdAt' => 'DESC' ],
+    paginationItemsPerPage: 10
+)]
+#[ApiFilter(SearchFilter::class, properties: [ 'title' => 'ipartial' ])]
+#[ApiFilter(OrderFilter::class, properties: [ 'title', 'createdAt' ])]
 class BlogArticleData extends AbstractPageData
 {
-    /**
-     * @ORM\ManyToOne(targetEntity=HtmlContent::class)
-     * @ORM\JoinColumn(nullable=true, onDelete="SET NULL")
-     */
+    #[Orm\ManyToOne(targetEntity: HtmlContent::class)]
+    #[Orm\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     public ?HtmlContent $htmlContent = null;
 }

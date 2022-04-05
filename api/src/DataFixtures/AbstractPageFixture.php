@@ -6,7 +6,7 @@ declare(strict_types=1);
 namespace App\DataFixtures;
 
 
-use ApiPlatform\Core\Api\IriConverterInterface;
+use ApiPlatform\Api\IriConverterInterface;
 use App\Entity\NavigationLink;
 use App\Lipsum\LipsumContentProvider;
 use Doctrine\Bundle\FixturesBundle\Fixture;

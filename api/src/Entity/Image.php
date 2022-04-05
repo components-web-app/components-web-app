@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Metadata\ApiResource;
 use Doctrine\ORM\Mapping as ORM;
 use Silverback\ApiComponentsBundle\Annotation as Silverback;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractComponent;
@@ -15,19 +15,17 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @author Daniel West <daniel@silverback.is>
- * @Silverback\Publishable()
- * @Silverback\Uploadable()
- * @ApiResource(mercure="true")
- * @ORM\Entity
  */
+#[Silverback\Publishable]
+#[Silverback\Uploadable]
+#[ApiResource(mercure: true)]
+#[Orm\Entity]
 class Image extends AbstractComponent
 {
     use PublishableTrait;
     use UploadableTrait;
 
-    /**
-     * @Silverback\UploadableField(adapter="local", imagineFilters={})
-     * @Assert\File(maxSize="5M")
-     */
+    #[Silverback\UploadableField(adapter: 'local', imagineFilters: [])]
+    #[Assert\File(maxSize: '5M')]
     public ?File $file = null;
 }
