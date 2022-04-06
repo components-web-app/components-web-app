@@ -4015,12 +4015,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "46e1bd6a5a81c60d4658e04c65ae643c1cfae37b"
+                "reference": "f79be9397540a45ef660874716d51b24335f010c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/46e1bd6a5a81c60d4658e04c65ae643c1cfae37b",
-                "reference": "46e1bd6a5a81c60d4658e04c65ae643c1cfae37b",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/f79be9397540a45ef660874716d51b24335f010c",
+                "reference": "f79be9397540a45ef660874716d51b24335f010c",
                 "shasum": ""
             },
             "require": {
@@ -4036,7 +4036,7 @@
                 "ext-json": "*",
                 "ext-pdo": "*",
                 "ext-simplexml": "*",
-                "imagine/imagine": "^1.3.0",
+                "imagine/imagine": "^1.3",
                 "lexik/jwt-authentication-bundle": "^2.14.4",
                 "liip/imagine-bundle": "^2.7",
                 "nelmio/cors-bundle": "^2.2",
@@ -4127,7 +4127,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2022-04-05T22:12:34+00:00"
+            "time": "2022-04-06T18:35:25+00:00"
         },
         {
             "name": "symfony/asset",
@@ -9457,16 +9457,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v3.3.9",
+            "version": "v3.3.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "6ff9b0e440fa66f97f207e181c41340ddfa5683d"
+                "reference": "8442df056c51b706793adf80a9fd363406dd3674"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/6ff9b0e440fa66f97f207e181c41340ddfa5683d",
-                "reference": "6ff9b0e440fa66f97f207e181c41340ddfa5683d",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/8442df056c51b706793adf80a9fd363406dd3674",
+                "reference": "8442df056c51b706793adf80a9fd363406dd3674",
                 "shasum": ""
             },
             "require": {
@@ -9517,7 +9517,7 @@
             ],
             "support": {
                 "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v3.3.9"
+                "source": "https://github.com/twigphp/Twig/tree/v3.3.10"
             },
             "funding": [
                 {
@@ -9529,7 +9529,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-03-25T09:37:52+00:00"
+            "time": "2022-04-06T06:47:41+00:00"
         },
         {
             "name": "webmozart/assert",
@@ -11568,12 +11568,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "3bbc1ff6ef5ac9e765a1e4b8464a7ab97e656820"
+                "reference": "8de287d3e2b7504c77a6fe6725afed5ed54f77c7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/3bbc1ff6ef5ac9e765a1e4b8464a7ab97e656820",
-                "reference": "3bbc1ff6ef5ac9e765a1e4b8464a7ab97e656820",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/8de287d3e2b7504c77a6fe6725afed5ed54f77c7",
+                "reference": "8de287d3e2b7504c77a6fe6725afed5ed54f77c7",
                 "shasum": ""
             },
             "conflict": {
@@ -11646,7 +11646,7 @@
                 "doctrine/mongodb-odm-bundle": ">=2,<3.0.1",
                 "doctrine/orm": ">=2,<2.4.8|>=2.5,<2.5.1|>=2.8.3,<2.8.4",
                 "dolibarr/dolibarr": "<16|>= 3.3.beta1, < 13.0.2",
-                "dompdf/dompdf": ">=0.6,<0.6.2",
+                "dompdf/dompdf": "<1.2.1",
                 "drupal/core": ">=7,<7.88|>=8,<9.2.13|>=9.3,<9.3.6",
                 "drupal/drupal": ">=7,<7.80|>=8,<8.9.16|>=9,<9.1.12|>=9.2,<9.2.4",
                 "dweeves/magmi": "<=0.7.24",
@@ -12036,7 +12036,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-04-05T22:03:54+00:00"
+            "time": "2022-04-06T15:08:57+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -13634,5 +13634,5 @@
         "php": "^8.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.2.0"
 }
