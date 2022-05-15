@@ -35,6 +35,15 @@ export default Vue.extend({
         ? this.resource.route
         : this.$cwa.getResource(this.resource.route)
     }
+  },
+  async mounted() {
+    if (
+      this.resource.route &&
+      (typeof this.resource.route === 'string' ||
+        this.resource.route instanceof String)
+    ) {
+      await this.$cwa.findResource(this.resource.route)
+    }
   }
 })
 </script>

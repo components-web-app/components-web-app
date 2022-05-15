@@ -18,8 +18,6 @@ api_platform:
             enabled: true
             varnish_urls: ['%env(VARNISH_URL)%']
             xkey:
-                enabled: true
                 glue: ', '
-            http_tags: false
         public: true
     metadata_backward_compatibility_layer: false

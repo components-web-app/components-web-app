@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Lipsum;
 
+use Symfony\Component\HttpClient\Exception\TimeoutException;
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -51,7 +53,7 @@ class LipsumContentProvider
                 $clientContext
             );
             $content = $res->getContent();
-        } catch (HttpExceptionInterface $e) {
+        } catch (HttpExceptionInterface|TimeoutException|TransportException $e) {
             if ($throw) {
                 throw $e;
             }

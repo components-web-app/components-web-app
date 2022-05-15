@@ -34,6 +34,9 @@
     "cocur/slugify": {
         "version": "v4.0.0"
     },
+    "components-web-app/api-components-bundle": {
+        "version": "dev-main"
+    },
     "composer/pcre": {
         "version": "1.0.0"
     },
@@ -400,8 +403,8 @@
     "sebastian/version": {
         "version": "3.0.2"
     },
-    "silverbackis/api-components-bundle": {
-        "version": "dev-master"
+    "stella-maris/clock": {
+        "version": "0.1.4"
     },
     "symfony/asset": {
         "version": "v4.3.8"
