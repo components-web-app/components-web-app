@@ -44,9 +44,11 @@
         />
       </div>
     </div>
-    <div v-if="$cwa.isAdmin">
-      <button @click="showNewResourceModal = true">Add</button>
-    </div>
+    <client-only>
+      <div v-if="$cwa.isAdmin">
+        <button @click="showNewResourceModal = true">Add</button>
+      </div>
+    </client-only>
     <div class="collection-items">
       <div v-if="fetching" class="loading-overlay">&nbsp;</div>
       <div class="row row-wrap">
