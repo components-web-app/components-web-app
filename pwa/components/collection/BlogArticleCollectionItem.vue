@@ -2,8 +2,8 @@
   <div v-if="resource" class="blog-collection-item">
     <div class="box">
       <h4>{{ resource.title }}</h4>
-      <nuxt-link :to="route ? route.path : '#'" class="button">{{
-        route ? 'View Article' : '...'
+      <nuxt-link :to="routePath" class="button">{{
+        routePath !== '#' ? 'View Article' : '...'
       }}</nuxt-link>
       <p class="created-date">
         {{ formatDate(parseDateString(resource.createdAt)) }}
@@ -16,33 +16,18 @@
 import Vue from 'vue'
 import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import ApiDateParserMixin from '@cwa/nuxt-module/core/mixins/ApiDateParserMixin'
+import ResolveRoutePathMixin from '@cwa/nuxt-module/core/mixins/ResolveRoutePathMixin'
 
 export default Vue.extend({
-  mixins: [ComponentMixin, ApiDateParserMixin],
+  mixins: [ComponentMixin, ApiDateParserMixin, ResolveRoutePathMixin],
   data() {
     return {
       componentManagerDisabled: true
     }
   },
   computed: {
-    route() {
-      if (!this.resource.route) {
-        return {
-          path: { name: '_cwa_page_data_iri', params: { iri: this.iri } }
-        }
-      }
-      return this.resource.route['@id']
-        ? this.resource.route
-        : this.$cwa.getResource(this.resource.route)
-    }
-  },
-  async mounted() {
-    if (
-      this.resource.route &&
-      (typeof this.resource.route === 'string' ||
-        this.resource.route instanceof String)
-    ) {
-      await this.$cwa.findResource(this.resource.route)
+    routePath() {
+      return this.resolveRoutePath(this.resource.route)
     }
   }
 })
