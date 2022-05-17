@@ -7,6 +7,8 @@ namespace App\DataFixtures;
 
 
 use ApiPlatform\Api\IriConverterInterface;
+use ApiPlatform\Api\UrlGeneratorInterface;
+use ApiPlatform\Metadata\GetCollection;
 use App\Entity\NavigationLink;
 use App\Lipsum\LipsumContentProvider;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -48,7 +50,7 @@ abstract class AbstractPageFixture extends Fixture
         $this->timestampedDataPersister->persistTimestampedFields($layout, true);
 
         $componentCollectionTop = $this->createComponentCollection( 'top', null, $layout);
-        $componentCollectionTop->addAllowedComponent($this->iriConverter->getIriFromResourceClass(NavigationLink::class));
+        $componentCollectionTop->addAllowedComponent($this->iriConverter->getIriFromResource(NavigationLink::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(NavigationLink::class)));
 
         $this->addNavigationLink($manager, $componentCollectionTop, 'Home', '/', HomePageFixture::ROUTE_NAME, 1);
         $this->addNavigationLink($manager, $componentCollectionTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);

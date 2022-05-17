@@ -6,7 +6,7 @@
 
 ARG PHP_VERSION=8.1
 ARG APCU_VERSION=5.1.19
-ARG VARNISH_VERSION=6.4
+ARG VARNISH_VERSION=7.1
 ARG CADDY_VERSION=2
 
 # "php" stage
@@ -84,23 +84,35 @@ RUN caddy fmt /etc/caddy/Caddyfile
 # does not depend on any of the above stages
 FROM varnish:${VARNISH_VERSION} AS cwa_varnish
 
-RUN apt-get update && \
-	apt-get install -y git varnish-dev make automake libtool python-sphinx gettext-base \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+#USER root
+#
+#RUN set -e; \
+#    apt-get update; \
+#    apt-get -y install gettext-base $VMOD_DEPS /pkgs/*.deb; \
+#    \
+## install one, possibly multiple vmods
+#   install-vmod https://github.com/varnish/varnish-modules/releases/download/0.20.0/varnish-modules-0.20.0.tar.gz; \
+#    \
+## clean up and set the user back to varnish
+#    apt-get -y purge --auto-remove $VMOD_DEPS varnish-dev; \
+#    rm -rf /var/lib/apt/lists/*
+#
+#USER varnish
 
-RUN git clone --branch 6.4 --single-branch https://github.com/varnish/varnish-modules.git /varnish-modules && \
-	cd /varnish-modules && \
-	./bootstrap && \
-  ./configure && \
-	make && \
-	make check -j 4 && \
-	make install
+USER root
+RUN apt-get update; apt-get -y install gettext-base
 
-COPY _docker/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
+#COPY _docker/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
+#CMD ["envsubst", "'${UPSTREAM},${UPSTREAM_PORT},${PHP_SERVICE},${CORS_ALLOW_ORIGIN}' < /tmp/varnish/conf/default.vcl > /etc/varnish/default.vcl"]
+
 COPY _docker/varnish/persist-environment.sh /usr/local/bin/persist-environment
+COPY _docker/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
 
-RUN chmod +x /usr/local/bin/persist-environment
-ENTRYPOINT ["persist-environment", "docker-varnish-entrypoint"]
+RUN chmod -R 777 /tmp/varnish/conf \
+    && chmod -R 777 /etc/varnish \
+    && chmod +x /usr/local/bin/persist-environment
 
-CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K"]
+USER varnish
+
+ENTRYPOINT ["/usr/local/bin/docker-varnish-entrypoint", "/usr/local/bin/persist-environment"]
+CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K", "-a", "http=:80,HTTP", "-a", "proxy=:8443,PROXY", "-p", "feature=+http2", "-s", "malloc,100M"]

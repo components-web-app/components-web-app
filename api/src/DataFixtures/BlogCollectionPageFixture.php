@@ -2,6 +2,8 @@
 
 namespace App\DataFixtures;
 
+use ApiPlatform\Api\UrlGeneratorInterface;
+use ApiPlatform\Metadata\GetCollection;
 use App\Entity\BlogArticleData;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
@@ -27,7 +29,7 @@ class BlogCollectionPageFixture extends AbstractPageFixture implements Dependent
         $manager->persist($page);
 
         $collection = new Collection();
-        $collection->setResourceIri($this->iriConverter->getIriFromResourceClass(BlogArticleData::class));
+        $collection->setResourceIri($this->iriConverter->getIriFromResource(BlogArticleData::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(BlogArticleData::class)));
         $manager->persist($collection);
 
         $componentCollection = $this->createComponentCollection('primary', $page);
