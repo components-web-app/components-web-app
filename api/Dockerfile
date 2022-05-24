@@ -114,5 +114,6 @@ RUN chmod -R 777 /tmp/varnish/conf \
 
 USER varnish
 
+EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/docker-varnish-entrypoint", "/usr/local/bin/persist-environment"]
-CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K", "-a", "http=:80,HTTP", "-a", "proxy=:8443,PROXY", "-p", "feature=+http2", "-s", "malloc,100M"]
+CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K", "-a", "http=:8080,HTTP", "-a", "proxy=:8443,PROXY", "-p", "feature=+http2", "-s", "malloc,100M"]

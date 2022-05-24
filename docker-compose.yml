@@ -40,7 +40,7 @@ services:
     environment:
       GLOBAL_DIRECTIVES: "auto_https disable_redirects"
       DEBUG: ~ # ~ or debug
-      VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy}
+      VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy:8080}
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
       BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost:8443}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-CHANGE_ME}
@@ -91,6 +91,10 @@ services:
       - /usr/local/var/varnish:exec
     volumes:
       - ./api/_docker/varnish/conf/default.vcl:/tmp/varnish/conf/default.vcl:rw
+    ports:
+      - target: 8080
+        published: 80
+        protocol: tcp
 
   # In production the pwa is deployed separately so we will not put behind caddy
   # We will use the caddy certs for localhost though in dev to serve over https
