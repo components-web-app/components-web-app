@@ -57,7 +57,9 @@ unit tests:
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml
-  needs: [ 'build' ]
+  needs:
+    - job: build
+      optional: true
   except:
     variables:
       - $TEST_DISABLED == "true"
@@ -78,7 +80,9 @@ behat tests:
     - setup_test_db
     - run_behat
   dependencies: [ ]
-  needs: [ 'build' ]
+  needs:
+    - job: build
+      optional: true
   only:
     - branches
   artifacts:
@@ -125,7 +129,11 @@ review api:
   only:
     refs:
       - branches
-  needs: ['unit tests', 'behat tests']
+  needs:
+    - job: 'unit tests'
+      optional: true
+    - job: 'behat tests'
+      optional: true
   except:
     refs:
       - main
@@ -161,7 +169,11 @@ staging api:
   environment:
     name: staging
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
-  needs: [ 'behat tests', 'unit tests']
+  needs:
+    - job: 'unit tests'
+      optional: true
+    - job: 'behat tests'
+      optional: true
   only:
     refs:
       - main
@@ -182,7 +194,9 @@ production pwa:
   only:
     refs:
       - main
-  needs: ['staging pwa']
+  needs:
+    - job: 'staging pwa'
+      optional: true
   except:
     variables:
       - $PRODUCTION_PWA_DISABLED == "true"
@@ -208,7 +222,9 @@ production api:
   when: manual
   retry: 1
   allow_failure: false
-  needs: ['staging api']
+  needs:
+    - job: 'staging api'
+      optional: true
   only:
     refs:
       - main
@@ -275,7 +291,9 @@ canary api:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
-  needs: ['staging api']
+  needs:
+    - job: 'staging api'
+      optional: true
   only:
     refs:
       - main

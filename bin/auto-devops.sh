@@ -328,7 +328,7 @@ deploy_vercel_pwa() {
 	if [[ "$track" == "stable" ]]; then
 		PROD_FLAG="--prod"
   else
-    PROD_FLAG="--target $track"
+    PROD_FLAG="--target=staging"
 	fi
 	API_ENDPOINT="https://${DOMAIN}"
 
