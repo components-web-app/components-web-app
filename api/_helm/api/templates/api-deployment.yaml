@@ -85,6 +85,8 @@ spec:
             - mountPath: /var/run/php
               name: php-socket
           livenessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 10
             httpGet:
               path: /health-check
               port: http
@@ -94,6 +96,8 @@ spec:
                 - name: X-Kubernetes-Liveness
                   value: {{ $fullName }}
           readinessProbe:
+            initialDelaySeconds: 60
+            periodSeconds: 10
             httpGet:
               path: /health-check
               port: http

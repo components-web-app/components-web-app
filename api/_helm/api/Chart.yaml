@@ -5,3 +5,8 @@ name: api
 version: 0.1.0
 home: https://github.com/components-web-app/components-web-app
 # icon: https://api-platform.com/logo-250x250.png
+dependencies:
+  - name: postgresql
+    version: ~11
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled

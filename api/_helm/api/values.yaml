@@ -54,9 +54,17 @@ mercure:
   publicUrl: ~
   url: https://example.com/.well-known/mercure
 
+# can be enabled for feature branches to avoid using prod database
 postgresql:
+  enabled: false
+  auth: 
+    postgresPassword: ~
+    username: ~
+    password: ~
+    database: ~
+  # if external and enabled is false - should be external in production
   url: 'pgsql://'
-
+  
 varnish:
   enabled: true
   image:

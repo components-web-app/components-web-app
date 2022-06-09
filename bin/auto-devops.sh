@@ -388,8 +388,6 @@ php:
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
-postgresql:
-  url: ${DATABASE_URL:-"~"}
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -428,6 +426,14 @@ blackfire:
 annotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
+postgresql:
+  url: ${DATABASE_URL:-"~"}
+  enabled: ${POSTGRESQL_ENABLED:-"false"}
+  auth:
+    postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
+  	username: ${POSTGRES_USER:-"pg_user"}
+  	password: ${POSTGRES_PASSWORD:-"pg_password"}
+  	database: ${POSTGRES_DB:-"pg_database"}
 EOF
 
   helm upgrade --install \
