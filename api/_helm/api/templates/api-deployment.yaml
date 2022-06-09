@@ -114,6 +114,11 @@ spec:
           image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.php.image.pullPolicy }}
           env:
+            - name: DATABASE_LOAD_FIXTURES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: database-load-fixtures
             - name: TRUSTED_HOSTS
               valueFrom:
                 configMapKeyRef:

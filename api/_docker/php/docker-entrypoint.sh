@@ -60,6 +60,10 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		if ls -A migrations/*.php >/dev/null 2>&1; then
 			php bin/console doctrine:migrations:migrate --no-interaction
 		fi
+
+		if [ "$DATABASE_LOAD_FIXTURES" = 'true' ]; then
+			php bin/console doctrine:fixtures:load --no-interaction
+		fi
 	fi
 fi
 

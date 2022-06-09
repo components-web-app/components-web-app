@@ -388,6 +388,7 @@ php:
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
+  databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure

@@ -28,6 +28,7 @@ php:
   blackfire:
     id: ''
     token: ''
+  databaseLoadFixtures: false
 
 caddy:
   image:

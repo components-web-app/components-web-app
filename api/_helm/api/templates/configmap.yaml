@@ -20,3 +20,4 @@ data:
   blackfire-server-id: {{ .Values.blackfire.server.id | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
   mailer-email: {{ .Values.php.mailer.email | quote }}
+  database-load-fixtures: {{ .Values.php.databaseLoadFixtures | quote }}
