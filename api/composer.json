@@ -2,12 +2,6 @@
     "name": "components-web-app/component-web-app-api",
     "description": "",
     "license": "MIT",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/silverbackdan/core"
-        }
-    ],
     "require": {
         "php": "^8.0",
         "doctrine/doctrine-fixtures-bundle": "^3.3",
