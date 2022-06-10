@@ -433,9 +433,9 @@ postgresql:
   enabled: ${POSTGRESQL_ENABLED:-"false"}
   auth:
     postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
-  	username: ${POSTGRES_USER:-"pg_user"}
-  	password: ${POSTGRES_PASSWORD:-"pg_password"}
-  	database: ${POSTGRES_DB:-"pg_database"}
+    username: ${POSTGRES_USER:-"pg_user"}
+    password: ${POSTGRES_PASSWORD:-"pg_password"}
+    database: ${POSTGRES_DB:-"pg_database"}
 EOF
 
   helm upgrade --install \
