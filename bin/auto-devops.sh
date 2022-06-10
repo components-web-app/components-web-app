@@ -232,6 +232,7 @@ check_kube_domain() {
 
 helm_init() {
   rm -rf ~/.helm/repository/cache/*
+  helm repo add bitnami https://charts.bitnami.com/bitnami
   helm dependency update api/_helm/api
   helm dependency build api/_helm/api
 }
