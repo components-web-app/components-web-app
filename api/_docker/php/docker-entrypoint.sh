@@ -19,7 +19,7 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	ln -sf "$PHP_INI_RECOMMENDED" "$PHP_INI_DIR/php.ini"
 
   echo "* Updating file permissions"
-	mkdir -p var/cache var/log
+	mkdir -p var/cache var/log var/storage/default
 	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var
 	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var
 
@@ -31,6 +31,7 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
   	done
 		update-ca-certificates
 
+		echo "* Composer install (DEV)"
 		composer install --prefer-dist --no-progress --no-suggest --no-interaction
 	fi
 

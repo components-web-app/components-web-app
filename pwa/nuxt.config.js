@@ -30,7 +30,9 @@ export default {
   },
   typescript: {
     typeCheck: {
-      eslint: true
+      eslint: {
+        files: './**/*.{ts,js,vue}'
+      }
     }
   },
   head: {
