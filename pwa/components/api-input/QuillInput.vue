@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div ref="quill" v-html="quillModel" />
   </div>
 </template>
