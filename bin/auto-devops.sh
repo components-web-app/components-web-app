@@ -336,8 +336,7 @@ deploy_vercel_pwa() {
 	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
-	vercel --no-clipboard \
-	  ${PROD_FLAG} ${SCOPE} \
+	vercel ${PROD_FLAG} ${SCOPE} \
 	  --token="$VERCEL_TOKEN" \
 		-A ./${VERCEL_CONFIG_PATH:-"vercel.json"} \
 		-e API_URL="${API_ENDPOINT}" \
