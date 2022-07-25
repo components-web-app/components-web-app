@@ -21,6 +21,7 @@ services:
       BLACKFIRE_CLIENT_TOKEN: ~
       # TODO: Remove environment variable once recipe is added to recipes-contrib repository - exposes environment variable for flex PR endpoint
       SYMFONY_ENDPOINT: ~
+      DATABASE_LOAD_FIXTURES: ${DATABASE_LOAD_FIXTURES:-false}
     volumes:
       - ./api:/srv/api:rw,cached
       - ./api/_docker/php/conf.d/cwa.dev.ini:/usr/local/etc/php/conf.d/cwa/cwa.dev.ini
