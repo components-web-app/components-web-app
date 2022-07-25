@@ -35,36 +35,34 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		composer install --prefer-dist --no-progress --no-suggest --no-interaction
 	fi
 
-  # If we have a database wait for it and run migrations
-	if grep -q DATABASE_URL= .env; then
-		echo "* Waiting for database to be ready..."
-		ATTEMPTS_LEFT_TO_REACH_DATABASE=60
-		until [ $ATTEMPTS_LEFT_TO_REACH_DATABASE -eq 0 ] || DATABASE_ERROR=$(bin/console dbal:run-sql "SELECT 1" 2>&1); do
-			if [ $? -eq 255 ]; then
-				# If the doctrine commands exits with 255, another (unrecoverable) error occurred, and we stop retrying
-				ATTEMPTS_LEFT_TO_REACH_DATABASE=0
-				break
-			fi
-			sleep 1
-			ATTEMPTS_LEFT_TO_REACH_DATABASE=$((ATTEMPTS_LEFT_TO_REACH_DATABASE - 1))
-			echo "?* Still waiting for database to be ready... Or maybe the database is not reachable. $ATTEMPTS_LEFT_TO_REACH_DATABASE attempts left."
-		done
-
-		if [ $ATTEMPTS_LEFT_TO_REACH_DATABASE -eq 0 ]; then
-			echo "!* The database is not up or not reachable:"
-			echo "!* $DATABASE_ERROR"
-			exit 1
-		else
-			echo "* The database is now ready and reachable"
+  # Database: wait for it and run migrations
+	echo "* Waiting for database to be ready..."
+	ATTEMPTS_LEFT_TO_REACH_DATABASE=60
+	until [ $ATTEMPTS_LEFT_TO_REACH_DATABASE -eq 0 ] || DATABASE_ERROR=$(bin/console dbal:run-sql "SELECT 1" 2>&1); do
+		if [ $? -eq 255 ]; then
+			# If the doctrine commands exits with 255, another (unrecoverable) error occurred, and we stop retrying
+			ATTEMPTS_LEFT_TO_REACH_DATABASE=0
+			break
 		fi
+		sleep 1
+		ATTEMPTS_LEFT_TO_REACH_DATABASE=$((ATTEMPTS_LEFT_TO_REACH_DATABASE - 1))
+		echo "?* Still waiting for database to be ready... Or maybe the database is not reachable. $ATTEMPTS_LEFT_TO_REACH_DATABASE attempts left."
+	done
 
-		if ls -A migrations/*.php >/dev/null 2>&1; then
-			php bin/console doctrine:migrations:migrate --no-interaction
-		fi
+	if [ $ATTEMPTS_LEFT_TO_REACH_DATABASE -eq 0 ]; then
+		echo "!* The database is not up or not reachable:"
+		echo "!* $DATABASE_ERROR"
+		exit 1
+	else
+		echo "* The database is now ready and reachable"
+	fi
 
-		if [ $DATABASE_LOAD_FIXTURES = 'true' ]; then
-			php bin/console doctrine:fixtures:load --no-interaction
-		fi
+	if ls -A migrations/*.php >/dev/null 2>&1; then
+		php bin/console doctrine:migrations:migrate --no-interaction
+	fi
+
+	if [ $DATABASE_LOAD_FIXTURES = 'true' ]; then
+		php bin/console doctrine:fixtures:load --no-interaction
 	fi
 fi
 
