@@ -26,18 +26,17 @@ import {
 export default Vue.extend({
   components: { CwaAdminToggle },
   mixins: [ComponentManagerTabMixin],
-  data() {
-    return {
-      showEditor: false
-    }
-  },
-  watch: {
-    showEditor(value) {
-      this.saveCmValue('showEditor', value)
+  computed: {
+    showEditor: {
+      get() {
+        return this.cmValue('showEditor')
+      },
+      set(value) {
+        this.saveCmValue('showEditor', value)
+      }
     }
   },
   mounted() {
-    this.showEditor = !!this.cmValue('showEditor')
     this.$cwa.$eventBus.$on(
       COMPONENT_MANAGER_EVENTS.publishableToggled,
       this.handlePublishableToggled
