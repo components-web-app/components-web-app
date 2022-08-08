@@ -127,13 +127,13 @@ export default Vue.extend({
     pageOptions() {
       const ops = [
         {
-          value: 4
+          value: 6
         },
         {
-          value: 10
+          value: 12
         },
         {
-          value: 20
+          value: 24
         }
       ]
       if (this.resource.perPage) {

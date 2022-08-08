@@ -19,7 +19,7 @@ use Silverback\ApiComponentsBundle\Entity\Core\AbstractPageData;
 #[ApiResource(
     mercure: true,
     order: [ 'createdAt' => 'DESC' ],
-    paginationItemsPerPage: 10
+    paginationItemsPerPage: 12
 )]
 #[ApiFilter(SearchFilter::class, properties: [ 'title' => 'ipartial' ])]
 #[ApiFilter(OrderFilter::class, properties: [ 'title', 'createdAt' ])]
