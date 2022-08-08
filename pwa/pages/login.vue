@@ -1,24 +1,36 @@
 <template>
   <cwa-admin-access-layout title="Admin Access">
     <form class="login-form" @submit.prevent="userLogin">
-      <div v-if="error" class="notice is-danger">
+      <div v-if="error" class="notification is-danger">
         {{ error }}
       </div>
-      <p>Please use the username and password 'admin' to login.</p>
-      <div>
-        <label>Username</label>
-        <input
-          v-model="login.username"
-          type="text"
-          placeholder="E.g. you.rock@cwa.rocks"
-        />
+      <div class="notification is-dark">
+        Please use the username and password 'admin' to login.
+      </div>
+      <div class="field">
+        <label class="label">Username</label>
+        <div class="control">
+          <input
+            v-model="login.username"
+            class="input"
+            type="text"
+            placeholder="E.g. you.rock@cwa.rocks"
+          />
+        </div>
+      </div>
+      <div class="field">
+        <label class="label">Password</label>
+        <div class="control">
+          <input
+            v-model="login.password"
+            class="input"
+            type="password"
+            placeholder="******"
+          />
+        </div>
       </div>
       <div>
-        <label>Password</label>
-        <input v-model="login.password" type="password" placeholder="******" />
-      </div>
-      <div>
-        <button class="is-light" type="submit" :disabled="submitting">
+        <button class="button" type="submit" :disabled="submitting">
           <span>Login</span>
           <span class="icon">
             <svg
@@ -43,7 +55,7 @@
           </span>
         </button>
       </div>
-      <div class="login-nav row">
+      <div class="login-nav columns">
         <div class="column is-narrow">
           <nuxt-link to="/"> &lt; Back to website </nuxt-link>
         </div>
