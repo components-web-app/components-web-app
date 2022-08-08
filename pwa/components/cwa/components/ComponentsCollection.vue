@@ -46,13 +46,13 @@
     </div>
     <client-only>
       <div v-if="$cwa.isAdmin">
-        <button @click="showNewResourceModal = true">Add</button>
+        <button class="button" @click="showNewResourceModal = true">Add</button>
       </div>
     </client-only>
     <div class="collection-items">
       <div v-if="fetching" class="loading-overlay">&nbsp;</div>
       <div class="columns is-multiline">
-        <div v-if="!items.length">
+        <div v-if="!items.length" class="column title is-size-5 has-text-grey">
           {{
             resource._metadata._isNew
               ? 'Items will load once the component has been added'

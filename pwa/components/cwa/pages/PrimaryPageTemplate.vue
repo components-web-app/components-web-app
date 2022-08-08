@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div class="columns">
+    <div class="columns is-gapless">
       <div class="column">
         <component-collection
           location="primary"

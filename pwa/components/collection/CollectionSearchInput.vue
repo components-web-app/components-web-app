@@ -4,6 +4,7 @@
       v-model="inputValue"
       type="text"
       placeholder="Search..."
+      class="input"
       @input="
         () => {
           updateQuery()

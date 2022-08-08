@@ -1,14 +1,16 @@
 <template>
   <div class="collection-select-input" @click.stop>
-    <select v-model="selectedOption" @change="updateSelectedOption">
-      <option
-        v-for="op of options"
-        :key="`select-option-${op.value}-${op.queryKey}`"
-        :value="op"
-      >
-        {{ op.label || op.value }}
-      </option>
-    </select>
+    <div class="select">
+      <select v-model="selectedOption" @change="updateSelectedOption">
+        <option
+          v-for="op of options"
+          :key="`select-option-${op.value}-${op.queryKey}`"
+          :value="op"
+        >
+          {{ op.label || op.value }}
+        </option>
+      </select>
+    </div>
   </div>
 </template>
 
