@@ -56,7 +56,7 @@
         </button>
       </div>
       <div class="login-nav columns">
-        <div class="column is-narrow">
+        <div class="column">
           <nuxt-link to="/"> &lt; Back to website </nuxt-link>
         </div>
         <div class="column is-narrow">
