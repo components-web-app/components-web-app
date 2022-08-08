@@ -15,6 +15,11 @@ import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManag
 export default Vue.extend({
   components: { CwaNuxtLink },
   mixins: [ComponentMixin],
+  data() {
+    return {
+      resourceName: 'Navigation Link'
+    }
+  },
   computed: {
     componentManagerTabs(): ComponentManagerTab[] {
       return [
@@ -35,7 +40,7 @@ export default Vue.extend({
   .navigation-link
     padding-right: 0
 .navigation-link
-  font-weight: $font-weight-bold
+  font-weight: $weight-bold
   padding: .25rem .5rem
   a.button
     margin-bottom: 0

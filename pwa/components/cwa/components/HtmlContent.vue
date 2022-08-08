@@ -6,12 +6,13 @@
       { 'has-error': !!fieldNotifications.html.length }
     ]"
   >
-    <component
-      :is="htmlComponent"
-      v-if="!cmValue('showEditor')"
-      v-bind="$props"
-      class="cwa-html-content"
-    ></component>
+    <div v-if="!cmValue('showEditor')" class="cwa-html-content">
+      <component
+        :is="htmlComponent"
+        v-bind="$props"
+        class="cwa-html-content content"
+      ></component>
+    </div>
     <quill-input
       v-else
       :iri="iri"

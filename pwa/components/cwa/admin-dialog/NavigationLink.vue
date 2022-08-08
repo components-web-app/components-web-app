@@ -1,6 +1,6 @@
 <template>
   <div class="html-content-tab">
-    <div class="row tab-row">
+    <div class="columns tab-row">
       <div class="column is-narrow">
         <cm-text :id="`label-${iri}`" :iri="iri" field="label" label="Label" />
       </div>

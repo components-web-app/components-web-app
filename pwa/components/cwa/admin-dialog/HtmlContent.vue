@@ -1,6 +1,6 @@
 <template>
   <div class="html-content-tab">
-    <div class="row tab-row">
+    <div class="columns tab-row">
       <div class="column is-narrow">
         <cwa-admin-toggle
           :id="`component-toggle-html-${iri}`"
@@ -29,7 +29,7 @@ export default Vue.extend({
   computed: {
     showEditor: {
       get() {
-        return this.cmValue('showEditor')
+        return !!this.cmValue('showEditor')
       },
       set(value) {
         this.saveCmValue('showEditor', value)
