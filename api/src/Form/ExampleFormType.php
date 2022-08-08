@@ -266,9 +266,9 @@ class ExampleFormType extends AbstractType
                 SubmitType::class,
                 [
                     'attr' => [
-                        'class' => 'is-large is-primary is-fullwidth',
+                        'class' => 'button is-dark',
                     ],
-                    'label' => 'Register',
+                    'label' => 'Submit Form',
                 ]
             )
         ;

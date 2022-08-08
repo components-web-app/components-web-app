@@ -40,10 +40,6 @@ export default Vue.extend({
   position: relative
   display: block
   .box
-    border: 1px solid $cwa-grid-item-border-color
-    background: $cwa-grid-item-background
-    color: $white
-    padding: 1.5rem
     overflow: auto
     font-size: $size-7
     .created-date
