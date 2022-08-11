@@ -36,12 +36,12 @@ export default Vue.extend({
 </script>
 
 <style lang="sass">
-.component-navigation-link:last-child
+.component-navigation-link:not(:last-child)
   .navigation-link
-    padding-right: 0
+    padding-right: .5rem
 .navigation-link
   font-weight: $weight-bold
-  padding: .25rem .5rem
+  padding: .25rem 0
   a.button
     margin-bottom: 0
 </style>

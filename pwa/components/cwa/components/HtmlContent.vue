@@ -6,19 +6,21 @@
       { 'has-error': !!fieldNotifications.html.length }
     ]"
   >
-    <div v-if="!cmValue('showEditor')" class="cwa-html-content">
-      <component
-        :is="htmlComponent"
-        v-bind="$props"
-        class="cwa-html-content content"
-      ></component>
+    <div class="content">
+      <div v-if="!cmValue('showEditor')" class="cwa-html-content">
+        <component
+          :is="htmlComponent"
+          v-bind="$props"
+          class="cwa-html-content"
+        ></component>
+      </div>
+      <quill-input
+        v-else
+        :iri="iri"
+        field="html"
+        notification-category="components-manager"
+      />
     </div>
-    <quill-input
-      v-else
-      :iri="iri"
-      field="html"
-      notification-category="components-manager"
-    />
   </div>
 </template>
 
@@ -111,6 +113,8 @@ export default Vue.extend({
 <style lang="sass">
 .html-component
   position: relative
+  .content
+    margin: 0
   &.is-feature
     padding: 1rem .5rem
     font-size: 2.1rem

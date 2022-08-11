@@ -7,18 +7,21 @@
     ]"
   >
     <cwa-logo class="cwa-logo" />
-    <component
-      :is="htmlComponent"
-      v-if="!cmValue('showEditor')"
-      v-bind="$props"
-      class="cwa-html-content"
-    ></component>
-    <quill-input
-      v-else
-      :iri="iri"
-      field="html"
-      notification-category="components-manager"
-    />
+    <div class="content">
+      <div v-if="!cmValue('showEditor')" class="cwa-html-content">
+        <component
+          :is="htmlComponent"
+          v-bind="$props"
+          class="cwa-html-content"
+        ></component>
+      </div>
+      <quill-input
+        v-else
+        :iri="iri"
+        field="html"
+        notification-category="components-manager"
+      />
+    </div>
   </div>
 </template>
 
@@ -33,6 +36,8 @@ export default {
 
 <style lang="sass">
 .html-component
+  .content
+    margin: 0
   .cwa-logo
     max-width: 100%
 </style>

@@ -14,9 +14,10 @@ const SizeClass = new Parchment.Attributor.Class('size', 'is-size', {
 })
 Quill.register(SizeClass, true)
 
+// use custom has-color instead of has-text to avoid align conflict
 const ThemeColorClass = new Parchment.Attributor.Class(
   'theme-color',
-  'has-color',
+  'has-text',
   {
     scope: Parchment.Scope.INLINE,
     whitelist: ['primary', 'success']
@@ -25,11 +26,11 @@ const ThemeColorClass = new Parchment.Attributor.Class(
 Quill.register(ThemeColorClass, true)
 
 // class conflict with has-text above
-const AlignClass = new Parchment.Attributor.Class('align', 'text-align', {
-  scope: Parchment.Scope.BLOCK,
-  whitelist: ['right', 'center', 'justify']
-})
-Quill.register(AlignClass)
+// const AlignClass = new Parchment.Attributor.Class('align', 'has-text', {
+//   scope: Parchment.Scope.BLOCK,
+//   whitelist: ['right', 'center', 'justify']
+// })
+// Quill.register(AlignClass)
 
 // const Inline = Quill.import('blots/inline')
 

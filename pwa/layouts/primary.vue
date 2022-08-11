@@ -22,6 +22,7 @@
               <component-collection
                 location="top"
                 v-bind="componentCollectionProps"
+                :resticted-resources="['/component/navigation_links']"
               />
             </div>
           </div>
@@ -61,7 +62,7 @@ export default {
     .refresh-bar-holder
       position: relative
     .navigation
-      padding: 2rem 0
+      padding: 2rem 1rem
     .component-collection.top_main-layout
       .positions-container
         display: flex
