@@ -24,7 +24,7 @@ export default Vue.extend({
   mixins: [ComponentMixin, ApiDateParserMixin, ResolveRoutePathMixin],
   data() {
     return {
-      componentManagerDisabled: true
+      forceComponentManagerDisabled: true
     }
   },
   computed: {
