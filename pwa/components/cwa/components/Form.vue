@@ -19,10 +19,10 @@ export default Vue.extend({
 
 <style lang="sass">
 .cwa-form
-  .is-validating
+  .is-validating:not(div):not(span)
     border: 1px solid $cwa-warning !important
-  .is-valid
+  .is-valid:not(div):not(span)
     border: 1px solid $cwa-success !important
-  .has-errors
+  .has-errors:not(div):not(span)
     border: 1px solid $cwa-danger !important
 </style>
