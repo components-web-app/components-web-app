@@ -389,6 +389,7 @@ php:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
   databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
+  replicaCount: ${PHP_REPLICA_COUNT:-"2"}
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -398,11 +399,13 @@ mercure:
     publisher:
       algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"HS256"}
 caddy:
+  replicaCount: ${CADDY_REPLICA_COUNT:-"1"}
   image:
     repository: ${CADDY_REPOSITORY}
     tag: ${TAG}
     pullPolicy: Always
 varnish:
+  replicaCount: ${VARNISH_REPLICA_COUNT:-"1"}
   image:
     repository: ${VARNISH_REPOSITORY}
     tag: ${TAG}
