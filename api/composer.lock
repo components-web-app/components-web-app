@@ -309,16 +309,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "c98fa9b178230515eee6037c81004d246d566d27"
+                "reference": "c0ff501c673c75a67b658b5f0ebe23d2b2f886b9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/c98fa9b178230515eee6037c81004d246d566d27",
-                "reference": "c98fa9b178230515eee6037c81004d246d566d27",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/c0ff501c673c75a67b658b5f0ebe23d2b2f886b9",
+                "reference": "c0ff501c673c75a67b658b5f0ebe23d2b2f886b9",
                 "shasum": ""
             },
             "require": {
-                "api-platform/core": "^2.7.0-beta.4",
+                "api-platform/core": "^2.7.0-rc.2",
                 "cocur/slugify": "^4.1",
                 "doctrine/annotations": "^1.7.0",
                 "doctrine/dbal": "^3.4",
@@ -423,7 +423,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2022-08-11T15:38:04+00:00"
+            "time": "2022-08-11T18:42:46+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -9576,16 +9576,16 @@
         },
         {
             "name": "twig/twig",
-            "version": "v3.4.1",
+            "version": "v3.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/twigphp/Twig.git",
-                "reference": "e939eae92386b69b49cfa4599dd9bead6bf4a342"
+                "reference": "e07cdd3d430cd7e453c31b36eb5ad6c0c5e43077"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/e939eae92386b69b49cfa4599dd9bead6bf4a342",
-                "reference": "e939eae92386b69b49cfa4599dd9bead6bf4a342",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/e07cdd3d430cd7e453c31b36eb5ad6c0c5e43077",
+                "reference": "e07cdd3d430cd7e453c31b36eb5ad6c0c5e43077",
                 "shasum": ""
             },
             "require": {
@@ -9636,7 +9636,7 @@
             ],
             "support": {
                 "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v3.4.1"
+                "source": "https://github.com/twigphp/Twig/tree/v3.4.2"
             },
             "funding": [
                 {
@@ -9648,7 +9648,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-05-17T05:48:52+00:00"
+            "time": "2022-08-12T06:47:24+00:00"
         },
         {
             "name": "webmozart/assert",
