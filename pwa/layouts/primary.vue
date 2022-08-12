@@ -22,7 +22,7 @@
               <component-collection
                 location="top"
                 v-bind="componentCollectionProps"
-                :resticted-resources="['/component/navigation_links']"
+                :allowed-components="['/component/navigation_links']"
               />
             </div>
           </div>
@@ -66,7 +66,8 @@ export default {
     .component-collection.top_main-layout
       .positions-container
         display: flex
-        justify-content: flex-end
+        +tablet
+          justify-content: flex-end
   .loading-message
     .error
       color: $color-danger
