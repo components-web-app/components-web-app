@@ -212,18 +212,22 @@ spec:
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket
-#          readinessProbe:
-#            exec:
-#              command:
-#                - docker-healthcheck
-#            initialDelaySeconds: 30
-#            periodSeconds: 5
-#          livenessProbe:
-#            exec:
-#              command:
-#                - /usr/local/bin/docker-healthcheck
-#            initialDelaySeconds: 30
-#            periodSeconds: 5
+          startupProbe:
+            exec:
+              command:
+                - docker-healthcheck
+            failureThreshold: 40
+            periodSeconds: 3
+          readinessProbe:
+            exec:
+              command:
+                - docker-healthcheck
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - docker-healthcheck
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
