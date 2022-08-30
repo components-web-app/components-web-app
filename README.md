@@ -22,6 +22,10 @@ This setup will also include Mercure for the front-end application to subscribe 
 
 We also want testing to be implemented by default. This means we will have both PHPUnit and Behat configured for the API and Jest for the front-end application.
 
+## Sponsors
+
+[![Blackfire](./blackfire-io_secondary_horizontal_transparent.png)](https://blackfire.io/)
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
