@@ -10,22 +10,26 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20211220164313 extends AbstractMigration
+final class Version20220831094149 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Initial database schema';
+        return '';
     }
 
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE _acb_abstract_component (id UUID NOT NULL, html_content_id UUID DEFAULT NULL, image_id UUID DEFAULT NULL, ui_component VARCHAR(255) DEFAULT NULL, ui_class_names JSON DEFAULT NULL, dtype VARCHAR(255) NOT NULL, html TEXT DEFAULT NULL, published_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, filename VARCHAR(255) DEFAULT NULL, resource_class VARCHAR(255) DEFAULT NULL, per_page INT DEFAULT NULL, default_query_parameters JSON DEFAULT NULL, form_type VARCHAR(255) DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, modified_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE _acb_abstract_component (id UUID NOT NULL, html_content_id UUID DEFAULT NULL, image_id UUID DEFAULT NULL, route_id UUID DEFAULT NULL, navigation_link_id UUID DEFAULT NULL, ui_component VARCHAR(255) DEFAULT NULL, ui_class_names JSON DEFAULT NULL, dtype VARCHAR(255) NOT NULL, html TEXT DEFAULT NULL, published_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, filename VARCHAR(255) DEFAULT NULL, label TEXT DEFAULT NULL, resource_class VARCHAR(255) DEFAULT NULL, per_page INT DEFAULT NULL, default_query_parameters JSON DEFAULT NULL, form_type VARCHAR(255) DEFAULT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, modified_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE INDEX IDX_4EBC1A19414CCF0D ON _acb_abstract_component (html_content_id)');
         $this->addSql('CREATE INDEX IDX_4EBC1A193DA5256D ON _acb_abstract_component (image_id)');
+        $this->addSql('CREATE INDEX IDX_4EBC1A1934ECB4E6 ON _acb_abstract_component (route_id)');
+        $this->addSql('CREATE INDEX IDX_4EBC1A19EB260C02 ON _acb_abstract_component (navigation_link_id)');
         $this->addSql('COMMENT ON COLUMN _acb_abstract_component.id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN _acb_abstract_component.html_content_id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN _acb_abstract_component.image_id IS \'(DC2Type:uuid)\'');
+        $this->addSql('COMMENT ON COLUMN _acb_abstract_component.route_id IS \'(DC2Type:uuid)\'');
+        $this->addSql('COMMENT ON COLUMN _acb_abstract_component.navigation_link_id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN _acb_abstract_component.created_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('CREATE TABLE _acb_abstract_component_component_collection (abstract_component_id UUID NOT NULL, component_collection_id UUID NOT NULL, PRIMARY KEY(abstract_component_id, component_collection_id))');
         $this->addSql('CREATE INDEX IDX_F79F072671C016CE ON _acb_abstract_component_component_collection (abstract_component_id)');
@@ -102,6 +106,8 @@ final class Version20211220164313 extends AbstractMigration
         $this->addSql('COMMENT ON COLUMN "user".created_at IS \'(DC2Type:datetime_immutable)\'');
         $this->addSql('ALTER TABLE _acb_abstract_component ADD CONSTRAINT FK_4EBC1A19414CCF0D FOREIGN KEY (html_content_id) REFERENCES _acb_abstract_component (id) ON DELETE SET NULL NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE _acb_abstract_component ADD CONSTRAINT FK_4EBC1A193DA5256D FOREIGN KEY (image_id) REFERENCES _acb_abstract_component (id) ON DELETE SET NULL NOT DEFERRABLE INITIALLY IMMEDIATE');
+        $this->addSql('ALTER TABLE _acb_abstract_component ADD CONSTRAINT FK_4EBC1A1934ECB4E6 FOREIGN KEY (route_id) REFERENCES _acb_route (id) NOT DEFERRABLE INITIALLY IMMEDIATE');
+        $this->addSql('ALTER TABLE _acb_abstract_component ADD CONSTRAINT FK_4EBC1A19EB260C02 FOREIGN KEY (navigation_link_id) REFERENCES _acb_abstract_component (id) ON DELETE SET NULL NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE _acb_abstract_component_component_collection ADD CONSTRAINT FK_F79F072671C016CE FOREIGN KEY (abstract_component_id) REFERENCES _acb_abstract_component (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE _acb_abstract_component_component_collection ADD CONSTRAINT FK_F79F072672E4DA89 FOREIGN KEY (component_collection_id) REFERENCES _acb_component_collection (id) ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE');
         $this->addSql('ALTER TABLE _acb_abstract_page_data ADD CONSTRAINT FK_2D7554F734ECB4E6 FOREIGN KEY (route_id) REFERENCES _acb_route (id) ON DELETE SET NULL NOT DEFERRABLE INITIALLY IMMEDIATE');
@@ -128,23 +134,25 @@ final class Version20211220164313 extends AbstractMigration
         $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A19414CCF0D');
         $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A193DA5256D');
+        $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A1934ECB4E6');
+        $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A19EB260C02');
         $this->addSql('ALTER TABLE _acb_abstract_component_component_collection DROP CONSTRAINT FK_F79F072671C016CE');
-        $this->addSql('ALTER TABLE _acb_component_position DROP CONSTRAINT FK_D6FC2796E2ABAFFF');
-        $this->addSql('ALTER TABLE blog_article_data DROP CONSTRAINT FK_476D9BE5414CCF0D');
-        $this->addSql('ALTER TABLE blog_article_data DROP CONSTRAINT FK_476D9BE5BF396750');
         $this->addSql('ALTER TABLE _acb_abstract_component_component_collection DROP CONSTRAINT FK_F79F072672E4DA89');
-        $this->addSql('ALTER TABLE _acb_component_position DROP CONSTRAINT FK_D6FC279672E4DA89');
-        $this->addSql('ALTER TABLE _acb_layout_component_collection DROP CONSTRAINT FK_4E7B15EC72E4DA89');
-        $this->addSql('ALTER TABLE _acb_page_component_collection DROP CONSTRAINT FK_31CA145772E4DA89');
-        $this->addSql('ALTER TABLE _acb_layout_component_collection DROP CONSTRAINT FK_4E7B15EC8C22AA1A');
-        $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF3238C22AA1A');
-        $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F7C4663E4');
-        $this->addSql('ALTER TABLE _acb_page_component_collection DROP CONSTRAINT FK_31CA1457C4663E4');
         $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F734ECB4E6');
         $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F7AB211837');
+        $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F7C4663E4');
+        $this->addSql('ALTER TABLE _acb_component_position DROP CONSTRAINT FK_D6FC279672E4DA89');
+        $this->addSql('ALTER TABLE _acb_component_position DROP CONSTRAINT FK_D6FC2796E2ABAFFF');
+        $this->addSql('ALTER TABLE _acb_layout_component_collection DROP CONSTRAINT FK_4E7B15EC8C22AA1A');
+        $this->addSql('ALTER TABLE _acb_layout_component_collection DROP CONSTRAINT FK_4E7B15EC72E4DA89');
         $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF323AB211837');
         $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF32334ECB4E6');
+        $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF3238C22AA1A');
+        $this->addSql('ALTER TABLE _acb_page_component_collection DROP CONSTRAINT FK_31CA1457C4663E4');
+        $this->addSql('ALTER TABLE _acb_page_component_collection DROP CONSTRAINT FK_31CA145772E4DA89');
         $this->addSql('ALTER TABLE _acb_route DROP CONSTRAINT FK_9BFEB786C30C9E2B');
+        $this->addSql('ALTER TABLE blog_article_data DROP CONSTRAINT FK_476D9BE5414CCF0D');
+        $this->addSql('ALTER TABLE blog_article_data DROP CONSTRAINT FK_476D9BE5BF396750');
         $this->addSql('ALTER TABLE refresh_token DROP CONSTRAINT FK_C74F2195A76ED395');
         $this->addSql('DROP TABLE _acb_abstract_component');
         $this->addSql('DROP TABLE _acb_abstract_component_component_collection');
