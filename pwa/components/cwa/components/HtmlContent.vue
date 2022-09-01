@@ -30,13 +30,13 @@ import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
 import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManagerMixin'
 import NotificationListenerMixin from '@cwa/nuxt-module/core/mixins/NotificationListenerMixin'
 import QuillInput from '~/components/api-input/QuillInput.vue'
+
 // eslint-disable-next-line vue/one-component-per-file
 export default Vue.extend({
   components: { QuillInput },
   mixins: [ComponentMixin, NotificationListenerMixin],
   data() {
     return {
-      isMounted: false,
       componentManagerContext: {
         componentTab: {
           UiClassNames: ['is-feature', 'has-cwa-color'],
@@ -58,53 +58,15 @@ export default Vue.extend({
       ]
     },
     htmlComponent() {
-      let html =
-        this.resource.html ||
-        (this.$cwa.isAdmin
-          ? '<p style="font-style: italic">No content</p>'
-          : '')
-      if (this.isMounted) {
-        const div = document.createElement('div')
-        div.innerHTML = html
-        const anchors = div.getElementsByTagName('a')
-        Array.from(anchors).forEach((anchor) => {
-          anchor.parentNode.replaceChild(this.convertAnchor(anchor), anchor)
-        })
-        html = div.innerHTML
-      }
-      // eslint-disable-next-line vue/one-component-per-file
-      return Vue.extend({
-        components: {
-          CwaNuxtLink: () =>
-            import(
-              '@cwa/nuxt-module/core/templates/components/utils/cwa-nuxt-link.vue'
-            )
-        },
-        props: this.$options.props,
-        template: '<div>' + html + '</div>'
-      })
+      return this.getHtmlAsComponent(this.resource.html)
     }
-  },
-  mounted() {
-    this.isMounted = true
   },
   created() {
     this.addFieldNotificationListener('html', this.iri)
   },
   methods: {
     toggleEditor() {
-      this.saveCmValue('showEditor', !this.cmValue('showEditor'))
-    },
-    convertAnchor(anchor) {
-      const newLink = document.createElement('cwa-nuxt-link')
-      newLink.setAttribute('to', anchor.getAttribute('href'))
-      for (const attr of anchor.attributes) {
-        if (!['href', 'target', 'rel'].includes(attr.name)) {
-          newLink.setAttribute(attr.name, anchor[attr.name])
-        }
-      }
-      newLink.innerHTML = anchor.innerHTML
-      return newLink
+      this.toggleCmValue('showEditor')
     }
   }
 })
