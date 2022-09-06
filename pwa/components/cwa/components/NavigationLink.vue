@@ -23,12 +23,12 @@ export default Vue.extend({
   computed: {
     componentManagerTabs(): ComponentManagerTab[] {
       return [
-        {
-          label: 'Link',
-          component: () => import('../admin-dialog/NavigationLink.vue'),
-          priority: 2,
-          inputFieldsUsed: ['label', 'route']
-        }
+        this.createCMTab(
+          'Link',
+          () => import('../admin-dialog/NavigationLink.vue'),
+          2,
+          ['label', 'route']
+        )
       ]
     }
   }

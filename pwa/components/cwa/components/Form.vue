@@ -8,6 +8,7 @@ import Vue from 'vue'
 import FormMixin from '@cwa/nuxt-module/core/mixins/FormMixin'
 
 export default Vue.extend({
+  name: 'CwaComponentForm',
   mixins: [FormMixin],
   data() {
     return {

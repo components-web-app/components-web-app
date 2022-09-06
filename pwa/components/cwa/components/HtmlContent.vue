@@ -26,15 +26,14 @@
 
 <script lang="ts">
 import Vue from 'vue'
-import ComponentMixin from '@cwa/nuxt-module/core/mixins/ComponentMixin'
+import HtmlComponentMixin from '@cwa/nuxt-module/core/mixins/HtmlComponentMixin'
 import { ComponentManagerTab } from '@cwa/nuxt-module/core/mixins/ComponentManagerMixin'
 import NotificationListenerMixin from '@cwa/nuxt-module/core/mixins/NotificationListenerMixin'
 import QuillInput from '~/components/api-input/QuillInput.vue'
-
 // eslint-disable-next-line vue/one-component-per-file
 export default Vue.extend({
   components: { QuillInput },
-  mixins: [ComponentMixin, NotificationListenerMixin],
+  mixins: [HtmlComponentMixin, NotificationListenerMixin],
   data() {
     return {
       componentManagerContext: {
@@ -49,12 +48,12 @@ export default Vue.extend({
   computed: {
     componentManagerTabs(): ComponentManagerTab[] {
       return [
-        {
-          label: this.resourceName,
-          component: () => import('../admin-dialog/HtmlContent.vue'),
-          priority: 0,
-          inputFieldsUsed: ['html']
-        }
+        this.createCMTab(
+          this.resourceName,
+          () => import('../admin-dialog/HtmlContent.vue'),
+          0,
+          ['html']
+        )
       ]
     },
     htmlComponent() {
