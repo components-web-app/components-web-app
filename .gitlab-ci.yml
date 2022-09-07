@@ -119,7 +119,7 @@ review api:
     - ensure_namespace
     - create_secret
     - deploy_api
-    - persist_enviroent_url
+    - persist_environment_url
   environment:
     name: review/$CI_COMMIT_REF_NAME
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
