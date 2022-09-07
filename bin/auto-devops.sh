@@ -432,7 +432,7 @@ annotations:
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 postgresql:
   url: ${DATABASE_URL:-"~"}
-  enabled: ${POSTGRESQL_ENABLED:-"false"}
+  enabled: ${POSTGRESQL_ENABLED:-"true"}
   auth:
     postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
     username: ${POSTGRES_USER:-"pg_user"}
