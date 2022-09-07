@@ -99,6 +99,7 @@ review pwa:
   environment:
     name: review/$CI_COMMIT_REF_NAME/pwa
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
+    auto_stop_in: 1 hour
   only:
     refs:
       - branches
@@ -147,6 +148,7 @@ staging pwa:
   environment:
     name: staging/pwa
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
+    auto_stop_in: 1 hour
   needs: []
   only:
     refs:

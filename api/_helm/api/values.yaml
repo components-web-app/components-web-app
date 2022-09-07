@@ -25,6 +25,7 @@ php:
     secret: ''
     public: ''
     passphrase: ''
+    samesite: 'lax'
   blackfire:
     id: ''
     token: ''

@@ -114,6 +114,11 @@ spec:
           image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.php.image.pullPolicy }}
           env:
+            - name: JWT_COOKIE_SAMESITE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-cookie-samesite
             - name: DATABASE_LOAD_FIXTURES
               valueFrom:
                 configMapKeyRef:

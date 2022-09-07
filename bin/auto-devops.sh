@@ -385,6 +385,7 @@ php:
     email: ${MAILER_EMAIL:-"~"}
   jwt:
     passphrase: "${JWT_PASSPHRASE:-"~"}"
+    samesite: "${JWT_COOKIE_SAMESITE:-"lax"}"
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"

@@ -1,3 +1,5 @@
+parameters:
+  env(JWT_COOKIE_SAMESITE): 'lax'
 lexik_jwt_authentication:
   secret_key: '%env(resolve:JWT_SECRET_KEY)%'
   public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
@@ -6,6 +8,7 @@ lexik_jwt_authentication:
   set_cookies:
     api_component:
       lifetime: 604800 # 1 week
+      samesite: '%env(JWT_COOKIE_SAMESITE)%'
   token_extractors:
     authorization_header:
       enabled: true
