@@ -326,6 +326,10 @@ sub vcl_hash {
     hash_data(server.ip);
   }
 
+  if (req.http.Referer) {
+    hash_data(req.http.Referer);
+  }
+
   # hash cookies for requests that have them
   if (req.http.Cookie) {
     hash_data(req.http.Cookie);
