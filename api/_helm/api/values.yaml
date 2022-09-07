@@ -61,10 +61,10 @@ postgresql:
   image:
     tag: ~
   auth:
-    postgresPassword: ~
-    username: ~
-    password: ~
-    database: ~
+    postgresPassword: pg_root_password
+    username: pg_user
+    password: pg_password
+    database: pg_database
   # if external and enabled is false - should be external in production
   url: 'pgsql://'
   
