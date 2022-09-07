@@ -63,6 +63,7 @@ export default {
       hashAlgorithm: 'sha256',
       policies: {
         'default-src': ["'self'"],
+        'font-src': ["'self'", "'raw.githubusercontent.com'"],
         'img-src': ['https:', '*.google-analytics.com', 'data:'],
         'worker-src': ["'self'", `blob:`],
         'style-src': ["'self'", "'unsafe-inline'"],
