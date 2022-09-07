@@ -62,11 +62,6 @@ export default Vue.extend({
   },
   created() {
     this.addFieldNotificationListener('html', this.iri)
-  },
-  methods: {
-    toggleEditor() {
-      this.toggleCmValue('showEditor')
-    }
   }
 })
 </script>
