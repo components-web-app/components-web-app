@@ -37,10 +37,6 @@ caddy-probe.local:80 {
 		header !X-Caddy-Forwarded
 	}
 
-	@internal {
-		header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
-	}
-
 	# customisable log level with environment
 	log {
 		level {$LOG_LEVEL:"info"}
@@ -49,8 +45,6 @@ caddy-probe.local:80 {
 	# preserve orders
 	route {
 		root * /srv/api/public
-
-		request_header @internal host {$BROWSER_SERVER_NAME}
 
 		mercure @do_varnish_pass {
 			# Transport to use (default to Bolt)
@@ -78,13 +72,14 @@ caddy-probe.local:80 {
 			health_interval 5s
 			health_timeout 20s
 			fail_duration 5s
+			trusted_proxies {$TRUSTED_PROXIES}
 			header_up X-Caddy-Forwarded 1
-			# required to ensure we have 8443 for example if we are using this
-			header_up X-Forwarded-Port {http.request.port}
 		}
 
-		php_fastcgi unix//var/run/php/php-fpm.sock
-		encode zstd gzip
-		file_server
+		php_fastcgi unix//var/run/php/php-fpm.sock {
+			trusted_proxies {$TRUSTED_PROXIES}
+		}
+        encode zstd gzip
+        file_server
 	}
 }

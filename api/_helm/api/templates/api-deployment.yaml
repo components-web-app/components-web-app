@@ -47,6 +47,11 @@ spec:
           env:
             - name: SERVER_NAME
               value: :80
+            - name: TRUSTED_PROXIES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: caddy-trusted-proxies
             - name: BROWSER_SERVER_NAME
               value: {{ $primaryHost.host | quote }}
             - name: MERCURE_PUBLISHER_JWT_KEY
