@@ -50,8 +50,6 @@ caddy-probe.local:80 {
 	route {
 		root * /srv/api/public
 
-		# matcher broken - @internal - https://github.com/caddyserver/caddy/issues/4084
-		# request_header host {$BROWSER_SERVER_NAME}
 		request_header @internal host {$BROWSER_SERVER_NAME}
 
 		mercure @do_varnish_pass {

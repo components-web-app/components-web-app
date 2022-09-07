@@ -26,8 +26,8 @@
 </template>
 
 <script>
-import HtmlContent from './HtmlContent'
 import CwaLogo from '@cwa/nuxt-module/core/templates/components/utils/cwa-logo.vue'
+import HtmlContent from './HtmlContent'
 export default {
   components: { CwaLogo },
   mixins: [HtmlContent]
