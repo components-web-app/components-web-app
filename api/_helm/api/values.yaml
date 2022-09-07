@@ -58,10 +58,13 @@ mercure:
 # can be enabled for feature branches to avoid using prod database
 postgresql:
   enabled: false
-  postgresPassword: ~
-  username: ~
-  password: ~
-  database: ~
+  image:
+    tag: ~
+  auth:
+    postgresPassword: ~
+    username: ~
+    password: ~
+    database: ~
   # if external and enabled is false - should be external in production
   url: 'pgsql://'
   
