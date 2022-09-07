@@ -60,6 +60,7 @@ export default {
       position: relative
     .navigation
       padding: 2rem 1rem
+      background: $cwa-blue
     .component-group.cwa-group-top_main-layout
       .positions-container
         display: flex
