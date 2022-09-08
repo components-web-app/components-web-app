@@ -63,7 +63,6 @@ caddy-probe.local:80 {
 			{$MERCURE_EXTRA_DIRECTIVES}
 		}
 		vulcain @do_varnish_pass
-		push @do_varnish_pass
 
 		# do the cache pass
 		reverse_proxy @do_varnish_pass {
