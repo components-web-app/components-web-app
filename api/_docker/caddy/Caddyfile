@@ -37,6 +37,10 @@ caddy-probe.local:80 {
 		header !X-Caddy-Forwarded
 	}
 
+	@internal {
+        header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
+    }
+
 	# customisable log level with environment
 	log {
 		level {$LOG_LEVEL:"info"}
@@ -74,6 +78,9 @@ caddy-probe.local:80 {
 			trusted_proxies {$TRUSTED_PROXIES}
 			header_up X-Caddy-Forwarded 1
 		}
+
+        # if ssr request using "caddy.local" php needs to know browser name for headers for docs.json etc.
+		request_header @internal host {$BROWSER_SERVER_NAME}
 
 		php_fastcgi unix//var/run/php/php-fpm.sock {
 			trusted_proxies {$TRUSTED_PROXIES}
