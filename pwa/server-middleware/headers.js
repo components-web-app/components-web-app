@@ -2,7 +2,10 @@
 // or if added to serverMiddleware config we get syntax issues
 
 const headersMiddleware = function (_, res, next) {
-  res.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate')
+  res.setHeader(
+    'Cache-Control',
+    's-maxage=1, max-age=1, public, stale-while-revalidate=30'
+  )
   next()
 }
 
