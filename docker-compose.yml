@@ -43,10 +43,10 @@ services:
       DEBUG: ~ # ~ or debug
       VARNISH_UPSTREAM: ${VARNISH_UPSTREAM:-cache-proxy:8080}
       SERVER_NAME: ${SERVER_NAME:-localhost:8443, localhost, caddy.local, :80}
-      BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost}
+      BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost:8443}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.0.0.0/8}
-      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-CHANGE_ME}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-CHANGE_ME}
+      MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
       MERCURE_CORS_ORIGIN: "*"
       MERCURE_EXTRA_DIRECTIVES: |
         demo /srv/mercure-assets/

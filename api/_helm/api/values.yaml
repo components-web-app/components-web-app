@@ -48,10 +48,10 @@ mercure:
   jwtSecret: ~
   jwtKey:
     subscriber:
-      key: 'CHANGE_ME'
+      key: 'my-key-that-must-be-at-least-256-bits'
       algorithm: ~
     publisher:
-      key: 'CHANGE_ME'
+      key: 'my-key-that-must-be-at-least-256-bits'
       algorithm: ~
   publicUrl: ~
   url: https://example.com/.well-known/mercure
