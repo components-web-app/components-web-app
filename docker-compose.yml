@@ -24,6 +24,7 @@ services:
       DATABASE_LOAD_FIXTURES: ${DATABASE_LOAD_FIXTURES:-false}
     volumes:
       - ./api:/srv/api:rw,cached
+      - ./api/var:/srv/api/var:rw,cached
       - ./api/_docker/php/conf.d/cwa.dev.ini:/usr/local/etc/php/conf.d/cwa/cwa.dev.ini
       # if you develop on Linux, you may use a bind-mounted host directory instead
       # - ./api/var:/srv/api/var:rw

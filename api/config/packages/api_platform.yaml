@@ -12,7 +12,7 @@ api_platform:
       cache_headers:
         max_age: 0
         shared_max_age: 3600
-        vary: ['Content-Type', 'Authorization', 'Path']
+        vary: ['Content-Type', 'Authorization']
     http_cache:
         invalidation:
             enabled: true
