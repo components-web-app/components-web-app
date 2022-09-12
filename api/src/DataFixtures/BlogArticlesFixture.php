@@ -64,14 +64,14 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         $page = $this->createPage('blog-template', 'PrimaryPageTemplate', $layout, true);
         $manager->persist($page);
 
-        $componentCollection = $this->createComponentCollection('primary', $page);
-        $manager->persist($componentCollection);
+        $componentGroup = $this->createComponentGroup('primary', $page);
+        $manager->persist($componentGroup);
 
 //        $htmlContent = new HtmlContent();
 //        $htmlContent->html = sprintf('<p>Placeholder content for when editing a template. This component will be replaced by the property `htmlContent` in page data.</p>');
 //        $manager->persist($htmlContent);
 
-        $position = $this->createComponentPosition($componentCollection, null, 0);
+        $position = $this->createComponentPosition($componentGroup, null, 0);
         $position->setPageDataProperty('htmlContent');
         $manager->persist($position);
 

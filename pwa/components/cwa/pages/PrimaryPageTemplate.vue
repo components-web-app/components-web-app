@@ -4,10 +4,7 @@
       <div class="container">
         <div class="columns is-gapless">
           <div class="column">
-            <component-collection
-              location="primary"
-              v-bind="componentCollectionProps"
-            />
+            <component-group location="primary" v-bind="componentGroupProps" />
           </div>
         </div>
       </div>

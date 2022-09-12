@@ -32,10 +32,10 @@ class BlogCollectionPageFixture extends AbstractPageFixture implements Dependent
         $collection->setResourceIri($this->iriConverter->getIriFromResource(BlogArticleData::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(BlogArticleData::class)));
         $manager->persist($collection);
 
-        $componentCollection = $this->createComponentCollection('primary', $page);
-        $manager->persist($componentCollection);
+        $componentGroup = $this->createComponentGroup('primary', $page);
+        $manager->persist($componentGroup);
 
-        $position = $this->createComponentPosition($componentCollection, $collection, 0);
+        $position = $this->createComponentPosition($componentGroup, $collection, 0);
         $manager->persist($position);
 
         $route = $this->createRoute('/blog-articles', self::ROUTE_NAME, $page);

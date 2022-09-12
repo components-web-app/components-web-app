@@ -14,14 +14,14 @@
 
       <div class="navigation">
         <div class="container">
-          <div class="columns">
+          <div class="columns is-vcentered">
             <div class="column is-narrow">
               <img src="/logo.svg" alt="CWA Logo" />
             </div>
             <div class="column">
-              <component-collection
+              <component-group
                 location="top"
-                v-bind="componentCollectionProps"
+                v-bind="componentGroupProps"
                 :allowed-components="['/component/navigation_links']"
               />
             </div>
@@ -32,10 +32,7 @@
       <nuxt class="cwa-page" />
     </div>
     <div class="bottom">
-      <component-collection
-        location="bottom"
-        v-bind="componentCollectionProps"
-      />
+      <component-group location="bottom" v-bind="componentGroupProps" />
     </div>
     <cwa-component-manager />
   </div>
@@ -63,7 +60,7 @@ export default {
       position: relative
     .navigation
       padding: 2rem 1rem
-    .component-collection.top_main-layout
+    .component-group.cwa-group-top_main-layout
       .positions-container
         display: flex
         +tablet

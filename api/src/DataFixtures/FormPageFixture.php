@@ -30,10 +30,10 @@ class FormPageFixture extends AbstractPageFixture implements DependentFixtureInt
         $form->formType = ExampleFormType::class;
         $manager->persist($form);
 
-        $componentCollection = $this->createComponentCollection('primary', $page);
-        $manager->persist($componentCollection);
+        $componentGroup = $this->createComponentGroup('primary', $page);
+        $manager->persist($componentGroup);
 
-        $position = $this->createComponentPosition($componentCollection, $form, 0);
+        $position = $this->createComponentPosition($componentGroup, $form, 0);
         $manager->persist($position);
 
         $route = $this->createRoute('/form', self::ROUTE_NAME, $page);

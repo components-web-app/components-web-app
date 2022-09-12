@@ -26,8 +26,8 @@ class HomePageFixture extends AbstractPageFixture
         $page->setTitle('Welcome to CWA')->setMetaDescription('A demo CWA website');
         $manager->persist($page);
 
-        $componentCollection = $this->createComponentCollection( 'primary', $page);
-        $manager->persist($componentCollection);
+        $componentGroup = $this->createComponentGroup( 'primary', $page);
+        $manager->persist($componentGroup);
 
         $htmlContent = new HtmlContent();
         $htmlContent->html = $this->lipsumContentProvider->generate([
@@ -38,12 +38,12 @@ class HomePageFixture extends AbstractPageFixture
         ]);
         $htmlContent->setPublishedAt(new DateTime());
         $manager->persist($htmlContent);
-        $position = $this->createComponentPosition($componentCollection, $htmlContent, 0);
+        $position = $this->createComponentPosition($componentGroup, $htmlContent, 0);
         $manager->persist($position);
 
         $image = new Image();
         $manager->persist($image);
-        $position = $this->createComponentPosition($componentCollection, $image, 1);
+        $position = $this->createComponentPosition($componentGroup, $image, 1);
         $manager->persist($position);
 
         $htmlContent = new HtmlContent();
@@ -54,7 +54,7 @@ class HomePageFixture extends AbstractPageFixture
         ]);
         $htmlContent->setPublishedAt(new DateTime());
         $manager->persist($htmlContent);
-        $position = $this->createComponentPosition($componentCollection, $htmlContent, 2);
+        $position = $this->createComponentPosition($componentGroup, $htmlContent, 2);
         $manager->persist($position);
 
         $route = $this->createRoute('/', self::ROUTE_NAME, $page);

@@ -15,7 +15,7 @@ use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractComponent;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractPageData;
-use Silverback\ApiComponentsBundle\Entity\Core\ComponentCollection;
+use Silverback\ApiComponentsBundle\Entity\Core\ComponentGroup;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentPosition;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
@@ -49,21 +49,21 @@ abstract class AbstractPageFixture extends Fixture
         $layout->uiComponent = $uiComponent;
         $this->timestampedDataPersister->persistTimestampedFields($layout, true);
 
-        $componentCollectionTop = $this->createComponentCollection( 'top', null, $layout);
-        $componentCollectionTop->addAllowedComponent($this->iriConverter->getIriFromResource(NavigationLink::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(NavigationLink::class)));
+        $componentGroupTop = $this->createComponentGroup( 'top', null, $layout);
+        $componentGroupTop->addAllowedComponent($this->iriConverter->getIriFromResource(NavigationLink::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(NavigationLink::class)));
 
-        $this->addNavigationLink($manager, $componentCollectionTop, 'Home', '/', HomePageFixture::ROUTE_NAME, 1);
-        $this->addNavigationLink($manager, $componentCollectionTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);
-        $this->addNavigationLink($manager, $componentCollectionTop, 'Form', '/form', FormPageFixture::ROUTE_NAME, 3);
+        $this->addNavigationLink($manager, $componentGroupTop, 'Home', '/', HomePageFixture::ROUTE_NAME, 1);
+        $this->addNavigationLink($manager, $componentGroupTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);
+        $this->addNavigationLink($manager, $componentGroupTop, 'Form', '/form', FormPageFixture::ROUTE_NAME, 3);
 
         $manager->persist($layout);
-        $manager->persist($componentCollectionTop);
+        $manager->persist($componentGroupTop);
 
         $this->addReference($fixtureRef, $layout);
         return $layout;
     }
 
-    private function addNavigationLink(ObjectManager $manager, ComponentCollection $collection, string $label, string $path, string $routeName, int $sort = 0): void
+    private function addNavigationLink(ObjectManager $manager, ComponentGroup $collection, string $label, string $path, string $routeName, int $sort = 0): void
     {
         $route = $this->createRoute($path, $routeName);
         $manager->persist($route);
@@ -100,7 +100,7 @@ abstract class AbstractPageFixture extends Fixture
         return $page;
     }
 
-    protected function createComponentCollection(string $reference, ?Page $page = null, ?Layout $layout = null): ComponentCollection
+    protected function createComponentGroup(string $reference, ?Page $page = null, ?Layout $layout = null): ComponentGroup
     {
         $ref = $reference;
         if ($page) {
@@ -109,31 +109,31 @@ abstract class AbstractPageFixture extends Fixture
         if ($layout) {
             $ref .= '_' . $layout->reference;
         }
-        $fixtureRef = ComponentCollection::class . '_' . $ref;
+        $fixtureRef = ComponentGroup::class . '_' . $ref;
         if ($this->hasReference($fixtureRef)) {
             return $this->getReference($fixtureRef);
         }
-        $componentCollection = new ComponentCollection();
-        $componentCollection
+        $componentGroup = new ComponentGroup();
+        $componentGroup
             ->setReference($ref)
             ->setLocation($reference)
         ;
         if ($page) {
-            $componentCollection->addPage($page);
+            $componentGroup->addPage($page);
         }
         if ($layout) {
-            $componentCollection->addLayout($layout);
+            $componentGroup->addLayout($layout);
         }
-        $this->timestampedDataPersister->persistTimestampedFields($componentCollection, true);
-        $this->addReference($fixtureRef, $componentCollection);
-        return $componentCollection;
+        $this->timestampedDataPersister->persistTimestampedFields($componentGroup, true);
+        $this->addReference($fixtureRef, $componentGroup);
+        return $componentGroup;
     }
 
-    protected function createComponentPosition(ComponentCollection $componentCollection, ?AbstractComponent $component, ?int $sortValue = null): ComponentPosition
+    protected function createComponentPosition(ComponentGroup $componentGroup, ?AbstractComponent $component, ?int $sortValue = null): ComponentPosition
     {
         $position = new ComponentPosition();
         $position
-            ->setComponentCollection($componentCollection)
+            ->setComponentGroup($componentGroup)
             ->setSortValue($sortValue);
         if ($component) {
             $position->setComponent($component);

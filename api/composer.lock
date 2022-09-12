@@ -309,12 +309,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "747a4eee51605e45d26cff6286588d4a39dda881"
+                "reference": "cce8a2334571627b40c338cd22f5a2a7d5e7e8b7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/747a4eee51605e45d26cff6286588d4a39dda881",
-                "reference": "747a4eee51605e45d26cff6286588d4a39dda881",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/cce8a2334571627b40c338cd22f5a2a7d5e7e8b7",
+                "reference": "cce8a2334571627b40c338cd22f5a2a7d5e7e8b7",
                 "shasum": ""
             },
             "require": {
@@ -423,7 +423,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2022-09-11T15:26:50+00:00"
+            "time": "2022-09-12T19:30:54+00:00"
         },
         {
             "name": "doctrine/annotations",
