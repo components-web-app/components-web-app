@@ -4,7 +4,7 @@
 const headersMiddleware = function (_, res, next) {
   res.setHeader(
     'Cache-Control',
-    's-maxage=1, max-age=1, public, stale-while-revalidate=30'
+    's-maxage=1, max-age=0, public, must-revalidate, stale-while-revalidate=30'
   )
   next()
 }
