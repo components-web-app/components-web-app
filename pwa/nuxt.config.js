@@ -1,8 +1,8 @@
 import fs from 'fs'
 import path, { join } from 'path'
 
-const API_URL_BROWSER = process.env.API_URL_BROWSER || 'https://localhost:8443'
-const API_URL = process.env.API_URL || API_URL_BROWSER
+const API_URL = process.env.API_URL || 'https://localhost:8443'
+const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 
 const CERT_DOMAIN = process.env.CERT_DOMAIN || 'localhost'
 const CERT_DIR = process.env.CERT_DIR || `/certs/${CERT_DOMAIN}`
