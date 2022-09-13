@@ -57,7 +57,7 @@ spec:
                       name: {{ $fullName }}
                       key: blackfire-server-token
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.blackfire.resources | nindent 12 }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -30,6 +30,13 @@ php:
     id: ''
     token: ''
   databaseLoadFixtures: false
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 100m
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
 caddy:
   image:
@@ -38,6 +45,13 @@ caddy:
     pullPolicy: IfNotPresent
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
   replicaCount: 1
+  resources:
+    limits:
+      memory: 64Mi
+      cpu: 100m
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
 service:
   type: ClusterIP
@@ -68,6 +82,22 @@ postgresql:
     database: pg_database
   # if external and enabled is false - should be external in production
   url: 'pgsql://'
+  primary:
+    resources:
+      limits:
+        memory: 100Mi
+        cpu: 100m
+      requests:
+        memory: 50Mi
+        cpu: 20m
+  readReplicas:
+    resources:
+      limits:
+        memory: 100Mi
+        cpu: 100m
+      requests:
+        memory: 50Mi
+        cpu: 20m
   
 varnish:
   enabled: true
@@ -79,6 +109,13 @@ varnish:
   service:
     type: ClusterIP
     port: 80
+  resources:
+    limits:
+      memory: 60Mi
+      cpu: 50m
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
 blackfire:
   enabled: false
@@ -89,6 +126,13 @@ blackfire:
   server:
     id: ''
     token: ''
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 100m
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
 # remember with mercure to auto-scale we will need managed/on-premise
 autoscaling:
@@ -134,19 +178,6 @@ ingress:
     #  - secretName: api-example-tls
     #    hosts:
     #      - api.example.com
-
-resources:
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  limits:
-    memory: 200Mi
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
 
 nodeSelector: { }
 
