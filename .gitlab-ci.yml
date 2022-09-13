@@ -214,7 +214,7 @@ production api:
     - create_secret
     - deploy_api
     - delete canary
-    - delete rollout
+    - delete staging
     - persist_environment_url
   environment:
     name: production
