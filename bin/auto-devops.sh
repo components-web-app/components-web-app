@@ -254,14 +254,12 @@ set_namespace() {
 ensure_namespace() {
 	set_namespace
 	echo "Ensuring namespace: $KUBE_NAMESPACE"
-	if (kubectl describe namespace "$KUBE_NAMESPACE" || EXIT_CODE=$? && false) {
+	NS_INFO=$(kubectl describe namespace "$KUBE_NAMESPACE" || EXIT_CODE=$? && true)
+	if [[ -z "$NS_INFO" ]]; then
 		echo ${EXIT_CODE}
 		kubectl create namespace "$KUBE_NAMESPACE"
 		apply_rolebinding
-	}
-
-  # change metadata.name, metadata.namespace, subject[0].name
-
+	endif
 }
 
 apply_rolebinding() {
