@@ -53,7 +53,7 @@ caddy:
 
 # api deployment - both caddy and php containers
 api:
-  # replicaCount: 2
+  replicaCount: 1
   autoscaling:
     enabled: true
     minReplicas: 1
