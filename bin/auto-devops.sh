@@ -360,9 +360,15 @@ deploy_api() {
 	track="${1-stable}"
 	percentage="${2:-100}"
 	name="$RELEASE"
+
+	if [[ "$track" != "stable" ]]; then
+		name="$name-$track"
+	fi
+
 	if [[ "$track" == "canary" ]]; then
 		export BLACKFIRE_SERVER_ENABLED=false
 	fi
+
 	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
 	replicas=$(get_replicas "$track" "$percentage")
@@ -480,10 +486,13 @@ performance() {
 
 function delete() {
 	track="${1-stable}"
-	percentage="${2:-100}"
 	name="$RELEASE"
 
-	helm uninstall "$name" --namespace="$KUBE_NAMESPACE" || EXIT_CODE=$? && true
+	if [[ "$track" != "stable" ]]; then
+		name="$name-$track"
+	fi
+
+	helm uninstall "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
   # The service account permissions by default cannot manage namespaces

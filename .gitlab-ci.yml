@@ -119,7 +119,7 @@ review api:
     - apply_kube_context
     - ensure_namespace
     - create_secret
-    - deploy_api
+    - deploy_api review
     - persist_environment_url
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -146,7 +146,7 @@ staging pwa:
   script:
     - deploy_vercel_pwa staging
   environment:
-    name: staging/pwa
+    name: production/pwa
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     auto_stop_in: 1 hour
   needs: []
@@ -169,7 +169,7 @@ staging api:
     - create_secret
     - deploy_api staging
   environment:
-    name: staging
+    name: production
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
   needs:
     - job: 'unit tests'
