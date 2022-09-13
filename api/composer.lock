@@ -309,12 +309,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "f16a82e062d73fe9d622ecb246994ea5b5b800ce"
+                "reference": "8b279edd09352aa5574330bb13317a3b3559fa33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/f16a82e062d73fe9d622ecb246994ea5b5b800ce",
-                "reference": "f16a82e062d73fe9d622ecb246994ea5b5b800ce",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/8b279edd09352aa5574330bb13317a3b3559fa33",
+                "reference": "8b279edd09352aa5574330bb13317a3b3559fa33",
                 "shasum": ""
             },
             "require": {
@@ -370,7 +370,7 @@
             },
             "require-dev": {
                 "behat/behat": "^3.8",
-                "behatch/contexts": "3.3.1",
+                "behatch/contexts": "dev-master",
                 "doctrine/common": "^3.1",
                 "doctrine/doctrine-fixtures-bundle": "^3.4",
                 "friends-of-behat/mink": "^1.8",
@@ -423,7 +423,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2022-09-13T15:54:42+00:00"
+            "time": "2022-09-13T17:02:31+00:00"
         },
         {
             "name": "doctrine/annotations",
