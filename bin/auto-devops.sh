@@ -492,7 +492,7 @@ function delete() {
 		name="$name-$track"
 	fi
 
-	helm uninstall "$name" || EXIT_CODE=$? && true
+	helm uninstall --namespace="$KUBE_NAMESPACE" "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
   # The service account permissions by default cannot manage namespaces
