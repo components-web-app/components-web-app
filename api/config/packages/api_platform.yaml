@@ -15,6 +15,7 @@ api_platform:
         vary: ['Content-Type', 'Authorization']
     http_cache:
         invalidation:
+            purger: 'api_platform.http_cache.purger.varnish.xkey'
             enabled: true
             varnish_urls: ['%env(VARNISH_URL)%']
             xkey:
