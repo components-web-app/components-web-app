@@ -263,6 +263,7 @@ stop review:
   script:
     - install_dependencies
     - apply_kube_context
+    - set_namespace
     - delete review
   environment:
     name: review/$CI_COMMIT_REF_NAME

@@ -242,13 +242,17 @@ apply_kube_context() {
   if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi
 }
 
-ensure_namespace() {
+set_namespace() {
 	# the default service account will not allow creating of the namespace - we should look at this
 	# when creating role bindings for the ci pipeline user to see if it's possible to allow
 	# the user to create and delete specific namespaces
 	if [[ -z "$KUBE_NAMESPACE" ]]; then
     export KUBE_NAMESPACE="$CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG"
   fi
+}
+
+ensure_namespace() {
+	set_namespace
 	echo "Ensuring namespace: $KUBE_NAMESPACE"
   kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
 }
