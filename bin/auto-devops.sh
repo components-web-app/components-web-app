@@ -259,7 +259,7 @@ ensure_namespace() {
 		echo ${EXIT_CODE}
 		kubectl create namespace "$KUBE_NAMESPACE"
 		apply_rolebinding
-	endif
+	fi
 }
 
 apply_rolebinding() {
