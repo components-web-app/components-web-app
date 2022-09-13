@@ -243,6 +243,9 @@ apply_kube_context() {
 }
 
 ensure_namespace() {
+	# the default service account will not allow creating of the namespace - we should look at this
+	# when creating role bindings for the ci pipeline user to see if it's possible to allow
+	# the user to create and delete specific namespaces
 	if [[ -z "$KUBE_NAMESPACE" ]]; then
     export KUBE_NAMESPACE="$CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG"
   fi
@@ -486,11 +489,11 @@ function delete() {
 	helm uninstall "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
-  # It appears the default service account does not have permissions for this.
-	if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
-	  echo "Deleting namespace $KUBE_NAMESPACE"
-		kubectl delete namespace $KUBE_NAMESPACE --grace-period=0
-	else
-	  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
-	fi
+  # The service account permissions by default cannot manage namespaces
+	#if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
+	#  echo "Deleting namespace $KUBE_NAMESPACE"
+  #  kubectl delete namespace $KUBE_NAMESPACE --grace-period=0
+	#else
+	#  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
+	#fi
 }
