@@ -254,7 +254,34 @@ set_namespace() {
 ensure_namespace() {
 	set_namespace
 	echo "Ensuring namespace: $KUBE_NAMESPACE"
-  kubectl describe namespace "$KUBE_NAMESPACE" || kubectl create namespace "$KUBE_NAMESPACE"
+	if (kubectl describe namespace "$KUBE_NAMESPACE" || EXIT_CODE=$? && false) {
+		echo ${EXIT_CODE}
+		kubectl create namespace "$KUBE_NAMESPACE"
+		apply_rolebinding
+	}
+
+  # change metadata.name, metadata.namespace, subject[0].name
+
+}
+
+apply_rolebinding() {
+  echo "APPLYING ROLE BINDING..."
+  cat >rolebinding.tmp.yaml <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gitlab-ci-role-binding
+  namespace: ${KUBE_NAMESPACE}
+subjects:
+  - kind: Group
+    name: gitlab:project:${CI_PROJECT_ID}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: gitlab-ci-default
+  apiGroup: rbac.authorization.k8s.io
+EOF
+  kubectl apply -f rolebinding.tmp.yaml
 }
 
 create_secret() {
