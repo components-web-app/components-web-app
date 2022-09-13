@@ -524,12 +524,13 @@ function delete() {
 	helm uninstall --namespace="$KUBE_NAMESPACE" "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
-  # The service account permissions by default cannot manage namespaces
-	if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
-	  echo "Deleting namespace $KUBE_NAMESPACE"
-    kubectl delete namespace $KUBE_NAMESPACE --grace-period=0 || EXIT_CODE=$? && true
-    echo ${EXIT_CODE}
-	else
-	  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
-	fi
+  # If we delete the namespace, when we create it we also need to recreate role bindings - no permissions for this
+  # We should see if that will be possible, or manually clean up empty namespaces when they are no longer needed
+	#if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
+	#  echo "Deleting namespace $KUBE_NAMESPACE"
+  #  kubectl delete namespace $KUBE_NAMESPACE --grace-period=0 || EXIT_CODE=$? && true
+  #  echo ${EXIT_CODE}
+	#else
+	#  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
+	#fi
 }
