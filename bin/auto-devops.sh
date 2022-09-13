@@ -480,13 +480,10 @@ performance() {
 
 function delete() {
 	track="${1-stable}"
+	percentage="${2:-100}"
 	name="$RELEASE"
 
-	if [[ "$track" != "stable" ]]; then
-		name="$name-$track"
-	fi
-
-	helm uninstall "$name" || EXIT_CODE=$? && true
+	helm uninstall "$name" --namespace="$KUBE_NAMESPACE" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
   # The service account permissions by default cannot manage namespaces
