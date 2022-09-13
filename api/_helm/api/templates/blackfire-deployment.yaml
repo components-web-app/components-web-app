@@ -11,7 +11,7 @@ metadata:
   annotations:
     {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
-  replicas: {{ .Values.varnish.replicaCount }}
+  replicas: {{ .Values.blackfire.replicaCount }}
   selector:
     matchLabels:
       {{- include "cwa.selectorLabels" $data | nindent 6 }}

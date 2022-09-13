@@ -44,7 +44,7 @@ spec:
           - name: UPSTREAM
             value: "{{ $fullName }}-api"
           - name: UPSTREAM_PORT
-            value: "{{ .Values.service.port }}"
+            value: "{{ .Values.api.service.port }}"
           - name: PHP_SERVICE
             value: "{{ $fullName }}-api"
           - name: CORS_ALLOW_ORIGIN

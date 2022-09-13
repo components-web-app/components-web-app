@@ -7,7 +7,6 @@ php:
     repository: registry.gitlab.com/silverback-web-apps/cwa/php
     tag: ~
     pullPolicy: IfNotPresent
-  replicaCount: 2
   env: prod
   debug: '0'
   secret: ""
@@ -44,7 +43,6 @@ caddy:
     tag: ~
     pullPolicy: IfNotPresent
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
-  replicaCount: 1
   resources:
     limits:
       memory: 64Mi
@@ -53,9 +51,18 @@ caddy:
     #   cpu: 100m
     #   memory: 128Mi
 
-service:
-  type: ClusterIP
-  port: 80
+# api deployment - both caddy and php containers
+api:
+  # replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+  service:
+    type: ClusterIP
+    port: 80
 
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
@@ -69,6 +76,13 @@ mercure:
       algorithm: ~
   publicUrl: ~
   url: https://example.com/.well-known/mercure
+  # need paid managed solution to enable this feature for replication
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
 
 # can be enabled for feature branches to avoid using prod database
 postgresql:
@@ -118,6 +132,7 @@ varnish:
     #   memory: 128Mi
 
 blackfire:
+  replicaCount: 1
   enabled: false
   image:
     repository: blackfire/blackfire
@@ -134,13 +149,19 @@ blackfire:
     #   cpu: 100m
     #   memory: 128Mi
 
-# remember with mercure to auto-scale we will need managed/on-premise
-autoscaling:
+
+ingress:
   enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  annotations: { }
+    # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: api.example.com
+      paths: [ ]
+  tls: [ ]
+    #  - secretName: api-example-tls
+    #    hosts:
+    #      - api.example.com
 
 imagePullSecrets: [ ]
 nameOverride: ""
@@ -165,19 +186,6 @@ securityContext: { }
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
-
-ingress:
-  enabled: false
-  annotations: { }
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: api.example.com
-      paths: [ ]
-  tls: [ ]
-    #  - secretName: api-example-tls
-    #    hosts:
-    #      - api.example.com
 
 nodeSelector: { }
 

@@ -11,8 +11,8 @@ metadata:
   annotations:
     {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
+  {{- if not .Values.api.autoscaling.enabled }}
+  replicas: {{ .Values.api.replicaCount }}
   {{- end }}
   strategy:
     type: RollingUpdate
