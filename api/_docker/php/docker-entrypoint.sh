@@ -20,8 +20,9 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 
   echo "* Updating file permissions"
 	mkdir -p var/cache var/log var/storage/default
-	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var
-	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var
+	# Fail nicely if bound to mac host by docker-compose
+	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
+	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
 
   # wait for caddy certs to add ca to trusted
 	if [ "$APP_ENV" != 'prod' ]; then
