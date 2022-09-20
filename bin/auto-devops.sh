@@ -374,6 +374,7 @@ deploy_vercel_pwa() {
 		-e API_URL="${API_ENDPOINT}" \
 		-e API_URL_BROWSER="${API_ENDPOINT}" \
 		-e NODE_ENV="${NODE_ENV}" \
+    -e MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}" \
 		-b API_URL="${API_ENDPOINT}" \
 		-b API_URL_BROWSER="${API_ENDPOINT}" \
 		-b NODE_ENV="${NODE_ENV}" \
