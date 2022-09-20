@@ -2,6 +2,12 @@
     "name": "components-web-app/component-web-app-api",
     "description": "",
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/silverbackdan/contexts"
+        }
+    ],
     "require": {
         "php": "^8.0",
         "doctrine/doctrine-fixtures-bundle": "^3.3",
@@ -19,7 +25,7 @@
     },
     "require-dev": {
         "behat/behat": "^3.6",
-        "behatch/contexts": "^3.3",
+        "behatch/contexts": "dev-master",
         "friends-of-behat/mink": "^1.9",
         "friends-of-behat/mink-browserkit-driver": "^1.5",
         "friends-of-behat/mink-extension": "^2.5",
