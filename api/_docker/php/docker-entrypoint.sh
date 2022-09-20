@@ -33,7 +33,7 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		update-ca-certificates
 
 		echo "* Composer install (DEV)"
-		composer install --prefer-dist --no-progress --no-suggest --no-interaction
+		composer install --prefer-dist --no-progress --no-interaction
 	fi
 
   # Database: wait for it and run migrations

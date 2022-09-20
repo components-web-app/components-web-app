@@ -21,6 +21,7 @@
         "symfony/framework-bundle": "^6.1",
         "symfony/mercure-bundle": "^0.3.2",
         "symfony/monolog-bundle": "^3.5",
+        "symfony/runtime": "^6.1",
         "symfony/yaml": "^6.1"
     },
     "require-dev": {
@@ -68,7 +69,9 @@
         },
         "sort-packages": true,
         "allow-plugins": {
-            "symfony/flex": true
+            "composer/package-versions-deprecated": true,
+            "symfony/flex": true,
+            "symfony/runtime": true
         }
     },
     "scripts": {
