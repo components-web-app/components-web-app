@@ -89,7 +89,7 @@ services:
       PHP_SERVICE: php
     # for cors_allow_origin env variable sharing
     env_file:
-      - api/.env
+      - api/.env.local
     tmpfs:
       - /usr/local/var/varnish:exec
     volumes:

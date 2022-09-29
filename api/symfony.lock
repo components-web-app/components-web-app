@@ -131,9 +131,6 @@
     "egulias/email-validator": {
         "version": "2.1.17"
     },
-    "fig/link-util": {
-        "version": "1.0.0"
-    },
     "friends-of-behat/mink": {
         "version": "v1.8.0"
     },
