@@ -101,7 +101,6 @@ services:
     build:
       context: ./pwa
       target: cwa_pwa
-    image: ${PWA_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/pwa}
     restart: unless-stopped
     volumes:
       - ./pwa:/usr/src/pwa:rw,cached
@@ -123,7 +122,7 @@ services:
       - "caddy:caddy.local"
 
   db:
-    image: postgres:12.2-alpine
+    image: postgres:14-alpine
     environment:
       - POSTGRES_MULTIPLE_DATABASES=api,api_test
       - POSTGRES_USER=api-platform
