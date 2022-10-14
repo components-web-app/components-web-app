@@ -219,6 +219,21 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: blackfire-client-token
+            - name: DATABASE_CA_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-ca
+            - name: DATABASE_CLIENT_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-cert
+            - name: DATABASE_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-key
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket

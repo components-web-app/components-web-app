@@ -429,6 +429,10 @@ php:
     token: "${BLACKFIRE_CLIENT_TOKEN}"
   databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
   replicaCount: ${PHP_REPLICA_COUNT:-"2"}
+  databaseSSL:
+    ca: "${DATABASE_CA_CERT:-"~"}"
+    key: "${DATABASE_CLIENT_KEY:-"~"}"
+    cert: "${DATABASE_CLIENT_CERT:-"~"}"
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure

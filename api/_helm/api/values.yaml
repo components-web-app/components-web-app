@@ -29,6 +29,10 @@ php:
     id: ''
     token: ''
   databaseLoadFixtures: false
+  databaseSSL:
+    ca: ~
+    key: ~
+    cert: ~
   resources:
     limits:
       memory: 256Mi
