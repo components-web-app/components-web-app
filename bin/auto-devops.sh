@@ -407,6 +407,10 @@ deploy_api() {
   	delete ${track}
   fi
 
+  DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
+  DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
+  DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
+
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
   - name: ${GITLAB_PULL_SECRET_NAME:-"~"}
@@ -430,9 +434,9 @@ php:
   databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
   replicaCount: ${PHP_REPLICA_COUNT:-"2"}
   databaseSSL:
-    ca: "${DATABASE_CA_CERT:-"~"}"
-    key: "${DATABASE_CLIENT_KEY:-"~"}"
-    cert: "${DATABASE_CLIENT_CERT:-"~"}"
+    ca: "${DATABASE_CA_CERT_B64}"
+    key: "${DATABASE_CLIENT_KEY_B64}"
+    cert: "${DATABASE_CLIENT_CERT_B64}"
 mercure:
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
