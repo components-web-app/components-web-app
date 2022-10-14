@@ -1,4 +1,9 @@
 doctrine:
+    dbal:
+        sslrootcert: '%env(resolve:DOCTRINE_CA_CERT)%'
+        sslcert: '%env(resolve:DOCTRINE_CLIENT_CERT)%'
+        sslkey: '%env(resolve:DOCTRINE_CLIENT_KEY)%'
+        sslmode: require
     orm:
         auto_generate_proxy_classes: false
         metadata_cache_driver:

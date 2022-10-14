@@ -19,10 +19,14 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	ln -sf "$PHP_INI_RECOMMENDED" "$PHP_INI_DIR/php.ini"
 
   echo "* Updating file permissions"
-	mkdir -p var/cache var/log var/storage/default
+	mkdir -p var/cache var/log var/storage/default config/database
 	# Fail nicely if bound to mac host by docker-compose
 	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
 	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
+	echo "$DATABASE_CA_CERT" > config/database/server-ca.pem
+	echo "$DATABASE_CLIENT_CERT" > config/database/client-cert.pem
+	echo "$DATABASE_CLIENT_KEY" > config/database/client-key.pem
+  chmod 0600 /srv/api/config/database/*
 
   # wait for caddy certs to add ca to trusted
 	if [ "$APP_ENV" != 'prod' ]; then
