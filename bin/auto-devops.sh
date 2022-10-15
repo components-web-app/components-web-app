@@ -408,8 +408,8 @@ deploy_api() {
   fi
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
-  DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
-  DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
+  DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
+  DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
 
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
