@@ -998,9 +998,9 @@
   integrity sha512-5a6wqoJV/xEdbRNKVo6I4hO3VjyDq//8q2f9I6PBAvMesJHFauXDorcNCsr9RzvsZnaWi5NYCcfyqP1QeFHFbw==
 
 "@cwa/nuxt-module-next@^1.0.0-1628507142.4c398c9":
-  version "1.0.0-1666177646.a6875e3"
-  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1666177646.a6875e3.tgz#ab8c3849ea7323fc7386182f405066779fba932e"
-  integrity sha512-PXyrJmsmT7x6RsSjf/UsDa4rv3yYMyvtfQWIZBfFt45GhK6Vpmc3AHheI2Fh5dvMf9PwAk0zclreeWOz0xpMnQ==
+  version "1.0.0-1666192963.cecde31"
+  resolved "https://registry.yarnpkg.com/@cwa/nuxt-module-next/-/nuxt-module-next-1.0.0-1666192963.cecde31.tgz#76dae38afee588c6ceddd58ee94dc5dbd72f91e1"
+  integrity sha512-DxKO7n4uVSlIrwrHUyta5nTAbzSzWHVf9aUg0PNoWNVta8d7zzzYZFX24xhkpFRizmIAHdT4HpOCBkgCnUL0Tw==
   dependencies:
     "@nuxt/components" "^2.2.0"
     "@nuxtjs/auth-next" "^5.0.0-1641419856.31900b3"
