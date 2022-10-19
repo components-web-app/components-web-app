@@ -391,6 +391,8 @@ deploy_api() {
 	percentage="${2:-100}"
 	name="$RELEASE"
 
+	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
+
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
@@ -466,7 +468,7 @@ ingress:
     - host: ${DOMAIN:-"~"}
       paths: [ "/" ]
   tls:
-    - secretName: ${LETSENCRYPT_SECRET_NAME}-api
+    - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
       hosts:
         - ${DOMAIN:-"~"}
 blackfire:
