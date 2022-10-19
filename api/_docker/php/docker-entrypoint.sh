@@ -29,8 +29,8 @@ if [ "$1" = 'php-fpm' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
 	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
 
-  chown -R www-data /srv/api/var/database
-	chmod -R 0600 /srv/api/var/database
+  chown -R www-data var/database/*
+  chmod -R 0600 var/database/*
 
   # wait for caddy certs to add ca to trusted
 	if [ "$APP_ENV" != 'prod' ]; then
