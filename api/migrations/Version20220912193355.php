@@ -134,7 +134,6 @@ final class Version20220912193355 extends AbstractMigration
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE SCHEMA public');
         $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A1945B0BCD');
         $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A19414CCF0D');
         $this->addSql('ALTER TABLE _acb_abstract_component DROP CONSTRAINT FK_4EBC1A193DA5256D');
