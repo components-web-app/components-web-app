@@ -1,7 +1,0 @@
-parameters:
-  env(MERCURE_JWT_SECRET_TOKEN): ''
-
-mercure:
-    hubs:
-        default:
-            jwt: '%env(MERCURE_JWT_SECRET_TOKEN)%'

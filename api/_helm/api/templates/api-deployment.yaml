@@ -179,7 +179,7 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: mercure-public-url
-            - name: MERCURE_JWT_SECRET_TOKEN
+            - name: MERCURE_JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ $fullName }}

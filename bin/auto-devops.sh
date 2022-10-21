@@ -132,17 +132,17 @@ install_dependencies() {
 		export MERCURE_PUBLISHER_JWT_KEY=$(cat ${JWT_SECRET_KEY_FILE}.pub)
     export MERCURE_PUBLISHER_JWT_ALG=RS256
 
-    echo "Generate MERCURE_JWT_SECRET_TOKEN..."
+    echo "Generate MERCURE_JWT_SECRET..."
 		npm install --global "@clarketm/jwt-cli"
 		MERCURE_PUBLISHER_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
-		export MERCURE_JWT_SECRET_TOKEN=$(jwt sign --noCopy --expiresIn '100 years' --algorithm 'RS256' --passphrase "$MERCURE_JWT_SECRET_KEY"  -- '{"mercure": {"publish": ["*"]}}' "$MERCURE_PUBLISHER_SECRET_KEY")
+		export MERCURE_JWT_SECRET=$(jwt sign --noCopy --expiresIn '100 years' --algorithm 'RS256' --passphrase "$MERCURE_JWT_SECRET_KEY"  -- '{"mercure": {"publish": ["*"]}}' "$MERCURE_PUBLISHER_SECRET_KEY")
 
     rm -f ${JWT_SECRET_KEY_FILE}
     rm -f ${JWT_SECRET_KEY_FILE}.pub
   fi
 
-  if [[ -z ${MERCURE_JWT_SECRET_TOKEN} ]]; then
-  	echo "!!! MERCURE_JWT_SECRET_TOKEN DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
+  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
+  	echo "!!! MERCURE_JWT_SECRET DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
   	false
 	fi
 }
@@ -497,7 +497,7 @@ EOF
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY}" \
-    --set mercure.jwtSecret="${MERCURE_JWT_SECRET_TOKEN}" \
+    --set mercure.jwtSecret="${MERCURE_JWT_SECRET}" \
   	-f values.tmp.yaml
 }
 
