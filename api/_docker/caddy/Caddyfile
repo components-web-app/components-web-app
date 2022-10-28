@@ -41,6 +41,11 @@ caddy-probe.local:80 {
         header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
     }
 
+    # pending thought on https://github.com/dunglas/mercure/issues/708
+    # @allowed-host {
+    #     header_regexp origin ({$MERCURE_CORS_ORIGIN:*})
+    # }
+
 	# customisable log level with environment
 	log {
 		level {$LOG_LEVEL:"info"}
@@ -62,6 +67,8 @@ caddy-probe.local:80 {
 			# Enable the subscription API (double-check that it's what you want)
 			subscriptions
 			# Cors origins
+			# pending thoughts on https://github.com/dunglas/mercure/issues/708
+			# cors_origins @allowed-host https://localhost:3000
 			cors_origins {$MERCURE_CORS_ORIGIN:*}
 			# Extra directives
 			{$MERCURE_EXTRA_DIRECTIVES}

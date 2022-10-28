@@ -30,3 +30,6 @@ silverback_api_components:
     route_security:
         - { route: "/user-area*", security: "is_granted('ROLE_USER')" }
     routable_security: "is_granted('ROLE_ADMIN')"
+    mercure:
+      cookie:
+        samesite: '%env(JWT_COOKIE_SAMESITE)%'
