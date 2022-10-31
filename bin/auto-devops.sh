@@ -440,6 +440,7 @@ php:
     key: "${DATABASE_CLIENT_KEY_B64}"
     cert: "${DATABASE_CLIENT_CERT_B64}"
 mercure:
+  corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   jwtKey:

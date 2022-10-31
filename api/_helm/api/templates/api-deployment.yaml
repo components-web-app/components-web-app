@@ -79,6 +79,11 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: varnish-upstream
+            - name: MERCURE_CORS_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mecure-cors-origin
           ports:
             - name: http
               containerPort: 80

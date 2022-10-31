@@ -15,6 +15,7 @@ data:
   mercure-url: {{ .Values.mercure.url | quote }}
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
+  mecure-cors-origin: {{ .Values.mercure.corsOrigin | quote }}
   varnish-url: http://{{ include "cwa.fullname" . }}-varnish
   varnish-upstream: {{ include "cwa.fullname" . }}-varnish
   blackfire-client-id: {{ .Values.php.blackfire.id | quote }}
