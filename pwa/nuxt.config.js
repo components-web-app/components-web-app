@@ -106,7 +106,7 @@ export default {
     websiteName: 'CWA Demo Site'
   },
   loading: {
-    color: '#E30A6C'
+    color: '#9CDD05'
   },
   build: {
     extend(config) {

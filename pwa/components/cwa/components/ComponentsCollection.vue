@@ -185,7 +185,7 @@ export default Vue.extend({
     margin-top: 1.5rem
     .loading-overlay
       position: absolute
-      background: rgba($white, .4)
+      background: rgba($body-background-color, .4)
       top: 0
       left: 0
       width: 100%
