@@ -83,7 +83,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: {{ $fullName }}
-                  key: mecure-cors-origin
+                  key: mercure-cors-origin
           ports:
             - name: http
               containerPort: 80
