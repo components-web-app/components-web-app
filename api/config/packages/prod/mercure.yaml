@@ -4,4 +4,6 @@ parameters:
 mercure:
   hubs:
     default:
-      jwt: '%env(MERCURE_JWT_SECRET_TOKEN)%'
+      jwt:
+        value: '%env(MERCURE_JWT_SECRET_TOKEN)%'
+        publish: '*'
