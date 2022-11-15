@@ -496,7 +496,7 @@ EOF
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY}" \
-    --set mercure.jwtSecret="${MERCURE_JWT_SECRET}" \
+    --set mercure.jwtSecretToken="${MERCURE_JWT_SECRET_TOKEN}" \
   	-f values.tmp.yaml
 }
 

@@ -71,7 +71,7 @@ api:
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
   corsOrigin: '*'
-  jwtSecret: ~
+  jwtSecretToken: ~
   jwtKey:
     subscriber:
       key: 'my-key-that-must-be-at-least-256-bits'
