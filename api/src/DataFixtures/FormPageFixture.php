@@ -28,6 +28,7 @@ class FormPageFixture extends AbstractPageFixture implements DependentFixtureInt
 
         $form = new Form();
         $form->formType = ExampleFormType::class;
+        $this->timestampedDataPersister->persistTimestampedFields($form, true);
         $manager->persist($form);
 
         $componentGroup = $this->createComponentGroup('primary', $page);

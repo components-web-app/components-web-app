@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Features\Bootstrap;
 
 use Behat\Behat\Context\Context;
-use Doctrine\Common\Persistence\ManagerRegistry;
 use Doctrine\ORM\Tools\SchemaTool;
+use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use Doctrine\Persistence\ObjectManager;
 

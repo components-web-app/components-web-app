@@ -9,7 +9,6 @@ export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
 export KUBERNETES_VERSION=1.18.2
 export HELM_VERSION=3.4.1
-export GLIBC_VERSION=2.33-r0
 
 # Choose the branch for production deploy.
 if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
@@ -73,9 +72,7 @@ install_dependencies() {
 
   echo "Install glibc"
 	wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
-	wget "https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk"
-	apk add "glibc-${GLIBC_VERSION}.apk"
-	rm "glibc-${GLIBC_VERSION}.apk"
+	apk add gcompat
 
   echo "Intalling helm..."
   curl "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
@@ -212,6 +209,7 @@ function run_phpunit() {
 
 function run_behat() {
   echo "run_behat function"
+  export TRUSTED_HOSTS='^localhost|caddy(\.local)?|example\.com$'
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs

@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
+use App\Flysystem\GoogleCloudStorageFactory;
+use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
-use Silverback\ApiComponentsBundle\Imagine\FlysystemCacheResolver;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
+
 
 return static function (ContainerConfigurator $configurator) {
-    $configurator->parameters()->set('locale', 'en');
+    $configurator->parameters()->set('locale', 'en')->set('env(GCLOUD_JSON)', '{}');
+
     $services = $configurator->services();
     $services
         ->defaults()
@@ -45,4 +49,8 @@ return static function (ContainerConfigurator $configurator) {
 //            '$visibility' => 'public'
 //        ])
 //        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
+
+
+    $envServicesFile = sprintf('services_%s.php', $configurator->env());
+    $configurator->import($envServicesFile, null, 'not_found');
 };
