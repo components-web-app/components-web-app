@@ -67,7 +67,7 @@ rand_str() {
 
 install_dependencies() {
   echo "Adding openssl curl tar gzip ca-certificates git nodejs npm ..."
-
+  # upgrade for curl fix https://github.com/curl/curl/issues/4357
   apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm openssh-keygen
 
   echo "Install glibc"
@@ -108,40 +108,8 @@ install_dependencies() {
   	echo "Generating MERCURE_JWT_SECRET_KEY..."
     export MERCURE_JWT_SECRET_KEY="$(rand_str)"
   fi
-
-	if [[ -z ${MERCURE_SUBSCRIBER_JWT_KEY} ]]; then
-  	echo "!! Generating MERCURE_SUBSCRIBER_JWT_KEY !! (IF YOU ARE RESTRICTING SUBSCRIBERS YOU SHOULD HAVE SET THIS PUBLIC KEY ALREADY)"
-    JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
-		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET_KEY}"
-		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET_KEY}"
-		export MERCURE_SUBSCRIBER_JWT_KEY=$(cat ${JWT_SECRET_KEY_FILE}.pub)
-    export MERCURE_SUBSCRIBER_JWT_ALG=RS256
-    rm -f ${JWT_SECRET_KEY_FILE}
-    rm -f ${JWT_SECRET_KEY_FILE}.pub
-	fi
-
-  # If the secret key is defined and and token is not we will generate a token with the key
-	if [[ -z ${MERCURE_PUBLISHER_JWT_KEY} ]]; then
-  	echo "Generating MERCURE_PUBLISHER_JWT_KEY..."
-		JWT_SECRET_KEY_FILE=/tmp/jwt_secret.key
-		ssh-keygen -q -t rsa -b 4096 -m PEM -f ${JWT_SECRET_KEY_FILE} -P "${MERCURE_JWT_SECRET_KEY}"
-		openssl rsa -in ${JWT_SECRET_KEY_FILE} -pubout -outform PEM -out ${JWT_SECRET_KEY_FILE}.pub -passin pass:"${MERCURE_JWT_SECRET_KEY}"
-		export MERCURE_PUBLISHER_JWT_KEY=$(cat ${JWT_SECRET_KEY_FILE}.pub)
-    export MERCURE_PUBLISHER_JWT_ALG=RS256
-
-    echo "Generate MERCURE_JWT_SECRET..."
-		npm install --global "@clarketm/jwt-cli"
-		MERCURE_PUBLISHER_SECRET_KEY=$(cat ${JWT_SECRET_KEY_FILE})
-		export MERCURE_JWT_SECRET=$(jwt sign --noCopy --expiresIn '100 years' --algorithm 'RS256' --passphrase "$MERCURE_JWT_SECRET_KEY"  -- '{"mercure": {"publish": ["*"]}}' "$MERCURE_PUBLISHER_SECRET_KEY")
-
-    rm -f ${JWT_SECRET_KEY_FILE}
-    rm -f ${JWT_SECRET_KEY_FILE}.pub
-  fi
-
-  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
-  	echo "!!! MERCURE_JWT_SECRET DOES NOT EXIST AND WAS NOT CREATED BECAUSE THE MERCURE_PUBLISHER_JWT_KEY ALREADY EXISTS !!!"
-  	false
-	fi
+	export MERCURE_SUBSCRIBER_JWT_ALG=HS256
+	export MERCURE_PUBLISHER_JWT_ALG=HS256
 }
 
 # For Kubernetes environment gitlab runner use the localhost for DIND - see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
@@ -208,8 +176,8 @@ function run_phpunit() {
 }
 
 function run_behat() {
+	export TRUSTED_HOSTS='^localhost|caddy(\.local)?|example\.com$'
   echo "run_behat function"
-  export TRUSTED_HOSTS='^localhost|caddy(\.local)?|example\.com$'
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
@@ -388,9 +356,7 @@ deploy_api() {
 	track="${1-stable}"
 	percentage="${2:-100}"
 	name="$RELEASE"
-
 	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
-
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
@@ -427,6 +393,7 @@ php:
     email: ${MAILER_EMAIL:-"~"}
   jwt:
     passphrase: "${JWT_PASSPHRASE:-"~"}"
+    algorithm: "${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}"
     samesite: "${JWT_COOKIE_SAMESITE:-"lax"}"
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
@@ -494,9 +461,8 @@ EOF
     "$name" ./api/_helm/api \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
-    --set mercure.jwtKey.subscriber.key="${MERCURE_SUBSCRIBER_JWT_KEY}" \
-    --set mercure.jwtKey.publisher.key="${MERCURE_PUBLISHER_JWT_KEY}" \
-    --set mercure.jwtSecretToken="${MERCURE_JWT_SECRET_TOKEN}" \
+    --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET_KEY}" \
+    --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET_KEY}" \
   	-f values.tmp.yaml
 }
 

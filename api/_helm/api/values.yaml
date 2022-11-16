@@ -29,6 +29,7 @@ php:
     id: ''
     token: ''
   databaseLoadFixtures: false
+  # base64 encoded
   databaseSSL:
     ca: ~
     key: ~
@@ -71,7 +72,7 @@ api:
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
   corsOrigin: '*'
-  jwtSecretToken: ~
+  jwtSecret: ~
   jwtKey:
     subscriber:
       key: 'my-key-that-must-be-at-least-256-bits'

@@ -22,8 +22,6 @@ services:
       # TODO: Remove environment variable once recipe is added to recipes-contrib repository - exposes environment variable for flex PR endpoint
       SYMFONY_ENDPOINT: ~
       DATABASE_LOAD_FIXTURES: ${DATABASE_LOAD_FIXTURES:-false}
-    env_file:
-      - api/.env.local
     volumes:
       - ./api:/srv/api:rw,cached
       - ./api/var:/srv/api/var:rw,cached

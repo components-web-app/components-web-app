@@ -1,5 +1,12 @@
+parameters:
+  env(MERCURE_JWT_ALGORITHM): 'hmac.sha256'
+
 mercure:
-    hubs:
-        default:
-            url: '%env(MERCURE_URL)%'
-            public_url: '%env(MERCURE_PUBLIC_URL)%'
+  hubs:
+    default:
+      url: '%env(MERCURE_URL)%'
+      public_url: '%env(MERCURE_PUBLIC_URL)%'
+      jwt:
+        secret: '%env(MERCURE_JWT_SECRET)%'
+        publish: '*'
+        algorithm: '%env(MERCURE_JWT_ALGORITHM)%'

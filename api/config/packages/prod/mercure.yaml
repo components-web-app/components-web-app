@@ -1,9 +1,0 @@
-parameters:
-  env(MERCURE_JWT_SECRET_TOKEN): ''
-
-mercure:
-  hubs:
-    default:
-      jwt:
-        value: '%env(MERCURE_JWT_SECRET_TOKEN)%'
-        publish: '*'
