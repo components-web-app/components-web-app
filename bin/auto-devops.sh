@@ -381,6 +381,10 @@ deploy_api() {
 imagePullSecrets:
   - name: ${GITLAB_PULL_SECRET_NAME:-"~"}
 php:
+  admin:
+    username: ${ADMIN_USERNAME:-"admin"}
+    password: ${ADMIN_PASSWORD:-"admin"}
+    email: ${ADMIN_EMAIL:-"hello@cwa.rocks"}
   image:
     repository: ${PHP_REPOSITORY}
     tag: ${TAG}

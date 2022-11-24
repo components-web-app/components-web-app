@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
-use App\Flysystem\GoogleCloudStorageFactory;
-use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
+use App\DataFixtures\UsersFixture;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
 
 
 return static function (ContainerConfigurator $configurator) {
-    $configurator->parameters()->set('locale', 'en')->set('env(GCLOUD_JSON)', '{}');
+    $configurator
+        ->parameters()
+        ->set('locale', 'en')
+        ->set('env(GCLOUD_JSON)', '{}')
+        ->set('env(ADMIN_USERNAME)', null)
+        ->set('env(ADMIN_PASSWORD)', null)
+        ->set('env(ADMIN_EMAIL)', null)
+    ;
 
     $services = $configurator->services();
     $services
@@ -29,6 +34,15 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->load('App\\Controller\\', '../src/Controller')
         ->tag('controller.service_subscriber');
+
+    $services
+        ->set(UsersFixture::class)
+        ->args([
+            '$adminUsername' => '%env(ADMIN_USERNAME)%',
+            '$adminPassword' => '%env(ADMIN_PASSWORD)%',
+            '$adminEmail' => '%env(ADMIN_EMAIL)%'
+        ])
+    ;
 
     $services
         ->set(LocalFilesystemAdapter::class)

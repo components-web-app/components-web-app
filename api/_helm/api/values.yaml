@@ -41,6 +41,10 @@ php:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
+  admin:
+    username: ~
+    password: ~
+    email: ~
 
 caddy:
   image:

@@ -239,6 +239,21 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: database-ssl-key
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: admin-username
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: admin-password
+            - name: ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: admin-email
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket

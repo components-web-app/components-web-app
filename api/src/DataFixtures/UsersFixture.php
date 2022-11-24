@@ -13,15 +13,17 @@ use Silverback\ApiComponentsBundle\Factory\User\UserFactory;
  */
 class UsersFixture extends Fixture
 {
-    private UserFactory $factory;
 
-    public function __construct(UserFactory $factory)
-    {
-        $this->factory = $factory;
+    public function __construct(
+        private readonly UserFactory $factory,
+        private readonly ?string $adminUsername = null,
+        private readonly ?string $adminPassword = null,
+        private readonly ?string $adminEmail = null
+    ) {
     }
 
-    public function load(ObjectManager $manager)
+    public function load(ObjectManager $manager): void
     {
-        $this->factory->create('admin', 'admin', 'hello@cwa.rocks', false, true);
+        $this->factory->create($this->adminUsername ?: 'admin', $this->adminPassword ?: 'admin', $this->adminEmail ?: 'hello@cwa.rocks', false, true);
     }
 }
