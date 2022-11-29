@@ -54,6 +54,32 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
 
+    // see: https://github.com/api-platform/core/issues/4975#issuecomment-1253617780
+    $services->set('api_platform.cache.metadata.property')
+        ->parent('cache.system')
+        ->tag('cache.pool')
+    ;
+    $services->set('api_platform.cache.metadata.resource')
+        ->parent('cache.system')
+        ->tag('cache.pool')
+    ;
+    $services->set('api_platform.cache.metadata.resource_collection')
+        ->parent('cache.system')
+        ->tag('cache.pool')
+    ;
+    $services->set('api_platform.cache.route_name_resolver')
+        ->parent('cache.system')
+        ->tag('cache.pool')
+    ;
+    $services->set('api_platform.cache.identifiers_extractor')
+        ->parent('cache.system')
+        ->tag('cache.pool')
+    ;
+    $services->set('api_platform.elasticsearch.cache.metadata.document')
+        ->parent('cache.system')
+        ->tag('cache.pool')
+    ;
+
 //    $services
 //        ->set(FlysystemCacheResolver::class)
 //        ->args([
