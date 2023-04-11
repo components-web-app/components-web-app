@@ -1,5 +1,6 @@
 api_platform:
   defaults:
     cache_headers:
+      max_age: 0
       shared_max_age: 31557600
       vary: ['Content-Type', 'Authorization']

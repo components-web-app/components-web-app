@@ -6,17 +6,25 @@
         {
             "type": "vcs",
             "url": "https://github.com/silverbackdan/contexts"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/silverbackdan/flysystem"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/silverbackdan/flysystem-google-cloud-storage"
         }
     ],
     "require": {
         "php": "^8.1",
+        "components-web-app/api-components-bundle": "dev-main",
         "doctrine/doctrine-fixtures-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^3.0",
-        "guzzlehttp/guzzle": "^6.3",
-        "league/flysystem": "^2",
-        "components-web-app/api-components-bundle": "dev-main",
-        "symfony/dotenv": "^6.1",
+        "league/flysystem": "^3.11",
+        "league/flysystem-google-cloud-storage": "^3.0",
         "symfony/console": "^6.1",
+        "symfony/dotenv": "^6.1",
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "^6.1",
         "symfony/mercure-bundle": "^0.3.2",

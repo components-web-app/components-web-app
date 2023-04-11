@@ -36,5 +36,6 @@
     ".nuxt",
     "dist",
     "static/sw.js"
-  ]
+  ],
+  "files": [ "@types/custom.d.ts" ]
 }

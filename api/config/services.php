@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Resources\config;
 
 use App\DataFixtures\UsersFixture;
+use App\Flysystem\GoogleCloudStorageFactory;
+use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
 
 
 return static function (ContainerConfigurator $configurator) {
@@ -21,6 +24,7 @@ return static function (ContainerConfigurator $configurator) {
     ;
 
     $services = $configurator->services();
+
     $services
         ->defaults()
         ->autowire()
@@ -52,43 +56,33 @@ return static function (ContainerConfigurator $configurator) {
         ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
 
     $services
+        ->set(GoogleCloudStorageFactory::class)
+        ->args([
+            '%env(json:GCLOUD_JSON)%',
+            '%env(GCLOUD_BUCKET)%'
+        ])
+    ;
+
+    $services
+        ->set(GoogleCloudStorageAdapter::class)
+        ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
+        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.bciontology.org/' ] ]);
+
+    // api_components.filesystem.gcloud is a service with a factory Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider
+    // we need to override this filesystem provider or have acb config options to pass configs into this provider
+    $services
         ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
 
-    // see: https://github.com/api-platform/core/issues/4975#issuecomment-1253617780
-    $services->set('api_platform.cache.metadata.property')
-        ->parent('cache.system')
-        ->tag('cache.pool')
-    ;
-    $services->set('api_platform.cache.metadata.resource')
-        ->parent('cache.system')
-        ->tag('cache.pool')
-    ;
-    $services->set('api_platform.cache.metadata.resource_collection')
-        ->parent('cache.system')
-        ->tag('cache.pool')
-    ;
-    $services->set('api_platform.cache.route_name_resolver')
-        ->parent('cache.system')
-        ->tag('cache.pool')
-    ;
-    $services->set('api_platform.cache.identifiers_extractor')
-        ->parent('cache.system')
-        ->tag('cache.pool')
-    ;
-    $services->set('api_platform.elasticsearch.cache.metadata.document')
-        ->parent('cache.system')
-        ->tag('cache.pool')
-    ;
 
 //    $services
 //        ->set(FlysystemCacheResolver::class)
 //        ->args([
-//            '$filesystem' => "@api_components.filesystem.local",
+//            '$filesystem' => "@api_components.filesystem.gcloud",
 //            '$rootUrl' => 'http://images.example.com',
-//            '$cachePrefix' => 'media/cache',
-//            '$visibility' => 'public'
+//            '$cachePrefix' => 'image_cache',
+//            '$visibility' => 'noPredefinedVisibility'
 //        ])
-//        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
+//        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud' ]);
 
 
     $envServicesFile = sprintf('services_%s.php', $configurator->env());

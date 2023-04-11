@@ -22,6 +22,8 @@ services:
       # TODO: Remove environment variable once recipe is added to recipes-contrib repository - exposes environment variable for flex PR endpoint
       SYMFONY_ENDPOINT: ~
       DATABASE_LOAD_FIXTURES: ${DATABASE_LOAD_FIXTURES:-false}
+#    env_file:
+#      - api/.env.local
     volumes:
       - ./api:/srv/api:rw,cached
       - ./api/var:/srv/api/var:rw,cached
@@ -48,7 +50,7 @@ services:
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.0.0.0/8 192.168.0.0/16 127.0.0.0/8 10.0.0.0/8}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
-      MERCURE_CORS_ORIGIN: '["https://localhost:3000", "https://localhost"]'
+      MERCURE_CORS_ORIGIN: 'https://localhost:3000'
       MERCURE_EXTRA_DIRECTIVES: |
         demo /srv/mercure-assets/
     restart: unless-stopped
@@ -136,14 +138,12 @@ services:
         protocol: tcp
 
   blackfire:
-    image: blackfire/blackfire:2
-    ports: ["8307"]
+    image: blackfire/blackfire
+    ports: ["8707"]
     environment:
       # Exposes BLACKFIRE_* environment variables from the host
       BLACKFIRE_SERVER_ID: ~
       BLACKFIRE_SERVER_TOKEN: ~
-      BLACKFIRE_CLIENT_ID: ~
-      BLACKFIRE_CLIENT_TOKEN: ~
       # BLACKFIRE_LOG_LEVEL: 4
   
   smtp-relay:

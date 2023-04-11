@@ -239,6 +239,16 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: database-ssl-key
+            - name: GCLOUD_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: gcloud-json
+            - name: GCLOUD_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: gcloud-bucket
             - name: ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -254,6 +264,7 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: admin-email
+
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket

@@ -25,7 +25,7 @@ class Image extends AbstractComponent
     use PublishableTrait;
     use UploadableTrait;
 
-    #[Silverback\UploadableField(adapter: 'local', imagineFilters: [])]
+    #[Silverback\UploadableField(adapter: 'gcloud', urlGenerator: 'public', imagineFilters: [])]
     #[Assert\File(maxSize: '5M')]
     public ?File $file = null;
 }

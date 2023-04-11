@@ -24,3 +24,4 @@ data:
   mailer-email: {{ .Values.php.mailer.email | quote }}
   database-load-fixtures: {{ .Values.php.databaseLoadFixtures | quote }}
   jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
+  gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
