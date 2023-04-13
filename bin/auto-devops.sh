@@ -376,6 +376,7 @@ deploy_api() {
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
   DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
   DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
+  GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
 
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
@@ -385,6 +386,9 @@ php:
     username: ${ADMIN_USERNAME:-"admin"}
     password: ${ADMIN_PASSWORD:-"admin"}
     email: ${ADMIN_EMAIL:-"hello@cwa.rocks"}
+  gcloud:
+    jsonKey: ${GCLOUD_JSON_B64:-"~"}
+    bucket: ${GCLOUD_BUCKET:-"~"}
   image:
     repository: ${PHP_REPOSITORY}
     tag: ${TAG}

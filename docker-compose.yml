@@ -151,6 +151,9 @@ services:
     restart: always
     ports:
       - "25:25"
+    environment:
+      RELAY_NETWORKS: ":10.0.0.0/8:127.0.0.0/8:172.22.0.0/12:192.0.0.0/8"
+
 
 volumes:
   php_socket:
