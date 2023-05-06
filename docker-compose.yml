@@ -99,26 +99,16 @@ services:
 
   # In production the pwa is deployed separately so we will not put behind caddy
   # We will use the caddy certs for localhost though in dev to serve over https
-  pwa:
+  app:
     build:
-      context: ./pwa
-      target: cwa_pwa
+      context: ./app
+      target: cwa_app
     restart: unless-stopped
     volumes:
-      - ./pwa:/usr/src/pwa:rw,cached
-      - caddy_certs:/certs:ro
-      - caddy_ca:/ca-certs
-    environment:
-      NODE_ENV: ~
-      LOCAL_TLS: ~
-      NODE_TLS_REJECT_UNAUTHORIZED: ~
-      # we have to allow the https port as axios module will change http to https
-      # so caddy must also accept this host with ssl
-      API_URL: ${API_URL:-https://caddy.local}
-      API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost:8443}
+      - ./app:/usr/src/app:rw,cached
     ports:
       - target: 3000
-        published: 443
+        published: 3000
         protocol: tcp
     links:
       - "caddy:caddy.local"

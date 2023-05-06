@@ -296,7 +296,7 @@ function get_replicas() {
 	fi
 }
 
-deploy_vercel_pwa() {
+deploy_vercel_app() {
 	if [[ -z "$VERCEL_ORG_ID" ]]; then
 	  echo 'You must define $VERCEL_ORG_ID to deploy to Vercel'
 		false
@@ -334,9 +334,8 @@ deploy_vercel_pwa() {
 	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
-	vercel ${PROD_FLAG} ${SCOPE} \
+	vercel app ${PROD_FLAG} ${SCOPE} \
 	  --token="$VERCEL_TOKEN" \
-		-A ./${VERCEL_CONFIG_PATH:-"vercel.json"} \
 		-e API_URL="${API_ENDPOINT}" \
 		-e API_URL_BROWSER="${API_ENDPOINT}" \
 		-e NODE_ENV="${NODE_ENV}" \
