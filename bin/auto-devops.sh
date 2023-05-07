@@ -386,8 +386,8 @@ php:
     password: ${ADMIN_PASSWORD:-"admin"}
     email: ${ADMIN_EMAIL:-"hello@cwa.rocks"}
   gcloud:
-    jsonKey: ${GCLOUD_JSON_B64:-"~"}
-    bucket: ${GCLOUD_BUCKET:-"~"}
+    jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
+    bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
   image:
     repository: ${PHP_REPOSITORY}
     tag: ${TAG}
