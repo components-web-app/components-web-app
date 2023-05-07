@@ -66,7 +66,7 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->set(GoogleCloudStorageAdapter::class)
         ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
-        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.bciontology.org/' ] ]);
+        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.silverbackwebapps.com/cwa' ] ]);
 
     // api_components.filesystem.gcloud is a service with a factory Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider
     // we need to override this filesystem provider or have acb config options to pass configs into this provider

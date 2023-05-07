@@ -42,8 +42,8 @@ php:
     #   cpu: 100m
     #   memory: 128Mi
   gcloud:
-    jsonKey: ~
-    bucket: ~
+    jsonKey: my-dummy-very-long-json-key-placeholder-value
+    bucket: bucket-name
   admin:
     username: ~
     password: ~
