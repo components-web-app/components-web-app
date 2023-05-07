@@ -6,12 +6,6 @@
 {
 	# Debug
 	{$DEBUG}
-	# HTTP/3 support
-	servers {
-		protocol {
-			experimental_http3
-		}
-	}
 	# Custom global directives
     {$GLOBAL_DIRECTIVES}
 }
