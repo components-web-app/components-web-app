@@ -95,7 +95,7 @@ behat tests:
 review pwa:
   stage: review
   script:
-    - deploy_vercel_pwa review
+    - deploy_vercel_app review
   environment:
     name: review/$CI_COMMIT_REF_NAME/pwa
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
@@ -144,7 +144,7 @@ review api:
 staging pwa:
   stage: staging
   script:
-    - deploy_vercel_pwa staging
+    - deploy_vercel_app staging
   environment:
     name: production/pwa
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
@@ -186,7 +186,7 @@ staging api:
 production pwa:
   stage: production
   script:
-    - deploy_vercel_pwa
+    - deploy_vercel_app
   environment:
     name: production/pwa
     url: https://$KUBE_INGRESS_BASE_DOMAIN
