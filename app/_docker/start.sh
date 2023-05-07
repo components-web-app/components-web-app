@@ -7,5 +7,5 @@ else
   apk update && apk add --no-cache libc6-compat
   corepack enable && corepack prepare pnpm@8.4.0 --activate
   pnpm install
-  pnpm dev
+  pnpm dev-ssl
 fi

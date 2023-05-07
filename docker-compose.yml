@@ -97,7 +97,7 @@ services:
     volumes:
       - ./api/_docker/varnish/conf/default.vcl:/tmp/varnish/conf/default.vcl:rw
 
-  # In production the pwa is deployed separately so we will not put behind caddy
+  # In production the pwa is deployed separately, so we will not put behind caddy
   # We will use the caddy certs for localhost though in dev to serve over https
   app:
     build:
@@ -106,6 +106,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./app:/usr/src/app:rw,cached
+      - caddy_certs:/certs:ro
+      #- caddy_ca:/ca-certs
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
     ports:
       - target: 3000
         published: 3000
