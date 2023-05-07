@@ -411,6 +411,7 @@ php:
     ca: "${DATABASE_CA_CERT_B64}"
     key: "${DATABASE_CLIENT_KEY_B64}"
     cert: "${DATABASE_CLIENT_CERT_B64}"
+    mode: "${DOCTRINE_SSL_MODE:-"prefer"}"
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure

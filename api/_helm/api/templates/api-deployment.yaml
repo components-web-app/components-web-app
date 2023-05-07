@@ -264,7 +264,12 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: admin-email
-
+            - name: DOCTRINE_SSL_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-mode
+              
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket

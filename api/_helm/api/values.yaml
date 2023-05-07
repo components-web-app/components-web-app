@@ -34,6 +34,7 @@ php:
     ca: ~
     key: ~
     cert: ~
+    mode: prefer
   resources:
     limits:
       memory: 256Mi

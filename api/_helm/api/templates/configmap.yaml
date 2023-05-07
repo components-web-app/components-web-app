@@ -25,3 +25,4 @@ data:
   database-load-fixtures: {{ .Values.php.databaseLoadFixtures | quote }}
   jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
+  database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
