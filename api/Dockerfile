@@ -21,6 +21,8 @@ ENV PATH="${PATH}:/root/.composer/vendor/bin"
 ARG APP_ENV=prod
 ENV DATABASE_LOAD_FIXTURES=false
 
+RUN apk add --no-cache openssh
+
 RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
 COPY _docker/php/conf.d $PHP_INI_DIR/conf.d/cwa/
 
