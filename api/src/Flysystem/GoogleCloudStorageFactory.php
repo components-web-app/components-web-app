@@ -14,7 +14,7 @@ class GoogleCloudStorageFactory
     public function __invoke(): GoogleCloudStorageAdapter
     {
         $clientOptions = [
-            'projectId' => $this->keyFile['project_id'],
+            'projectId' => $this->keyFile['project_id'] ?? null,
             'keyFile'   => $this->keyFile,
         ];
 
