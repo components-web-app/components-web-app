@@ -112,7 +112,7 @@ services:
       NODE_TLS_REJECT_UNAUTHORIZED: 0
     ports:
       - target: 3000
-        published: 3000
+        published: 443
         protocol: tcp
     links:
       - "caddy:caddy.local"
