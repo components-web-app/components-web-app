@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 RUN apk update && \
     apk add --no-cache libc6-compat
 RUN corepack enable && \
-    corepack prepare pnpm@8.4.0 --activate
+    corepack prepare pnpm@8.5.1 --activate
 
 # Files required by pnpm install
 COPY .npmrc package.json pnpm-*.yaml ./
@@ -32,6 +32,7 @@ COPY --from=cwa_app_builder /usr/src/app  .
 
 ENV HOST 0.0.0.0
 EXPOSE 3000
+EXPOSE 24678
 
 COPY _docker/start.sh /usr/local/bin/start
 RUN chmod +x /usr/local/bin/start

@@ -106,6 +106,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./app:/usr/src/app:rw,cached
+      - /app/node_modules
       - caddy_certs:/certs:ro
       #- caddy_ca:/ca-certs
     environment:
@@ -113,6 +114,9 @@ services:
     ports:
       - target: 3000
         published: 443
+        protocol: tcp
+      - target: 24678
+        published: 24678
         protocol: tcp
     links:
       - "caddy:caddy.local"
