@@ -50,7 +50,7 @@ services:
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.0.0.0/8 192.168.0.0/16 127.0.0.0/8 10.0.0.0/8}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
-      MERCURE_CORS_ORIGIN: 'https://localhost:3000'
+      MERCURE_CORS_ORIGIN: 'https://localhost'
       MERCURE_EXTRA_DIRECTIVES: |
         demo /srv/mercure-assets/
     restart: unless-stopped
@@ -106,11 +106,12 @@ services:
     restart: unless-stopped
     volumes:
       - ./app:/usr/src/app:rw,cached
-      - /app/node_modules
       - caddy_certs:/certs:ro
       #- caddy_ca:/ca-certs
     environment:
       NODE_TLS_REJECT_UNAUTHORIZED: 0
+      API_URL: ${API_URL:-https://caddy.local}
+      API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost:8443}
     ports:
       - target: 3000
         published: 443

@@ -1,5 +1,4 @@
 ARG NODE_VERSION=16
-ARG PNPM_VERSION=8.4.0
 
 FROM node:${NODE_VERSION}-alpine AS cwa_app_builder
 
@@ -20,8 +19,9 @@ RUN pnpm install
 
 COPY . .
 
-RUN pnpm build
+RUN pnpm run build
 
+# todo: container can be as small as possible - although really after the build everything is in .output so we should only need that folder and I'm not sure we need node deps anymore. Tree-shaken...
 RUN pnpm install --frozen-lockfile --prod
 
 FROM node:${NODE_VERSION}-alpine AS cwa_app

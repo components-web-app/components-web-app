@@ -1,20 +1,17 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
-import {fileURLToPath} from "url";
 
 const API_URL = process.env.API_URL || 'https://localhost:8443'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 
 export default defineNuxtConfig({
   extends: [
-    fileURLToPath(new URL('./node_modules/@cwa/nuxt3-next/dist/layer/nuxt.config.ts', import.meta.url))
+    './node_modules/@cwa/nuxt3-next/dist/layer'
   ],
   modules: [
     '@nuxtjs/tailwindcss',
-    '@kevinmarrec/nuxt-pwa',
     '@nuxt/image-edge',
-    '@nuxt/devtools',
-    'nuxt-vitest'
+    // '@nuxt/devtools'
   ],
   cwa: {
     apiUrl: API_URL,
@@ -31,5 +28,8 @@ export default defineNuxtConfig({
       ]
     }
   },
-  pwa: {}
+  pwa: {},
+  alias: {
+    'lodash/isEqual': 'lodash/isEqual.js'
+  }
 })

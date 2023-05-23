@@ -27,11 +27,11 @@
 </template>
 
 <script setup>
-import { useNuxtApp } from '#app'
+import { useCwa } from '#imports'
 import { Popover, PopoverGroup } from '@headlessui/vue'
-import { CwaAuthStatus } from '@cwa/nuxt3/runtime/api/auth'
+import { CwaAuthStatus } from '#cwa/runtime/api/auth'
 
-const { $cwa } = useNuxtApp()
+const $cwa = useCwa()
 
 async function signOut () {
   await $cwa.auth.signOut()
