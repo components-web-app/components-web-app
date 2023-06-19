@@ -1,13 +1,14 @@
 ARG NODE_VERSION=16
-
-FROM node:${NODE_VERSION}-alpine AS cwa_app_builder
+FROM node:${NODE_VERSION}-alpine AS cwa_app
 
 WORKDIR /usr/src/app
+
+ARG PNPM_VERSION=8.6.3
 
 RUN apk update && \
     apk add --no-cache libc6-compat
 RUN corepack enable && \
-    corepack prepare pnpm@8.5.1 --activate
+    corepack prepare pnpm@${PNPM_VERSION} --activate
 
 # Files required by pnpm install
 COPY .npmrc package.json pnpm-*.yaml ./
@@ -15,24 +16,17 @@ COPY .npmrc package.json pnpm-*.yaml ./
 # If you patched any package, include patches before install too
 #COPY patches patches
 
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
 RUN pnpm run build
 
-# todo: container can be as small as possible - although really after the build everything is in .output so we should only need that folder and I'm not sure we need node deps anymore. Tree-shaken...
-RUN pnpm install --frozen-lockfile --prod
-
-FROM node:${NODE_VERSION}-alpine AS cwa_app
-
-WORKDIR /usr/src/app
-
-COPY --from=cwa_app_builder /usr/src/app  .
-
 ENV HOST 0.0.0.0
 EXPOSE 3000
 EXPOSE 24678
+
+RUN find . ! -name '.output' -type f -exec rm -f {} +
 
 COPY _docker/start.sh /usr/local/bin/start
 RUN chmod +x /usr/local/bin/start

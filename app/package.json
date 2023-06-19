@@ -11,16 +11,17 @@
   },
   "dependencies": {
     "@headlessui/vue": "latest",
-    "@nuxt/devtools": "^0.5.3",
     "@nuxt/image-edge": "latest",
-    "@nuxtjs/tailwindcss": "^6.7.0",
+    "@nuxtjs/tailwindcss": "^6.7.2",
     "@tailwindcss/forms": "^0.5.3"
   },
   "devDependencies": {
-    "@cwa/nuxt3-next": "1.0.0-1684771198.7195d5c",
-    "@types/node": "^20.2.3",
-    "@vite-pwa/nuxt": "^0.0.9",
-    "postcss": "^8.4.23",
-    "tailwindcss": "^3.3.2"
+    "@cwa/nuxt3-next": "latest",
+    "@nuxt/devtools": "^0.6.1",
+    "@types/node": "^20.3.1",
+    "@vite-pwa/nuxt": "^0.1.0",
+    "postcss": "^8.4.24",
+    "tailwindcss": "^3.3.2",
+    "typescript": "^5.1.3"
   }
 }

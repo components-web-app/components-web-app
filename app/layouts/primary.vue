@@ -31,10 +31,8 @@ import { useCwa } from '#imports'
 import { Popover, PopoverGroup } from '@headlessui/vue'
 import { CwaAuthStatus } from '#cwa/runtime/api/auth'
 
-const $cwa = useCwa()
-
 async function signOut () {
-  await $cwa.auth.signOut()
+  await useCwa().auth.signOut()
 }
 </script>
 
