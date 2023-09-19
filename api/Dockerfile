@@ -4,13 +4,16 @@
 
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 
-ARG PHP_VERSION=8.1
+ARG PHP_VERSION=8.2
 ARG APCU_VERSION=5.1.19
 ARG VARNISH_VERSION=7.1
 ARG CADDY_VERSION=2
 
+FROM registry.gitlab.com/silverback-web-apps/cwa/docker/php:${PHP_VERSION}-fpm-alpine AS php_upstream
+FROM caddy:${CADDY_VERSION}-alpine AS caddy_upstream
+
 # "php" stage
-FROM registry.gitlab.com/silverback-web-apps/cwa/docker/php:${PHP_VERSION}-fpm-alpine AS cwa_php
+FROM php_upstream AS cwa_php
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -74,14 +77,21 @@ CMD ["php-fpm"]
 
 # "caddy" stage
 # depends on the "php" stage above
-FROM caddy:${CADDY_VERSION} AS cwa_caddy
+FROM caddy_upstream AS cwa_caddy
 
-WORKDIR /srv/api
+ARG TARGETARCH
 
-COPY --from=registry.gitlab.com/silverback-web-apps/cwa/docker/caddy-builder:mercure-vulcain /usr/bin/caddy /usr/bin/caddy
-COPY --from=cwa_php /srv/api/public public/
-COPY _docker/caddy/Caddyfile /etc/caddy/Caddyfile
-RUN caddy fmt /etc/caddy/Caddyfile --overwrite
+WORKDIR /srv/app
+
+# Download Caddy compiled with the Mercure and Vulcain modules
+ADD --chmod=500 https://caddyserver.com/api/download?os=linux&arch=$TARGETARCH&p=github.com/dunglas/mercure/caddy&p=github.com/dunglas/vulcain/caddy /usr/bin/caddy
+
+COPY --link _docker/caddy/Caddyfile /etc/caddy/Caddyfile
+HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://localhost:2019/metrics || exit 1
+#RUN caddy fmt /etc/caddy/Caddyfile --overwrite
+
+COPY --from=cwa_php --link /srv/api/public public/
+
 
 # "varnish" stage
 # does not depend on any of the above stages
