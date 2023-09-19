@@ -81,10 +81,10 @@ FROM caddy_upstream AS cwa_caddy
 
 ARG TARGETARCH
 
-WORKDIR /srv/app
+WORKDIR /srv/api
 
 # Download Caddy compiled with the Mercure and Vulcain modules
-ADD --chmod=500 https://caddyserver.com/api/download?os=linux&arch=$TARGETARCH&p=github.com/dunglas/mercure/caddy&p=github.com/dunglas/vulcain/caddy /usr/bin/caddy
+ADD --chmod=500 https://caddyserver.com/api/download?os=linux&arch=$TARGETARCH&p=github.com/dunglas/mercure/caddy&p=github.com/dunglas/vulcain/caddy&p=github.com/darkweak/souin/plugins/caddy /usr/bin/caddy
 
 COPY --link _docker/caddy/Caddyfile /etc/caddy/Caddyfile
 HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://localhost:2019/metrics || exit 1
