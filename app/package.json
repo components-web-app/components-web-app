@@ -16,7 +16,7 @@
     "@tailwindcss/forms": "^0.5.6"
   },
   "devDependencies": {
-    "@cwa/nuxt3-next": "latest",
+    "@cwa/nuxt3-next": "1.0.0-1695715305.9c44512",
     "@nuxt/devtools": "^0.8.3",
     "@types/node": "^20.6.2",
     "@vite-pwa/nuxt": "^0.1.1",

@@ -10,7 +10,7 @@ dependencies:
     version: 1.7.16(vue@3.3.4)
   '@nuxt/image-edge':
     specifier: latest
-    version: 1.0.0-rc.2-28252196.34e7c67(rollup@2.79.1)
+    version: 1.0.0-rc.2-28257829.3628546(rollup@2.79.1)
   '@nuxtjs/tailwindcss':
     specifier: ^6.8.0
     version: 6.8.0(rollup@2.79.1)(webpack@5.88.2)
@@ -20,8 +20,8 @@ dependencies:
 
 devDependencies:
   '@cwa/nuxt3-next':
-    specifier: latest
-    version: 1.0.0-1695154143.cc20cf8(@types/node@20.6.2)(rollup@2.79.1)(typescript@5.2.2)
+    specifier: 1.0.0-1695715305.9c44512
+    version: 1.0.0-1695715305.9c44512(@types/node@20.6.2)(rollup@2.79.1)(typescript@5.2.2)
   '@nuxt/devtools':
     specifier: ^0.8.3
     version: 0.8.3(nuxt@3.7.3)(rollup@2.79.1)(vite@4.4.9)
@@ -1304,8 +1304,8 @@ packages:
       postcss-selector-parser: 6.0.13
     dev: false
 
-  /@cwa/nuxt3-next@1.0.0-1695154143.cc20cf8(@types/node@20.6.2)(rollup@2.79.1)(typescript@5.2.2):
-    resolution: {integrity: sha512-M/GevK2XwR3nXWyb6v7xolkTYMUt3VX0b/Tz8rSkHVDXIH27VUPej+5VMQ0IwhFcUMtB4PcOAR8qSKyIE/70SA==}
+  /@cwa/nuxt3-next@1.0.0-1695715305.9c44512(@types/node@20.6.2)(rollup@2.79.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-Obaka6jw3D39QfqwC5ibHwRk1XivSgXI39TUmmiks2PUxAtmLu92fvqPSkeEz2B6Z2teRito4ztjOOv1lqCBgg==}
     dependencies:
       '@nuxtjs/color-mode': 3.3.0(rollup@2.79.1)
       '@pinia/nuxt': 0.4.11(rollup@2.79.1)(typescript@5.2.2)(vue@3.3.4)
@@ -2088,8 +2088,8 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@nuxt/image-edge@1.0.0-rc.2-28252196.34e7c67(rollup@2.79.1):
-    resolution: {integrity: sha512-EEnYyMMeGMWYw2MiRnhEzqheSMyFSOgyIDryw/Uzez0lM/eoUJUoAwXrZyeUBFGOlteWPYP3Jt01gbqHE7+rBQ==}
+  /@nuxt/image-edge@1.0.0-rc.2-28257829.3628546(rollup@2.79.1):
+    resolution: {integrity: sha512-iM18VbiVm+cKzgiNRJHSYiHh1MCWSXyTgbCU+jR3xPHo0vcUCn+yU5CX1nZbIL8HnfVyZjjDalOOsnJJ9Ubx3g==}
     engines: {node: ^14.16.0 || >=16.11.0}
     dependencies:
       '@nuxt/kit': 3.7.3(rollup@2.79.1)
@@ -3486,6 +3486,7 @@ packages:
 
   /b4a@1.6.4:
     resolution: {integrity: sha512-fpWrvyVHEKyeEvbKZTVOeZF3VSKKWtJxFIxX/jaVPf+cLbGUSitjb49pHLqPV2BUNNZ0LcoeEGfE/YCpyDYHIw==}
+    requiresBuild: true
 
   /babel-plugin-polyfill-corejs2@0.4.5(@babel/core@7.22.20):
     resolution: {integrity: sha512-19hwUH5FKl49JEsvyTcoHakh6BE0wgXLLptIyKZ3PijHc/Ci521wygORCUCCred+E/twuqRyAkE02BAWPmsHOg==}
@@ -4785,6 +4786,7 @@ packages:
 
   /fast-fifo@1.3.2:
     resolution: {integrity: sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==}
+    requiresBuild: true
 
   /fast-glob@3.3.1:
     resolution: {integrity: sha512-kNFPyjhh5cKjrUltxs+wFx+ZkbRaxxmZ+X0ZU31SOsxCEtP9VPgtq2teZw1DebupL5GmDaNQ6yKMMVcM41iqDg==}
@@ -7687,6 +7689,7 @@ packages:
 
   /queue-tick@1.0.1:
     resolution: {integrity: sha512-kJt5qhMxoszgU/62PLP1CJytzd2NKetjSRnyuj31fDd3Rlcz3fzlFdFLD1SItunPwyqEOkca6GbV612BWfaBag==}
+    requiresBuild: true
 
   /radix3@1.1.0:
     resolution: {integrity: sha512-pNsHDxbGORSvuSScqNJ+3Km6QAVqk8CfsCBIEoDgpqLrkD2f3QM4I7d1ozJJ172OmIcoUcerZaNWqtLkRXTV3A==}
@@ -8345,6 +8348,7 @@ packages:
 
   /streamx@2.15.1:
     resolution: {integrity: sha512-fQMzy2O/Q47rgwErk/eGeLu/roaFWV0jVsogDmrszM9uIw8L5OA+t+V93MgYlufNptfjmYR1tOMWhei/Eh7TQA==}
+    requiresBuild: true
     dependencies:
       fast-fifo: 1.3.2
       queue-tick: 1.0.1
