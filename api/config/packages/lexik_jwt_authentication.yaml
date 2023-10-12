@@ -9,6 +9,7 @@ lexik_jwt_authentication:
     api_component:
       lifetime: 604800 # 1 week
       samesite: '%env(JWT_COOKIE_SAMESITE)%'
+      domain: ~
   token_extractors:
     authorization_header:
       enabled: true
