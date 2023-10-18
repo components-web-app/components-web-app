@@ -20,6 +20,13 @@ class HomePageFixture extends AbstractPageFixture
         $manager->flush();
     }
 
+    private function addHtmlContent(array $ops, bool $published = true) {
+        $htmlContent = new HtmlContent();
+        $htmlContent->html = $this->lipsumContentProvider->generate($ops);
+        $htmlContent->setPublishedAt($published ? new DateTime() : null);
+        return $htmlContent;
+    }
+
     private function addHomePage(ObjectManager $manager, Layout $layout): void
     {
         $page = $this->createPage('home', 'PrimaryPageTemplate', $layout);
@@ -29,32 +36,35 @@ class HomePageFixture extends AbstractPageFixture
         $componentGroup = $this->createComponentGroup( 'primary', $page);
         $manager->persist($componentGroup);
 
-        $htmlContent = new HtmlContent();
-        $htmlContent->html = $this->lipsumContentProvider->generate([
+        $htmlContent = $this->addHtmlContent([
             '2',
             'short',
             'headers',
             'link',
         ]);
-        $htmlContent->setPublishedAt(new DateTime());
         $manager->persist($htmlContent);
         $position = $this->createComponentPosition($componentGroup, $htmlContent, 0);
         $manager->persist($position);
+
+        $htmlContentDraft = $this->addHtmlContent([
+            '1',
+            'medium'
+        ], false);
+        $htmlContentDraft->setPublishedResource($htmlContent);
+        $manager->persist($htmlContentDraft);
 
         $image = new Image();
         $manager->persist($image);
         $position = $this->createComponentPosition($componentGroup, $image, 1);
         $manager->persist($position);
 
-        $htmlContent = new HtmlContent();
-        $htmlContent->html = $this->lipsumContentProvider->generate([
+        $htmlContentBottom = $this->addHtmlContent([
             '1',
             'medium',
-            'link',
+            'link'
         ]);
-        $htmlContent->setPublishedAt(new DateTime());
-        $manager->persist($htmlContent);
-        $position = $this->createComponentPosition($componentGroup, $htmlContent, 2);
+        $manager->persist($htmlContentBottom);
+        $position = $this->createComponentPosition($componentGroup, $htmlContentBottom, 2);
         $manager->persist($position);
 
         $route = $this->createRoute('/', self::ROUTE_NAME, $page);

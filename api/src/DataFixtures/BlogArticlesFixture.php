@@ -5,9 +5,11 @@ namespace App\DataFixtures;
 use ApiPlatform\Api\IriConverterInterface;
 use App\Entity\BlogArticleData;
 use App\Entity\HtmlContent;
+use App\Entity\NavigationLink;
 use App\Lipsum\LipsumContentProvider;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
+use Silverback\ApiComponentsBundle\Entity\Core\ComponentGroup;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
 use Silverback\ApiComponentsBundle\Entity\Core\Route;
@@ -28,14 +30,24 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
     {
         $layout = $this->createLayout($manager, 'Main Layout', 'primary');
         $page = $this->addArticlePage($manager, $layout);
-        $this->addBlogArticles($manager, $page);
+
+        $layoutGroup = $layout->getComponentGroups()->first();
+        $navigationLink = new NavigationLink();
+        $navigationLink->label = 'Blog Template';
+        $navigationLink->rawPath = $this->iriConverter->getIriFromResource($page);
+        $navigationLink->setPublishedAt(new \DateTime());
+        $position = $this->createComponentPosition($layoutGroup, $navigationLink, 5);
+        $manager->persist($navigationLink);
+        $manager->persist($position);
+
+        $this->addBlogArticles($manager, $page, $layoutGroup);
 
         $manager->flush();
     }
 
-    private function addBlogArticles(ObjectManager $manager, Page $page): void
+    private function addBlogArticles(ObjectManager $manager, Page $page, ComponentGroup $layoutComponentGroup): void
     {
-        for($x=0; $x<80; $x++) {
+        for($x=0; $x<10; $x++) {
             $htmlContent = new HtmlContent();
             $htmlContent->html = sprintf('<p>Bonjour mon ami %d</p>', $x);
             $htmlContent->setPublishedAt(new \DateTime());
@@ -57,6 +69,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
             $route = $this->routeGenerator->create($articleData);
             $manager->persist($route);
         }
+        $this->addNavigationLink($manager, $layoutComponentGroup, 'Blog Article', null, null, 4, $route);
     }
 
     private function addArticlePage(ObjectManager $manager, Layout $layout): Page
@@ -64,12 +77,14 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         $page = $this->createPage('blog-template', 'PrimaryPageTemplate', $layout, true);
         $manager->persist($page);
 
+        $this->addReference('blog_template', $page);
+
         $componentGroup = $this->createComponentGroup('primary', $page);
         $manager->persist($componentGroup);
 
-//        $htmlContent = new HtmlContent();
-//        $htmlContent->html = sprintf('<p>Placeholder content for when editing a template. This component will be replaced by the property `htmlContent` in page data.</p>');
-//        $manager->persist($htmlContent);
+        $htmlContent = new HtmlContent();
+        $htmlContent->html = sprintf('<p>Placeholder content for when editing a template. This component will be replaced by the property `htmlContent` in page data.</p>');
+        $manager->persist($htmlContent);
 
         $position = $this->createComponentPosition($componentGroup, null, 0);
         $position->setPageDataProperty('htmlContent');

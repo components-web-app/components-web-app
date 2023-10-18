@@ -63,10 +63,12 @@ abstract class AbstractPageFixture extends Fixture
         return $layout;
     }
 
-    private function addNavigationLink(ObjectManager $manager, ComponentGroup $collection, string $label, string $path, string $routeName, int $sort = 0): void
+    protected function addNavigationLink(ObjectManager $manager, ComponentGroup $collection, string $label, ?string $path, ?string $routeName, int $sort = 0, ?Route $route = null): void
     {
-        $route = $this->createRoute($path, $routeName);
-        $manager->persist($route);
+        if (!$route) {
+            $route = $this->createRoute($path, $routeName);
+            $manager->persist($route);
+        }
 
         $navigationLink = new NavigationLink();
         $navigationLink->label = $label;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    Cwa Component for Form {{ props.iri }}
+    Cwa Component for Form {{ iri }}
     <CodeBlock>{{ resource }}</CodeBlock>
   </div>
 </template>

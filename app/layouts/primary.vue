@@ -1,7 +1,7 @@
 <template>
   <div v-if="$cwa.resources.layoutIri.value" class="relative">
-    <CwaUiProgressBar :show="showPageLoadBar" :percent="percent" class="page-progress-bar fixed left-0 top-0 z-50" />
-    <CwaUiSpinner :show="$cwa.resources.isLoading.value === true" class="absolute top-4 right-4 z-50" />
+    <CwaUtilsProgressBar :show="showPageLoadBar" :percent="percent" class="page-progress-bar fixed left-0 top-0 z-50" />
+    <CwaUtilsSpinner :show="$cwa.resources.isLoading.value === true" class="absolute top-4 right-4 z-50" />
     <header>
       <Popover class="relative bg-white">
         <div class="mx-auto flex max-w-7xl items-center p-6 justify-start space-x-10 lg:px-8">

@@ -1,6 +1,6 @@
 <template>
-  <div className="p-4">
-    <CwaComponentGroup reference="primary" :location="props.iri"/>
+  <div class="p-4">
+    <CwaComponentGroup reference="primary" :location="props.iri" />
   </div>
 </template>
 

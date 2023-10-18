@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20221116173257 extends AbstractMigration
+final class Version20231017180011 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -98,7 +98,7 @@ final class Version20221116173257 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_C53D045F3DA5256D ON image (image_id)');
         $this->addSql('COMMENT ON COLUMN image.id IS \'(DC2Type:uuid)\'');
         $this->addSql('COMMENT ON COLUMN image.image_id IS \'(DC2Type:uuid)\'');
-        $this->addSql('CREATE TABLE navigation_link (id UUID NOT NULL, route_id UUID DEFAULT NULL, navigation_link_id UUID DEFAULT NULL, label TEXT DEFAULT NULL, published_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE navigation_link (id UUID NOT NULL, route_id UUID DEFAULT NULL, navigation_link_id UUID DEFAULT NULL, label TEXT DEFAULT NULL, raw_path TEXT DEFAULT NULL, published_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE INDEX IDX_12C4C8334ECB4E6 ON navigation_link (route_id)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_12C4C83EB260C02 ON navigation_link (navigation_link_id)');
         $this->addSql('COMMENT ON COLUMN navigation_link.id IS \'(DC2Type:uuid)\'');
