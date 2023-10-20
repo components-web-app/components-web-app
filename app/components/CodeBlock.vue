@@ -1,3 +1,5 @@
 <template>
-  <pre class="text-xs max-h-60 overflow-auto border-2 p-4 mb-10"><slot /></pre>
+  <pre class="text-xs max-h-60 overflow-auto border-2 p-4 mb-10"><client-only><slot /></client-only></pre>
 </template>
+<script setup lang="ts">
+</script>

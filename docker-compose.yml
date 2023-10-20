@@ -50,7 +50,7 @@ services:
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.0.0.0/8 192.168.0.0/16 127.0.0.0/8 10.0.0.0/8}
       MERCURE_PUBLISHER_JWT_KEY: ${MERCURE_PUBLISHER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
       MERCURE_SUBSCRIBER_JWT_KEY: ${MERCURE_SUBSCRIBER_JWT_KEY:-my-key-that-must-be-at-least-256-bits}
-      MERCURE_CORS_ORIGIN: 'https://localhost'
+      MERCURE_CORS_ORIGIN: 'https://localhost https://localhost:3000'
       MERCURE_EXTRA_DIRECTIVES: |
         demo /srv/mercure-assets/
     restart: unless-stopped

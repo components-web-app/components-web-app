@@ -1,7 +1,6 @@
-import { fileURLToPath } from 'url'
+import {Config} from "tailwindcss";
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
     'cwa/**/*.{js,vue,ts}'
   ],
@@ -11,4 +10,4 @@ module.exports = {
   corePlugins: {
     preflight: false
   }
-}
+} as Config

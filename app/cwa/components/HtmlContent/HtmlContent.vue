@@ -3,18 +3,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useCwaResource, useHtmlContent } from '#imports'
-import { IriProp } from '#cwa/runtime/composables/cwa-resource'
+import { computed, ref, toRef } from 'vue'
+import { useCwaResource, useHtmlContent, IriProp } from '#imports'
 
 const props = defineProps<IriProp>()
-
-const { getResource, exposeMeta } = useCwaResource(props.iri)
+const { getResource, exposeMeta } = useCwaResource(toRef(props, 'iri'))
 const resource = getResource()
 defineExpose(exposeMeta)
 
 const htmlContainer = ref<null|HTMLElement>(null)
-const htmlContent = ref<string>(resource.value.data?.html || '<div></div>')
+const htmlContent = computed<string>(() => (resource.value.data?.html || '<div></div>'))
 useHtmlContent(htmlContainer)
 </script>
 
