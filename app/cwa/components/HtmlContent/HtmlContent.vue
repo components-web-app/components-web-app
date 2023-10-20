@@ -4,7 +4,8 @@
 
 <script setup lang="ts">
 import { computed, ref, toRef } from 'vue'
-import { useCwaResource, useHtmlContent, IriProp } from '#imports'
+import { useCwaResource, useHtmlContent } from '#imports'
+import { IriProp } from '#cwa/runtime/composables/cwa-resource'
 
 const props = defineProps<IriProp>()
 const { getResource, exposeMeta } = useCwaResource(toRef(props, 'iri'))
