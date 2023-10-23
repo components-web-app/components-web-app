@@ -347,7 +347,7 @@ deploy_vercel_app() {
 
 if [ "$track" != "stable" ] && [ -n "$VERCEL_PREVIEW_ALIAS" ]; then
 	echo "Setting up alias for preview domain"
-	vercel alias set "${VERCEL_DEPLOYED_URL}" "${VERCEL_PREVIEW_ALIAS}"
+	vercel alias --token="$VERCEL_TOKEN" set "${VERCEL_DEPLOYED_URL}" "${VERCEL_PREVIEW_ALIAS}"
 fi
 # if [[ "$track" == "stable" ]]; then
 #		echo "Removing old deployments with --safe flag ..."
