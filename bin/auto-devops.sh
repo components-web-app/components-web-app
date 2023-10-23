@@ -334,7 +334,7 @@ deploy_vercel_app() {
 	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
-	vercel app ${PROD_FLAG} ${SCOPE} \
+	VERCEL_DEPLOYED_URL=$(vercel app ${PROD_FLAG} ${SCOPE} \
 	  --token="$VERCEL_TOKEN" \
 		-e API_URL="${API_ENDPOINT}" \
 		-e API_URL_BROWSER="${API_ENDPOINT}" \
@@ -343,8 +343,12 @@ deploy_vercel_app() {
 		-b API_URL="${API_ENDPOINT}" \
 		-b API_URL_BROWSER="${API_ENDPOINT}" \
 		-b NODE_ENV="${NODE_ENV}" \
-		-b MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}"
+		-b MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}")
 
+if [ "$track" != "stable" ] && [ -n "$VERCEL_PREVIEW_ALIAS" ]; then
+	echo "Setting up alias for preview domain"
+	vercel alias --token="$VERCEL_TOKEN" set "${VERCEL_DEPLOYED_URL}" "${VERCEL_PREVIEW_ALIAS}"
+fi
 # if [[ "$track" == "stable" ]]; then
 #		echo "Removing old deployments with --safe flag ..."
 #		vercel remove --safe --yes --token="$VERCEL_TOKEN"
