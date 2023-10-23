@@ -1,0 +1,8 @@
+.nuxt
+_docker
+node_modules
+*.log
+README.md
+Dockerfile
+.vercel
+.pnpm-store
