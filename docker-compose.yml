@@ -107,6 +107,8 @@ services:
     volumes:
       - ./app:/usr/src/app:rw,cached
       - caddy_certs:/certs:ro
+      - /usr/src/app/.pnpm-store
+      - /usr/src/app/node_modules
       #- caddy_ca:/ca-certs
     environment:
       NODE_TLS_REJECT_UNAUTHORIZED: 0

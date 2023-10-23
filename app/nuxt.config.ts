@@ -11,10 +11,12 @@ export default defineNuxtConfig({
   modules: [
     '@cwa/nuxt3-next',
     '@nuxtjs/tailwindcss',
-    '@nuxt/image-edge',
-    '@vite-pwa/nuxt',
-    '@nuxt/devtools'
+    '@nuxt/image',
+    '@vite-pwa/nuxt'
   ],
+  devtools: {
+    enabled: true
+  },
   cwa: {
     apiUrl: API_URL,
     apiUrlBrowser: API_URL_BROWSER

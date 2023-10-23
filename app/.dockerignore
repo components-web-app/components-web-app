@@ -13,4 +13,5 @@
 .env*
 .nuxt
 node_modules
+.pnpm-store
 build
