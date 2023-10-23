@@ -346,7 +346,7 @@ deploy_vercel_app() {
 		-b MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}")
 
 if [ "$track" != "stable" ] && [ -n "$VERCEL_PREVIEW_ALIAS" ]; then
-	echo "Setting up alias for preview domain"
+	echo "Setting up alias for '${VERCEL_DEPLOYED_URL}' to custom preview domain '${VERCEL_PREVIEW_ALIAS}'"
 	vercel alias --token="$VERCEL_TOKEN" set "${VERCEL_DEPLOYED_URL}" "${VERCEL_PREVIEW_ALIAS}"
 fi
 # if [[ "$track" == "stable" ]]; then
