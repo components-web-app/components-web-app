@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@cwa/nuxt3-next':
-    specifier: latest
-    version: 1.0.0-1698089600.a21acac(@types/node@20.8.7)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0)
+    specifier: 1.0.0-1698325922.d753000
+    version: 1.0.0-1698325922.d753000(@types/node@20.8.7)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0)
   '@headlessui/vue':
     specifier: latest
     version: 1.7.16(vue@3.3.6)
@@ -1288,8 +1288,8 @@ packages:
       postcss-selector-parser: 6.0.13
     dev: false
 
-  /@cwa/nuxt3-next@1.0.0-1698089600.a21acac(@types/node@20.8.7)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0):
-    resolution: {integrity: sha512-DcLgCLGRaPJ7UoDa+ly9YlfPXu+BpR7SaYOmaEsp4IaizmveUSaZYk7x4AAdu1a0AVJ6WuPAIx3L/9RxrITaHw==}
+  /@cwa/nuxt3-next@1.0.0-1698325922.d753000(@types/node@20.8.7)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0):
+    resolution: {integrity: sha512-B1ei7dI7rx6PCK90PZfNNC9ZFw9FlKp2XK8M6WMkMeVsIufklOQO6Ivsxus62poRfqIRD89t1MfOfgMYT4PI1Q==}
     dependencies:
       '@nuxtjs/color-mode': 3.3.0(rollup@2.79.1)
       '@pinia/nuxt': 0.4.11(rollup@2.79.1)(typescript@5.2.2)(vue@3.3.6)
@@ -6199,6 +6199,7 @@ packages:
 
   /napi-wasm@1.1.0:
     resolution: {integrity: sha512-lHwIAJbmLSjF9VDRm9GoVOy9AGp3aIvkjv+Kvz9h16QR3uSVYH78PNQUnT2U4X53mhlnV2M7wrhibQ3GHicDmg==}
+    requiresBuild: true
 
   /negotiator@0.6.3:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
