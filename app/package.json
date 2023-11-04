@@ -10,7 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@cwa/nuxt3-next": "1.0.0-1698939684.1fe2c47",
+    "@cwa/nuxt3-next": "1.0.0-1699130555.6719a19",
     "@headlessui/vue": "latest",
     "@nuxt/image": "^1.0.0",
     "@nuxtjs/tailwindcss": "^6.9.0",

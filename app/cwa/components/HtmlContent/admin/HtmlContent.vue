@@ -6,13 +6,13 @@ const { exposeMeta, iri } = useCwaResourceManagerTab({
   name: 'HTML Content'
 })
 
-const resourceModel = useCwaResourceModel(iri, 'html')
+const resourceModel = useCwaResourceModel<string>(iri, 'html')
 
 defineExpose(exposeMeta)
 </script>
 
 <template>
   <div>
-    <input v-model="resourceModel.model.value" class="cwa-text-dark cwa-w-full">
+    <CwaUiFormInput v-model="resourceModel.model.value" />
   </div>
 </template>
