@@ -1,7 +1,7 @@
 <template>
   <div v-if="$cwa.resources.layoutIri.value" class="relative">
-    <CwaUtilsProgressBar :show="showPageLoadBar" :percent="percent" class="page-progress-bar fixed left-0 top-0 z-50" />
-    <CwaUtilsSpinner :show="$cwa.resources.isLoading.value" class="absolute top-4 right-4 z-50" />
+    <CwaUiProgressBar :show="showPageLoadBar" :percent="percent" class="page-progress-bar fixed left-0 top-0 z-50" />
+    <Spinner :show="$cwa.resources.isLoading.value" class="absolute top-4 right-4 z-50" />
     <header>
       <Popover class="relative bg-white">
         <div class="mx-auto flex max-w-7xl items-center p-6 justify-start space-x-10 lg:px-8">
@@ -32,6 +32,7 @@
 import { Popover, PopoverGroup } from '@headlessui/vue'
 import { computed } from 'vue'
 import { CwaAuthStatus } from '#cwa/runtime/api/auth'
+import Spinner from '#cwa/runtime/templates/components/utils/Spinner.vue'
 import { useCwa } from '#imports'
 
 const $cwa = useCwa()
