@@ -13,7 +13,7 @@
     "@cwa/nuxt3-next": "1.0.0-1699130555.6719a19",
     "@headlessui/vue": "latest",
     "@nuxt/image": "^1.0.0",
-    "@nuxtjs/tailwindcss": "^6.9.0",
+    "@nuxtjs/tailwindcss": "^6.9.4",
     "@tailwindcss/forms": "^0.5.6",
     "@vite-pwa/nuxt": "^0.1.1"
   },
