@@ -52,6 +52,10 @@ sub vcl_recv {
     return (synth(200, "OK"));
   }
 
+  if (req.http.Cache-Control ~ "(private|no-cache|no-store)" || req.http.Pragma == "no-cache") {
+    return (pass);
+  }
+
   if (req.esi_level > 0) {
     # ESI request should not be included in the profile.
     # Instead you should profile them separately, each one
