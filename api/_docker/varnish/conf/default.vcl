@@ -64,7 +64,9 @@ sub vcl_recv {
 
   unset req.http.x-cache;
   set req.http.grace = "none";
-  set req.http.Surrogate-Capability = "abc=ESI/1.0";
+
+  # Send Surrogate-Capability headers to announce ESI support to backend
+  set req.http.Surrogate-Capability = "key=ESI/1.0";
 
   if (req.restarts > 0) {
     set req.hash_always_miss = true;
@@ -156,9 +158,6 @@ sub vcl_recv {
     unset req.http.Cookie;
     return (hash);
   }
-
-  # Send Surrogate-Capability headers to announce ESI support to backend
-  set req.http.Surrogate-Capability = "key=ESI/1.0";
 
   if (req.http.Cookie) {
       set req.http.Cookie = ";" + req.http.Cookie;
