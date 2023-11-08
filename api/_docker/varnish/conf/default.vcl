@@ -318,13 +318,7 @@ sub vcl_deliver {
 }
 
 sub vcl_hash {
-  hash_data(req.url);
-
-  if (req.http.host) {
-    hash_data(req.http.host);
-  } else {
-    hash_data(server.ip);
-  }
+  call vcl_builtin_hash;
 
   if (req.http.Referer) {
     hash_data(req.http.Referer);
@@ -416,4 +410,46 @@ sub vcl_purge {
     set req.http.X-Purge = "Yes";
     return(restart);
   }
+}
+
+sub vcl_builtin_backend_response {
+	if (bereq.uncacheable) {
+		return (deliver);
+	}
+	call vcl_beresp_stale;
+	call vcl_beresp_cookie;
+	call vcl_beresp_control;
+	call vcl_beresp_vary;
+}
+
+sub vcl_beresp_stale {
+	if (beresp.ttl <= 0s) {
+		call vcl_beresp_hitmiss;
+	}
+}
+
+sub vcl_beresp_cookie {
+	if (beresp.http.Set-Cookie) {
+		call vcl_beresp_hitmiss;
+	}
+}
+
+sub vcl_beresp_control {
+	if (beresp.http.Surrogate-control ~ "(?i)no-store" ||
+	    (!beresp.http.Surrogate-Control &&
+	      beresp.http.Cache-Control ~ "(?i:no-cache|no-store|private)")) {
+		call vcl_beresp_hitmiss;
+	}
+}
+
+sub vcl_beresp_vary {
+	if (beresp.http.Vary == "*") {
+		call vcl_beresp_hitmiss;
+	}
+}
+
+sub vcl_beresp_hitmiss {
+	set beresp.ttl = 120s;
+	set beresp.uncacheable = true;
+	return (deliver);
 }
