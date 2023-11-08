@@ -349,6 +349,7 @@ sub vcl_hash {
 }
 
 sub vcl_backend_response {
+  call vcl_builtin_backend_response;
   # Called after the response headers has been successfully retrieved from the backend.
 
   # Pause ESI request and remove Surrogate-Control header
