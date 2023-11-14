@@ -18,7 +18,18 @@ export default defineNuxtConfig({
   },
   cwa: {
     apiUrl: API_URL,
-    apiUrlBrowser: API_URL_BROWSER
+    apiUrlBrowser: API_URL_BROWSER,
+    resources: {
+      NavigationLink: {
+        name: 'Link'
+      },
+      HtmlContent: {
+        name: 'Body Text'
+      }
+    },
+    tailwind: {
+      base: false
+    }
   },
   typescript: {
     tsConfig: {
