@@ -84,6 +84,8 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: mercure-cors-origin
+            - name: MERCURE_EXTRA_DIRECTIVES
+              value: ui
           ports:
             - name: http
               containerPort: 80
