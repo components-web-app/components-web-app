@@ -1,0 +1,147 @@
+<template>
+  <div v-if="editor">
+    <bubble-menu
+      class="bg-stone-700 text-stone-100 rounded overflow-hidden text-sm"
+      :tippy-options="{ duration: 150, animation: 'fade' }"
+      :editor="editor"
+      :update-delay="0"
+      @contextmenu.stop
+    >
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 1 })">
+        H1
+      </BubbleMenuButton>
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 2 })">
+        H2
+      </BubbleMenuButton>
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleBold', 'bold')">
+        Bold
+      </BubbleMenuButton>
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleItalic', 'italic')">
+        Italic
+      </BubbleMenuButton>
+    </bubble-menu>
+
+    <floating-menu
+      class="floating-menu bg-stone-200 text-stone-700 rounded overflow-hidden"
+      :tippy-options="{ duration: 150, animation: 'fade' }"
+      :editor="editor"
+      :update-delay="0"
+      @contextmenu.stop
+    >
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 1 })">
+        H1
+      </BubbleMenuButton>
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 2 })">
+        H2
+      </BubbleMenuButton>
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleBulletList', 'bulletList')">
+        Bullet List
+      </BubbleMenuButton>
+    </floating-menu>
+    <editor-content :editor="editor" />
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { StarterKit } from '@tiptap/starter-kit'
+import { Placeholder } from '@tiptap/extension-placeholder'
+import {
+  BubbleMenu,
+  useEditor,
+  EditorContent,
+  FloatingMenu
+} from '@tiptap/vue-3'
+import { computed, toRef, watch } from 'vue'
+import type { UnionCommands } from '@tiptap/core/src/types'
+import type { Editor } from '@tiptap/core'
+import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
+
+const props = defineProps<{
+  modelValue: string|null|undefined,
+  disabled?: boolean
+}>()
+
+const emit = defineEmits(['update:modelValue'])
+
+// reactive updating of the model
+const value = computed({
+  get () {
+    return props.modelValue
+  },
+  set (value) {
+    emit('update:modelValue', value)
+  }
+})
+
+// create the editor
+const editor = useEditor({
+  content: value.value,
+  extensions: [
+    StarterKit,
+    Placeholder.configure({
+      placeholder: 'Write something …',
+      emptyEditorClass: 'is-editor-empty text-inherit opacity-50'
+    })
+  ],
+  onUpdate: () => {
+    // HTML
+    value.value = editor.value?.isEmpty ? null : editor.value?.getHTML()
+
+    // JSON
+    // this.$emit('update:modelValue', this.editor.getJSON())
+  },
+  editable: !props.disabled
+})
+
+// match the editor value to the modelValue prop
+watch(value, () => {
+  if (!editor.value) {
+    return
+  }
+  // HTML
+  const isSame = editor.value.getHTML() === value.value
+
+  // JSON
+  // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
+  if (isSame) {
+    return
+  }
+
+  editor.value.commands.setContent(value.value || null, false)
+})
+
+// Toggle disabled prop and focus when enabled
+const disabledRef = toRef(props, 'disabled')
+watch(disabledRef, () => {
+  if (!editor.value) {
+    return
+  }
+  const editable = !disabledRef.value
+  editor.value.setEditable(editable)
+  if (editable) {
+    editor.value.chain().focus(null, { scrollIntoView: false }).run()
+  }
+})
+
+// Common menu item props
+const buttonBubbleMenuProps = computed(() => (call: UnionCommands, isActiveName: string, attributes?: {}) => {
+  return {
+    editor: editor.value as Editor,
+    editorFn: {
+      call,
+      attributes
+    },
+    isActiveName
+  }
+})
+
+defineExpose({
+  editor
+})
+</script>
+
+<style>
+.ProseMirror:focus {
+  outline: none;
+}
+</style>
