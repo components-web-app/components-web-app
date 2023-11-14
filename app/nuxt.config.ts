@@ -28,7 +28,7 @@ export default defineNuxtConfig({
       }
     },
     tailwind: {
-      base: false
+      base: true
     }
   },
   typescript: {
