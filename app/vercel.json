@@ -1,7 +1,8 @@
 {
   "functions": {
     "/": {
-      "maxDuration": 30 // First load from the API may take some time
+      "maxDuration": 30,
+      "memory": 256
     }
   }
 }
