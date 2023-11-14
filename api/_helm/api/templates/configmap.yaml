@@ -12,7 +12,7 @@ data:
   php-trusted-proxies: {{ join "," .Values.php.trustedProxies }}
   caddy-trusted-proxies: {{ join " " .Values.php.trustedProxies }}
   mercure-public-url: {{ .Values.mercure.publicUrl | default "http://127.0.0.1/.well-known/mercure" | quote }}
-  mercure-url: {{ .Values.mercure.url | quote }}
+  mercure-url: http://{{ include "cwa.fullname" . }}-caddy/.well-known/mercure
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | squote }}
