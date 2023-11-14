@@ -61,7 +61,7 @@ caddy-probe.local:80 {
 			# Cors origins
 			cors_origins {$MERCURE_CORS_ORIGIN:*}
 			# Extra directives
-			{$MERCURE_EXTRA_DIRECTIcVES}
+			{$MERCURE_EXTRA_DIRECTIVES}
 		}
 		vulcain @do_varnish_pass
 
