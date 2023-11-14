@@ -12,9 +12,10 @@ data:
   php-trusted-proxies: {{ join "," .Values.php.trustedProxies }}
   caddy-trusted-proxies: {{ join " " .Values.php.trustedProxies }}
   mercure-public-url: {{ .Values.mercure.publicUrl | default "http://127.0.0.1/.well-known/mercure" | quote }}
-  mercure-url: http://127.0.0.1/.well-known/mercure
+  mercure-url: {{ .Values.mercure.url | quote }}
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
+  php-mercure-jwt-algorithm: {{ .Values.php.mercure.jwt.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | squote }}
   varnish-url: http://{{ include "cwa.fullname" . }}-varnish
   varnish-upstream: {{ include "cwa.fullname" . }}-varnish

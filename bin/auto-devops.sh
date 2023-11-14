@@ -419,6 +419,7 @@ php:
     mode: "${DOCTRINE_SSL_MODE:-"prefer"}"
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
+  url: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
   jwtKey:
     subscriber:

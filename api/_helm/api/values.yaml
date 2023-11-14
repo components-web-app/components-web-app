@@ -25,6 +25,9 @@ php:
     public: ''
     passphrase: ''
     samesite: 'lax'
+  mercure:
+    jwt:
+      algorithm: 'hmac.sha256'
   blackfire:
     id: ''
     token: ''

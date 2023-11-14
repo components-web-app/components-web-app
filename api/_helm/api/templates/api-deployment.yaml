@@ -84,6 +84,7 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: mercure-cors-origin
+            # Todo: remove when we find out why php is not publishing updates to the hub
             - name: MERCURE_EXTRA_DIRECTIVES
               value: ui
           ports:
@@ -191,6 +192,11 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: mercure-publisher-jwt-key
+            - name: MERCURE_JWT_ALGORITHM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: php-mercure-jwt-algorithm
             - name: JWT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
