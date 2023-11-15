@@ -7,8 +7,8 @@ php:
     repository: registry.gitlab.com/silverback-web-apps/cwa/php
     tag: ~
     pullPolicy: IfNotPresent
-  env: dev
-  debug: '1'
+  env: prod
+  debug: '0'
   secret: ""
   corsAllowOrigin: "^https?://.*?\\.example\\.com$"
   trustedHosts: "^.*\\.example\\.com$"
