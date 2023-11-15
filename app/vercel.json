@@ -1,6 +1,6 @@
 {
   "functions": {
-    "/": {
+    "__nitro": {
       "maxDuration": 30,
       "memory": 256
     }
