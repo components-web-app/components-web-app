@@ -20,7 +20,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PATH="${PATH}:/root/.composer/vendor/bin"
 
 # build for production
-ARG APP_ENV=prod
+ARG APP_ENV=dev
 ENV DATABASE_LOAD_FIXTURES=false
 
 RUN apk add --no-cache openssh
@@ -31,13 +31,13 @@ COPY _docker/php/conf.d $PHP_INI_DIR/conf.d/cwa/
 # prevent the reinstallation of vendors at every changes in the source code
 COPY composer.* symfony.lock ./
 RUN set -eux; \
-	composer install --prefer-dist --no-dev --no-scripts --no-progress; \
+	composer install --prefer-dist --no-scripts --no-progress; \
 	composer clear-cache
 
 # do not use .env files in production
 COPY .env ./
-RUN composer dump-env prod; \
-	rm .env
+#RUN composer dump-env prod; \
+#	rm .env
 
 # copy only specifically what we need
 COPY bin bin/
@@ -49,8 +49,8 @@ COPY migrations migrations/
 
 RUN set -eux; \
 	mkdir -p var/cache var/log var/database; \
-	composer dump-autoload --classmap-authoritative --no-dev; \
-	composer run-script --no-dev post-install-cmd; \
+	composer dump-autoload --classmap-authoritative; \
+	composer run-script post-install-cmd; \
 	chmod +x bin/console; sync
 
 VOLUME /srv/api/var
