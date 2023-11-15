@@ -27,3 +27,4 @@ data:
   jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
+  caddy-global-directives: {{ .Values.caddy.globalDirectives | quote }}

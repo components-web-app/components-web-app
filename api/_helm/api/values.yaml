@@ -54,6 +54,7 @@ php:
     email: ~
 
 caddy:
+  globalDirectives: 'auto_https disable_redirects'
   image:
     repository: registry.gitlab.com/silverback-web-apps/cwa/caddy
     tag: ~

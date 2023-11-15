@@ -87,6 +87,12 @@ spec:
             # Todo: remove when we find out why php is not publishing updates to the hub
             - name: MERCURE_EXTRA_DIRECTIVES
               value: ui
+            - name: GLOBAL_DIRECTIVES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: caddy-global-directives
+              
           ports:
             - name: http
               containerPort: 80
