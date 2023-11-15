@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@cwa/nuxt3-next':
-    specifier: 1.0.0-1700076650.eaf47f5
-    version: 1.0.0-1700076650.eaf47f5(@types/node@20.9.0)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0)
+    specifier: 1.0.0-1700077973.c09871a
+    version: 1.0.0-1700077973.c09871a(@types/node@20.9.0)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0)
   '@headlessui/vue':
     specifier: latest
     version: 1.7.16(vue@3.3.8)
@@ -1314,8 +1314,8 @@ packages:
       postcss-selector-parser: 6.0.13
     dev: false
 
-  /@cwa/nuxt3-next@1.0.0-1700076650.eaf47f5(@types/node@20.9.0)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0):
-    resolution: {integrity: sha512-40Ky2pAiFppcQwUZlLbJgAp2zuHn4TEy6JSYG2PjBuH2XE4PJSbU5+aerVdcY/utY1BN6JPKPIhGyK+nv8DQrA==}
+  /@cwa/nuxt3-next@1.0.0-1700077973.c09871a(@types/node@20.9.0)(rollup@2.79.1)(typescript@5.2.2)(vite@4.5.0):
+    resolution: {integrity: sha512-vXH/B/SWWB0CoW+35YZZtNP60g88nFNPvzZLA4QxhnRHBy0ghgT+KZlqTDbxM4j7CfBj5gcXtuAm2ZucFOVf/w==}
     engines: {node: '>=20.0.0'}
     dependencies:
       '@nuxtjs/color-mode': 3.3.2(rollup@2.79.1)
