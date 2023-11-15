@@ -92,7 +92,7 @@ mercure:
       key: 'my-key-that-must-be-at-least-256-bits'
       algorithm: ~
   publicUrl: ~
-  url: https://example.com/.well-known/mercure
+  url: ~
   # need paid managed solution to enable this feature for replication
   autoscaling:
     enabled: false
