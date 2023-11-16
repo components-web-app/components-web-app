@@ -46,10 +46,9 @@ export default defineNuxtConfig({
   alias: {
     'lodash/isEqual.js': 'lodash/isEqual.js'
   },
-  nitro: {
-    prerender: {
-      routes: ['/']
-    }
+  routeRules: {
+    // '/': { prerender: true },
+    '/**': { isr: true }
   },
   pwa: {
     registerType: 'autoUpdate',
@@ -77,6 +76,7 @@ export default defineNuxtConfig({
       ]
     },
     workbox: {
+      navigateFallback: null,
       globPatterns: ['**/*.{js,css,html,png,svg,ico}']
     },
     client: {
@@ -86,10 +86,14 @@ export default defineNuxtConfig({
       // periodicSyncForUpdates: 20,
     },
     devOptions: {
-      enabled: false,
+      enabled: true,
       suppressWarnings: true,
       navigateFallbackAllowlist: [/^\/$/],
       type: 'module'
     }
   }
+  // typescript: {
+  //   typeCheck: true,
+  //   strict: true
+  // }
 })
