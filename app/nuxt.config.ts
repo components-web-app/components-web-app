@@ -5,6 +5,15 @@ const API_URL = process.env.API_URL || 'https://localhost:8443'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 
 export default defineNuxtConfig({
+  app: {
+    head: {
+      titleTemplate: '%s - CWA Demo',
+      charset: 'utf-8',
+      htmlAttrs: {
+        lang: 'en-GB'
+      }
+    }
+  },
   extends: [
     './node_modules/@cwa/nuxt3-next/dist/layer'
   ],
