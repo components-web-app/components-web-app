@@ -16,7 +16,7 @@ class BlogCollectionPageFixture extends AbstractPageFixture implements Dependent
 
     public function load(ObjectManager $manager): void
     {
-        $layout = $this->createLayout($manager, 'Main Layout', 'primary');
+        $layout = $this->createLayout($manager, 'Main Layout', 'CwaLayoutPrimary');
         $this->addBlogCollectionPage($manager, $layout);
 
         $manager->flush();

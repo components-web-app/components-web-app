@@ -28,7 +28,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 
     public function load(ObjectManager $manager): void
     {
-        $layout = $this->createLayout($manager, 'Main Layout', 'primary');
+        $layout = $this->createLayout($manager, 'Main Layout', 'CwaLayoutPrimary');
         $page = $this->addArticlePage($manager, $layout);
 
         $layoutGroup = $layout->getComponentGroups()->first();
