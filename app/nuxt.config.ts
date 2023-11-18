@@ -56,7 +56,7 @@ export default defineNuxtConfig({
     'lodash/isEqual.js': 'lodash/isEqual.js'
   },
   routeRules: {
-    // '/': { prerender: true },
+    '/': { prerender: true },
     '/**': { isr: 30 }
   },
   pwa: {
@@ -86,7 +86,7 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: null,
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}']
+      globPatterns: ['**/*.{js,mjs,ts,json,css,html,png,svg,ico,jpg,jpeg,webp}']
     },
     client: {
       // installPrompt: true,
