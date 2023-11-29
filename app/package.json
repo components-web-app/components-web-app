@@ -10,10 +10,10 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@cwa/nuxt3-next": "1.0.0-1700325617.551c012",
+    "@cwa/nuxt3-next": "1.0.0-1701255183.17082c9",
     "@headlessui/vue": "latest",
-    "@nuxt/image": "^1.0.0",
-    "@nuxtjs/tailwindcss": "^6.9.4",
+    "@nuxt/image": "^1.1.0",
+    "@nuxtjs/tailwindcss": "^6.10.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
     "@tiptap/extension-placeholder": "^2.1.12",
@@ -24,10 +24,10 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "^0.8.5",
-    "@types/node": "^20.9.0",
+    "@types/node": "^20.10.0",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
-    "typescript": "^5.2.2",
-    "vue-tsc": "^1.8.22"
+    "typescript": "^5.3.2",
+    "vue-tsc": "^1.8.24"
   }
 }
