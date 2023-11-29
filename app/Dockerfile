@@ -3,7 +3,7 @@ FROM node:${NODE_VERSION}-alpine AS cwa_app
 
 WORKDIR /usr/src/app
 
-ARG PNPM_VERSION=8.10.5
+ARG PNPM_VERSION=8.11.0
 
 RUN apk update && \
     apk add --no-cache libc6-compat

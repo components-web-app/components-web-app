@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@cwa/nuxt3-next':
-    specifier: 1.0.0-1701255183.17082c9
-    version: 1.0.0-1701255183.17082c9(@types/node@20.10.0)(rollup@2.79.1)(typescript@5.3.2)(vite@4.5.0)(vue-tsc@1.8.24)
+    specifier: 1.0.0-1701260541.6264d94
+    version: 1.0.0-1701260541.6264d94(@types/node@20.10.0)(rollup@2.79.1)(typescript@5.3.2)(vite@4.5.0)(vue-tsc@1.8.24)
   '@headlessui/vue':
     specifier: latest
     version: 1.7.16(vue@3.3.9)
@@ -1317,9 +1317,9 @@ packages:
       postcss-selector-parser: 6.0.13
     dev: false
 
-  /@cwa/nuxt3-next@1.0.0-1701255183.17082c9(@types/node@20.10.0)(rollup@2.79.1)(typescript@5.3.2)(vite@4.5.0)(vue-tsc@1.8.24):
-    resolution: {integrity: sha512-ijGe98EfmXvrafAW5LTpPWMj78idARA88NxRJtN7Y2kAERiATHHzhjtaVYolMzXTZB/2iqI8JgB/+/QrSw/qLQ==}
-    engines: {node: '>=20.0.0'}
+  /@cwa/nuxt3-next@1.0.0-1701260541.6264d94(@types/node@20.10.0)(rollup@2.79.1)(typescript@5.3.2)(vite@4.5.0)(vue-tsc@1.8.24):
+    resolution: {integrity: sha512-XmEo3HSfLPla2CsoSEzZ7vAOItgEPmdIuxwgwSNdzMU53ru/875tmRW71Eq5Ktaq10c/jT9EuTSIWSBE4nq6aQ==}
+    engines: {pnpm: '>=8.11.0'}
     dependencies:
       '@nuxtjs/color-mode': 3.3.2(rollup@2.79.1)
       '@pinia/nuxt': 0.4.11(rollup@2.79.1)(typescript@5.3.2)(vue@3.3.9)
