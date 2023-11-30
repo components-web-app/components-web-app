@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
+import escapeStringRegexp from "escape-string-regexp";
 
 const API_URL = process.env.API_URL || 'https://localhost:8443'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
@@ -56,8 +57,8 @@ export default defineNuxtConfig({
     'lodash/isEqual.js': 'lodash/isEqual.js'
   },
   routeRules: {
-    '/': { prerender: true },
-    '/**': { isr: 2 }
+    // '/': { prerender: true },
+    '/**': { isr: 300 }
   },
   pwa: {
     registerType: 'autoUpdate',
@@ -85,11 +86,41 @@ export default defineNuxtConfig({
       ]
     },
     workbox: {
-      navigateFallback: null,
-      globPatterns: ['**/*.{js,mjs,ts,json,css,html,png,svg,ico,jpg,jpeg,webp}']
+      // navigateFallback: '/',
+      globPatterns: ['**/*.{js,mjs,ts,json,css,html,png,svg,ico,jpg,jpeg,webp,woff2}'],
+      runtimeCaching: [
+        {
+          urlPattern: new RegExp(`^${escapeStringRegexp(API_URL_BROWSER)}\/.*`, 'i'),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'web-app-api',
+            expiration: {
+              maxEntries: 10000,
+              maxAgeSeconds: 60 * 60 * 24 * 30 // <== 30 days
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        },
+        // {
+        //   urlPattern: /^https:\/\/res.cloudinary\.com\/dxt7m8fqi\/image\/upload\/v1700228271\/.*/i,
+        //   handler: 'StaleWhileRevalidate',
+        //   options: {
+        //     cacheName: 'cloudinary-uploads',
+        //     expiration: {
+        //       maxEntries: 100,
+        //       maxAgeSeconds: 60 * 60 * 24 * 30 // <== 30 days
+        //     },
+        //     cacheableResponse: {
+        //       statuses: [0, 200]
+        //     }
+        //   }
+        // }
+      ]
     },
     client: {
-      // installPrompt: true,
+      installPrompt: true,
       // you don't need to include this: only for testing purposes
       // if enabling periodic sync for update use 1 hour or so (periodicSyncForUpdates: 3600)
       // periodicSyncForUpdates: 20,
@@ -97,7 +128,7 @@ export default defineNuxtConfig({
     devOptions: {
       enabled: true,
       suppressWarnings: true,
-      navigateFallbackAllowlist: [/^\/$/],
+      // navigateFallbackAllowlist: [/^\/$/],
       type: 'module'
     }
   }
