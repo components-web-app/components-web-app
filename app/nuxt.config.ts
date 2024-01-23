@@ -11,7 +11,11 @@ export default defineNuxtConfig({
       titleTemplate: '%s - CWA Demo',
       charset: 'utf-8',
       htmlAttrs: {
-        lang: 'en-GB'
+        lang: 'en-GB',
+        class: 'bg-blue-400'
+      },
+      bodyAttrs: {
+        class: 'bg-white'
       }
     }
   },
