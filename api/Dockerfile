@@ -79,26 +79,10 @@ WORKDIR /srv/api
 COPY --from=registry.gitlab.com/silverback-web-apps/cwa/docker/caddy-builder:mercure-vulcain /usr/bin/caddy /usr/bin/caddy
 COPY --from=cwa_php /srv/api/public public/
 COPY _docker/caddy/Caddyfile /etc/caddy/Caddyfile
-RUN caddy fmt /etc/caddy/Caddyfile
 
 # "varnish" stage
 # does not depend on any of the above stages
 FROM varnish:${VARNISH_VERSION} AS cwa_varnish
-
-#USER root
-#
-#RUN set -e; \
-#    apt-get update; \
-#    apt-get -y install gettext-base $VMOD_DEPS /pkgs/*.deb; \
-#    \
-## install one, possibly multiple vmods
-#   install-vmod https://github.com/varnish/varnish-modules/releases/download/0.20.0/varnish-modules-0.20.0.tar.gz; \
-#    \
-## clean up and set the user back to varnish
-#    apt-get -y purge --auto-remove $VMOD_DEPS varnish-dev; \
-#    rm -rf /var/lib/apt/lists/*
-#
-#USER varnish
 
 USER root
 RUN apt-get update; apt-get -y install gettext-base
