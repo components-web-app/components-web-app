@@ -37,7 +37,7 @@ php:
   resources:
     limits:
       memory: 256Mi
-      cpu: 100m
+      cpu: 80m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
@@ -58,7 +58,7 @@ caddy:
   resources:
     limits:
       memory: 64Mi
-      cpu: 100m
+      cpu: 80m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
@@ -113,7 +113,7 @@ postgresql:
     resources:
       limits:
         memory: 100Mi
-        cpu: 100m
+        cpu: 80m
       requests:
         memory: 50Mi
         cpu: 20m
@@ -121,7 +121,7 @@ postgresql:
     resources:
       limits:
         memory: 100Mi
-        cpu: 100m
+        cpu: 80m
       requests:
         memory: 50Mi
         cpu: 20m
@@ -157,7 +157,7 @@ blackfire:
   resources:
     limits:
       memory: 128Mi
-      cpu: 100m
+      cpu: 80m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
