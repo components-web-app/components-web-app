@@ -6,14 +6,11 @@
 {
 	# Debug
 	{$DEBUG}
-	# HTTP/3 support
-	servers {
-		protocol {
-			experimental_http3
-		}
-	}
 	# Custom global directives
     {$GLOBAL_DIRECTIVES}
+    servers {
+        trusted_proxies static {$TRUSTED_PROXIES}
+    }
 }
 
 caddy-probe.local:80 {
@@ -75,7 +72,6 @@ caddy-probe.local:80 {
 			health_interval 5s
 			health_timeout 20s
 			fail_duration 5s
-			trusted_proxies {$TRUSTED_PROXIES}
 			header_up X-Caddy-Forwarded 1
 		}
 
