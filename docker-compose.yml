@@ -7,8 +7,8 @@ services:
     build:
       context: ./api
       target: cwa_php
-    image: ${PHP_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/php}
     healthcheck:
+      test: ./_docker/php/docker-healthcheck.sh
       interval: 10s
       timeout: 3s
       retries: 3
@@ -38,7 +38,6 @@ services:
     build:
       context: api/
       target: cwa_caddy
-    image: ${CADDY_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/caddy}
     depends_on:
       - php
     environment:
@@ -80,7 +79,6 @@ services:
     build:
       context: ./api
       target: cwa_varnish
-    image: ${VARNISH_IMAGE:-registry.gitlab.com/silverback-web-apps/cwa/varnish}
     restart: unless-stopped
     depends_on:
       - caddy

@@ -4,7 +4,7 @@
 
 php:
   image:
-    repository: registry.gitlab.com/silverback-web-apps/cwa/php
+    repository: ~
     tag: ~
     pullPolicy: IfNotPresent
   env: prod
@@ -41,7 +41,7 @@ php:
   resources:
     limits:
       memory: 256Mi
-      cpu: 100m
+      cpu: 60m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
@@ -56,14 +56,14 @@ php:
 caddy:
   globalDirectives: ''
   image:
-    repository: registry.gitlab.com/silverback-web-apps/cwa/caddy
+    repository: ~
     tag: ~
     pullPolicy: IfNotPresent
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
   resources:
     limits:
       memory: 64Mi
-      cpu: 100m
+      cpu: 50m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
@@ -134,7 +134,7 @@ postgresql:
 varnish:
   enabled: true
   image:
-    repository: registry.gitlab.com/silverback-web-apps/cwa/varnish
+    repository: ~
     tag: latest
     pullPolicy: Always
   replicaCount: 1
