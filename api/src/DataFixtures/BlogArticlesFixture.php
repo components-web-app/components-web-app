@@ -32,13 +32,13 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         $page = $this->addArticlePage($manager, $layout);
 
         $layoutGroup = $layout->getComponentGroups()->first();
-        $navigationLink = new NavigationLink();
-        $navigationLink->label = 'Blog Template';
-        $navigationLink->rawPath = $this->iriConverter->getIriFromResource($page);
-        $navigationLink->setPublishedAt(new \DateTime());
-        $position = $this->createComponentPosition($layoutGroup, $navigationLink, 5);
-        $manager->persist($navigationLink);
-        $manager->persist($position);
+//        $navigationLink = new NavigationLink();
+//        $navigationLink->label = 'Blog Template';
+//        $navigationLink->rawPath = $this->iriConverter->getIriFromResource($page);
+//        $navigationLink->setPublishedAt(new \DateTime());
+//        $position = $this->createComponentPosition($layoutGroup, $navigationLink, 5);
+//        $manager->persist($navigationLink);
+//        $manager->persist($position);
 
         $this->addBlogArticles($manager, $page, $layoutGroup);
 

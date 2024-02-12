@@ -31,7 +31,7 @@ const resource = getResource()
 // HTML Content composable, converting anchors to nuxt link and link enable/disable with editable status
 const htmlContainer = ref<null|HTMLElement>(null)
 
-const htmlContent = computed<string>(() => resource.value.data?.html)
+const htmlContent = computed<string>(() => resource.value?.data?.html)
 useHtmlContent(htmlContainer)
 
 // This deals with the HTML editor

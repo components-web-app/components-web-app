@@ -12,6 +12,7 @@ import { useCwaResource } from '#imports'
 
 const props = defineProps<IriProp>()
 
-const cwaUtils = useCwaResource(toRef(props, 'iri'))
-const resource = cwaUtils.getResource()
+const { getResource, exposeMeta } = useCwaResource(toRef(props, 'iri'))
+const resource = getResource()
+defineExpose(exposeMeta)
 </script>
