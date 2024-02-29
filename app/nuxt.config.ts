@@ -1,9 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
 import escapeStringRegexp from "escape-string-regexp";
+import {createResolver} from "@nuxt/kit";
 
 const API_URL = process.env.API_URL || 'https://localhost:8443'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
+
+const { resolve } = createResolver(import.meta.url)
 
 export default defineNuxtConfig({
   app: {
@@ -141,6 +144,21 @@ export default defineNuxtConfig({
       suppressWarnings: true,
       // navigateFallbackAllowlist: [/^\/$/],
       type: 'module'
+    }
+  },
+  tailwindcss: {
+    config: {
+      content: [
+        resolve('nuxt.config.ts'),
+        resolve('cwa/**/*.{js,vue,ts}')
+      ],
+      plugins: [
+        require('@tailwindcss/forms'),
+        require('@tailwindcss/typography')
+      ],
+      corePlugins: {
+        preflight: false
+      }
     }
   }
   // typescript: {
