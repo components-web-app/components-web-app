@@ -1,9 +1,9 @@
-ARG NODE_VERSION=18
+ARG NODE_VERSION=21
 FROM node:${NODE_VERSION}-alpine AS cwa_app
 
 WORKDIR /usr/src/app
 
-ARG PNPM_VERSION=8.11.0
+ARG PNPM_VERSION=8.15.4
 
 RUN apk update && \
     apk add --no-cache libc6-compat

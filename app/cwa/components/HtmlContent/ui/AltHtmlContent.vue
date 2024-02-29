@@ -23,7 +23,7 @@ import { useCustomHtmlComponent } from '~/composables/useCustomHtmlComponent'
 // Setup the resource
 const props = defineProps<IriProp>()
 const iriRef = toRef(props, 'iri')
-const { getResource, exposeMeta, $cwa } = useCwaResource(iriRef)
+const { getResource, exposeMeta, $cwa } = useCwaResource(iriRef, { name: 'Alternative' })
 defineExpose(exposeMeta)
 
 const resource = getResource()

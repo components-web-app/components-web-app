@@ -20,7 +20,7 @@
         </div>
       </Popover>
     </header>
-    <div>
+    <div class="bg-inherit">
       <slot />
     </div>
     <div v-if="$cwa.resources.layoutIri.value">
