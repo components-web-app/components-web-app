@@ -63,7 +63,9 @@ export default defineNuxtConfig({
     }
   },
   alias: {
-    'lodash/isEqual.js': 'lodash/isEqual.js'
+    'lodash/isEqual.js': 'lodash/isEqual.js',
+    'lodash/isArray.js': 'lodash/isArray.js',
+    'lodash/mergeWith.js': 'lodash/mergeWith.js'
   },
   routeRules: {
     // '/': { prerender: true },
