@@ -8,7 +8,7 @@ const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 export default defineNuxtConfig({
   app: {
     head: {
-      titleTemplate: '%s - CWA Demo',
+      titleTemplate: '%s - CWA Preview',
       charset: 'utf-8',
       htmlAttrs: {
         lang: 'en-GB',
