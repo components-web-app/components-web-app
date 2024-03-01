@@ -214,6 +214,7 @@ set_namespace() {
 	# the user to create and delete specific namespaces
 	if [[ -z "$KUBE_NAMESPACE" ]]; then
     export KUBE_NAMESPACE="$CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG"
+    echo "KUBE_NAMESPACE not set. Defaulting to '$KUBE_NAMESPACE'"
   fi
 }
 
