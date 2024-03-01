@@ -5,9 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@cwa/nuxt3-next':
-    specifier: 1.0.0-1709212333.34c5694
-    version: 1.0.0-1709212333.34c5694(@types/node@20.11.23)(rollup@2.79.1)(typescript@5.3.3)(vite@4.5.2)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27)
+  '@cwa/nuxt-edge':
+    specifier: 1.0.0-28488376.7d6f31e
+    version: 1.0.0-28488376.7d6f31e(@types/node@20.11.23)(rollup@2.79.1)(typescript@5.3.3)(vite@4.5.2)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27)
   '@headlessui/vue':
     specifier: latest
     version: 1.7.19(vue@3.4.21)
@@ -1327,8 +1327,8 @@ packages:
       postcss: 8.4.35
     dev: false
 
-  /@cwa/nuxt3-next@1.0.0-1709212333.34c5694(@types/node@20.11.23)(rollup@2.79.1)(typescript@5.3.3)(vite@4.5.2)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27):
-    resolution: {integrity: sha512-ZCYRameOXrVCiGjqy5/b5/whb7qrHy2Gu/ZmjJ/iXIy69h3bkPD2nJSPfQLf6XFjXYD/zfSe9f70Tc8OnF743g==}
+  /@cwa/nuxt-edge@1.0.0-28488376.7d6f31e(@types/node@20.11.23)(rollup@2.79.1)(typescript@5.3.3)(vite@4.5.2)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27):
+    resolution: {integrity: sha512-I4y6Med3lm4t5m2f1/9UEcN4pj/snw3OhSZsYkcdtFYle1dw2S4WsDGjZAMOMXe4EMoWobgBaJEmA66fAw8jkg==}
     engines: {pnpm: '>=8.11.0'}
     dependencies:
       '@nuxtjs/color-mode': 3.3.2(rollup@2.79.1)
@@ -3908,7 +3908,7 @@ packages:
     dependencies:
       '@vueuse/shared': 7.7.1(vue@3.4.21)
       vue: 3.4.21(typescript@5.3.3)
-      vue-demi: 0.14.7(vue@3.4.21)
+      vue-demi: 0.13.11(vue@3.4.21)
     dev: false
 
   /@vueuse/metadata@10.9.0:
@@ -3936,7 +3936,7 @@ packages:
         optional: true
     dependencies:
       vue: 3.4.21(typescript@5.3.3)
-      vue-demi: 0.14.7(vue@3.4.21)
+      vue-demi: 0.13.11(vue@3.4.21)
     dev: false
 
   /abbrev@1.1.1:

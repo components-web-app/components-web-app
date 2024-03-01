@@ -23,10 +23,10 @@ export default defineNuxtConfig({
     }
   },
   extends: [
-    './node_modules/@cwa/nuxt3-next/dist/layer'
+    './node_modules/@cwa/nuxt-edge/dist/layer'
   ],
   modules: [
-    '@cwa/nuxt3-next',
+    '@cwa/nuxt-edge',
     '@nuxtjs/tailwindcss',
     '@nuxt/image',
     '@vite-pwa/nuxt'
