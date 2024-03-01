@@ -17,7 +17,7 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 2
+      maxSurge: 1
       maxUnavailable: 0
   selector:
     matchLabels:
@@ -103,9 +103,20 @@ spec:
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket
+          startupProbe:
+            failureThreshold: 20
+            periodSeconds: 3
+            httpGet:
+              path: /health-check
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: 'caddy-probe.local'
+                - name: X-Kubernetes-Liveness
+                  value: {{ $fullName }}
           livenessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 10
+            failureThreshold: 12
+            periodSeconds: 5
             httpGet:
               path: /health-check
               port: http
@@ -115,8 +126,8 @@ spec:
                 - name: X-Kubernetes-Liveness
                   value: {{ $fullName }}
           readinessProbe:
-            initialDelaySeconds: 60
-            periodSeconds: 10
+            failureThreshold: 2
+            periodSeconds: 5
             httpGet:
               path: /health-check
               port: http
@@ -287,21 +298,26 @@ spec:
           volumeMounts:
             - mountPath: /var/run/php
               name: php-socket
+          # check container started 20 * 5 second intervals
           startupProbe:
             exec:
               command:
                 - docker-healthcheck
-            failureThreshold: 40
-            periodSeconds: 3
+            failureThreshold: 20
+            periodSeconds: 5
+          # stop sending requests temp to the container if healthcheck fails
           readinessProbe:
             exec:
               command:
                 - docker-healthcheck
+            failureThreshold: 2
             periodSeconds: 5
+          # if the container is unresponsive 12 * 5 second intervals then restart
           livenessProbe:
             exec:
               command:
                 - docker-healthcheck
+            failureThreshold: 12
             periodSeconds: 5
           resources:
             {{- toYaml .Values.php.resources | nindent 12 }}
