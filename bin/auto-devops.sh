@@ -371,6 +371,7 @@ deploy_api() {
 
 	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
+  # WITH AUTO-SCALER NOW AND ENV CONFIGURED REPLICAS - THIS SEEMS REDUNDANT?
 	replicas=$(get_replicas "$track" "$percentage")
 
   if [[ -n "$HELM_UNINSTALL" ]]; then
@@ -412,12 +413,19 @@ php:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
   databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
-  replicaCount: ${PHP_REPLICA_COUNT:-"2"}
   databaseSSL:
     ca: "${DATABASE_CA_CERT_B64}"
     key: "${DATABASE_CLIENT_KEY_B64}"
     cert: "${DATABASE_CLIENT_CERT_B64}"
     mode: "${DOCTRINE_SSL_MODE:-"prefer"}"
+api:
+  replicaCount: ${API_REPLICA_COUNT:-"2"}
+  autoscaling:
+    enabled: ${API_AUTOSCALE:-"true"}
+    minReplicas: ${API_AUTOSCALE_MIN:-"2"}
+    maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
+    targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"80"}
+    targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"80"}
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
