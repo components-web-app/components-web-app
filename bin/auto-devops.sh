@@ -7,8 +7,8 @@ export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
 export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
-export KUBERNETES_VERSION=1.18.2
-export HELM_VERSION=3.4.1
+export KUBERNETES_VERSION=1.29.2
+export HELM_VERSION=3.14.3
 
 # Choose the branch for production deploy.
 if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
@@ -407,8 +407,10 @@ php:
     email: ${MAILER_EMAIL:-"~"}
   jwt:
     passphrase: "${JWT_PASSPHRASE:-"~"}"
-    algorithm: "${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}"
     samesite: "${JWT_COOKIE_SAMESITE:-"lax"}"
+  mercure:
+    jwt:
+      algorithm: "${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}"
   blackfire:
     id: "${BLACKFIRE_CLIENT_ID}"
     token: "${BLACKFIRE_CLIENT_TOKEN}"
