@@ -6,6 +6,7 @@ api_platform:
     paths: ['%kernel.project_dir%/src/Entity']
   formats:
     jsonld: ['application/ld+json']
+    multipart: ['multipart/form-data']
   docs_formats:
     jsonld: ['application/ld+json']
     json: ['application/json']
@@ -22,6 +23,7 @@ api_platform:
       enabled: true
       urls: ['%env(VARNISH_URL)%']
     public: true
+  use_symfony_listeners: true
   defaults:
     extra_properties:
       rfc_7807_compliant_errors: true
