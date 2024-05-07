@@ -469,6 +469,8 @@ annotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 postgresql:
+  image:
+    tag: ${DATABASE_IMAGE_TAG:-"14"}
   url: ${DATABASE_URL:-"~"}
   enabled: ${POSTGRESQL_ENABLED:-"true"}
   auth:
