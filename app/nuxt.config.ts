@@ -72,7 +72,7 @@ export default defineNuxtConfig({
   },
   routeRules: {
     // '/': { prerender: true },
-    '/**': { isr: 300 }
+    '/**': { isr: 30 }
   },
   pwa: {
     registerType: 'autoUpdate',
