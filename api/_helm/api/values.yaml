@@ -143,11 +143,11 @@ varnish:
     port: 80
   resources:
     limits:
-      memory: 80Mi
       cpu: 100m
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
 
 blackfire:
   replicaCount: 1
