@@ -443,6 +443,7 @@ caddy:
     tag: ${TAG}
     pullPolicy: Always
 varnish:
+  enabled: ${VARNISH_ENABLED:="true"}
   replicaCount: ${VARNISH_REPLICA_COUNT:-"1"}
   image:
     repository: ${VARNISH_REPOSITORY}
