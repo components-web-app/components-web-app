@@ -462,7 +462,7 @@ ingress:
       hosts:
         - ${DOMAIN:-"~"}
 blackfire:
-  enabled: ${BLACKFIRE_SERVER_ENABLED:-false}
+  enabled: ${BLACKFIRE_SERVER_ENABLED:-true}
   server:
     id: "${BLACKFIRE_SERVER_ID}"
     token: "${BLACKFIRE_SERVER_TOKEN}"

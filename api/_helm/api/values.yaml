@@ -40,11 +40,11 @@ php:
     mode: prefer
   resources:
     limits:
+      cpu: 100m
       memory: 512Mi
-      cpu: 120m
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 512Mi
   gcloud:
     jsonKey: my-dummy-very-long-json-key-placeholder-value
     bucket: bucket-name
@@ -62,11 +62,11 @@ caddy:
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
   resources:
     limits:
-      memory: 128Mi
       cpu: 100m
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
 
 # api deployment - both caddy and php containers
 api:
