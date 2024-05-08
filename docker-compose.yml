@@ -138,7 +138,7 @@ services:
 
   blackfire:
     image: blackfire/blackfire
-    ports: ["8707"]
+    ports: ["8307"]
     environment:
       # Exposes BLACKFIRE_* environment variables from the host
       BLACKFIRE_SERVER_ID: ~
