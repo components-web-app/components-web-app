@@ -66,14 +66,14 @@ caddy-probe.local:80 {
 		vulcain @do_varnish_pass
 
 		# do the cache pass
-		#reverse_proxy @do_varnish_pass {
-		#	to {$VARNISH_UPSTREAM}
-		#	health_uri /healthz
-		#	health_interval 5s
-		#	health_timeout 20s
-		#	fail_duration 5s
-		#	header_up X-Caddy-Forwarded 1
-		#}
+		reverse_proxy @do_varnish_pass {
+			to {$VARNISH_UPSTREAM}
+			health_uri /healthz
+			health_interval 5s
+			health_timeout 20s
+			fail_duration 5s
+			header_up X-Caddy-Forwarded 1
+		}
 
         # if ssr request using "caddy.local" php needs to know browser name for headers for docs.json etc.
 		request_header @internal host {$BROWSER_SERVER_NAME}
