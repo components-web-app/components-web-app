@@ -40,8 +40,8 @@ php:
     mode: prefer
   resources:
     limits:
-      memory: 256Mi
-      cpu: 60m
+      memory: 512Mi
+      cpu: 120m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
@@ -62,8 +62,8 @@ caddy:
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
   resources:
     limits:
-      memory: 64Mi
-      cpu: 50m
+      memory: 128Mi
+      cpu: 100m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
@@ -151,7 +151,7 @@ varnish:
 
 blackfire:
   replicaCount: 1
-  enabled: false
+  enabled: true
   image:
     repository: blackfire/blackfire
     tag: latest
@@ -161,8 +161,8 @@ blackfire:
     token: ''
   resources:
     limits:
-      memory: 128Mi
-      cpu: 100m
+      memory: 64Mi
+      cpu: 50m
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
