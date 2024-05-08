@@ -37,7 +37,7 @@ spec:
           imagePullPolicy: {{ .Values.blackfire.image.pullPolicy }}
           ports:
             - name: agent
-              containerPort: 8707
+              containerPort: 8307
               protocol: TCP
           livenessProbe:
               tcpSocket:
