@@ -40,8 +40,8 @@ php:
     mode: prefer
   resources:
     limits:
-      cpu: 100m
-      memory: 512Mi
+      cpu: 150m
+      memory: 800Mi
     requests:
       cpu: 100m
       memory: 512Mi
