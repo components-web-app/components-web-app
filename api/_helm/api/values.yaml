@@ -62,10 +62,10 @@ caddy:
   # Mercure: You need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
   resources:
     limits:
-      cpu: 100m
+      cpu: 200m
       memory: 128Mi
     requests:
-      cpu: 100m
+      cpu: 200m
       memory: 128Mi
 
 # api deployment - both caddy and php containers
