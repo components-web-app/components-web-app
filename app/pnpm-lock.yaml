@@ -7,7 +7,7 @@ settings:
 dependencies:
   '@cwa/nuxt':
     specifier: npm:@cwa/nuxt-edge@latest
-    version: /@cwa/nuxt-edge@1.0.0-28604703.ad5b82d(@opentelemetry/api@1.8.0)(@types/node@20.12.12)(@unocss/reset@0.60.3)(floating-vue@5.2.2)(rollup@2.79.1)(typescript@5.4.5)(unocss@0.60.3)(vite@4.5.3)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27)
+    version: /@cwa/nuxt-edge@1.0.0-28605269.811d706(@opentelemetry/api@1.8.0)(@types/node@20.12.12)(@unocss/reset@0.60.3)(floating-vue@5.2.2)(rollup@2.79.1)(typescript@5.4.5)(unocss@0.60.3)(vite@4.5.3)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27)
   '@headlessui/vue':
     specifier: latest
     version: 1.7.22(vue@3.4.27)
@@ -1339,8 +1339,8 @@ packages:
       postcss-selector-parser: 6.0.16
     dev: false
 
-  /@cwa/nuxt-edge@1.0.0-28604703.ad5b82d(@opentelemetry/api@1.8.0)(@types/node@20.12.12)(@unocss/reset@0.60.3)(floating-vue@5.2.2)(rollup@2.79.1)(typescript@5.4.5)(unocss@0.60.3)(vite@4.5.3)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27):
-    resolution: {integrity: sha512-Widv1O9X3LnaJcwGz74omvsF1j7xoF+Z0MolCQiH20vWtkuKmw2SKV+fDAVIscxqR0Ow+JiLz2k849GtUS4j0g==}
+  /@cwa/nuxt-edge@1.0.0-28605269.811d706(@opentelemetry/api@1.8.0)(@types/node@20.12.12)(@unocss/reset@0.60.3)(floating-vue@5.2.2)(rollup@2.79.1)(typescript@5.4.5)(unocss@0.60.3)(vite@4.5.3)(vue-template-compiler@2.7.16)(vue-tsc@1.8.27):
+    resolution: {integrity: sha512-S+a7JNmFOhNnd4K8OVMLuABpl9hxAQ0YnHKsbwbvl7NYHA8IsOSct+dnSXjFAxoA3ydkS28277rQjnDInEoDUg==}
     engines: {pnpm: '>=8.11.0'}
     dependencies:
       '@nuxtjs/color-mode': 3.4.1(rollup@2.79.1)
@@ -2656,7 +2656,7 @@ packages:
     requiresBuild: true
     dependencies:
       is-glob: 4.0.3
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       napi-wasm: 1.1.0
     bundledDependencies:
       - napi-wasm
@@ -2692,7 +2692,7 @@ packages:
     dependencies:
       detect-libc: 1.0.3
       is-glob: 4.0.3
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       node-addon-api: 7.1.0
     optionalDependencies:
       '@parcel/watcher-android-arm64': 2.4.1
@@ -3715,7 +3715,7 @@ packages:
       estree-walker: 2.0.2
       glob: 7.2.3
       graceful-fs: 4.2.11
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       node-gyp-build: 4.8.1
       resolve-from: 5.0.0
     transitivePeerDependencies:
@@ -4366,8 +4366,8 @@ packages:
       possible-typed-array-names: 1.0.0
     dev: false
 
-  /axios@1.7.1:
-    resolution: {integrity: sha512-+LV37nQcd1EpFalkXksWNBiA17NZ5m5/WspmHGmZmdx1qBOg/VNq/c4eRJiA9VQQHBOs+N0ZhhdU10h2TyNK7Q==}
+  /axios@1.7.2:
+    resolution: {integrity: sha512-2A8QhOMrbomlDuiLeK9XibIBzuHeRcqqNOHp0Cyp5EoJ1IFDh+XZH3A6BkXtv0K4gFGCI0Y4BM7B1wOEi0Rmgw==}
     dependencies:
       follow-redirects: 1.15.6
       form-data: 4.0.0
@@ -4520,7 +4520,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001620
-      electron-to-chromium: 1.4.776
+      electron-to-chromium: 1.4.777
       node-releases: 2.0.14
       update-browserslist-db: 1.0.16(browserslist@4.23.0)
 
@@ -5296,8 +5296,8 @@ packages:
       jake: 10.9.1
     dev: false
 
-  /electron-to-chromium@1.4.776:
-    resolution: {integrity: sha512-s694bi3+gUzlliqxjPHpa9NRTlhzTgB34aan+pVKZmOTGy2xoZXl+8E1B8i5p5rtev3PKMK/H4asgNejC+YHNg==}
+  /electron-to-chromium@1.4.777:
+    resolution: {integrity: sha512-n02NCwLJ3wexLfK/yQeqfywCblZqLcXphzmid5e8yVPdtEcida7li0A5WQKghHNG0FeOMCzeFOzEbtAh5riXFw==}
 
   /emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -5619,7 +5619,7 @@ packages:
       '@nodelib/fs.walk': 1.2.8
       glob-parent: 5.1.2
       merge2: 1.4.1
-      micromatch: 4.0.5
+      micromatch: 4.0.6
 
   /fast-json-stable-stringify@2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
@@ -6929,12 +6929,12 @@ packages:
     engines: {node: '>= 0.6'}
     dev: false
 
-  /micromatch@4.0.5:
-    resolution: {integrity: sha512-DMy+ERcEW2q8Z2Po+WNXuw3c5YaUSFjAO5GsJqfEl7UjvtIuFKO6ZrKvcItdy98dwFI2N1tg3zNIdKaQT+aNdA==}
+  /micromatch@4.0.6:
+    resolution: {integrity: sha512-Y4Ypn3oujJYxJcMacVgcs92wofTHxp9FzfDpQON4msDefoC0lb3ETvQLOdLcbhSwU1bz8HrL/1sygfBIHudrkQ==}
     engines: {node: '>=8.6'}
     dependencies:
       braces: 3.0.3
-      picomatch: 2.3.1
+      picomatch: 4.0.2
 
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
@@ -7840,6 +7840,10 @@ packages:
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+
+  /picomatch@4.0.2:
+    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
+    engines: {node: '>=12'}
 
   /pify@2.3.0:
     resolution: {integrity: sha512-udgsAY+fTnvv7kI7aaxbqwWNb0AHiB0qBO89PZKPkoTmGOgdbrHDKD+0B2X4uTfJ/FT1R09r9gTsjUjNJotuog==}
@@ -9351,7 +9355,7 @@ packages:
       is-glob: 4.0.3
       jiti: 1.21.0
       lilconfig: 2.1.0
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       normalize-path: 3.0.0
       object-hash: 3.0.0
       picocolors: 1.0.1
@@ -10387,7 +10391,7 @@ packages:
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
-      axios: 1.7.1
+      axios: 1.7.2
       joi: 17.13.1
       lodash: 4.17.21
       minimist: 1.2.8
