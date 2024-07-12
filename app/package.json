@@ -13,7 +13,7 @@
     "@cwa/nuxt": "npm:@cwa/nuxt-edge@latest",
     "@headlessui/vue": "latest",
     "@nuxt/image": "^1.7.0",
-    "@nuxtjs/tailwindcss": "^6.12.0",
+    "@nuxtjs/tailwindcss": "^6.12.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.13",
     "@tiptap/extension-placeholder": "^2.4.0",
