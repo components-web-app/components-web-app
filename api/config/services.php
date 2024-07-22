@@ -62,17 +62,17 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
 
-    $services
-        ->set(FlysystemCacheResolver::class)
-        ->args([
-            '$filesystem' => new Reference("api_components.filesystem.gcloud"),
-            '$rootUrl' => '/uploads/',
-            '$cachePrefix' => 'cache',
-            '$visibility' => 'public'
-        ])
-        ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
-
     if ($configurator->env() !== 'prod') {
+        $services
+            ->set(FlysystemCacheResolver::class)
+            ->args([
+                '$filesystem' => new Reference("api_components.filesystem.gcloud"),
+                '$rootUrl' => '/uploads/',
+                '$cachePrefix' => 'cache',
+                '$visibility' => 'public'
+            ])
+            ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
+
         $services
             ->set(LocalFilesystemAdapter::class)
             ->args(
@@ -92,7 +92,16 @@ return static function (ContainerConfigurator $configurator) {
         $services
             ->set(GoogleCloudStorageAdapter::class)
             ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
-            ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.silverbackwebapps.com/cwa' ] ]);
+            ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.cwa.rocks/', 'prefix' => '_preview' ] ]);
+        $services
+            ->set(FlysystemCacheResolver::class)
+            ->args([
+                '$filesystem' => new Reference("api_components.filesystem.gcloud"),
+                '$rootUrl' => 'https://cdn.cwa.rocks/',
+                '$cachePrefix' => 'cache',
+                '$visibility' => 'public'
+            ])
+            ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
     }
 
 
