@@ -60,6 +60,8 @@ services:
       - caddy_certs:/data/caddy/certificates/local
       - caddy_ca:/usr/local/share/ca-certificates
       - ./api/_docker/caddy/Caddyfile:/etc/caddy/Caddyfile:rw
+      # added this volume binding as the dockerfile link does not appear to work in compose, hopefully will be OK in production - this note is to remind me this is a fix for dev
+      - ./api/public:/srv/api/public:rw,cached
     ports:
       # HTTP
       - target: 80

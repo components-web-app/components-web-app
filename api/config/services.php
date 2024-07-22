@@ -9,8 +9,10 @@ use App\Flysystem\GoogleCloudStorageFactory;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
+use Silverback\ApiComponentsBundle\Imagine\FlysystemCacheResolver;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
+use Symfony\Component\DependencyInjection\Reference;
 
 
 return static function (ContainerConfigurator $configurator) {
@@ -55,34 +57,43 @@ return static function (ContainerConfigurator $configurator) {
         ])
         ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
 
-    $services
-        ->set(GoogleCloudStorageFactory::class)
-        ->args([
-            '%env(json:GCLOUD_JSON)%',
-            '%env(GCLOUD_BUCKET)%'
-        ])
-    ;
-
-    $services
-        ->set(GoogleCloudStorageAdapter::class)
-        ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
-        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.silverbackwebapps.com/cwa' ] ]);
-
     // api_components.filesystem.gcloud is a service with a factory Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider
     // we need to override this filesystem provider or have acb config options to pass configs into this provider
     $services
         ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
 
+    $services
+        ->set(FlysystemCacheResolver::class)
+        ->args([
+            '$filesystem' => new Reference("api_components.filesystem.gcloud"),
+            '$rootUrl' => '/uploads/',
+            '$cachePrefix' => 'cache',
+            '$visibility' => 'public'
+        ])
+        ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
 
-//    $services
-//        ->set(FlysystemCacheResolver::class)
-//        ->args([
-//            '$filesystem' => "@api_components.filesystem.gcloud",
-//            '$rootUrl' => 'http://images.example.com',
-//            '$cachePrefix' => 'image_cache',
-//            '$visibility' => 'noPredefinedVisibility'
-//        ])
-//        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud' ]);
+    if ($configurator->env() !== 'prod') {
+        $services
+            ->set(LocalFilesystemAdapter::class)
+            ->args(
+                [
+                    '%kernel.project_dir%/public/uploads',
+                ]
+            )
+            ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, ['alias' => 'gcloud']);
+    } else {
+        $services
+            ->set(GoogleCloudStorageFactory::class)
+            ->args([
+                '%env(json:GCLOUD_JSON)%',
+                '%env(GCLOUD_BUCKET)%'
+            ])
+        ;
+        $services
+            ->set(GoogleCloudStorageAdapter::class)
+            ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
+            ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => 'https://cdn.silverbackwebapps.com/cwa' ] ]);
+    }
 
 
     $envServicesFile = sprintf('services_%s.php', $configurator->env());
