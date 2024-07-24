@@ -24,11 +24,11 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "^0.8.5",
-    "@types/node": "^20.14.11",
+    "@types/node": "^20.14.12",
     "escape-string-regexp": "^5.0.0",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
-    "typescript": "^5.5.3",
+    "typescript": "^5.5.4",
     "vue-tsc": "^1.8.27"
   }
 }
