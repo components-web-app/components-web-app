@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <VitePwaManifest />
-    <CwaUiProgressBar :show="showPageLoadBar" :percent="percent" class="page-progress-bar fixed left-0 top-0 z-50" />
+    <CwaUiProgressBar :show="showPageLoadBar" :percent="percent" class="page-progress-bar fixed left-0 top-0 z-[200]" />
     <Spinner :show="$cwa.resources.isLoading.value" class="absolute top-4 right-4 z-50" />
     <header v-if="$cwa.resources.layoutIri.value">
       <Popover class="relative">
