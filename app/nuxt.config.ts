@@ -32,6 +32,7 @@ export default defineNuxtConfig({
     enabled: true
   },
   cwa: {
+    appName: 'CWA Preview Web App',
     apiUrl: API_URL,
     apiUrlBrowser: API_URL_BROWSER,
     resources: {
