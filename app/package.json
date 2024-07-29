@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "^0.8.5",
-    "@types/node": "^20.14.12",
+    "@types/node": "^20.14.13",
     "escape-string-regexp": "^5.0.0",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.7",
