@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@cwa/nuxt':
         specifier: npm:@cwa/nuxt-edge@latest
-        version: '@cwa/nuxt-edge@1.0.0-28710167.f35ee48(@parcel/watcher@2.4.1)(@types/node@20.14.14)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.19.2)(terser@5.31.3)(typescript@5.5.4)(vite@5.3.5(@types/node@20.14.14)(terser@5.31.3))(vue-template-compiler@2.7.16)(vue-tsc@1.8.27(typescript@5.5.4))'
+        version: '@cwa/nuxt-edge@1.0.0-28710354.0ab002f(@parcel/watcher@2.4.1)(@types/node@20.14.14)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.19.2)(terser@5.31.3)(typescript@5.5.4)(vite@5.3.5(@types/node@20.14.14)(terser@5.31.3))(vue-template-compiler@2.7.16)(vue-tsc@1.8.27(typescript@5.5.4))'
       '@headlessui/vue':
         specifier: latest
         version: 1.7.22(vue@3.4.35(typescript@5.5.4))
@@ -709,8 +709,8 @@ packages:
     peerDependencies:
       postcss-selector-parser: ^6.0.13
 
-  '@cwa/nuxt-edge@1.0.0-28710167.f35ee48':
-    resolution: {integrity: sha512-hm0mKj2mrY4ycr7di6yMHT10Dlm9sORNVzEgJCQarc+yYBfzezuZgE7PFr7Rv1CqU10xk8nF7NlWU8/eWGdQuA==}
+  '@cwa/nuxt-edge@1.0.0-28710354.0ab002f':
+    resolution: {integrity: sha512-gHmxGFJRjAUaoj1e4jh47oHYb5o/7+blF7RYIUF7z07l6DDFvUSzTEsZCQSvl4HmjnNFC+aRwYz8qfpdTR7uLQ==}
     engines: {pnpm: '>=8.11.0'}
 
   '@esbuild/aix-ppc64@0.20.2':
@@ -6396,7 +6396,7 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.1.1
 
-  '@cwa/nuxt-edge@1.0.0-28710167.f35ee48(@parcel/watcher@2.4.1)(@types/node@20.14.14)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.19.2)(terser@5.31.3)(typescript@5.5.4)(vite@5.3.5(@types/node@20.14.14)(terser@5.31.3))(vue-template-compiler@2.7.16)(vue-tsc@1.8.27(typescript@5.5.4))':
+  '@cwa/nuxt-edge@1.0.0-28710354.0ab002f(@parcel/watcher@2.4.1)(@types/node@20.14.14)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.19.2)(terser@5.31.3)(typescript@5.5.4)(vite@5.3.5(@types/node@20.14.14)(terser@5.31.3))(vue-template-compiler@2.7.16)(vue-tsc@1.8.27(typescript@5.5.4))':
     dependencies:
       '@nuxtjs/color-mode': 3.4.2(magicast@0.3.4)(rollup@4.19.2)
       '@pinia/nuxt': 0.4.11(magicast@0.3.4)(rollup@4.19.2)(typescript@5.5.4)(vue@3.4.35(typescript@5.5.4))
