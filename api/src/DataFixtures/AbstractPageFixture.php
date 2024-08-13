@@ -48,7 +48,8 @@ abstract class AbstractPageFixture extends Fixture
         $layout->reference = $reference;
         $layout->uiComponent = $uiComponent;
         $this->timestampedDataPersister->persistTimestampedFields($layout, true);
-
+        $manager->persist($layout);
+        $manager->flush();
         $componentGroupTop = $this->createComponentGroup( 'top', null, $layout);
         $componentGroupTop->addAllowedComponent($this->iriConverter->getIriFromResource(NavigationLink::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(NavigationLink::class)));
 
@@ -56,7 +57,6 @@ abstract class AbstractPageFixture extends Fixture
         $this->addNavigationLink($manager, $componentGroupTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);
         $this->addNavigationLink($manager, $componentGroupTop, 'Form', '/form', FormPageFixture::ROUTE_NAME, 3);
 
-        $manager->persist($layout);
         $manager->persist($componentGroupTop);
 
         $this->addReference($fixtureRef, $layout);
@@ -106,10 +106,10 @@ abstract class AbstractPageFixture extends Fixture
     {
         $ref = $reference;
         if ($page) {
-            $ref .= '_' . $page->reference;
+            $ref .= '_' . $this->iriConverter->getIriFromResource($page);
         }
         if ($layout) {
-            $ref .= '_' . $layout->reference;
+            $ref .= '_' . $this->iriConverter->getIriFromResource($layout);
         }
         $fixtureRef = ComponentGroup::class . '_' . $ref;
         if ($this->hasReference($fixtureRef)) {
