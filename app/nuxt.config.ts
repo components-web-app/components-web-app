@@ -48,6 +48,22 @@ export default defineNuxtConfig({
         instantAdd: true
       }
     },
+    layouts: {
+      Primary: {
+        name: 'Primary Layout',
+        classes: {
+          'Blue Background': ['bg-blue-600']
+        }
+      }
+    },
+    pages: {
+      PrimaryPageTemplate: {
+        name: 'Primary Page',
+        classes: {
+          'Big Text': ['text-2xl']
+        }
+      }
+    },
     tailwind: {
       base: true
     }
