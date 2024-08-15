@@ -16,10 +16,10 @@
     "@nuxtjs/tailwindcss": "^6.12.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.14",
-    "@tiptap/extension-placeholder": "^2.6.3",
-    "@tiptap/pm": "^2.6.3",
-    "@tiptap/starter-kit": "^2.6.3",
-    "@tiptap/vue-3": "^2.6.3",
+    "@tiptap/extension-placeholder": "^2.6.4",
+    "@tiptap/pm": "^2.6.4",
+    "@tiptap/starter-kit": "^2.6.4",
+    "@tiptap/vue-3": "^2.6.4",
     "@vite-pwa/nuxt": "^0.2.3"
   },
   "devDependencies": {

@@ -29,7 +29,7 @@ class NavigationLink extends AbstractComponent
     public ?string $label = null;
 
     #[ORM\ManyToOne(targetEntity: Route::class)]
-    #[ORM\JoinColumn(nullable: true)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     public ?Route $route = null;
 
     #[ORM\Column(type: 'text', nullable: true)]

@@ -144,53 +144,5 @@ final class Version20231017180011 extends AbstractMigration
     }
 
     public function down(Schema $schema): void
-    {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE _acb_abstract_component_component_group DROP CONSTRAINT FK_8217637E71C016CE');
-        $this->addSql('ALTER TABLE _acb_abstract_component_component_group DROP CONSTRAINT FK_8217637EBC564DAA');
-        $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F734ECB4E6');
-        $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F7AB211837');
-        $this->addSql('ALTER TABLE _acb_abstract_page_data DROP CONSTRAINT FK_2D7554F7C4663E4');
-        $this->addSql('ALTER TABLE _acb_collection DROP CONSTRAINT FK_9FC12AB6BF396750');
-        $this->addSql('ALTER TABLE _acb_component_position DROP CONSTRAINT FK_D6FC2796BC564DAA');
-        $this->addSql('ALTER TABLE _acb_component_position DROP CONSTRAINT FK_D6FC2796E2ABAFFF');
-        $this->addSql('ALTER TABLE _acb_form DROP CONSTRAINT FK_614EB84CBF396750');
-        $this->addSql('ALTER TABLE _acb_layout_component_group DROP CONSTRAINT FK_5AAA48748C22AA1A');
-        $this->addSql('ALTER TABLE _acb_layout_component_group DROP CONSTRAINT FK_5AAA4874BC564DAA');
-        $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF323AB211837');
-        $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF32334ECB4E6');
-        $this->addSql('ALTER TABLE _acb_page DROP CONSTRAINT FK_27CCF3238C22AA1A');
-        $this->addSql('ALTER TABLE _acb_page_component_group DROP CONSTRAINT FK_9E7E5D75C4663E4');
-        $this->addSql('ALTER TABLE _acb_page_component_group DROP CONSTRAINT FK_9E7E5D75BC564DAA');
-        $this->addSql('ALTER TABLE _acb_route DROP CONSTRAINT FK_9BFEB786C30C9E2B');
-        $this->addSql('ALTER TABLE blog_article_data DROP CONSTRAINT FK_476D9BE5414CCF0D');
-        $this->addSql('ALTER TABLE blog_article_data DROP CONSTRAINT FK_476D9BE5BF396750');
-        $this->addSql('ALTER TABLE html_content DROP CONSTRAINT FK_6A910E25414CCF0D');
-        $this->addSql('ALTER TABLE html_content DROP CONSTRAINT FK_6A910E25BF396750');
-        $this->addSql('ALTER TABLE image DROP CONSTRAINT FK_C53D045F3DA5256D');
-        $this->addSql('ALTER TABLE image DROP CONSTRAINT FK_C53D045FBF396750');
-        $this->addSql('ALTER TABLE navigation_link DROP CONSTRAINT FK_12C4C8334ECB4E6');
-        $this->addSql('ALTER TABLE navigation_link DROP CONSTRAINT FK_12C4C83EB260C02');
-        $this->addSql('ALTER TABLE navigation_link DROP CONSTRAINT FK_12C4C83BF396750');
-        $this->addSql('ALTER TABLE refresh_token DROP CONSTRAINT FK_C74F2195A76ED395');
-        $this->addSql('DROP TABLE _acb_abstract_component');
-        $this->addSql('DROP TABLE _acb_abstract_component_component_group');
-        $this->addSql('DROP TABLE _acb_abstract_page_data');
-        $this->addSql('DROP TABLE _acb_collection');
-        $this->addSql('DROP TABLE _acb_component_group');
-        $this->addSql('DROP TABLE _acb_component_position');
-        $this->addSql('DROP TABLE _acb_form');
-        $this->addSql('DROP TABLE _acb_imagine_cached_file_metadata');
-        $this->addSql('DROP TABLE _acb_layout');
-        $this->addSql('DROP TABLE _acb_layout_component_group');
-        $this->addSql('DROP TABLE _acb_page');
-        $this->addSql('DROP TABLE _acb_page_component_group');
-        $this->addSql('DROP TABLE _acb_route');
-        $this->addSql('DROP TABLE blog_article_data');
-        $this->addSql('DROP TABLE html_content');
-        $this->addSql('DROP TABLE image');
-        $this->addSql('DROP TABLE navigation_link');
-        $this->addSql('DROP TABLE refresh_token');
-        $this->addSql('DROP TABLE "user"');
-    }
+    {}
 }
