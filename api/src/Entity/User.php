@@ -21,7 +21,7 @@ use Silverback\ApiComponentsBundle\Filter\OrSearchFilter;
  * @author Daniel West <daniel@silverback.is>
  */
 #[ApiResource(operations: [
-    new GetCollection( security: "is_granted('ROLE_SUPER_ADMIN')" ),
+    new GetCollection( order: ['createdAt' => 'DESC'], security: "is_granted('ROLE_SUPER_ADMIN')"),
     new Post( security: "is_granted('ROLE_SUPER_ADMIN')" ),
     new Get( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
     new Put( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
