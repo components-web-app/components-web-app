@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@cwa/nuxt':
         specifier: npm:@cwa/nuxt-edge@latest
-        version: '@cwa/nuxt-edge@1.0.0-28730104.efe34ad(@parcel/watcher@2.4.1)(@types/node@20.14.15)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.20.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.14.15)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))'
+        version: '@cwa/nuxt-edge@1.0.0-28730144.4a057f5(@parcel/watcher@2.4.1)(@types/node@20.14.15)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.20.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.14.15)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))'
       '@headlessui/vue':
         specifier: latest
         version: 1.7.22(vue@3.4.38(typescript@5.5.4))
@@ -709,8 +709,8 @@ packages:
     peerDependencies:
       postcss-selector-parser: ^6.0.13
 
-  '@cwa/nuxt-edge@1.0.0-28730104.efe34ad':
-    resolution: {integrity: sha512-c2SusgmyE+U9zq+/nVmklC/gPrecRE3oK+J/SGzkQ4my8t4a/Gzs55/U++Rmqb+39qm+IPNUSHfRIDxE/lSMYg==}
+  '@cwa/nuxt-edge@1.0.0-28730144.4a057f5':
+    resolution: {integrity: sha512-28cR7z9cwte1/oy5lER/prsvLuwZ580P+76ionfnKZHCsJy1dzL10cuxoJYs2vzxT5kY5KvzafXoRbrWVH5l3A==}
     engines: {pnpm: '>=8.11.0'}
 
   '@esbuild/aix-ppc64@0.20.2':
@@ -6404,7 +6404,7 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.1.2
 
-  '@cwa/nuxt-edge@1.0.0-28730104.efe34ad(@parcel/watcher@2.4.1)(@types/node@20.14.15)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.20.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.14.15)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))':
+  '@cwa/nuxt-edge@1.0.0-28730144.4a057f5(@parcel/watcher@2.4.1)(@types/node@20.14.15)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.20.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.14.15)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))':
     dependencies:
       '@nuxtjs/color-mode': 3.4.2(magicast@0.3.4)(rollup@4.20.0)
       '@pinia/nuxt': 0.4.11(magicast@0.3.4)(rollup@4.20.0)(typescript@5.5.4)(vue@3.4.38(typescript@5.5.4))
