@@ -65,7 +65,7 @@ export default defineNuxtConfig({
       }
     },
     pageData: {
-      'App\\Entity\\BlogArticleData': {
+      BlogArticleData: {
         name: 'Blog Articles'
       }
     },

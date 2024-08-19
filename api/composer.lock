@@ -468,7 +468,7 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/feat/data-admin"
             },
             "time": "2024-08-16T11:22:40+00:00"
         },
