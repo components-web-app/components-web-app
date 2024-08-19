@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@cwa/nuxt':
         specifier: npm:@cwa/nuxt-edge@latest
-        version: '@cwa/nuxt-edge@1.0.0-28734638.c54b510(@parcel/watcher@2.4.1)(@types/node@20.16.1)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.21.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.16.1)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))'
+        version: '@cwa/nuxt-edge@1.0.0-28734727.8ad6c9e(@parcel/watcher@2.4.1)(@types/node@20.16.1)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.21.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.16.1)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))'
       '@headlessui/vue':
         specifier: latest
         version: 1.7.22(vue@3.4.38(typescript@5.5.4))
@@ -709,8 +709,8 @@ packages:
     peerDependencies:
       postcss-selector-parser: ^6.0.13
 
-  '@cwa/nuxt-edge@1.0.0-28734638.c54b510':
-    resolution: {integrity: sha512-IhLqMdm6bnZhSHdkKvBPXKjpQcRlhNsk+/5ef2D12Gz5Q6K5bpsAPtwGCiYelAMaKWBI7vJ18QrgWSvIWzZZ+A==}
+  '@cwa/nuxt-edge@1.0.0-28734727.8ad6c9e':
+    resolution: {integrity: sha512-xeGAUABIPjm0j5Whn419VrDGaW3zoRsNY7ww4KFanIJ5BuP0yjexscAXs/yS7Pf/Qc/M6e/NdW2C1uikkKtWMA==}
     engines: {pnpm: '>=8.11.0'}
 
   '@esbuild/aix-ppc64@0.20.2':
@@ -6404,7 +6404,7 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.1.2
 
-  '@cwa/nuxt-edge@1.0.0-28734638.c54b510(@parcel/watcher@2.4.1)(@types/node@20.16.1)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.21.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.16.1)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))':
+  '@cwa/nuxt-edge@1.0.0-28734727.8ad6c9e(@parcel/watcher@2.4.1)(@types/node@20.16.1)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(rollup@4.21.0)(terser@5.31.6)(typescript@5.5.4)(vite@5.4.1(@types/node@20.16.1)(terser@5.31.6))(vue-tsc@1.8.27(typescript@5.5.4))':
     dependencies:
       '@nuxtjs/color-mode': 3.4.4(magicast@0.3.4)(rollup@4.21.0)
       '@pinia/nuxt': 0.4.11(magicast@0.3.4)(rollup@4.21.0)(typescript@5.5.4)(vue@3.4.38(typescript@5.5.4))
