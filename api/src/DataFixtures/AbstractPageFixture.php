@@ -55,7 +55,7 @@ abstract class AbstractPageFixture extends Fixture
 
         $this->addNavigationLink($manager, $componentGroupTop, 'Home', '/', HomePageFixture::ROUTE_NAME, 1);
         $this->addNavigationLink($manager, $componentGroupTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);
-        $this->addNavigationLink($manager, $componentGroupTop, 'Form', '/form', FormPageFixture::ROUTE_NAME, 3);
+        // $this->addNavigationLink($manager, $componentGroupTop, 'Form', '/form', FormPageFixture::ROUTE_NAME, 3);
 
         $manager->persist($componentGroupTop);
 

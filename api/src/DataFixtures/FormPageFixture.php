@@ -15,7 +15,7 @@ class FormPageFixture extends AbstractPageFixture implements DependentFixtureInt
     public function load(ObjectManager $manager): void
     {
         $layout = $this->createLayout($manager, 'Main Layout', 'CwaLayoutPrimary');
-        $this->addRegisterPage($manager, $layout);
+        // $this->addRegisterPage($manager, $layout);
 
         $manager->flush();
     }

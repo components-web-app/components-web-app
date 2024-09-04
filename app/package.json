@@ -20,7 +20,7 @@
     "@tiptap/pm": "^2.6.4",
     "@tiptap/starter-kit": "^2.6.4",
     "@tiptap/vue-3": "^2.6.4",
-    "@vite-pwa/nuxt": "^0.2.3"
+    "@vite-pwa/nuxt": "^0.7.0"
   },
   "devDependencies": {
     "@nuxt/devtools": "^0.8.5",
