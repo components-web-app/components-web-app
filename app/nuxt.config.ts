@@ -89,7 +89,7 @@ export default defineNuxtConfig({
     'lodash/isArray.js': 'lodash/isArray.js',
     'lodash/mergeWith.js': 'lodash/mergeWith.js',
     'dayjs': 'dayjs',
-    'slugify': 'slugify/slugify.js'
+    'slugify': 'slugify'
   },
   routeRules: {
     // '/': { prerender: true },
