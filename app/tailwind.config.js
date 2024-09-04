@@ -1,4 +1,4 @@
-const {createResolver} = require("@nuxt/kit");
+const { createResolver } = require('@nuxt/kit')
 
 const { resolve } = createResolver(import.meta.url)
 
@@ -17,5 +17,42 @@ module.exports = {
   ],
   corePlugins: {
     preflight: true
+  },
+  theme: {
+    extend: {
+      colors: {
+        'primary': '#999A77',
+        'background': '#12212B',
+        'text-default': '#FFFFFF'
+      },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.white'),
+            h1: {
+              color: theme('colors.primary')
+            },
+            h2: {
+              color: theme('colors.primary')
+            },
+            h3: {
+              color: theme('colors.primary')
+            },
+            h4: {
+              color: theme('colors.primary')
+            },
+            strong: {
+              color: theme('colors.current')
+            },
+            a: {
+              color: theme('colors.primary'),
+              '&:hover': {
+                color: theme('colors.white'),
+              },
+            },
+          },
+        },
+      })
+    }
   }
 }

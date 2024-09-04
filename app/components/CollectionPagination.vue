@@ -1,8 +1,8 @@
 <template>
-  <nav class="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
+  <nav class="flex items-center justify-between border-t border-primary px-4 sm:px-0">
     <div class="-mt-px flex w-0 flex-1">
       <button :disabled="currentPage === 1" :class="nextPreviousClass" @click="$emit('previous')">
-        <ArrowLongLeftIcon class="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
+        <ArrowLongLeftIcon class="mr-3 h-5 w-5 text-current-color" aria-hidden="true" />
         Previous
       </button>
     </div>
@@ -21,7 +21,7 @@
     <div class="-mt-px flex w-0 flex-1 justify-end">
       <button :disabled="currentPage === totalPages" :class="nextPreviousClass" @click="$emit('next')">
         Next
-        <ArrowLongRightIcon class="ml-3 h-5 w-5 text-gray-400" aria-hidden="true" />
+        <ArrowLongRightIcon class="ml-3 h-5 w-5 text-current-color" aria-hidden="true" />
       </button>
     </div>
   </nav>
@@ -35,9 +35,9 @@ import {
   useCwaCollectionPagination
 } from '#cwa/runtime/composables/cwa-collection-pagination'
 
-const pageClass = 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-const selectedPageClass = 'border-indigo-500 text-indigo-600'
-const nextPreviousClass = 'inline-flex items-center border-t-2 border-transparent pr-1 pt-4 text-sm font-medium text-gray-500 enabled:hover:border-gray-300 enabled:hover:text-gray-700 disabled:opacity-50'
+const pageClass = 'border-transparent text-gray-300 hover:border-gray-300 hover:text-white transition'
+const selectedPageClass = 'border-primary text-primary'
+const nextPreviousClass = 'inline-flex items-center border-t-2 border-transparent px-1 pt-4 text-sm font-medium text-gray-300 enabled:hover:border-gray-300 enabled:hover:text-white disabled:opacity-50'
 
 const props = defineProps<CwaPaginationProps>()
 defineEmits<CwaPaginationEmits>()

@@ -2,13 +2,12 @@
   <div class="pb-5 flex flex-col space-y-2">
     <CollectionSearch />
     <div v-if="collectionItems" class="relative flex flex-wrap -mx-4 min-h-96">
-      <article v-for="post of collectionItems" :key="post['@id']" class="mx-4 my-4 w-[calc(25%-2rem)] relative z-0 isolate flex flex-col justify-end overflow-hidden rounded-2xl bg-gray-900 px-8 pb-8 pt-80 sm:pt-48 lg:pt-60">
+      <article v-for="post of collectionItems" :key="post['@id']" class="mx-4 my-4 w-[calc(25%-2rem)] relative z-0 isolate flex flex-col justify-end overflow-hidden bg-black/50 px-8 pb-8 pt-80 sm:pt-48 lg:pt-60">
         <div v-if="!post.image" class="absolute inset-0 -z-10 h-full w-full text-white flex justify-center items-center font-bold">
           No Image
         </div>
         <CollectionImage v-else :iri="post.image" class="absolute inset-0 -z-10 h-full w-full object-cover" />
-        <div class="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/40" />
-        <div class="absolute inset-0 -z-10 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
+        <div class="absolute inset-0 -z-10 bg-gradient-to-t from-black via-primary/10" />
         <div class="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-3 text-gray-300">
           <time :datetime="post.createdAt" class="mr-8">{{ formatDate(post.createdAt) }}</time>
         </div>
@@ -19,7 +18,7 @@
           </NuxtLink>
         </h3>
       </article>
-      <div v-if="!collectionItems.length" class="absolute top-0 left-0 right-0 bottom-0 bg-white/50 flex justify-center items-center font-bold text-2xl text-gray-700">
+      <div v-if="!collectionItems.length" class="absolute top-0 left-0 right-0 bottom-0 flex justify-center items-center font-bold text-2xl text-primary">
         No Results
       </div>
       <Transition
@@ -30,7 +29,7 @@
         leave-active-class="duration-300 ease-in"
         leave-to-class="transform opacity-0"
       >
-        <div v-if="isLoadingCollection" class="absolute z-10 top-0 left-0 right-0 bottom-0 bg-white/50 flex justify-center items-center">
+        <div v-if="isLoadingCollection" class="absolute z-10 top-0 left-0 right-0 bottom-0 flex justify-center items-center">
           <Spinner :show="true" />
         </div>
       </Transition>

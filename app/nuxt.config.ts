@@ -15,10 +15,10 @@ export default defineNuxtConfig({
       charset: 'utf-8',
       htmlAttrs: {
         lang: 'en-GB',
-        class: 'bg-blue-400'
+        class: 'bg-black'
       },
       bodyAttrs: {
-        class: 'bg-white'
+        class: 'bg-background'
       }
     }
   },

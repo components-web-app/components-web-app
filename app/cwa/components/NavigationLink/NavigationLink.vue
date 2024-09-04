@@ -1,6 +1,6 @@
 <template>
   <div>
-    <nuxt-link :target="isExternal ? '_blank' : undefined" :to="resource?.data?.url || '#'" exact-active-class="!text-gray-900 underline" class="text-base font-medium text-gray-500 hover:text-gray-900 no-underline" @click="handleClick">
+    <nuxt-link :target="isExternal ? '_blank' : undefined" :to="resource?.data?.url || '#'" exact-active-class="!underline !opacity-100" class="text-xl font-medium text-white opacity-80 transition hover:opacity-100 hover:underline no-underline underline-offset-8 decoration-2" @click="handleClick">
       {{ resource?.data?.label || 'No Link Label' }}
     </nuxt-link>
   </div>
