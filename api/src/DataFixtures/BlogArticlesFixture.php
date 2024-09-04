@@ -69,7 +69,6 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
             $route = $this->routeGenerator->create($articleData);
             $manager->persist($route);
         }
-        $this->addNavigationLink($manager, $layoutComponentGroup, 'Blog Article', null, null, 4, $route);
     }
 
     private function addArticlePage(ObjectManager $manager, Layout $layout): Page

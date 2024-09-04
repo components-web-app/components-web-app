@@ -27,4 +27,12 @@ class BlogArticleData extends AbstractPageData
     #[Orm\ManyToOne(targetEntity: HtmlContent::class)]
     #[Orm\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     public ?HtmlContent $htmlContent = null;
+
+    #[Orm\ManyToOne(targetEntity: Image::class)]
+    #[Orm\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    public ?Image $image = null;
+
+    public function getRoutePath () {
+        return $this->getRoute()?->getPath();
+    }
 }

@@ -29,6 +29,7 @@ class BlogCollectionPageFixture extends AbstractPageFixture implements Dependent
         $manager->persist($page);
 
         $collection = new Collection();
+        $collection->setPerPage(8);
         $collection->setResourceIri($this->iriConverter->getIriFromResource(BlogArticleData::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(BlogArticleData::class)));
         $manager->persist($collection);
 
