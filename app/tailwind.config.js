@@ -6,6 +6,7 @@ const { resolve } = createResolver(import.meta.url)
 module.exports = {
   content: [
     resolve('nuxt.config.ts'),
+    resolve('components/**/*.{js,vue,ts}'),
     resolve('cwa/**/*.{js,vue,ts}')
   ],
   plugins: [
