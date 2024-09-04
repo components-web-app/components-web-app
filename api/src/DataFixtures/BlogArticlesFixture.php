@@ -86,6 +86,10 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         $manager->persist($htmlContent);
 
         $position = $this->createComponentPosition($componentGroup, null, 0);
+        $position->setPageDataProperty('image');
+        $manager->persist($position);
+
+        $position = $this->createComponentPosition($componentGroup, null, 1);
         $position->setPageDataProperty('htmlContent');
         $manager->persist($position);
 
