@@ -31,7 +31,13 @@ services:
       # - ./api/var:/srv/api/var:rw
       - php_socket:/var/run/php
       - caddy_ca:/usr/local/share/ca-certificates
-  
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+        reservations:
+          cpus: '0.5'
+
   # essentially acting as a merged mercure/vulcain layer here with https
   caddy:
     build:

@@ -40,11 +40,11 @@ php:
     mode: prefer
   resources:
     limits:
-      cpu: 600m
-      memory: 750Mi
+      cpu: 400m
+      memory: 512Mi
     requests:
-      cpu: 600m
-      memory: 750Mi
+      cpu: 400m
+      memory: 512Mi
   gcloud:
     jsonKey: my-dummy-very-long-json-key-placeholder-value
     bucket: bucket-name
