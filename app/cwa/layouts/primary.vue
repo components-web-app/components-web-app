@@ -6,10 +6,13 @@
     <header v-if="$cwa.resources.layoutIri.value">
       <Popover class="relative">
         <div class="mx-auto flex max-w-7xl items-center p-6 justify-start space-x-10 lg:px-8">
-          <PopoverGroup as="nav" class="space-x-5 flex">
-            <CwaComponentGroup reference="top" :location="$cwa.resources.layoutIri.value" :allowed-components="['/component/navigation_links']" />
+          <PopoverGroup as="nav" class="space-x-5 flex w-full items-center   justify-between">
+            <div class="space-x-5 flex items-center">
+              <SvgoLogo :font-controlled="false" class="text-white h-8 opacity-80 mr-5" />
+              <CwaComponentGroup reference="top" :location="$cwa.resources.layoutIri.value" :allowed-components="['/component/navigation_links']" />
+            </div>
             <ClientOnly>
-              <nuxt-link v-if="$cwa.auth.status.value === CwaAuthStatus.SIGNED_OUT" to="/login" class="text-base font-medium text-gray-500 hover:text-gray-900">
+              <nuxt-link v-if="$cwa.auth.status.value === CwaAuthStatus.SIGNED_OUT" to="/login" class="transition justify-self-end px-2.5 py-1 bg-primary rounded text-base font-medium text-white opacity-90 hover:opacity-100">
                 Sign In
               </nuxt-link>
             </ClientOnly>

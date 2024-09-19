@@ -29,7 +29,8 @@ export default defineNuxtConfig({
     '@cwa/nuxt',
     '@nuxtjs/tailwindcss',
     '@nuxt/image',
-    '@vite-pwa/nuxt'
+    '@vite-pwa/nuxt',
+    'nuxt-svgo'
   ],
   devtools: {
     enabled: true
@@ -169,6 +170,9 @@ export default defineNuxtConfig({
       // navigateFallbackAllowlist: [/^\/$/],
       type: 'module'
     }
+  },
+  svgo: {
+    autoImportPath: './assets/svg/',
   }
   // typescript: {
   //   typeCheck: true,

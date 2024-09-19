@@ -21,7 +21,8 @@
     "@tiptap/pm": "^2.7.1",
     "@tiptap/starter-kit": "^2.7.1",
     "@tiptap/vue-3": "^2.7.1",
-    "@vite-pwa/nuxt": "^0.7.0"
+    "@vite-pwa/nuxt": "^0.7.0",
+    "nuxt-svgo": "^4.0.6"
   },
   "devDependencies": {
     "@nuxt/devtools": "^0.8.5",
