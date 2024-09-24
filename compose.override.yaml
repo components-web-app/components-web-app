@@ -21,17 +21,23 @@ services:
       - host.docker.internal:host-gateway
     tty: true
 
-#  pwa:
-#    build:
-#      context: ./pwa
-#      target: dev
-#    volumes:
-#      - ./pwa:/srv/app
-#    environment:
-#      API_PLATFORM_CREATE_CLIENT_ENTRYPOINT: http://php
-#      API_PLATFORM_CREATE_CLIENT_OUTPUT: .
-#      # On Linux, you may want to comment the following line for improved performance
-#      WATCHPACK_POLLING: "true"
+  app:
+    build:
+      context: ./app
+      target: dev
+    volumes:
+      - ./app:/srv/app:rw,cached
+      - /srv/app/.pnpm-store
+    environment:
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
+      API_URL: ${API_URL:-http://php}
+      API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost}
+    ports:
+      - target: 24678
+        published: 24678
+        protocol: tcp
+    links:
+      - "php:php.local"
 
 ###> doctrine/doctrine-bundle ###
   database:

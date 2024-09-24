@@ -19,7 +19,23 @@
 	}
 
 	root * /app/public
-	encode zstd br gzip
+	encode {
+		zstd
+		br
+		gzip
+
+		match {
+			header Content-Type text/*
+			header Content-Type application/json*
+			header Content-Type application/javascript*
+			header Content-Type application/xhtml+xml*
+			header Content-Type application/atom+xml*
+			header Content-Type application/rss+xml*
+			header Content-Type image/svg+xml*
+			# Custom formats supported
+			header Content-Type application/ld+json*
+		}
+	}
 
 	mercure {
 		# Transport to use (default to Bolt)
@@ -47,19 +63,21 @@
 
 	# Matches requests for HTML documents, for static files and for Next.js files,
 	# except for known API paths and paths with extensions handled by API Platform
-	#@pwa expression `(
-	#		header({'Accept': '*text/html*'})
-	#		&& !path(
-	#			'/docs*', '/graphql*', '/bundles*', '/contexts*', '/_profiler*', '/_wdt*',
-	#			'*.json*', '*.html', '*.csv', '*.yml', '*.yaml', '*.xml'
-	#		)
-	#	)
-	#	|| path('/favicon.ico', '/manifest.json', '/robots.txt', '/sitemap*', '/_next*', '/__next*')
-	#	|| query({'_rsc': '*'})`
+	@app expression `(
+            header({'Accept': '*text/html*'})
+            && !path(
+                '/login_check',
+                '/logout',
+                '/docs*', '/graphql*', '/bundles*', '/contexts*', '/_profiler*', '/_wdt*',
+                '*.json*', '*.html', '*.csv', '*.yml', '*.yaml', '*.xml'
+            )
+        )
+        || path('/favicon.ico', '/manifest.json', '/manifest.webmanifest', ''/robots.txt', '/sitemap*', '/_next*', '/__next*', '/_nuxt*', '/__nuxt*')
+        || query({'_rsc': '*'})`
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
-	# reverse_proxy @pwa http://{$APP_UPSTREAM}
+	reverse_proxy @app http://{$APP_UPSTREAM}
 
 	php_server
 }

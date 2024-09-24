@@ -43,11 +43,9 @@ services:
           cpus: '0.5'
         reservations:
           cpus: '0.5'
-
-#  pwa:
-#    image: ${IMAGES_PREFIX:-}app-pwa
-#    environment:
-#      NEXT_PUBLIC_ENTRYPOINT: http://php
+  
+  app:
+    image: ${IMAGES_PREFIX:-}app-app
 
 ###> doctrine/doctrine-bundle ###
   database:
