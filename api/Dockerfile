@@ -36,6 +36,9 @@ RUN set -eux; \
 		intl \
 		opcache \
 		zip \
+		exif \
+		xsl \
+		gd \
 	;
 
 ###> recipes ###
