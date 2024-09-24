@@ -1,5 +1,6 @@
 /build/
 /config/database/*.pem
+/docker/db/data
 
 ###> symfony/framework-bundle ###
 /.env.local
@@ -9,7 +10,9 @@
 /public/uploads/
 /var/
 /vendor/
+/config/secrets/prod/prod.decrypt.private.php
 ###< symfony/framework-bundle ###
+
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
