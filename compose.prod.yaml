@@ -9,10 +9,10 @@ services:
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
 
-  pwa:
-    build:
-      context: ./pwa
-      target: prod
+#  pwa:
+#    build:
+#      context: ./pwa
+#      target: prod
 
   database:
     environment:

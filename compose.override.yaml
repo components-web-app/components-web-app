@@ -13,7 +13,7 @@ services:
       #  from the bind-mount for better performance by enabling the next line:
       #- /app/vendor
     environment:
-      MERCURE_EXTRA_DIRECTIVES: demo
+      MERCURE_EXTRA_DIRECTIVES: demo # - CHECK WHETHER WE STILL NEED THIS PATH ARG (/srv/mercure-assets/)
       # See https://xdebug.org/docs/all_settings#mode
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
     extra_hosts:
@@ -21,17 +21,17 @@ services:
       - host.docker.internal:host-gateway
     tty: true
 
-  pwa:
-    build:
-      context: ./pwa
-      target: dev
-    volumes:
-      - ./pwa:/srv/app
-    environment:
-      API_PLATFORM_CREATE_CLIENT_ENTRYPOINT: http://php
-      API_PLATFORM_CREATE_CLIENT_OUTPUT: .
-      # On Linux, you may want to comment the following line for improved performance
-      WATCHPACK_POLLING: "true"
+#  pwa:
+#    build:
+#      context: ./pwa
+#      target: dev
+#    volumes:
+#      - ./pwa:/srv/app
+#    environment:
+#      API_PLATFORM_CREATE_CLIENT_ENTRYPOINT: http://php
+#      API_PLATFORM_CREATE_CLIENT_OUTPUT: .
+#      # On Linux, you may want to comment the following line for improved performance
+#      WATCHPACK_POLLING: "true"
 
 ###> doctrine/doctrine-bundle ###
   database:

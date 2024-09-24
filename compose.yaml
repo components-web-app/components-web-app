@@ -5,10 +5,16 @@ services:
       - database
     restart: unless-stopped
     environment:
-      PWA_UPSTREAM: pwa:3000
-      SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
+      APP_UPSTREAM: app:3000
+      SERVER_NAME: ${SERVER_NAME:-localhost, caddy.local}, php:80
+      # Will be needed for Server-side/internal loads to generate the doc headers
+      # BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost:8443}
+      # CHANGES TO ENV TO MAP CADDY_MERCURE_JWT_SECRET NOW INSTEAD OF MERCURE_PUBLISHER_JWT_KEY
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      # CHANGES TO ENV TO MAP CADDY_MERCURE_JWT_SECRET NOW INSTEAD OF MERCURE_SUBSCRIBER_JWT_KEY
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      # CHANGES TO ENV TO MAP CADDY_MERCURE_CORS_ORIGIN NOW INSTEAD OF MERCURE_CORS_ORIGIN
+      MERCURE_CORS_ORIGIN: ${CADDY_MERCURE_CORS_ORIGIN:-'https://localhost https://localhost:3000 http://localhost:3000'}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
       TRUSTED_HOSTS: ${TRUSTED_HOSTS:-^${SERVER_NAME:-example\.com|localhost}|php$$}
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
@@ -31,11 +37,17 @@ services:
       - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+        reservations:
+          cpus: '0.8'
 
-  pwa:
-    image: ${IMAGES_PREFIX:-}app-pwa
-    environment:
-      NEXT_PUBLIC_ENTRYPOINT: http://php
+#  pwa:
+#    image: ${IMAGES_PREFIX:-}app-pwa
+#    environment:
+#      NEXT_PUBLIC_ENTRYPOINT: http://php
 
 ###> doctrine/doctrine-bundle ###
   database:

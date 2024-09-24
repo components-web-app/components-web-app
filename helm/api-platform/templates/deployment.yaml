@@ -38,7 +38,7 @@ spec:
           env:
             - name: SERVER_NAME
               value: :80
-            - name: PWA_UPSTREAM
+            - name: APP_UPSTREAM
               value: {{ include "api-platform.fullname" . }}-pwa:3000
             - name: MERCURE_PUBLISHER_JWT_KEY
               valueFrom:
