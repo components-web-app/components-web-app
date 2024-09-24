@@ -9,6 +9,10 @@
 {$CADDY_EXTRA_CONFIG}
 
 {$SERVER_NAME:localhost} {
+    @internal {
+        header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
+    }
+
 	log {
 		# Redact the authorization query parameter that can be set by Mercure
 		format filter {
@@ -72,12 +76,14 @@
                 '*.json*', '*.html', '*.csv', '*.yml', '*.yaml', '*.xml'
             )
         )
-        || path('/favicon.ico', '/manifest.json', '/manifest.webmanifest', ''/robots.txt', '/sitemap*', '/_next*', '/__next*', '/_nuxt*', '/__nuxt*')
-        || query({'_rsc': '*'})`
+        || path('/favicon.ico', '/manifest.json', '/manifest.webmanifest', '/robots.txt', '/sitemap*', '/_next*', '/__next*', '/_nuxt*', '/__nuxt*', '/pwa-*.png')
+        || query({'_rsc': '*'})
+        || {port} == 24678`
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
 	reverse_proxy @app http://{$APP_UPSTREAM}
 
+    request_header @internal host {$BROWSER_SERVER_NAME}
 	php_server
 }

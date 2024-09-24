@@ -30,7 +30,7 @@ services:
       - /srv/app/.pnpm-store
     environment:
       NODE_TLS_REJECT_UNAUTHORIZED: 0
-      API_URL: ${API_URL:-http://php}
+      API_URL: ${API_URL:-https://php.local}
       API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost}
     ports:
       - target: 24678

@@ -173,7 +173,7 @@ export default defineNuxtConfig({
   },
   svgo: {
     autoImportPath: './assets/svg/',
-  }
+  },
   // typescript: {
   //   typeCheck: true,
   //   strict: true
