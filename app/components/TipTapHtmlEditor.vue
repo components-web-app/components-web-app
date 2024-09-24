@@ -52,7 +52,7 @@ import {
   FloatingMenu
 } from '@tiptap/vue-3'
 import { computed, toRef, watch } from 'vue'
-import type { UnionCommands } from '@tiptap/core/src/types'
+import type { UnionCommands } from '@tiptap/core/src/types.ts'
 import type { Editor } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
 

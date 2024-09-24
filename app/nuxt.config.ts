@@ -177,5 +177,16 @@ export default defineNuxtConfig({
   // typescript: {
   //   typeCheck: true,
   //   strict: true
-  // }
+  // },
+  hooks: {
+    'vite:extendConfig'(viteInlineConfig) {
+      viteInlineConfig.server = {
+        ...viteInlineConfig.server,
+        hmr: {
+          protocol: 'wss',
+          clientPort: 443,
+        }
+      }
+    }
+  }
 })
