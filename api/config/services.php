@@ -59,8 +59,8 @@ return static function (ContainerConfigurator $configurator) {
 
     // api_components.filesystem.gcloud is a service with a factory Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider
     // we need to override this filesystem provider or have acb config options to pass configs into this provider
-    $services
-        ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
+//    $services
+//        ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
 
     if ($configurator->env() !== 'prod') {
         $services

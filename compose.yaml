@@ -40,9 +40,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.8'
+          cpus: '0.5'
         reservations:
-          cpus: '0.8'
+          cpus: '0.5'
 
 #  pwa:
 #    image: ${IMAGES_PREFIX:-}app-pwa

@@ -17,12 +17,12 @@ api_platform:
   swagger:
     versions: [3]
   keep_legacy_inflector: true
-  http_cache:
-    invalidation:
-      purger: 'api_platform.http_cache.purger.varnish.xkey'
-      enabled: true
-      urls: ['%env(VARNISH_URL)%']
-    public: true
+#  http_cache:
+#    invalidation:
+#      purger: 'api_platform.http_cache.purger.varnish.xkey'
+#      enabled: true
+#      urls: ['%env(VARNISH_URL)%']
+#    public: true
   use_symfony_listeners: true
   defaults:
     #standard_put: true
