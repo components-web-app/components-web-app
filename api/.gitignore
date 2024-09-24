@@ -1,6 +1,4 @@
 /build/
-/_docker/db/data
-/_helm/api/charts
 /config/database/*.pem
 
 ###> symfony/framework-bundle ###
