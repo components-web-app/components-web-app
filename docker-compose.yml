@@ -34,9 +34,9 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.8'
+          cpus: '1.0'
         reservations:
-          cpus: '0.8'
+          cpus: '1.0'
 
   # essentially acting as a merged mercure/vulcain layer here with https
   caddy:
