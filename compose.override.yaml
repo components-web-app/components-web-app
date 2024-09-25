@@ -33,8 +33,8 @@ services:
       API_URL: ${API_URL:-https://php.local}
       API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost}
     ports:
-      - target: 24678
-        published: 24678
+      - target: 3000
+        published: 3001
         protocol: tcp
     links:
       - "php:php.local"

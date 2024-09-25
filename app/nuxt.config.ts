@@ -178,15 +178,14 @@ export default defineNuxtConfig({
   //   typeCheck: true,
   //   strict: true
   // },
-  hooks: {
-    'vite:extendConfig'(viteInlineConfig) {
-      viteInlineConfig.server = {
-        ...viteInlineConfig.server,
-        hmr: {
-          protocol: 'wss',
-          clientPort: 443,
-        }
-      }
-    }
+  // see https://github.com/nuxt/nuxt/issues/12003#issuecomment-1397230032
+  vite: {
+    server: {
+      hmr: {
+        protocol: "wss",
+        clientPort: 443,
+        path: "hmr/",
+      },
+    },
   }
 })
