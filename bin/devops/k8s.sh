@@ -82,10 +82,18 @@ build() {
   docker build \
   	--cache-from $PHP_REPOSITORY:$TAG \
   	--tag $PHP_REPOSITORY:$TAG \
-  	--target cwa_php \
+  	--target frankenphp_prod \
   	"api"
 
+  docker pull $APP_REPOSITORY:$TAG || true
+  docker build \
+  	--cache-from $APP_REPOSITORY:$TAG \
+  	--tag $APP_REPOSITORY:$TAG \
+  	--target prod \
+  	"app"
+
   docker push $PHP_REPOSITORY:$TAG
+  docker push $APP_REPOSITORY:$TAG
 }
 
 run_test_phpunit() {
