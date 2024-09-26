@@ -1,60 +1,3 @@
-#!/usr/bin/env bash
-
-# echo the commands that are run
-[[ "$TRACE" ]] && set -x
-
-export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
-export CI_APPLICATION_TAG=$CI_COMMIT_SHA
-
-export GITLAB_PULL_SECRET_NAME=gitlab-registry
-export KUBERNETES_VERSION=1.29.2
-export HELM_VERSION=3.14.3
-
-# Choose the branch for production deploy.
-if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
-  export DEPLOYMENT_BRANCH=main
-fi
-
-# Miscellaneous
-if [[ -z "$CLUSTER_ISSUER" ]]; then
-  export CLUSTER_ISSUER="letsencrypt-staging"
-fi
-if [[ -z "$LETSENCRYPT_SECRET_NAME" ]]; then
-  export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
-fi
-
-export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
-export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
-export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
-export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/php.}"
-
-if [[ -z "$CORS_ALLOW_ORIGIN" ]]; then
-  echo "!!!! WARNING CORS_ALLOW_ORIGIN ENVIRONMENT IS NOT SET !!!!";
-  echo "Expected a regex string similar to ^https?:\/\/(.*\.)?example\.com"
-fi
-if [[ -z "$TRUSTED_HOSTS" ]]; then
-  echo '!!!! WARNING TRUSTED_HOSTS ENVIRONMENT IS NOT SET !!!!';
-  echo "Expected a regex string similar to ^.*\.example\.com$"
-fi
-
-if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
-  export RELEASE="${CI_ENVIRONMENT_SLUG}"
-  export TAG=${CI_COMMIT_REF_SLUG}
-else
-  if [[ -n "$CI_ENVIRONMENT_SLUG" ]] && [[ -z "$RELEASE" ]]; then
-    export RELEASE="${CI_ENVIRONMENT_SLUG}"
-  fi
-  if [[ -z "$RELEASE" ]]; then echo 'Helm RELEASE environment variable is not defined in your ci environment variables for non-production helm releases.'; fi
-  export TAG=${CI_COMMIT_REF_SLUG:-dev}
-  echo "CONTAINER TAG: '${TAG}'"
-fi
-
-# To enable blackfire, set the environment variables
-#if [[ -n "$BLACKFIRE_SERVER_ID" ]] && [[ -n "$BLACKFIRE_SERVER_TOKEN" ]] ; then
-#  export BLACKFIRE_SERVER_ENABLED=true
-#fi
-
-# hBipH0zBIp98alQOCfB4IecnWudKxFbw
 rand_str() {
   len=32
   head -c 256 /dev/urandom > /tmp/urandom.out
@@ -81,8 +24,10 @@ install_dependencies() {
   curl -L -o /usr/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
   chmod +x /usr/bin/kubectl
   kubectl version --client
+}
 
-  # Generate random passphrase and keys for JWT signing if not set
+generate_jwt_keys() {
+	# Generate random passphrase and keys for JWT signing if not set
 	if [[ -z ${JWT_PASSPHRASE} ]]; then
   	echo "Generate JWT_PASSPHRASE..."
 		export JWT_PASSPHRASE="$(rand_str)"
@@ -99,24 +44,30 @@ install_dependencies() {
 		rm ${JWT_SECRET_KEY_FILE}
 	fi
 
-
   # Generate random key & jwt for Mercure if not set
   if [[ -z ${MERCURE_JWT_SECRET_KEY} ]]; then
   	echo "Generating MERCURE_JWT_SECRET_KEY..."
     export MERCURE_JWT_SECRET_KEY="$(rand_str)"
   fi
-	export MERCURE_SUBSCRIBER_JWT_ALG=HS256
-	export MERCURE_PUBLISHER_JWT_ALG=HS256
 }
 
 # For Kubernetes environment gitlab runner use the localhost for DIND - see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
 # Using shared runners for now.
-setup_docker() {
+setup_docker_environment() {
   if ! docker info &>/dev/null; then
     if [[ -z "$DOCKER_HOST" && "$KUBERNETES_PORT" ]]; then
       export DOCKER_HOST='tcp://localhost:2375'
     fi
   fi
+}
+
+setup_test_db_environment() {
+  if [[ -z ${KUBERNETES_PORT+x} ]]; then
+    DB_HOST=postgres
+  else
+    DB_HOST=localhost
+  fi
+  export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
 }
 
 build() {
@@ -137,16 +88,7 @@ build() {
   docker push $PHP_REPOSITORY:$TAG
 }
 
-function setup_test_db() {
-  if [[ -z ${KUBERNETES_PORT+x} ]]; then
-    DB_HOST=postgres
-  else
-    DB_HOST=localhost
-  fi
-  export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
-}
-
-function run_phpunit() {
+run_test_phpunit() {
   echo "run_phpunit function"
   cd ./api || return
   mkdir -p build/logs/phpunit/
@@ -154,7 +96,7 @@ function run_phpunit() {
   vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
 }
 
-function run_behat() {
+run_test_behat() {
 	export TRUSTED_HOSTS='^localhost|caddy(\.local)?|example\.com$'
   echo "run_behat function"
   cd ./api || return
@@ -203,32 +145,13 @@ ensure_namespace() {
 	NS_INFO=$(kubectl describe namespace "$KUBE_NAMESPACE" || EXIT_CODE=$? && true)
 	if [[ -z "$NS_INFO" ]]; then
 		echo ${EXIT_CODE}
-		kubectl create namespace "$KUBE_NAMESPACE"
-		apply_rolebinding
+	  echo "Namespaces must be created manually with appropriate role bindings. It is not secure to allow a single project to have the permissions to manage namespaces and role bindings across the cluster."
+		echo "YOU MUST CREATE THE NAMESPACE '$KUBE_NAMESPACE'"
+		false
 	fi
 }
 
-apply_rolebinding() {
-  echo "APPLYING ROLE BINDING..."
-  cat >rolebinding.tmp.yaml <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: gitlab-ci-role-binding
-  namespace: ${KUBE_NAMESPACE}
-subjects:
-  - kind: Group
-    name: gitlab:project:${CI_PROJECT_ID}
-    apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole
-  name: gitlab-ci-default
-  apiGroup: rbac.authorization.k8s.io
-EOF
-  kubectl apply -f rolebinding.tmp.yaml
-}
-
-create_secret() {
+create_docker_pull_secret() {
   if [[ "$CI_PROJECT_VISIBILITY" = "public" ]]; then
   	echo "Project is public - skipping secret creation"
     return
@@ -244,114 +167,15 @@ create_secret() {
     -o yaml --dry-run | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
 }
 
-function get_replicas() {
-	track="${1:-stable}"
-	percentage="${2:-100}"
-
-	env_track=$( echo $track | tr -s  '[:lower:]'  '[:upper:]' )
-	env_slug=$( echo ${CI_ENVIRONMENT_SLUG//-/_} | tr -s  '[:lower:]'  '[:upper:]' )
-
-	if [[ "$track" == "stable" ]] || [[ "$track" == "rollout" ]]; then
-		# for stable track get number of replicas from `PRODUCTION_REPLICAS`
-		eval new_replicas=\$${env_slug}_REPLICAS
-		if [[ -z "$new_replicas" ]]; then
-			new_replicas=$REPLICAS
-		fi
-	else
-		# for all tracks get number of replicas from `CANARY_PRODUCTION_REPLICAS`
-		eval new_replicas=\$${env_track}_${env_slug}_REPLICAS
-		if [[ -z "$new_replicas" ]]; then
-			eval new_replicas=\$env_track_REPLICAS
-		fi
-	fi
-
-	replicas="${new_replicas:-1}"
-	replicas="$(($replicas * $percentage / 100))"
-
-	# always return at least one replica
-	if [[ $replicas -gt 0 ]]; then
-		echo "$replicas"
-	else
-		echo 1
-	fi
-}
-
-deploy_vercel_app() {
-	if [[ -z "$VERCEL_ORG_ID" ]]; then
-	  echo 'You must define $VERCEL_ORG_ID to deploy to Vercel'
-		false
-	fi
-	if [[ -z "$VERCEL_PROJECT_ID" ]]; then
-		echo 'You must define $VERCEL_PROJECT_ID to deploy to Vercel'
-		false
-	fi
-	if [[ -z "$VERCEL_TOKEN" ]]; then
-		echo 'You must define $VERCEL_TOKEN to deploy to Vercel'
-		false
-	fi
-
-	echo "Adding nodejs npm ..."
-  # upgrade for curl fix https://github.com/curl/curl/issues/4357
-  apk add --update-cache --upgrade --no-cache -U openssl nodejs npm
-	echo "Installing Vercel CLI ..."
-	npm i -g vercel
-
-  echo "Setting up Vercel environment ..."
-  track="${1-stable}"
-	SCOPE=""
-	NODE_ENV="production"
-	MERCURE_SUBSCRIBE_URL="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure"
-	if [[ -n "$VERCEL_SCOPE" ]]; then
-		SCOPE="--scope $VERCEL_SCOPE"
-	fi
-	if [[ "$track" == "stable" ]]; then
-		PROD_FLAG="--prod"
-  else
-    PROD_FLAG="--target=staging"
-	fi
-	API_ENDPOINT="https://${DOMAIN}"
-
-	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
-	VERCEL_ORG_ID="$VERCEL_ORG_ID"
-	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
-	VERCEL_DEPLOYED_URL=$(vercel app ${PROD_FLAG} ${SCOPE} \
-	  --token="$VERCEL_TOKEN" \
-		-e API_URL="${API_ENDPOINT}" \
-		-e API_URL_BROWSER="${API_ENDPOINT}" \
-		-e NODE_ENV="${NODE_ENV}" \
-    -e MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}" \
-		-b API_URL="${API_ENDPOINT}" \
-		-b API_URL_BROWSER="${API_ENDPOINT}" \
-		-b NODE_ENV="${NODE_ENV}" \
-		-b MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}")
-
-if [ "$track" != "stable" ] && [ -n "$VERCEL_PREVIEW_ALIAS" ]; then
-	echo "Setting up alias for '${VERCEL_DEPLOYED_URL}' to custom preview domain '${VERCEL_PREVIEW_ALIAS}'"
-	vercel alias --token="$VERCEL_TOKEN" ${SCOPE} set "${VERCEL_DEPLOYED_URL}" "${VERCEL_PREVIEW_ALIAS}"
-fi
-# if [[ "$track" == "stable" ]]; then
-#		echo "Removing old deployments with --safe flag ..."
-#		vercel remove --safe --yes --token="$VERCEL_TOKEN"
-#	fi
-}
-
-deploy_api() {
+deploy() {
 	track="${1-stable}"
-	percentage="${2:-100}"
 	name="$RELEASE"
 	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
 
-	if [[ "$track" == "canary" ]]; then
-		export BLACKFIRE_SERVER_ENABLED=false
-	fi
-
 	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
-
-  # WITH AUTO-SCALER NOW AND ENV CONFIGURED REPLICAS - THIS SEEMS REDUNDANT?
-	replicas=$(get_replicas "$track" "$percentage")
 
   if [[ -n "$HELM_UNINSTALL" ]]; then
   	delete ${track}
@@ -390,9 +214,6 @@ php:
   mercure:
     jwt:
       algorithm: "${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}"
-  blackfire:
-    id: "${BLACKFIRE_CLIENT_ID}"
-    token: "${BLACKFIRE_CLIENT_TOKEN}"
   databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
   databaseSSL:
     ca: "${DATABASE_CA_CERT_B64}"
@@ -440,11 +261,6 @@ ingress:
     - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
       hosts:
         - ${DOMAIN:-"~"}
-blackfire:
-  enabled: ${BLACKFIRE_SERVER_ENABLED:-true}
-  server:
-    id: "${BLACKFIRE_SERVER_ID}"
-    token: "${BLACKFIRE_SERVER_TOKEN}"
 annotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
@@ -475,24 +291,6 @@ persist_environment_url() {
 	echo $CI_ENVIRONMENT_URL > environment_url.txt
 }
 
-performance() {
-  export CI_ENVIRONMENT_URL=$(cat environment_url.txt)
-
-  mkdir gitlab-exporter
-  wget -O gitlab-exporter/index.js https://gitlab.com/gitlab-org/gl-performance/raw/10-5/index.js
-
-  mkdir sitespeed-results
-
-  if [[ -f .gitlab-urls.txt ]]; then
-    sed -i -e 's@^@'"$CI_ENVIRONMENT_URL"'@' .gitlab-urls.txt
-    docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results .gitlab-urls.txt
-  else
-    docker run --shm-size=1g --rm -v "$(pwd)":/sitespeed.io sitespeedio/sitespeed.io:6.3.1 --plugins.add ./gitlab-exporter --outputFolder sitespeed-results "$CI_ENVIRONMENT_URL"
-  fi
-
-  mv sitespeed-results/data/performance.json performance.json
-}
-
 function delete() {
 	track="${1-stable}"
 	name="$RELEASE"
@@ -514,4 +312,6 @@ function delete() {
 	#else
 	#  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
 	#fi
+}
+
 }

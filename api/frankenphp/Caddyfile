@@ -67,7 +67,8 @@
 
 	# Matches requests for HTML documents, for static files and for Next.js files,
 	# except for known API paths and paths with extensions handled by API Platform
-	@app expression `(
+	@app expression `
+	    (
             header({'Accept': '*text/html*'})
             && !path(
                 '/login_check',
@@ -76,8 +77,17 @@
                 '*.json*', '*.html', '*.csv', '*.yml', '*.yaml', '*.xml'
             )
         )
-        || path('/favicon.ico', '/manifest.json', '/manifest.webmanifest', '/robots.txt', '/sitemap*', '/_next*', '/__next*', '/_nuxt*', '/__nuxt*', '/pwa-*.png', '/*-sw.js*')
-        || query({'_rsc': '*'})`
+        ||
+        path(
+            '/favicon.ico', '/icon.png', '/logo.svg', '/pwa-*.png',
+            '/robots.txt', '/sitemap*',
+            '/manifest.json', '/manifest.webmanifest',
+            '/_nuxt*', '/__nuxt*',
+            '/*-sw.js*', '/_ipx/*'
+           )
+        ||
+        query({'_rsc': '*'})
+    `
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.

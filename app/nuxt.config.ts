@@ -3,7 +3,7 @@ import { defineNuxtConfig } from 'nuxt/config'
 import { createResolver } from '@nuxt/kit'
 import escapeStringRegexp from "escape-string-regexp";
 
-const API_URL = process.env.API_URL || 'https://localhost:8443'
+const API_URL = process.env.API_URL || 'https://localhost'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 
 const { resolve } = createResolver(import.meta.url)
