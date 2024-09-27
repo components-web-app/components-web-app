@@ -88,25 +88,25 @@ behat tests:
     variables:
       - $TEST_DISABLED == "true"
 
-review pwa:
-  stage: review
-  script:
-    - deploy_vercel_app review
-  environment:
-    name: review/$CI_COMMIT_REF_NAME/pwa
-    url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
-    auto_stop_in: 1 hour
-  only:
-    refs:
-      - branches
-  needs: []
-  except:
-    refs:
-      - main
-    variables:
-      - $REVIEW_DISABLED == "true"
+#review pwa:
+#  stage: review
+#  script:
+#    - deploy_vercel_app review
+#  environment:
+#    name: review/$CI_COMMIT_REF_NAME/pwa
+#    url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
+#    auto_stop_in: 1 hour
+#  only:
+#    refs:
+#      - branches
+#  needs: []
+#  except:
+#    refs:
+#      - main
+#    variables:
+#      - $REVIEW_DISABLED == "true"
 
-review api:
+review:
   stage: review
   script:
     - check_kube_domain
@@ -137,23 +137,23 @@ review api:
     variables:
       - $REVIEW_DISABLED == "true"
 
-staging pwa:
-  stage: staging
-  script:
-    - deploy_vercel_app staging
-  environment:
-    name: production/pwa
-    url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
-    auto_stop_in: 1 hour
-  needs: []
-  only:
-    refs:
-      - main
-    variables:
-      - $STAGING_ENABLED == "true"
-  allow_failure: false
+#staging pwa:
+#  stage: staging
+#  script:
+#    - deploy_vercel_app staging
+#  environment:
+#    name: production/pwa
+#    url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
+#    auto_stop_in: 1 hour
+#  needs: []
+#  only:
+#    refs:
+#      - main
+#    variables:
+#      - $STAGING_ENABLED == "true"
+#  allow_failure: false
 
-staging api:
+staging:
   retry: 1
   stage: staging
   script:
@@ -179,27 +179,27 @@ staging api:
       - $STAGING_ENABLED == "true"
   allow_failure: false
 
-production pwa:
-  stage: production
-  script:
-    - deploy_vercel_app
-  environment:
-    name: production/pwa
-    url: https://$KUBE_INGRESS_BASE_DOMAIN
-  when: manual
-  retry: 1
-  allow_failure: false
-  only:
-    refs:
-      - main
-  needs:
-    - job: 'staging pwa'
-      optional: true
-  except:
-    variables:
-      - $PRODUCTION_PWA_DISABLED == "true"
+#production pwa:
+#  stage: production
+#  script:
+#    - deploy_vercel_app
+#  environment:
+#    name: production/pwa
+#    url: https://$KUBE_INGRESS_BASE_DOMAIN
+#  when: manual
+#  retry: 1
+#  allow_failure: false
+#  only:
+#    refs:
+#      - main
+#  needs:
+#    - job: 'staging pwa'
+#      optional: true
+#  except:
+#    variables:
+#      - $PRODUCTION_PWA_DISABLED == "true"
 
-production api:
+production:
   stage: production
   script:
     - check_kube_domain
@@ -221,7 +221,7 @@ production api:
   retry: 1
   allow_failure: false
   needs:
-    - job: 'staging api'
+    - job: 'staging'
       optional: true
   only:
     refs:
@@ -269,14 +269,14 @@ stop review:
   only:
     refs:
       - branches
-  needs: ['review api']
+  needs: ['review']
   except:
     refs:
       - main
     variables:
       - $REVIEW_DISABLED == "true"
 
-canary api:
+canary:
   stage: canary
   script:
     - check_kube_domain
@@ -291,7 +291,7 @@ canary api:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
   needs:
-    - job: 'staging api'
+    - job: 'staging'
       optional: true
   only:
     refs:
