@@ -321,5 +321,3 @@ function delete() {
 	#  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
 	#fi
 }
-
-}
