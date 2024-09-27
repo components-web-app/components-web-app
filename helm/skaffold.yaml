@@ -1,15 +1,15 @@
 apiVersion: skaffold/v4beta4
 kind: Config
 metadata:
-  name: api-platform
+  name: cwa
 build:
   artifacts:
-    - image: api-platform-php
+    - image: cwa-php
       context: ../api
       docker:
         target: app_php
-    - image: api-platform-pwa
-      context: ../pwa
+    - image: cwa-app
+      context: ../app
       docker:
         target: prod
 
@@ -17,13 +17,13 @@ deploy:
   kubeContext: minikube
   helm:
     releases:
-    - name: api-platform
-      chartPath: ./api-platform
+    - name: cwa
+      chartPath: ./cwa
       namespace: default
       setValueTemplates:
-        php.image.repository: "{{.IMAGE_REPO_api_platform_php}}"
-        php.image.tag: "{{.IMAGE_TAG_api_platform_php}}@{{.IMAGE_DIGEST_api_platform_php}}"
-        pwa.image.repository: "{{.IMAGE_REPO_api_platform_pwa}}"
-        pwa.image.tag: "{{.IMAGE_TAG_api_platform_pwa}}@{{.IMAGE_DIGEST_api_platform_pwa}}"
+        php.image.repository: "{{.IMAGE_REPO_cwa_php}}"
+        php.image.tag: "{{.IMAGE_TAG_cwa_php}}@{{.IMAGE_DIGEST_cwa_php}}"
+        pwa.image.repository: "{{.IMAGE_REPO_cwa_app}}"
+        pwa.image.tag: "{{.IMAGE_TAG_cwa_app}}@{{.IMAGE_DIGEST_cwa_app}}"
       valuesFiles:
         - skaffold-values.yaml

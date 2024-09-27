@@ -287,7 +287,7 @@ EOF
   helm upgrade --install \
     --reset-values \
     --namespace="$KUBE_NAMESPACE" \
-    "$name" ./api/_helm/api \
+    "$name" ./helm/cwa \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
