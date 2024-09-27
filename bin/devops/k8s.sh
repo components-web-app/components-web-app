@@ -89,6 +89,10 @@ build_api() {
 }
 
 build_app() {
+	# TODO: REALLY THIS SHOULD BE INTERNAL - IN NUXT WE SHOULD NOT NEED THESE ENVIRONMENTS AT BUILD AND SHOULD JUST USE AT RUNTIME...
+	API_URL="https://${DOMAIN}"
+  API_URL_BROWSER="https://${DOMAIN}"
+
   # https://gitlab.com/help/ci/variables/predefined_variables.md
   if [[ -n "$CI_REGISTRY_USER" ]]; then
     echo "Logging to GitLab Container Registry with CI credentials..."
@@ -214,6 +218,7 @@ pwa:
     repository: ${APP_REPOSITORY}
     tag: ${TAG}
     pullPolicy: Always
+  apiUrl: ~
   apiUrlBrowser: ${API_URL_BROWSER}
 php:
   admin:

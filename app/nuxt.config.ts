@@ -3,6 +3,7 @@ import { defineNuxtConfig } from 'nuxt/config'
 import { createResolver } from '@nuxt/kit'
 import escapeStringRegexp from "escape-string-regexp";
 
+// TODO: Need to get these vars into runtime config so they can be manipulated in runtime with environment and not required at build time
 const API_URL = process.env.API_URL || 'https://localhost'
 const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 
