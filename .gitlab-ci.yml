@@ -28,7 +28,7 @@ before_script:
   - source ./bin/devops/performance.sh
   - source ./bin/devops/vercel.sh
 
-build:
+build api:
   stage: build
   image: docker:stable-git
   services:
@@ -38,7 +38,24 @@ build:
   script:
     - install_dependencies
     - setup_docker_environment
-    - build
+    - build_api
+  only:
+    - branches
+  except:
+    variables:
+      - $BUILD_DISABLED == "true"
+       
+build app:
+  stage: build
+  image: docker:stable-git
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - install_dependencies
+    - setup_docker_environment
+    - build_app
   only:
     - branches
   except:
@@ -54,7 +71,7 @@ unit tests:
     reports:
       junit: api/build/logs/phpunit/junit.xml
   needs:
-    - job: build
+    - job: build api
       optional: true
   except:
     variables:
@@ -77,7 +94,7 @@ behat tests:
     - run_behat
   dependencies: [ ]
   needs:
-    - job: build
+    - job: build api
       optional: true
   only:
     - branches

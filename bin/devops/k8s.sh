@@ -70,7 +70,7 @@ setup_test_db_environment() {
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
 }
 
-build() {
+build_api() {
   # https://gitlab.com/help/ci/variables/predefined_variables.md
   if [[ -n "$CI_REGISTRY_USER" ]]; then
     echo "Logging to GitLab Container Registry with CI credentials..."
@@ -85,6 +85,17 @@ build() {
   	--target frankenphp_prod \
   	"api"
 
+  docker push $PHP_REPOSITORY:$TAG
+}
+
+build_app() {
+  # https://gitlab.com/help/ci/variables/predefined_variables.md
+  if [[ -n "$CI_REGISTRY_USER" ]]; then
+    echo "Logging to GitLab Container Registry with CI credentials..."
+    docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    echo ""
+  fi
+
   docker pull $APP_REPOSITORY:$TAG || true
   docker build \
   	--cache-from $APP_REPOSITORY:$TAG \
@@ -92,7 +103,6 @@ build() {
   	--target prod \
   	"app"
 
-  docker push $PHP_REPOSITORY:$TAG
   docker push $APP_REPOSITORY:$TAG
 }
 
