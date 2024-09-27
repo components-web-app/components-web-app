@@ -211,6 +211,8 @@ imagePullSecrets:
 pwa:
   image:
     repository: ${APP_REPOSITORY}
+    tag: ${TAG}
+    pullPolicy: Always
 php:
   admin:
     username: ${ADMIN_USERNAME:-"admin"}
