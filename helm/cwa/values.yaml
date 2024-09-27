@@ -35,13 +35,13 @@ php:
     samesite: lax
   mercure:
     jwt:
-      algorithm: "${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}"
+      algorithm: ${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}
   databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
   databaseSSL:
-    ca: "${DATABASE_CA_CERT_B64}"
-    key: "${DATABASE_CLIENT_KEY_B64}"
-    cert: "${DATABASE_CLIENT_CERT_B64}"
-    mode: "${DOCTRINE_SSL_MODE:-"prefer"}"
+    ca: ${DATABASE_CA_CERT_B64}
+    key: ${DATABASE_CLIENT_KEY_B64}
+    cert: ${DATABASE_CLIENT_CERT_B64}
+    mode: ${DOCTRINE_SSL_MODE:-"prefer"}
 
 pwa:
   image:
