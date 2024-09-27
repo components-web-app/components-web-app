@@ -45,9 +45,9 @@ generate_jwt_keys() {
 	fi
 
   # Generate random key & jwt for Mercure if not set
-  if [[ -z ${MERCURE_JWT_SECRET_KEY} ]]; then
-  	echo "Generating MERCURE_JWT_SECRET_KEY..."
-    export MERCURE_JWT_SECRET_KEY="$(rand_str)"
+  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
+  	echo "Generating MERCURE_JWT_SECRET..."
+    export MERCURE_JWT_SECRET="$(rand_str)"
   fi
 }
 
@@ -290,8 +290,8 @@ EOF
     "$name" ./api/_helm/api \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
-    --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET_KEY}" \
-    --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET_KEY}" \
+    --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
+    --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
   	-f values.tmp.yaml
 }
 
