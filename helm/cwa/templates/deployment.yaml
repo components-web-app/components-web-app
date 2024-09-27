@@ -1,7 +1,9 @@
+{{- $fullName := include "api-platform.fullname" . -}}
+{{- $primaryHost := index .Values.ingress.hosts 0 }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "api-platform.fullname" . }}
+  name: {{ $fullName }}
   labels:
     {{- include "api-platform.labels" . | nindent 4 }}
 spec:
@@ -36,6 +38,8 @@ spec:
           image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.php.image.pullPolicy }}
           env:
+            - name: BROWSER_SERVER_NAME
+              value: {{ $primaryHost.host | quote }}
             - name: SERVER_NAME
               value: :80
             - name: APP_UPSTREAM
@@ -44,12 +48,22 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "api-platform.fullname" . }}
-                  key: mercure-jwt-secret
+                  key: mercure-publisher-jwt-key
             - name: MERCURE_SUBSCRIBER_JWT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "api-platform.fullname" . }}
-                  key: mercure-jwt-secret
+                  key: mercure-subscriber-jwt-key
+            - name: MERCURE_PUBLISHER_JWT_ALG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-publisher-jwt-algorithm
+            - name: MERCURE_SUBSCRIBER_JWT_ALG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-subscriber-jwt-algorithm
             - name: TRUSTED_HOSTS
               valueFrom:
                 configMapKeyRef:
@@ -110,6 +124,91 @@ spec:
                 secretKeyRef:
                   name: {{ include "api-platform.fullname" . }}
                   key: mercure-jwt-secret
+            - name: MERCURE_CORS_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-cors-origin
+            - name: MERCURE_JWT_ALGORITHM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: php-mercure-jwt-algorithm
+            - name: JWT_COOKIE_SAMESITE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-cookie-samesite
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-secret
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-public
+            - name: JWT_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: jwt-passphrase
+            - name: MAILER_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mailer-email
+            - name: MAILER_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: mailer-dsn
+            - name: DATABASE_CA_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-ca
+            - name: DATABASE_CLIENT_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-cert
+            - name: DATABASE_CLIENT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-key
+            - name: GCLOUD_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: gcloud-json
+            - name: GCLOUD_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: gcloud-bucket
+            - name: ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: admin-username
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: admin-password
+            - name: ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: admin-email
+            - name: DOCTRINE_SSL_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-mode
           ports:
             - name: http
               containerPort: 80

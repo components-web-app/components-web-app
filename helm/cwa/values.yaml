@@ -31,8 +31,10 @@ php:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}
   jwt:
+    secret: ''
+    public: ''
     passphrase: ~
-    samesite: lax
+    samesite: 'lax'
   mercure:
     jwt:
       algorithm: ${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}
@@ -58,6 +60,14 @@ mercure:
   # Change me!
   jwtSecret: "!ChangeThisMercureHubJWTSecretKey!"
   extraDirectives: cors_origins http://chart-example.local https://chart-example.local
+  corsOrigin: '*'
+  jwtKey:
+    subscriber:
+      key: 'my-key-that-must-be-at-least-256-bits'
+      algorithm: ~
+    publisher:
+      key: 'my-key-that-must-be-at-least-256-bits'
+      algorithm: ~
 
 # Full configuration: https://github.com/bitnami/charts/tree/master/bitnami/postgresql
 postgresql:
