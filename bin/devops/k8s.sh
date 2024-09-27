@@ -278,7 +278,9 @@ ingress:
     "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
   hosts:
     - host: ${DOMAIN:-"~"}
-      paths: [ "/" ]
+      paths:
+        - path: '/'
+          pathType: ImplementationSpecific
   tls:
     - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
       hosts:
