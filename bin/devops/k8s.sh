@@ -208,6 +208,9 @@ deploy() {
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
   - name: ${GITLAB_PULL_SECRET_NAME:-"~"}
+pwa:
+  image:
+    repository: ${APP_REPOSITORY}
 php:
   admin:
     username: ${ADMIN_USERNAME:-"admin"}
