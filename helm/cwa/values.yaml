@@ -44,6 +44,8 @@ php:
     mode: ${DOCTRINE_SSL_MODE:-"prefer"}
 
 pwa:
+  apiUrl: ~
+  apiUrlBrowser: ~
   image:
     repository: "chart-example.local/api-platform/pwa"
     pullPolicy: IfNotPresent

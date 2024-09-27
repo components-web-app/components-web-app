@@ -204,6 +204,7 @@ deploy() {
   DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
+  API_URL_BROWSER="https://${DOMAIN}"
 
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
@@ -213,6 +214,7 @@ pwa:
     repository: ${APP_REPOSITORY}
     tag: ${TAG}
     pullPolicy: Always
+  apiUrlBrowser: ${API_URL_BROWSER}
 php:
   admin:
     username: ${ADMIN_USERNAME:-"admin"}

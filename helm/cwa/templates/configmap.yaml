@@ -14,3 +14,5 @@ data:
   mercure-public-url: {{ .Values.mercure.publicUrl | default "http://127.0.0.1/.well-known/mercure" | quote }}
   mercure-extra-directives: {{ .Values.mercure.extraDirectives | quote }}
   caddy-global-options: {{ .Values.php.caddyGlobalOptions | quote }}
+  api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s" (include "api-platform.fullname" .)) | quote }}
+  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "http://%s" (include "api-platform.fullname" .)) | quote }}
