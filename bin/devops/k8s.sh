@@ -240,11 +240,11 @@ php:
     mode: "${DOCTRINE_SSL_MODE:-"prefer"}"
 replicaCount: ${API_REPLICA_COUNT:-"2"}
 autoscaling:
-	enabled: ${API_AUTOSCALE:-"true"}
-	minReplicas: ${API_AUTOSCALE_MIN:-"2"}
-	maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
-	targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"80"}
-	targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"80"}
+  enabled: ${API_AUTOSCALE:-"true"}
+  minReplicas: ${API_AUTOSCALE_MIN:-"2"}
+  maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
+  targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"80"}
+  targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"80"}
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
