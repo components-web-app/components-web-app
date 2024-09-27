@@ -144,6 +144,10 @@ review:
     refs:
       - branches
   needs:
+    - job: 'build api'
+      optional: true
+    - job: 'build app'
+      optional: true
     - job: 'unit tests'
       optional: true
     - job: 'behat tests'
@@ -185,6 +189,10 @@ staging:
     name: production
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
   needs:
+    - job: 'build api'
+      optional: true
+    - job: 'build app'
+      optional: true
     - job: 'unit tests'
       optional: true
     - job: 'behat tests'
