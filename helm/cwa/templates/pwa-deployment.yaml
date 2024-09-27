@@ -34,8 +34,19 @@ spec:
           image: "{{ .Values.pwa.image.repository }}:{{ .Values.pwa.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.pwa.image.pullPolicy }}
           env:
-            - name: NEXT_PUBLIC_ENTRYPOINT
+            {{- with (index .Values.ingress.hosts 0) }}
+            - name: API_URL
+              value: {{ .host }}
+            {{- end }}
+            - name: API_URL_BROWSER
               value: http://{{ include "api-platform.fullname" . }}
+            - name: MERCURE_SUBSCRIBE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "api-platform.fullname" . }}
+                  key: mercure-public-url
+            - name: NODE_ENV
+              value: production
           ports:
             - name: http
               containerPort: 3000
