@@ -90,7 +90,7 @@ behat tests:
   services:
     - postgres:latest
   script:
-    - setup_test_db
+    - setup_test_db_environment
     - run_behat
   dependencies: [ ]
   needs:
