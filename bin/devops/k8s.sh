@@ -269,7 +269,7 @@ varnish:
 ingress:
   enabled: ${INGRESS_ENABLED:-"false"}
   annotations:
-    "kubernetes.io/ingress.class": nginx
+    "spec.ingressClassName": nginx
     "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
   hosts:
     - host: ${DOMAIN:-"~"}
