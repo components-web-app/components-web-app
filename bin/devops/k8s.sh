@@ -89,10 +89,6 @@ build_api() {
 }
 
 build_app() {
-	# TODO: REALLY THIS SHOULD BE INTERNAL - IN NUXT WE SHOULD NOT NEED THESE ENVIRONMENTS AT BUILD AND SHOULD JUST USE AT RUNTIME...
-	API_URL="https://${DOMAIN}"
-  API_URL_BROWSER="https://${DOMAIN}"
-
   # https://gitlab.com/help/ci/variables/predefined_variables.md
   if [[ -n "$CI_REGISTRY_USER" ]]; then
     echo "Logging to GitLab Container Registry with CI credentials..."
@@ -208,7 +204,7 @@ deploy() {
   DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
-  API_URL_BROWSER="https://${DOMAIN}"
+  NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}"
 
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
@@ -219,7 +215,7 @@ pwa:
     tag: ${TAG}
     pullPolicy: Always
   apiUrl: ~
-  apiUrlBrowser: ${API_URL_BROWSER}
+  apiUrlBrowser: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
 php:
   admin:
     username: ${ADMIN_USERNAME:-"admin"}

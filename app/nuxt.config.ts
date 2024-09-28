@@ -1,15 +1,18 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
 import { createResolver } from '@nuxt/kit'
-import escapeStringRegexp from "escape-string-regexp";
-
-// TODO: Need to get these vars into runtime config so they can be manipulated in runtime with environment and not required at build time
-const API_URL = process.env.API_URL || 'https://localhost'
-const API_URL_BROWSER = process.env.API_URL_BROWSER || API_URL
 
 const { resolve } = createResolver(import.meta.url)
 
 export default defineNuxtConfig({
+  runtimeConfig: {
+    public: {
+      cwa: {
+        apiUrl: '',
+        apiUrlBrowser: ''
+      }
+    }
+  },
   app: {
     head: {
       titleTemplate: '%s - CWA Preview',
@@ -38,8 +41,6 @@ export default defineNuxtConfig({
   },
   cwa: {
     appName: 'CWA Preview Web App',
-    apiUrl: API_URL,
-    apiUrlBrowser: API_URL_BROWSER,
     resources: {
       NavigationLink: {
         name: 'Link',
@@ -129,20 +130,20 @@ export default defineNuxtConfig({
       // navigateFallback: '/',
       globPatterns: ['**/*.{js,mjs,ts,json,css,html,png,svg,ico,jpg,jpeg,webp,woff2}'],
       runtimeCaching: [
-        {
-          urlPattern: new RegExp(`^${escapeStringRegexp(API_URL_BROWSER)}\/.*`, 'i'),
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'web-app-api',
-            expiration: {
-              maxEntries: 10000,
-              maxAgeSeconds: 60 * 60 * 24 * 30 // <== 30 days
-            },
-            cacheableResponse: {
-              statuses: [0, 200]
-            }
-          }
-        },
+        // {
+        //   urlPattern: new RegExp(`^${escapeStringRegexp(API_URL_BROWSER)}\/.*`, 'i'),
+        //   handler: 'NetworkFirst',
+        //   options: {
+        //     cacheName: 'web-app-api',
+        //     expiration: {
+        //       maxEntries: 10000,
+        //       maxAgeSeconds: 60 * 60 * 24 * 30 // <== 30 days
+        //     },
+        //     cacheableResponse: {
+        //       statuses: [0, 200]
+        //     }
+        //   }
+        // },
         // {
         //   urlPattern: /^https:\/\/res.cloudinary\.com\/dxt7m8fqi\/image\/upload\/v1700228271\/.*/i,
         //   handler: 'StaleWhileRevalidate',
