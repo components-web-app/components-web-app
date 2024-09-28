@@ -26,7 +26,7 @@ before_script:
   - source ./bin/devops/setup.sh
   - source ./bin/devops/k8s.sh
   - source ./bin/devops/performance.sh
-  - source ./bin/devops/vercel.sh
+  #- source ./bin/devops/vercel.sh
 
 build api:
   stage: build
