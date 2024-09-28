@@ -214,7 +214,7 @@ pwa:
     repository: ${APP_REPOSITORY}
     tag: ${TAG}
     pullPolicy: Always
-  apiUrl: ~
+  apiUrl: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
   apiUrlBrowser: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
 php:
   admin:
