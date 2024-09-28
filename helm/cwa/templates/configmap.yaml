@@ -20,8 +20,8 @@ data:
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | quote }}
   caddy-global-options: {{ .Values.php.caddyGlobalOptions | quote }}
-  api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s" (include "api-platform.fullname" .)) | quote }}
-  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "http://%s" (include "api-platform.fullname" .)) | quote }}
+  api-url: {{ .Values.pwa.apiUrl | default (printf "https://%s" (include "api-platform.fullname" .)) | quote }}
+  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s" (include "api-platform.fullname" .)) | quote }}
   mailer-email: {{ .Values.php.mailer.email | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
