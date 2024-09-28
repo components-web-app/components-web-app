@@ -42,7 +42,7 @@ deploy_vercel_app() {
 		-e NUXT_PUBLIC_CWA_API_URL="${API_ENDPOINT}" \
 		-e NUXT_PUBLIC_CWA_API_URL_BROWSER="${API_ENDPOINT}" \
 		-e NODE_ENV="${NODE_ENV}" \
-		-b NODE_ENV="${NODE_ENV}"
+		-b NODE_ENV="${NODE_ENV}")
 
   if [ "$track" != "stable" ] && [ -n "$VERCEL_PREVIEW_ALIAS" ]; then
 	  echo "Setting up alias for '${VERCEL_DEPLOYED_URL}' to custom preview domain '${VERCEL_PREVIEW_ALIAS}'"
