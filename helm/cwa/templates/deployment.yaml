@@ -123,7 +123,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "api-platform.fullname" . }}
-                  key: mercure-jwt-secret
+                  key: mercure-subscriber-jwt-key
             - name: MERCURE_CORS_ORIGIN
               valueFrom:
                 configMapKeyRef:

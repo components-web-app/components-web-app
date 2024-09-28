@@ -57,8 +57,6 @@ pwa:
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
   publicUrl: https://chart-example.local/.well-known/mercure
-  # Change me!
-  jwtSecret: "!ChangeThisMercureHubJWTSecretKey!"
   extraDirectives: cors_origins http://chart-example.local https://chart-example.local
   corsOrigin: '*'
   jwtKey:
