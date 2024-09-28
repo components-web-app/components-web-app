@@ -44,11 +44,6 @@ spec:
                 configMapKeyRef:
                   name: {{ include "api-platform.fullname" . }}
                   key: api-url-browser
-            - name: MERCURE_SUBSCRIBE_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "api-platform.fullname" . }}
-                  key: mercure-public-url
             - name: NODE_ENV
               value: production
           ports:

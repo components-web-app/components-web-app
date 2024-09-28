@@ -24,7 +24,6 @@ deploy_vercel_app() {
   track="${1-stable}"
 	SCOPE=""
 	NODE_ENV="production"
-	MERCURE_SUBSCRIBE_URL="https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure"
 	if [[ -n "$VERCEL_SCOPE" ]]; then
 		SCOPE="--scope $VERCEL_SCOPE"
 	fi
@@ -35,7 +34,7 @@ deploy_vercel_app() {
 	fi
 	API_ENDPOINT="https://${DOMAIN}"
 
-	echo "Deploying Vercel with API ${API_ENDPOINT} and Mercure subscriber URL ${MERCURE_SUBSCRIBE_URL} ..."
+	echo "Deploying Vercel with API ${API_ENDPOINT}..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"
 	VERCEL_PROJECT_ID="$VERCEL_PROJECT_ID"
 	VERCEL_DEPLOYED_URL=$(vercel app ${PROD_FLAG} ${SCOPE} \
@@ -43,9 +42,7 @@ deploy_vercel_app() {
 		-e NUXT_PUBLIC_CWA_API_URL="${API_ENDPOINT}" \
 		-e NUXT_PUBLIC_CWA_API_URL_BROWSER="${API_ENDPOINT}" \
 		-e NODE_ENV="${NODE_ENV}" \
-    -e MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}" \
-		-b NODE_ENV="${NODE_ENV}" \
-		-b MERCURE_SUBSCRIBE_URL="${MERCURE_SUBSCRIBE_URL}")
+		-b NODE_ENV="${NODE_ENV}"
 
   if [ "$track" != "stable" ] && [ -n "$VERCEL_PREVIEW_ALIAS" ]; then
 	  echo "Setting up alias for '${VERCEL_DEPLOYED_URL}' to custom preview domain '${VERCEL_PREVIEW_ALIAS}'"
