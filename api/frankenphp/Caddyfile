@@ -10,7 +10,7 @@
 
 {$SERVER_NAME:localhost} {
     @internal {
-        header_regexp internal host ([A-Za-z\-]+\.local(?:\:[0-9]{1,4})?)
+        header_regexp internal host ([A-Za-z\-0-9]+(?:\.local)?(?:\:[0-9]{1,4})?)
     }
 
 	log {
