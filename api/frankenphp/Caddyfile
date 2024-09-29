@@ -1,7 +1,9 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
 
-    {$CACHE_CONFIG}
+    cache {
+        {$CACHE_CONFIG}
+    }
 
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
@@ -97,8 +99,6 @@
 
     # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
     request_header @internal host {$BROWSER_SERVER_NAME}
-	route {
-	    cache
-	    php_server
-	}
+    #cache
+    php_server
 }
