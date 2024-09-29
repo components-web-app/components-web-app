@@ -209,6 +209,11 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: database-ssl-mode
+            - name: CACHE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: cache-url
           ports:
             - name: http
               containerPort: 80
