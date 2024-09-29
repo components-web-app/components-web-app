@@ -102,6 +102,7 @@ FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
 ENV FRANKENPHP_CONFIG="import worker.Caddyfile"
+ENV CACHE_CONFIG="import souin.Caddyfile"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
