@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "api-platform.fullname" . }}
+  name: {{ include "cwa.fullname" . }}
   labels:
-    {{- include "api-platform.labels" . | nindent 4 }}
+    {{- include "cwa.labels" . | nindent 4 }}
 data:
   php-app-env: {{ .Values.php.appEnv | quote }}
   php-app-debug: {{ .Values.php.appDebug | quote }}
@@ -13,16 +13,16 @@ data:
   php-mercure-jwt-algorithm: {{ .Values.php.mercure.jwt.algorithm | quote }}
   jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
-  mercure-url: "http://{{ include "api-platform.fullname" . }}/.well-known/mercure"
+  mercure-url: "http://{{ include "cwa.fullname" . }}/.well-known/mercure"
   mercure-public-url: {{ .Values.mercure.publicUrl | default "http://127.0.0.1/.well-known/mercure" | quote }}
   mercure-extra-directives: {{ .Values.mercure.extraDirectives | quote }}
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | quote }}
   caddy-global-options: {{ .Values.php.caddyGlobalOptions | quote }}
-  api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s" (include "api-platform.fullname" .)) | quote }}
-  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s" (include "api-platform.fullname" .)) | quote }}
+  api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s" (include "cwa.fullname" .)) | quote }}
+  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s" (include "cwa.fullname" .)) | quote }}
   mailer-email: {{ .Values.php.mailer.email | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
-  cache-url: http://{{ include "api-platform.fullname" . }}/souin-api/souin
+  cache-url: http://{{ include "cwa.fullname" . }}/souin-api/souin

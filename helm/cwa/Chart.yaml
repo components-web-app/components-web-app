@@ -2,7 +2,7 @@ apiVersion: v2
 name: cwa
 description: A Helm chart for a CWA project
 home: https://cwa.rocks
-#icon: https://api-platform.com/logo-250x250.png
+#icon: https://cwa.rocks/logo-250x250.png
 
 # A chart can be either an 'application' or a 'library' chart.
 #

@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "api-platform.fullname" . }}-pwa
+  name: {{ include "cwa.fullname" . }}-pwa
   labels:
-    {{- include "api-platform.labelsPWA" . | nindent 4 }}
+    {{- include "cwa.labelsPWA" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "api-platform.selectorLabelsPWA" . | nindent 6 }}
+      {{- include "cwa.selectorLabelsPWA" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -20,13 +20,13 @@ spec:
           {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "api-platform.selectorLabelsPWA" . | nindent 8 }}
+        {{- include "cwa.selectorLabelsPWA" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "api-platform.serviceAccountName" . }}
+      serviceAccountName: {{ include "cwa.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -39,12 +39,12 @@ spec:
             - name: NUXT_PUBLIC_CWA_API_URL
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "api-platform.fullname" . }}
+                  name: {{ include "cwa.fullname" . }}
                   key: api-url
             - name: NUXT_PUBLIC_CWA_API_URL_BROWSER
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "api-platform.fullname" . }}
+                  name: {{ include "cwa.fullname" . }}
                   key: api-url-browser
             - name: NODE_ENV
               value: production
