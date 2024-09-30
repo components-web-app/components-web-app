@@ -1,8 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { defineNuxtConfig } from 'nuxt/config'
-import { createResolver } from '@nuxt/kit'
-
-const { resolve } = createResolver(import.meta.url)
 
 export default defineNuxtConfig({
   runtimeConfig: {
@@ -99,7 +96,7 @@ export default defineNuxtConfig({
   },
   routeRules: {
     // '/': { prerender: true },
-    '/**': { isr: 30 }
+    // '/**': { isr: 30 }
   },
   pwa: {
     registerType: 'autoUpdate',
@@ -180,7 +177,7 @@ export default defineNuxtConfig({
   //   typeCheck: true,
   //   strict: true
   // },
-  // see https://github.com/nuxt/nuxt/issues/12003#issuecomment-1397230032
+  // behind caddy so we have this so we can predictably forward hmr sockets
   vite: {
     server: {
       hmr: {
