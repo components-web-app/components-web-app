@@ -108,11 +108,12 @@ build_app() {
     echo ""
   fi
 
+	# --build-arg BUILDKIT_INLINE_CACHE=1 \
+	# --cache-from $APP_REPOSITORY:$TAG \
+
   docker pull $APP_REPOSITORY:$TAG || true
 
   docker build \
-  	--build-arg BUILDKIT_INLINE_CACHE=1 \
-  	--cache-from $APP_REPOSITORY:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
   	--target prod \
   	"app"
