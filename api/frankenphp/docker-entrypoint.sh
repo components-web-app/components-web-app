@@ -6,6 +6,17 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		composer install --prefer-dist --no-progress --no-interaction
 	fi
 
+  mkdir -p var/database
+	echo "$DATABASE_CA_CERT" > var/database/server-ca.pem
+	echo "$DATABASE_CLIENT_CERT" > var/database/client-cert.pem
+	echo "$DATABASE_CLIENT_KEY" > var/database/client-key.pem
+
+	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
+  setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var || true
+
+  chown -R www-data var/database/*
+	chmod -R 0600 var/database/*
+
 	if grep -q ^DATABASE_URL= .env; then
 		echo "Waiting for database to be ready..."
 		ATTEMPTS_LEFT_TO_REACH_DATABASE=30
@@ -32,9 +43,6 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 			php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
 		fi
 	fi
-
-	setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX var
-	setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX var
 fi
 
 exec docker-php-entrypoint "$@"
