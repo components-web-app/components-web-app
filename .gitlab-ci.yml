@@ -7,11 +7,6 @@ variables:
   CANARY_ENABLED: "true"
   PERFORMANCE_DISABLED: "false"
 
-cache:
-  key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
-  paths:
-    - api/vendor/
-
 stages:
   - build
   - test
@@ -40,6 +35,12 @@ build api:
     - generate_jwt_keys
     - setup_docker_environment
     - build_api
+  cache:
+    - key:
+        files:
+          - api/composer.lock
+      paths:
+        - api/vendor/
   only:
     - branches
   except:
@@ -57,6 +58,13 @@ build app:
     - install_dependencies
     - setup_docker_environment
     - build_app
+  cache:
+    - key:
+        files:
+          - app/pnpm-lock.yaml
+      paths:
+        - app/.pnpm-store/
+        - app/node_modules/
   only:
     - branches
   except:
