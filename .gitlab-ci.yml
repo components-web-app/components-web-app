@@ -95,7 +95,7 @@ behat tests:
     url: https://test.$KUBE_INGRESS_BASE_DOMAIN #required for properly setting environment without errors
   allow_failure: false
   services:
-    - postgres:latest
+    - postgres:14
   script:
     - setup_test_db_environment
     - run_test_behat
