@@ -67,6 +67,11 @@ setup_test_db_environment() {
   else
     DB_HOST=localhost
   fi
+  export DATABASE_CA_CERT=''
+  export DATABASE_CLIENT_CERT=''
+  export DATABASE_CLIENT_KEY=''
+  export DATABASE_SSL_MODE='disable'
+
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
 }
 
