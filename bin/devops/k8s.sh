@@ -84,11 +84,14 @@ build_api() {
   fi
 
   docker pull $PHP_REPOSITORY:$TAG || true
+  docker pull $PHP_REPOSITORY:dev || true
 
   docker build \
   	--build-arg BUILDKIT_INLINE_CACHE=1 \
   	--cache-from $PHP_REPOSITORY:$TAG \
+  	--cache-from $PHP_REPOSITORY:dev \
   	--tag $PHP_REPOSITORY:$TAG \
+  	--tag $PHP_REPOSITORY:dev \
   	--target frankenphp_prod \
   	"api"
 
@@ -104,10 +107,14 @@ build_app() {
   fi
 
   docker pull $APP_REPOSITORY:$TAG || true
+  docker pull $APP_REPOSITORY:dev || true
+
   docker build \
   	--build-arg BUILDKIT_INLINE_CACHE=1 \
   	--cache-from $APP_REPOSITORY:$TAG \
+  	--cache-from $APP_REPOSITORY:dev \
   	--tag $APP_REPOSITORY:$TAG \
+  	--tag $APP_REPOSITORY:dev \
   	--target prod \
   	"app"
 
