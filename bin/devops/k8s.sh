@@ -127,7 +127,7 @@ run_test_phpunit() {
   cd ./api || return
   mkdir -p build/logs/phpunit/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
-  vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
+  APP_ENV=test vendor/bin/simple-phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
 }
 
 run_test_behat() {

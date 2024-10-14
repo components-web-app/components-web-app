@@ -164,26 +164,21 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: mailer-dsn
-            - name: DATABASE_CA_CERT
+            - name: DOCTRINE_CA_CERT
               valueFrom:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: database-ssl-ca
-            - name: DATABASE_CLIENT_CERT
+            - name: DOCTRINE_CLIENT_CERT
               valueFrom:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: database-ssl-cert
-            - name: DATABASE_CLIENT_KEY
+            - name: DOCTRINE_CLIENT_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: database-ssl-key
-            - name: DATABASE_SSL_MODE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ $fullName }}
-                  key: database-ssl-mode
             - name: GCLOUD_JSON
               valueFrom:
                 secretKeyRef:
@@ -209,6 +204,11 @@ spec:
                 secretKeyRef:
                   name: {{ $fullName }}
                   key: admin-email
+            - name: DOCTRINE_SSL_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: database-ssl-mode
             - name: CACHE_URL
               valueFrom:
                 configMapKeyRef:
