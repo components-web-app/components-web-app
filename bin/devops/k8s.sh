@@ -73,7 +73,7 @@ setup_test_db_environment() {
   export DATABASE_SSL_MODE='disable'
 
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
-  echo "TEST DATABASE URL SETUP... ${DATABASE_URL}"
+  echo "Test database: ${DATABASE_URL}"
 }
 
 build_api() {
@@ -136,6 +136,7 @@ run_test_behat() {
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  echo "Behat environment for DATABASE_URL: ${DATABASE_URL}"
   bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS citext;"
   vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
 }
