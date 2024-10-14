@@ -31,6 +31,14 @@
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.3",
-    "vue-tsc": "^1.8.27"
+    "vue-tsc": "^2.1.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "vue-tsc": ">=2.1.6"
+    },
+    "auditConfig": {
+      "ignoreCves": []
+    }
   }
 }
