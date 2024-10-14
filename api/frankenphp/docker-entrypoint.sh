@@ -21,11 +21,11 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		done
 
 		if [ $ATTEMPTS_LEFT_TO_REACH_DATABASE -eq 0 ]; then
-			echo "The database is not up or not reachable:"
-			echo "$DATABASE_ERROR"
+			echo "!* The database is not up or not reachable:"
+			echo "!* $DATABASE_ERROR"
 			exit 1
 		else
-			echo "The database is now ready and reachable"
+			echo "* The database is now ready and reachable"
 		fi
 
 		if [ "$( find ./migrations -iname '*.php' -print -quit )" ]; then
