@@ -97,6 +97,7 @@ build_api() {
   	"api"
 
   docker push $PHP_REPOSITORY:$TAG
+  docker push $PHP_REPOSITORY:dev
 }
 
 build_app() {
@@ -120,6 +121,7 @@ build_app() {
   	"app"
 
   docker push $APP_REPOSITORY:$TAG
+  docker push $APP_REPOSITORY:dev
 }
 
 run_test_phpunit() {
