@@ -2,8 +2,8 @@ parameters:
   env(DATABASE_SSL_MODE): 'prefer'
 doctrine:
   dbal:
-    url: '%env(DATABASE_URL)%'
-    server_version: '14'
+    # we resolve paths to cert files rather than the certs themselves 
+    # docker entrypoint moves the env to the files for this to work.
     sslrootcert: '%env(resolve:DOCTRINE_CA_CERT)%'
     sslcert: '%env(resolve:DOCTRINE_CLIENT_CERT)%'
     sslkey: '%env(resolve:DOCTRINE_CLIENT_KEY)%'
