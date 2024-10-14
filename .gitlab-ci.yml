@@ -66,6 +66,9 @@ build app:
 unit tests:
   image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG
   stage: test
+  environment:
+    name: test
+    url: https://test.$KUBE_INGRESS_BASE_DOMAIN #required for properly setting environment without errors
   script:
     - run_test_phpunit
   artifacts:
@@ -87,6 +90,9 @@ behat tests:
     POSTGRES_PASSWORD: "password"
     POSTGRES_DB: test
     POSTGRES_HOST_AUTH_METHOD: trust
+  environment:
+    name: test
+    url: https://test.$KUBE_INGRESS_BASE_DOMAIN #required for properly setting environment without errors
   allow_failure: false
   services:
     - postgres:latest
