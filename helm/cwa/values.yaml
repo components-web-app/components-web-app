@@ -38,7 +38,6 @@ php:
   mercure:
     jwt:
       algorithm: ${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}
-  databaseLoadFixtures: ${DATABASE_LOAD_FIXTURES:-"false"}
   databaseSSL:
     ca: ${DATABASE_CA_CERT_B64}
     key: ${DATABASE_CLIENT_KEY_B64}
