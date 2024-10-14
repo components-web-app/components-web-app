@@ -73,6 +73,7 @@ setup_test_db_environment() {
   export DATABASE_SSL_MODE='disable'
 
   export DATABASE_URL="pgsql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}"
+  echo "TEST DATABASE URL SETUP... ${DATABASE_URL}"
 }
 
 build_api() {
