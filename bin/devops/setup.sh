@@ -21,6 +21,9 @@ fi
 if [[ -z "$LETSENCRYPT_SECRET_NAME" ]]; then
   export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
 fi
+if [[ -z "$CI_ENVIRONMENT_URL" ]]; then
+  export CI_ENVIRONMENT_URL="test-domain.com"
+fi
 
 export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
