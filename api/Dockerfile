@@ -12,8 +12,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 ENV CGO_ENABLED=1 XCADDY_SETCAP=1 XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\""
 RUN xcaddy build \
     --output /usr/local/bin/frankenphp \
-    #--with github.com/dunglas/frankenphp=./ \
-    #--with github.com/dunglas/frankenphp/caddy=./caddy/ \
     --with github.com/dunglas/frankenphp/caddy \
     --with github.com/dunglas/caddy-cbrotli \
     --with github.com/dunglas/mercure/caddy \
@@ -96,13 +94,11 @@ FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
 ENV FRANKENPHP_CONFIG="import worker.Caddyfile"
-ENV CACHE_CONFIG="import souin.Caddyfile"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 COPY --link frankenphp/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
 COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
-COPY --link frankenphp/souin.Caddyfile /etc/caddy/souin.Caddyfile
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY --link composer.* symfony.* ./
