@@ -9,7 +9,7 @@
 			strategy hard
 		}
 		key {
-			headers Cookie Content-Type
+			headers Cookie Content-Type Accept
 		}
 		otter
 	}
