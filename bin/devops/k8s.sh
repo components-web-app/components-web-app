@@ -109,15 +109,18 @@ build_app() {
   fi
 
   docker pull $APP_REPOSITORY:$TAG || true
+  docker pull $APP_REPOSITORY:dev || true
 
   docker build \
     --build-arg BUILDKIT_INLINE_CACHE=1 \
     --cache-from $APP_REPOSITORY:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
+  	--tag $APP_REPOSITORY:dev \
   	--target prod \
   	"app"
 
   docker push $APP_REPOSITORY:$TAG
+  docker push $APP_REPOSITORY:dev
 }
 
 run_test_phpunit() {
