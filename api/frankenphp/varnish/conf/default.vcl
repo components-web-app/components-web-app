@@ -45,13 +45,13 @@ acl invalidators {
 }
 
 sub vcl_recv {
-  if (req.http.upgrade ~ "(?i)websocket") {
-    return (pipe);
+  # For health checks
+  if (req.url == "/healthz") {
+    return (synth(200, "OK"));
   }
 
-  # For health checks
-  if (req.method == "GET" && req.url == "/healthz") {
-    return (synth(200, "OK"));
+  if (req.http.upgrade ~ "(?i)websocket") {
+    return (pipe);
   }
 
   if (req.esi_level > 0) {

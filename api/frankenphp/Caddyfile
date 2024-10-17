@@ -125,7 +125,9 @@
         #health_uri /healthz
         #health_interval 5s
         #health_timeout 20s
+
         #fail_duration 5s
+        #max_fails 3
 	}
 
 	# Add links to the API docs and to the Mercure Hub if not set explicitly (e.g. the PWA)
