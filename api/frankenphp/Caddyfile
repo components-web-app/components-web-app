@@ -27,12 +27,13 @@
 
 {$SERVER_NAME:localhost}, :80 {
     @health_check {
-		host caddy-probe.local
-		path /health-check
-	}
+      header User-Agent "Varnish Health Probe"
+      method HEAD
+      path /health-check
+    }
 
-	respond @health_check 200 {
-        close
+    respond @health_check 200 {
+      close
     }
 
     @not_passed_varnish {

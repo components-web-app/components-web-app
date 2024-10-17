@@ -35,12 +35,6 @@ build api:
     - generate_jwt_keys
     - setup_docker_environment
     - build_api
-  cache:
-    - key:
-        files:
-          - api/composer.lock
-      paths:
-        - api/vendor/
   only:
     - branches
   except:
