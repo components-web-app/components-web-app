@@ -9,9 +9,10 @@
 			strategy hard
 		}
 		key {
+		    hide
 			headers Cookie Content-Type Accept
 		}
-		otter
+		# otter
 	}
 
 	frankenphp {
