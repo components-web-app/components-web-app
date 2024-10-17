@@ -25,21 +25,16 @@
 
 {$CADDY_EXTRA_CONFIG}
 
-caddy-probe.local:80 {
-	@health_check {
+{$SERVER_NAME:localhost}, :80 {
+    @health_check {
 		host caddy-probe.local
 		path /health-check
 	}
-	# customisable log level with environment
-    log {
-        level {$LOG_LEVEL:"error"}
-    }
-    respond @health_check 200 {
+
+	respond @health_check 200 {
         close
     }
-}
 
-{$SERVER_NAME:localhost}, :80 {
     @not_passed_varnish {
 		header !X-Varnish
 	}
