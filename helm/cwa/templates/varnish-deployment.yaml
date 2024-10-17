@@ -8,8 +8,6 @@ metadata:
   name: {{ $fullName }}-{{ $name }}
   labels:
     {{- include "cwa.labels" $data | nindent 4 }}
-  annotations:
-    {{- include "cwa.annotations" $data | nindent 4 }}
 spec:
   replicas: {{ .Values.varnish.replicaCount }}
   strategy:
@@ -27,7 +25,9 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-        {{- include "cwa.annotations" $data | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
