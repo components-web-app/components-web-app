@@ -1,6 +1,8 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
-
+    log {
+        level debug
+    }
     cache {
         api {
 			souin
@@ -12,7 +14,6 @@
 		    hide
 			headers Cookie Content-Type Accept
 		}
-		debug
 		otter
 	}
 
