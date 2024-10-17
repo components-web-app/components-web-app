@@ -13,7 +13,7 @@
 			headers Cookie Content-Type Accept
 		}
 		debug
-		# otter
+		otter
 	}
 
 	frankenphp {
