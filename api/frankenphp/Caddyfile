@@ -1,8 +1,6 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
-    log {
-        level debug
-    }
+    debug
     cache {
         api {
 			souin
