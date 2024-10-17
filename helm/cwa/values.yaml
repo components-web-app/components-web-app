@@ -93,6 +93,24 @@ postgresql:
         memory: 50Mi
         cpu: 1m
 
+varnish:
+  enabled: true
+  image:
+    repository: ~
+    tag: latest
+    pullPolicy: Always
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    limits:
+      cpu: 200m
+      memory: 250Mi
+    requests:
+      cpu: 200m
+      memory: 250Mi
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

@@ -96,6 +96,26 @@ build_api() {
   docker push $PHP_REPOSITORY:$TAG
 }
 
+build_varnish() {
+  # https://gitlab.com/help/ci/variables/predefined_variables.md
+  if [[ -n "$CI_REGISTRY_USER" ]]; then
+    echo "Logging to GitLab Container Registry with CI credentials..."
+    docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    echo ""
+  fi
+
+  docker pull $VARNISH_REPOSITORY:$TAG || true
+
+  docker build \
+  	--build-arg BUILDKIT_INLINE_CACHE=1 \
+  	--cache-from $VARNISH_REPOSITORY:$TAG \
+  	--tag $VARNISH_REPOSITORY:$TAG \
+  	--target varnish \
+  	"api"
+
+  docker push $VARNISH_REPOSITORY:$TAG
+}
+
 build_app() {
   # https://gitlab.com/help/ci/variables/predefined_variables.md
   if [[ -n "$CI_REGISTRY_USER" ]]; then
@@ -255,13 +275,6 @@ php:
     key: "${DATABASE_CLIENT_KEY_B64}"
     cert: "${DATABASE_CLIENT_CERT_B64}"
     mode: "${DATABASE_SSL_MODE:-"prefer"}"
-replicaCount: ${API_REPLICA_COUNT:-"2"}
-autoscaling:
-  enabled: ${API_AUTOSCALE:-"true"}
-  minReplicas: ${API_AUTOSCALE_MIN:-"2"}
-  maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
-  targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"80"}
-  targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"80"}
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -297,9 +310,6 @@ ingress:
     - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
       hosts:
         - ${DOMAIN:-"~"}
-annotations:
-  app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
-  app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 postgresql:
   image:
     tag: ${DATABASE_IMAGE_TAG:-"14"}
@@ -310,6 +320,23 @@ postgresql:
     database: ${POSTGRES_DB:-"pg_database"}
     username: ${POSTGRES_USERNAME:-"pg_user"}
     password: ${POSTGRES_PASSWORD:-"pg_password"}
+varnish:
+  enabled: true
+  replicaCount: ${VARNISH_REPLICA_COUNT:-"1"}
+  image:
+    repository: ${VARNISH_REPOSITORY}
+    tag: ${TAG}
+    pullPolicy: Always
+annotations:
+  app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
+  app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
+replicaCount: ${REPLICA_COUNT:-"1"}
+autoscaling:
+  enabled: ${API_AUTOSCALE:-"true"}
+  minReplicas: ${API_AUTOSCALE_MIN:-"1"}
+  maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
+  targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"80"}
+  targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"80"}
 EOF
 
   helm upgrade --install \

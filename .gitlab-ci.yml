@@ -46,6 +46,23 @@ build api:
   except:
     variables:
       - $BUILD_DISABLED == "true"
+      
+build varnish:
+  stage: build
+  image: docker:stable-git
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - install_dependencies
+    - setup_docker_environment
+    - build_varnish
+  only:
+    - branches
+  except:
+    variables:
+      - $BUILD_DISABLED == "true"
        
 build app:
   stage: build
