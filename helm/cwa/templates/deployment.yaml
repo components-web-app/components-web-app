@@ -235,16 +235,16 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "/bin/sleep 1; kill -QUIT 1"]
-          readinessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 3
-            periodSeconds: 3
-          livenessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 3
-            periodSeconds: 3
+          #readinessProbe:
+          #  tcpSocket:
+          #    port: 80
+          #  initialDelaySeconds: 3
+          #  periodSeconds: 3
+          #livenessProbe:
+          #  tcpSocket:
+          #    port: 80
+          #  initialDelaySeconds: 3
+          #  periodSeconds: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
