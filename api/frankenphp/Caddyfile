@@ -12,6 +12,7 @@
 		    hide
 			headers Cookie Content-Type Accept
 		}
+		debug
 		# otter
 	}
 
