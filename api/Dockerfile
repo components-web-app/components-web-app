@@ -1,5 +1,7 @@
 #syntax=docker/dockerfile:1
 
+ARG VARNISH_VERSION=7.4
+
 # Adapted from https://github.com/dunglas/symfony-docker
 
 # Versions
@@ -115,3 +117,23 @@ RUN set -eux; \
 	composer dump-env prod; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync;
+
+# "varnish" stage
+# does not depend on any of the above stages
+FROM varnish:${VARNISH_VERSION} AS varnish
+
+USER root
+RUN apt-get update; apt-get -y install gettext-base
+
+COPY frankenphp/varnish/persist-environment.sh /usr/local/bin/persist-environment
+COPY frankenphp/varnish/conf/default.vcl /tmp/varnish/conf/default.vcl
+
+RUN chmod -R 777 /tmp/varnish/conf \
+    && chmod -R 777 /etc/varnish \
+    && chmod +x /usr/local/bin/persist-environment
+
+USER varnish
+
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/docker-varnish-entrypoint", "/usr/local/bin/persist-environment"]
+CMD ["varnishd", "-F", "-f", "/etc/varnish/default.vcl", "-p", "http_resp_hdr_len=65536", "-p", "http_resp_size=98304", "-p", "workspace_backend=512K", "-a", "http=:8080,HTTP", "-a", "proxy=:8443,PROXY", "-p", "feature=+http2", "-s", "malloc,100M"]

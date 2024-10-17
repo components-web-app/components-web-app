@@ -19,7 +19,7 @@ api_platform:
   keep_legacy_inflector: true
   http_cache:
     invalidation:
-      purger: 'api_platform.http_cache.purger.souin'
+      purger: 'api_platform.http_cache.purger.varnish.xkey'
       enabled: true
       urls: ['%env(CACHE_URL)%']
     public: true

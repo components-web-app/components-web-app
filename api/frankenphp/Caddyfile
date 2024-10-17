@@ -1,30 +1,78 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
 
-    cache {
-        api {
-			souin
-		}
-		cdn {
-			strategy hard
-		}
-		key {
-			headers Cookie Content-Type Accept
-		}
-		otter
-	}
+    # using varnish for now
+    # souin Git branch looking to work on making this stable
+    #cache {
+    #    api {
+	#		souin
+	#	}
+	#	cdn {
+	#		strategy hard
+	#	}
+	#	key {
+	#		headers Cookie Content-Type Accept
+	#	}
+	#	otter
+	#}
 
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
+
+	auto_https disable_redirects
 }
 
 {$CADDY_EXTRA_CONFIG}
 
-{$SERVER_NAME:localhost} {
+caddy-probe.local:80 {
+	@health_check {
+		host caddy-probe.local
+		path /health-check
+	}
+	# customisable log level with environment
+    log {
+        level {$LOG_LEVEL:"error"}
+    }
+    respond @health_check 200 {
+        close
+    }
+}
+
+{$SERVER_NAME:localhost}, :80 {
+    @not_passed_varnish {
+		header !X-Varnish
+	}
+    @has_passed_varnish {
+		header X-Varnish 1
+	}
     @internal {
         header_regexp internal host ([A-Za-z\-0-9]+(?:\.local)?(?:\:[0-9]{1,4})?)
     }
+    # Matches requests for HTML documents, for static files and for Next.js files,
+    # except for known API paths and paths with extensions handled by API Platform
+    @app expression `
+        (
+            header({'Accept': '*text/html*'})
+            && !path(
+                '/souin*',
+                '/login_check',
+                '/logout',
+                '/docs*', '/graphql*', '/bundles*', '/contexts*', '/_profiler*', '/_wdt*',
+                '*.json*', '*.html', '*.csv', '*.yml', '*.yaml', '*.xml'
+            )
+        )
+        ||
+        path(
+            '/favicon.ico', '/icon.png', '/logo.svg', '/pwa-*.png',
+            '/robots.txt', '/sitemap*',
+            '/manifest.json', '/manifest.webmanifest',
+            '/_nuxt*', '/__nuxt*',
+            '/*-sw.js*', '/_ipx/*'
+           )
+        ||
+        query({'_rsc': '*'})
+    `
 
 	log {
 		# Redact the authorization query parameter that can be set by Mercure
@@ -55,7 +103,7 @@
 		}
 	}
 
-	mercure {
+	mercure @not_passed_varnish {
 		# Transport to use (default to Bolt)
 		transport_url {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
 		# Publisher JWT key
@@ -72,40 +120,23 @@
         cors_origins {$MERCURE_CORS_ORIGIN:*}
 	}
 
-	vulcain
+	vulcain @not_passed_varnish
+
+	reverse_proxy @not_passed_varnish {
+	    to {$VARNISH_UPSTREAM}
+        health_uri /healthz
+        health_interval 5s
+        health_timeout 20s
+        fail_duration 5s
+        header_up Upgrade-Insecure-Requests 0
+        header_up X-Varnish 1
+	}
 
 	# Add links to the API docs and to the Mercure Hub if not set explicitly (e.g. the PWA)
 	header ?Link `</docs.jsonld>; rel="http://www.w3.org/ns/hydra/core#apiDocumentation", </.well-known/mercure>; rel="mercure"`
+
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
-
-	# Matches requests for HTML documents, for static files and for Next.js files,
-	# except for known API paths and paths with extensions handled by API Platform
-	@app expression `
-	    (
-            header({'Accept': '*text/html*'})
-            && !path(
-                '/souin*',
-                '/login_check',
-                '/logout',
-                '/docs*', '/graphql*', '/bundles*', '/contexts*', '/_profiler*', '/_wdt*',
-                '*.json*', '*.html', '*.csv', '*.yml', '*.yaml', '*.xml'
-            )
-        )
-        ||
-        path(
-            '/favicon.ico', '/icon.png', '/logo.svg', '/pwa-*.png',
-            '/robots.txt', '/sitemap*',
-            '/manifest.json', '/manifest.webmanifest',
-            '/_nuxt*', '/__nuxt*',
-            '/*-sw.js*', '/_ipx/*'
-           )
-        ||
-        query({'_rsc': '*'})
-    `
-    @php expression `header({'Accept': '*application/*'}) || path('/souin*')`
-
-    cache @php
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
