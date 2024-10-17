@@ -214,6 +214,16 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: cache-url
+            - name: VARNISH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: varnish-url
+            - name: VARNISH_UPSTREAM
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: varnish-upstream
           ports:
             - name: http
               containerPort: 80
