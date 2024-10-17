@@ -14,17 +14,17 @@ backend default {
   .between_bytes_timeout  = 10s;     # How long to wait between bytes received from our backend?
 
   # Health check
-  #.probe = {
-  #  .request =
-  #    "HEAD /health-check HTTP/1.1"
-  #    "Host: caddy-probe.local"
-  #    "Connection: close"
-  #    "User-Agent: Varnish Health Probe";
-  #  .timeout = 5s;
-  #  .interval = 5s;
-  #  .window = 4;
-  #  .threshold = 2;
-  #}
+  .probe = {
+    .request =
+      "HEAD /health-check HTTP/1.1"
+      "Host: caddy-probe.local"
+      "Connection: close"
+      "User-Agent: Varnish Health Probe";
+    .timeout = 5s;
+    .interval = 5s;
+    .window = 4;
+    .threshold = 2;
+  }
 }
 
 acl profile {
@@ -46,7 +46,7 @@ acl invalidators {
 
 sub vcl_recv {
   # For health checks
-  if (req.url == "/healthz") {
+  if (req.http.X-Liveness && req.url == "/healthz") {
     return (synth(200, "OK"));
   }
 
