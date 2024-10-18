@@ -89,7 +89,7 @@ build_api() {
 
 	docker buildx version
 	docker context create builder
-	docker buildx create builder --driver=docker-container
+	docker buildx create builder --driver=docker-container --use
 
   docker buildx build --push \
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
@@ -111,7 +111,7 @@ build_app() {
 
 	docker buildx version
 	docker context create builder
-  docker buildx create builder --driver=docker-container
+  docker buildx create builder --driver=docker-container --use
 
   docker buildx build --push \
     --cache-to type=inline \
