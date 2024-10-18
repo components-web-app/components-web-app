@@ -74,6 +74,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: php-trusted-proxies
+            - name: CADDY_TRUSTED_PROXIES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cwa.fullname" . }}
+                  key: caddy-trusted-proxies              
             - name: APP_ENV
               valueFrom:
                 configMapKeyRef:

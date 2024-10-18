@@ -1,41 +1,35 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
-
-    # using varnish for now
-    # souin Git branch looking to work on making this stable
-    #cache {
-    #    api {
-	#		souin
-	#	}
-	#	cdn {
-	#		strategy hard
-	#	}
-	#	key {
-	#		headers Cookie Content-Type Accept
-	#	}
-	#	otter
-	#}
-
+    debug
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
 
 	auto_https disable_redirects
+
+	servers {
+        trusted_proxies static {$CADDY_TRUSTED_PROXIES}
+    }
 }
 
 {$CADDY_EXTRA_CONFIG}
 
-{$SERVER_NAME:localhost}, :80 {
-    @health_check {
-      header User-Agent "Varnish Health Probe"
-      method HEAD
-      path /health-check
+caddy-probe.local:80 {
+	@health_check {
+	    header User-Agent "Varnish Health Probe"
+        method HEAD
+		path /health-check
+	}
+	# customisable log level with environment
+    log {
+        level {$LOG_LEVEL:"error"}
     }
-
     respond @health_check 200 {
-      close
+        close
     }
+}
 
+{$SERVER_NAME:localhost} {
     @not_passed_varnish {
 		header !X-Varnish
 	}
@@ -120,17 +114,12 @@
 	vulcain @not_passed_varnish
 
 	reverse_proxy @not_passed_varnish {
-	    to {$VARNISH_UPSTREAM}
         header_up X-Varnish 1
-
         health_uri /healthz
-        health_interval 10s
-        health_timeout 30s
         health_headers {
             X-Liveness caddy
         }
-        fail_duration 10s
-        max_fails 10
+	    to {$VARNISH_UPSTREAM}
 	}
 
 	# Add links to the API docs and to the Mercure Hub if not set explicitly (e.g. the PWA)

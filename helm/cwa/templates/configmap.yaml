@@ -10,6 +10,7 @@ data:
   php-cors-allow-origin: {{ .Values.php.corsAllowOrigin | quote }}
   php-trusted-hosts: {{ .Values.php.trustedHosts | quote }}
   php-trusted-proxies: "{{ join "," .Values.php.trustedProxies }}"
+  caddy-trusted-proxies: "{{ join " " .Values.php.trustedProxies }}"
   php-mercure-jwt-algorithm: {{ .Values.php.mercure.jwt.algorithm | quote }}
   jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}

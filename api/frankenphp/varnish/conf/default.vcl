@@ -8,7 +8,7 @@ backend default {
   .host = "${UPSTREAM}";
   .port = "${UPSTREAM_PORT}";
 
-  .max_connections        = 500;
+  .max_connections        = 100;
   .first_byte_timeout     = 30s;   # How long to wait before we receive a first byte from our backend?
   .connect_timeout        = 20s;     # How long to wait for a backend connection?
   .between_bytes_timeout  = 10s;     # How long to wait between bytes received from our backend?

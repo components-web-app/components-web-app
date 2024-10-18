@@ -327,7 +327,7 @@ varnish:
     repository: ${VARNISH_REPOSITORY}
     tag: ${TAG}
     pullPolicy: Always
-annotations:
+podAnnotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 replicaCount: ${REPLICA_COUNT:-"1"}
