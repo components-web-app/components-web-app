@@ -89,14 +89,12 @@ build_api() {
 
 	docker buildx create --use
 
-  docker buildx build \
+  docker buildx build --push \
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	--tag $PHP_REPOSITORY:$TAG \
   	--target frankenphp_prod \
   	"api"
-
-  docker push $PHP_REPOSITORY:$TAG
 }
 
 build_app() {
@@ -111,14 +109,12 @@ build_app() {
 
 	docker buildx create --use
 
-  docker buildx build \
+  docker buildx build --push \
     --cache-to type=inline \
     --cache-from $APP_REPOSITORY:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
   	--target prod \
   	"app"
-
-  docker push $APP_REPOSITORY:$TAG
 }
 
 run_test_phpunit() {
