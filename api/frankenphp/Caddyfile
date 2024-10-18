@@ -48,8 +48,9 @@
     # Matches requests for HTML documents, for static files and for Next.js files,
     # except for known API paths and paths with extensions handled by API Platform
     @app expression `
+        (header({'Connection':'*Upgrade*'}) && header({'Upgrade':'websocket'})) ||
         (
-            header({'Accept': '*text/html*'})
+            (header({'Accept': '*text/html*'}) || header({'Accept': 'text/x-vite-ping'}))
             && !path(
                 '/souin*',
                 '/login_check',
@@ -122,15 +123,14 @@
 	    to {$VARNISH_UPSTREAM}
         header_up X-Varnish 1
 
-        #health_uri /healthz
-        #health_interval 5s
-        #health_timeout 20s
-        #health_headers {
-        #    X-Liveness caddy
-        #}
-
-        #fail_duration 5s
-        #max_fails 3
+        health_uri /healthz
+        health_interval 10s
+        health_timeout 30s
+        health_headers {
+            X-Liveness caddy
+        }
+        fail_duration 10s
+        max_fails 10
 	}
 
 	# Add links to the API docs and to the Mercure Hub if not set explicitly (e.g. the PWA)

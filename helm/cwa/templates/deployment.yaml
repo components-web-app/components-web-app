@@ -236,9 +236,16 @@ spec:
               exec:
                 command: ["/bin/sh", "-c", "/bin/sleep 1; kill -QUIT 1"]
           readinessProbe:
-            tcpSocket:
-              port: 80
-            initialDelaySeconds: 3
+            httpGet:
+              path: /docs.jsonld
+              port: http
+              # request which skips the cache but ensures the API is ready
+              httpHeaders:
+                - name: X-Varnish
+                  value: '1'
+                - name: Accept
+                  value: application/ld+json
+            initialDelaySeconds: 8
             periodSeconds: 3
           livenessProbe:
             tcpSocket:
