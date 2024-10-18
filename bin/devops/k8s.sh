@@ -108,13 +108,14 @@ build_app() {
   fi
 
   docker pull $APP_REPOSITORY:$TAG || true
+  docker pull $APP_REPOSITORY_CACHE:$TAG || true
 
 	docker buildx version
 	docker context create builder
   docker buildx create builder --driver=docker-container --use
 
   docker buildx build --push \
-    --cache-to type=inline \
+    --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
     --cache-from $APP_REPOSITORY:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
   	--target prod \
