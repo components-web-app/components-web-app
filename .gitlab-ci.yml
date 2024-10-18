@@ -25,9 +25,9 @@ before_script:
 
 build api:
   stage: build
-  image: docker:stable-git
+  image: docker:stable
   services:
-    - docker:27-dind
+    - docker:stable-dind
   variables:
     DOCKER_DRIVER: overlay2
   script:
