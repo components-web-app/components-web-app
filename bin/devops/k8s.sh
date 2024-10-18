@@ -116,7 +116,7 @@ build_app() {
 
   docker buildx build --push \
     --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
-    --cache-from $APP_REPOSITORY:$TAG \
+    --cache-from type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
   	--target prod \
   	"app"

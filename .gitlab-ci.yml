@@ -58,13 +58,6 @@ build app:
     - install_dependencies
     - setup_docker_environment
     - build_app
-  cache:
-    - key:
-        files:
-          - app/pnpm-lock.yaml
-      paths:
-        - app/.pnpm-store/
-        - app/node_modules/
   only:
     - branches
   except:
