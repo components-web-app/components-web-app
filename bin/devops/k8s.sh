@@ -255,13 +255,6 @@ php:
     key: "${DATABASE_CLIENT_KEY_B64}"
     cert: "${DATABASE_CLIENT_CERT_B64}"
     mode: "${DATABASE_SSL_MODE:-"prefer"}"
-replicaCount: ${API_REPLICA_COUNT:-"2"}
-autoscaling:
-  enabled: ${API_AUTOSCALE:-"true"}
-  minReplicas: ${API_AUTOSCALE_MIN:-"2"}
-  maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
-  targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"80"}
-  targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"80"}
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -297,9 +290,6 @@ ingress:
     - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
       hosts:
         - ${DOMAIN:-"~"}
-annotations:
-  app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
-  app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 postgresql:
   image:
     tag: ${DATABASE_IMAGE_TAG:-"14"}
@@ -310,6 +300,16 @@ postgresql:
     database: ${POSTGRES_DB:-"pg_database"}
     username: ${POSTGRES_USERNAME:-"pg_user"}
     password: ${POSTGRES_PASSWORD:-"pg_password"}
+replicaCount: ${API_REPLICA_COUNT:-"2"}
+podAnnotations:
+  app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
+  app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
+autoscaling:
+  enabled: ${API_AUTOSCALE:-"true"}
+  minReplicas: ${API_AUTOSCALE_MIN:-"1"}
+  maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
+  targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"90"}
+  targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"90"}
 EOF
 
   helm upgrade --install \

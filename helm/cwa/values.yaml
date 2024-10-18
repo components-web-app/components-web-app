@@ -91,7 +91,7 @@ postgresql:
     resources:
       requests:
         memory: 50Mi
-        cpu: 1m
+        cpu: 10m
 
 imagePullSecrets: []
 nameOverride: ""
@@ -142,10 +142,10 @@ resources:
   # resources, such as Minikube.
   limits:
     cpu: 500m
-    memory: 550Mi
+    memory: 750Mi
   requests:
-    cpu: 300m
-    memory: 350Mi
+    cpu: 500m
+    memory: 600Mi
 
 # If you use Mercure, you need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
 replicaCount: 1
