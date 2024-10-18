@@ -104,9 +104,8 @@
         ||
         query({'_rsc': '*'})
     `
-    @php expression `header({'Accept': '*application/*'}) || path('/souin*')`
 
-    cache @php
+    cache
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
