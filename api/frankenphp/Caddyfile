@@ -115,10 +115,10 @@ caddy-probe.local:80 {
 
 	reverse_proxy @not_passed_varnish {
         header_up X-Varnish 1
-        health_uri /healthz
-        health_headers {
-            X-Liveness caddy
-        }
+        #health_uri /healthz
+        #health_headers {
+        #    X-Liveness caddy
+        #}
 	    to {$VARNISH_UPSTREAM}
 	}
 
