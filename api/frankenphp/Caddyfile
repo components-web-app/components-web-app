@@ -65,7 +65,7 @@
             '/robots.txt', '/sitemap*',
             '/manifest.json', '/manifest.webmanifest',
             '/_nuxt*', '/__nuxt*',
-            '/*-sw.js*', '/_ipx/*'
+            '/*sw.js*', '/_ipx/*'
            )
         ||
         query({'_rsc': '*'})
