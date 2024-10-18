@@ -142,10 +142,10 @@ resources:
   # resources, such as Minikube.
   limits:
     cpu: 400m
-    memory: 600Mi
+    memory: 768Mi
   requests:
     cpu: 300m
-    memory: 300Mi
+    memory: 512Mi
 
 # If you use Mercure, you need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
 replicaCount: 1
