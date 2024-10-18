@@ -84,9 +84,6 @@ build_api() {
     echo ""
   fi
 
-  docker pull $PHP_REPOSITORY:$TAG || true
-  docker pull $PHP_REPOSITORY_CACHE:$TAG || true
-
 	docker buildx version
 	docker context create builder
 	docker buildx create builder --driver=docker-container --use
@@ -106,9 +103,6 @@ build_app() {
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     echo ""
   fi
-
-  docker pull $APP_REPOSITORY:$TAG || true
-  docker pull $APP_REPOSITORY_CACHE:$TAG || true
 
 	docker buildx version
 	docker context create builder
