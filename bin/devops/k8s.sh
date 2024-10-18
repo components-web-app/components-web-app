@@ -87,6 +87,8 @@ build_api() {
   docker pull $PHP_REPOSITORY:$TAG || true
   docker pull $PHP_REPOSITORY_CACHE:$TAG || true
 
+	docker buildx create --use
+
   docker buildx build \
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
@@ -106,6 +108,8 @@ build_app() {
   fi
 
   docker pull $APP_REPOSITORY:$TAG || true
+
+	docker buildx create --use
 
   docker buildx build \
     --cache-to type=inline \
