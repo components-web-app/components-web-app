@@ -87,7 +87,6 @@ build_api() {
   docker pull $PHP_REPOSITORY:$TAG || true
   docker pull $PHP_REPOSITORY_CACHE:$TAG || true
 
-	docker buildx version
 	docker context create builder
 	docker buildx create builder --driver=docker-container
 
@@ -109,7 +108,6 @@ build_app() {
 
   docker pull $APP_REPOSITORY:$TAG || true
 
-	docker buildx version
 	docker context create builder
   docker buildx create builder --driver=docker-container
 
