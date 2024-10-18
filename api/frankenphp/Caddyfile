@@ -104,7 +104,10 @@
         ||
         query({'_rsc': '*'})
     `
-    @use_cache expression `!header({'Accept': 'text/event-stream'}) && !(header({'Connection': '*Upgrade*'}) && header({'Upgrade': 'websocket'}))`
+    @use_cache expression `
+        !header({'Accept': 'text/event-stream'}) &&
+        !(header({'Connection': '*Upgrade*', 'Upgrade': 'websocket'}))
+    `
 
     cache @use_cache
 
