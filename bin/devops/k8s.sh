@@ -306,8 +306,8 @@ podAnnotations:
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 autoscaling:
   enabled: ${API_AUTOSCALE:-"true"}
-  minReplicas: ${API_AUTOSCALE_MIN:-"1"}
-  maxReplicas: ${API_AUTOSCALE_MAX:-"4"}
+  minReplicas: ${API_AUTOSCALE_MIN:-"2"}
+  maxReplicas: ${API_AUTOSCALE_MAX:-"5"}
   targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"90"}
   targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"90"}
 EOF
