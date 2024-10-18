@@ -300,16 +300,16 @@ postgresql:
     database: ${POSTGRES_DB:-"pg_database"}
     username: ${POSTGRES_USERNAME:-"pg_user"}
     password: ${POSTGRES_PASSWORD:-"pg_password"}
-replicaCount: ${API_REPLICA_COUNT:-"2"}
+replicaCount: ${REPLICA_COUNT:-"2"}
 podAnnotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 autoscaling:
-  enabled: ${API_AUTOSCALE:-"true"}
-  minReplicas: ${API_AUTOSCALE_MIN:-"2"}
-  maxReplicas: ${API_AUTOSCALE_MAX:-"5"}
-  targetCPUUtilizationPercentage: ${API_AUTOSCALE_CPU:-"90"}
-  targetMemoryUtilizationPercentage: ${API_AUTOSCALE_MEMORY:-"90"}
+  enabled: ${AUTOSCALE:-"true"}
+  minReplicas: ${AUTOSCALE_MIN:-"2"}
+  maxReplicas: ${AUTOSCALE_MAX:-"5"}
+  targetCPUUtilizationPercentage: ${AUTOSCALE_CPU_PERCENT:-"90"}
+  targetMemoryUtilizationPercentage: ${AUTOSCALE_MEMORY_PERCENT:-"90"}
 EOF
 
   helm upgrade --install \
