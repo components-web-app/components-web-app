@@ -20,7 +20,7 @@ RUN corepack enable && \
     pnpm config -g set store-dir /.pnpm-store
 
 # Development image
-FROM base as dev
+FROM base AS dev
 
 ENV HOST 0.0.0.0
 ENV PORT 3000
@@ -46,7 +46,7 @@ FROM node_upstream AS prod
 
 WORKDIR /srv/app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs; \
 	adduser --system --uid 1001 nuxtjs
@@ -62,7 +62,7 @@ COPY --from=builder --link --chown=1001:1001 /srv/app/.output ./
 USER nuxtjs
 
 EXPOSE 3000
-ENV PORT 3000
-ENV HOST "0.0.0.0"
+ENV PORT=3000
+ENV HOST="0.0.0.0"
 
 CMD ["node", "server/index.mjs"]
