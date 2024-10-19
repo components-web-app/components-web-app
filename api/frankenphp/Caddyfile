@@ -112,7 +112,6 @@
     `
 
     cache @use_cache
-    header ?Cache-Control "public, max-age=120, s-maxage=604800, must-revalidate"
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
