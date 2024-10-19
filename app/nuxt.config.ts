@@ -186,5 +186,7 @@ export default defineNuxtConfig({
         path: "hmr/",
       },
     },
-  }
+  },
+
+
 })

@@ -111,11 +111,12 @@
     `
 
     cache @use_cache
-    header ?Cache-Control "public, max-age=120, s-maxage=604800, must-revalidate"
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
-	reverse_proxy @app http://{$APP_UPSTREAM}
+	reverse_proxy @app http://{$APP_UPSTREAM} {
+	    header ?Cache-Control "public, max-age=120, s-maxage=604800, must-revalidate"
+	}
 
     # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
     request_header @internal host {$BROWSER_SERVER_NAME}
