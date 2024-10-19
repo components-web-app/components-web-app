@@ -8,7 +8,7 @@
         <div class="mx-auto flex max-w-7xl items-center p-6 justify-start space-x-10 lg:px-8">
           <nav class="space-x-5 flex w-full items-center justify-between">
             <div class="space-x-5 flex items-center">
-              <SvgoLogo :font-controlled="false" class="text-white h-8 opacity-80 mr-5" />
+              <LazySvgoLogo :font-controlled="false" class="text-white h-8 opacity-80 mr-5" />
               <CwaComponentGroup reference="top" :location="$cwa.resources.layoutIri.value" :allowed-components="['/component/navigation_links']" />
             </div>
             <ClientOnly>
