@@ -99,7 +99,8 @@
             '/robots.txt', '/sitemap*',
             '/manifest.json', '/manifest.webmanifest',
             '/_nuxt*', '/__nuxt*',
-            '/*-sw.js*', '/_ipx/*'
+            '/*sw.js*', '/workbox-*.js*',
+            '/_ipx/*'
            )
         ||
         query({'_rsc': '*'})
@@ -108,6 +109,8 @@
         !header({'Accept': 'text/event-stream'}) &&
         !(header({'Connection': '*Upgrade*', 'Upgrade': 'websocket'}))
     `
+
+    header @app ?Cache-Control "public, max-age=120, s-maxage=604800, must-revalidate"
 
     cache @use_cache
 
