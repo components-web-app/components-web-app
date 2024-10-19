@@ -281,6 +281,10 @@ ingress:
   annotations:
     "spec.ingressClassName": nginx
     "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
+    "nginx.ingress.kubernetes.io/connection-proxy-header": "keep-alive"
+    "nginx.ingress.kubernetes.io/proxy-buffering": "on"
+    "nginx.ingress.kubernetes.io/proxy-buffers-number": "4"
+    "nginx.ingress.kubernetes.io/proxy-buffer-size": "8k"
   hosts:
     - host: ${DOMAIN:-"~"}
       paths:
