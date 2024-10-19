@@ -12,7 +12,7 @@
               <CwaComponentGroup reference="top" :location="$cwa.resources.layoutIri.value" :allowed-components="['/component/navigation_links']" />
             </div>
             <ClientOnly>
-              <nuxt-link v-if="$cwa.auth.status.value === CwaAuthStatus.SIGNED_OUT" to="/login" class="transition justify-self-end px-2.5 py-1 bg-primary rounded text-base font-semibold text-background opacity-90 hover:opacity-100">
+              <nuxt-link v-if="$cwa.auth.status.value === CwaAuthStatus.SIGNED_OUT" to="/login" class="transition justify-self-end px-2.5 py-1 bg-white rounded font-semibold text-background opacity-90 hover:opacity-100">
                 Sign In
               </nuxt-link>
             </ClientOnly>
