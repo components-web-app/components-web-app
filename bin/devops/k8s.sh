@@ -304,14 +304,14 @@ postgresql:
     database: ${POSTGRES_DB:-"pg_database"}
     username: ${POSTGRES_USERNAME:-"pg_user"}
     password: ${POSTGRES_PASSWORD:-"pg_password"}
-replicaCount: ${REPLICA_COUNT:-"2"}
+replicaCount: ${REPLICA_COUNT:-"1"}
 podAnnotations:
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 autoscaling:
   enabled: ${AUTOSCALE:-"true"}
-  minReplicas: ${AUTOSCALE_MIN:-"2"}
-  maxReplicas: ${AUTOSCALE_MAX:-"5"}
+  minReplicas: ${AUTOSCALE_MIN:-"1"}
+  maxReplicas: ${AUTOSCALE_MAX:-"3"}
   targetCPUUtilizationPercentage: ${AUTOSCALE_CPU_PERCENT:-"90"}
   targetMemoryUtilizationPercentage: ${AUTOSCALE_MEMORY_PERCENT:-"90"}
 EOF
