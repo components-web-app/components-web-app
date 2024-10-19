@@ -18,6 +18,10 @@
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
+
+	servers {
+        protocols h3
+    }
 }
 
 {$CADDY_EXTRA_CONFIG}
