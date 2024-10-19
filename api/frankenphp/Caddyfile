@@ -12,7 +12,7 @@
 		    hide
 			headers Cookie Content-Type Accept
 		}
-		default_cache_control "public, max-age=120, s-maxage=604800, must-revalidate"
+		default_cache_control "public, max-age=3600, s-maxage=604800, must-revalidate"
 		otter
 	}
 
