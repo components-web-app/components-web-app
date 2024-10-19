@@ -1,6 +1,6 @@
 {
 	{$CADDY_GLOBAL_OPTIONS}
-    debug
+
     cache {
         api {
 			souin
@@ -18,10 +18,6 @@
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
-
-	servers {
-        protocols h3
-    }
 }
 
 {$CADDY_EXTRA_CONFIG}

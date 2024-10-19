@@ -89,7 +89,7 @@ build_api() {
 	docker buildx create builder --driver=docker-container --use
 
   docker buildx build --push \
-  	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
+  	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG,mode=max \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	--tag $PHP_REPOSITORY:$TAG \
   	--target frankenphp_prod \
