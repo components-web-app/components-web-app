@@ -26,6 +26,7 @@ php:
     - "172.16.0.0/12"
     - "192.168.0.0/16"
   caddyGlobalOptions: "debug" # "auto_https off"
+  caddyCdnOptions: ${CADDY_CDN_OPTIONS_B64}
   apiSecretToken: ~
   mailer:
     dsn: ${MAILER_DSN:-"~"}

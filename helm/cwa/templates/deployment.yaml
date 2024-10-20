@@ -104,6 +104,11 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: caddy-global-options
+            - name: CACHE_CDN_OPTIONS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cwa.fullname" . }}
+                  key: caddy-cdn-options
             - name: MERCURE_URL
               valueFrom:
                 configMapKeyRef:
