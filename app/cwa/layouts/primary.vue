@@ -5,14 +5,18 @@
     <Spinner :show="$cwa.resources.isLoading.value" class="absolute top-4 right-4 z-50" />
     <header v-if="$cwa.resources.layoutIri.value">
       <div class="relative">
-        <div class="mx-auto flex max-w-7xl items-center p-6 justify-start space-x-10 lg:px-8">
-          <nav class="space-x-5 flex w-full items-center justify-between">
-            <div class="space-x-5 flex items-center">
-              <LazySvgoLogo :font-controlled="false" class="text-white h-8 opacity-80 mr-5" />
-              <CwaComponentGroup reference="top" :location="$cwa.resources.layoutIri.value" :allowed-components="['/component/navigation_links']" />
+        <div class="mx-auto flex max-w-7xl items-center p-6 md:justify-start lg:px-8">
+          <nav class="space-x-5 flex w-full items-center">
+            <div class="space-x-5 md:space-x-5 flex items-center flex-grow w-auto">
+              <div>
+                <LazySvgoLogo :font-controlled="false" class="text-white h-6 md:h-8 opacity-80" />
+              </div>
+              <div class="flex-grow w-auto flex space-x-3 md:space-x-5 justify-end md:justify-start">
+                <CwaComponentGroup reference="top" :location="$cwa.resources.layoutIri.value" :allowed-components="['/component/navigation_links']" />
+              </div>
             </div>
             <ClientOnly>
-              <nuxt-link v-if="$cwa.auth.status.value === CwaAuthStatus.SIGNED_OUT" to="/login" class="transition justify-self-end px-2.5 py-1 bg-white rounded font-semibold text-background opacity-90 hover:opacity-100">
+              <nuxt-link v-if="$cwa.auth.status.value === CwaAuthStatus.SIGNED_OUT" to="/login" class="transition justify-self-end px-2.5 py-1 bg-white rounded text-base font-semibold text-background opacity-90 hover:opacity-100 text-nowrap">
                 Sign In
               </nuxt-link>
             </ClientOnly>

@@ -1,8 +1,8 @@
 <template>
   <div class="pb-5 flex flex-col space-y-2">
     <CollectionSearch />
-    <div v-if="collectionItems" class="relative flex flex-wrap -mx-4 min-h-96">
-      <article v-for="post of collectionItems" :key="post['@id']" class="mx-4 my-4 w-[calc(25%-2rem)] relative z-0 isolate flex flex-col justify-end overflow-hidden bg-black/50 px-8 pb-8 pt-80 sm:pt-48 lg:pt-60">
+    <div v-if="collectionItems" class="relative pt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 min-h-96">
+      <article v-for="post of collectionItems" :key="post['@id']" class="relative z-0 isolate flex flex-col justify-end overflow-hidden bg-black/50 px-8 pb-8 pt-80 sm:pt-48 lg:pt-60">
         <div v-if="!post.image" class="absolute inset-0 -z-10 h-full w-full text-white flex justify-center items-center font-bold">
           No Image
         </div>
