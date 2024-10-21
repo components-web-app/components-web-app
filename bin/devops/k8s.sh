@@ -327,6 +327,7 @@ EOF
     "$name" ./helm/cwa \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
+    --set php.caddy.globalConfig="${CADDY_GLOBAL_CONFIG}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
   	-f values.tmp.yaml
