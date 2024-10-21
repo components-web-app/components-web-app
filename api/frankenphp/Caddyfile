@@ -109,7 +109,8 @@
     `
     @use_cache expression `
         !header({'Accept': 'text/event-stream'}) &&
-        !(header({'Connection': '*Upgrade*', 'Upgrade': 'websocket'}))
+        !(header({'Connection': '*Upgrade*', 'Upgrade': 'websocket'})) &&
+        !path('/logout')
     `
 
     cache @use_cache
