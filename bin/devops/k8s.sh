@@ -213,6 +213,7 @@ deploy() {
   DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
   DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
   CADDY_CACHE_CDN_CONFIG_B64=$(echo "${CADDY_CACHE_CDN_CONFIG:-""}" | base64 -w0)
+  CADDY_CACHE_STORAGE_CONFIG_B64=$(echo "${CADDY_CACHE_STORAGE_CONFIG:-""}" | base64 -w0)
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}"
@@ -258,7 +259,7 @@ php:
     mode: "${DATABASE_SSL_MODE:-"prefer"}"
   caddy:
     cdnConfig: "${CADDY_CDN_OPTIONS_B64}"
-    storageConfig: "${CADDY_CACHE_STORAGE_CONFIG:-"otter"}"
+    storageConfig: "${CADDY_CACHE_STORAGE_CONFIG_B64:-"otter"}"
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure

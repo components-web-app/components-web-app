@@ -28,7 +28,7 @@ php:
   caddy:
     globalConfig: "" # e.g. "auto_https off" "debug"
     cdnConfig: ${CADDY_CACHE_CDN_CONFIG_B64}
-    storageConfig: ${CADDY_CACHE_STORAGE_CONFIG:-"otter"}
+    storageConfig: ${CADDY_CACHE_STORAGE_CONFIG_B64:-"otter"}
   apiSecretToken: ~
   mailer:
     dsn: ${MAILER_DSN:-"~"}
