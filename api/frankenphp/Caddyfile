@@ -6,15 +6,14 @@
 			souin
 		}
 		cdn {
-			strategy hard
-			{$CACHE_CDN_OPTIONS}
+			{$CADDY_CACHE_CDN_CONFIG:"strategy hard"}
 		}
 		key {
 		    hide
 			headers Cookie Content-Type Accept
 		}
 		default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
-		{$CACHE_STORAGE:otter}
+		{$CADDY_CACHE_STORAGE_CONFIG:otter}
 	}
 
 	frankenphp {
