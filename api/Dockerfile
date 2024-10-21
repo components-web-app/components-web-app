@@ -18,6 +18,7 @@ RUN xcaddy build \
     --with github.com/dunglas/vulcain/caddy \
     --with github.com/darkweak/souin/plugins/caddy \
     --with github.com/darkweak/storages/otter/caddy \
+    --with github.com/darkweak/storages/redis/caddy \
     --with github.com/darkweak/storages/go-redis/caddy
 
 FROM dunglas/frankenphp:latest AS frankenphp_upstream
