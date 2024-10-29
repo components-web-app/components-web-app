@@ -1,5 +1,5 @@
 {
-	{$CADDY_GLOBAL_OPTIONS}
+	{$CADDY_GLOBAL_CONFIG}
 
     cache {
         api {

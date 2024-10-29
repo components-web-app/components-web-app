@@ -99,7 +99,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: database-url
-            - name: CADDY_GLOBAL_OPTIONS
+            - name: CADDY_GLOBAL_CONFIG
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
