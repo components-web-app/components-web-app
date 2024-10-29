@@ -10,7 +10,7 @@
 		}
 		key {
 		    hide
-			headers Cookie Content-Type Accept
+			template "{method}-{host}-{path}-{query}-{header.accept}-{cookie.api_component}"
 		}
 		default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
 		{$CADDY_CACHE_STORAGE_CONFIG:otter}
