@@ -18,7 +18,13 @@ RUN xcaddy build \
     --with github.com/dunglas/vulcain/caddy \
     --with github.com/darkweak/souin/plugins/caddy \
     --with github.com/darkweak/storages/otter/caddy \
-    --with github.com/darkweak/storages/go-redis/caddy
+    # --with github.com/darkweak/storages/go-redis/caddy \
+    --with github.com/darkweak/storages/go-redis/caddy@29b5e6ae4cd7977b4eaf3b04c8a0dc12cf774293 \
+    --with github.com/darkweak/storages/go-redis@29b5e6ae4cd7977b4eaf3b04c8a0dc12cf774293
+
+
+#--with github.com/darkweak/souin/plugins/caddy@b1792361afb1fdc3e9d3fedc3712a00008795272 \
+#--with github.com/darkweak/souin@b1792361afb1fdc3e9d3fedc3712a00008795272
 
 FROM dunglas/frankenphp:latest AS frankenphp_upstream
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
