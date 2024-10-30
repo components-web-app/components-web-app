@@ -6,9 +6,6 @@
 FROM dunglas/frankenphp:latest-builder AS builder
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
-RUN apt-get update && apt-get install --no-install-recommends -y \
-    git
-
 ENV CGO_ENABLED=1 XCADDY_SETCAP=1 XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\""
 RUN xcaddy build \
     --output /usr/local/bin/frankenphp \
