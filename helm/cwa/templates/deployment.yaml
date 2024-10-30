@@ -109,7 +109,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: caddy-cache-cdn-config
-            - name: CADDY_CACHE_STORAGE_CONFIG
+            - name: CADDY_CACHE_EXTRA_CONFIG
               valueFrom:
                 secretKeyRef:
                   name: {{ include "cwa.fullname" . }}
