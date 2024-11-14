@@ -24,7 +24,6 @@ COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 # https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
 # https://docs.docker.com/compose/compose-file/#target
 
-
 # Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
 
