@@ -6,7 +6,13 @@
 FROM dunglas/frankenphp:latest-builder AS builder
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
-ENV CGO_ENABLED=1 XCADDY_SETCAP=1 XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\""
+ENV CGO_ENABLED=1 \
+	XCADDY_SETCAP=1 \
+	XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\" -tags=nobadger,nomysql,nopgx,nowatcher"
+
+RUN export CGO_CFLAGS=$(php-config --includes) && \
+    export CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)"
+
 RUN xcaddy build \
     --output /usr/local/bin/frankenphp \
     --with github.com/dunglas/frankenphp/caddy \
@@ -31,7 +37,7 @@ WORKDIR /app
 
 # persistent / runtime deps
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get install --no-install-recommends -y \
+RUN apt-get clean && apt-get update && apt-get install --no-install-recommends -y \
 	acl \
 	file \
 	gettext \

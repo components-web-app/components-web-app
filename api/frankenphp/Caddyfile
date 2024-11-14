@@ -8,7 +8,7 @@
 		}
 
 		cdn {
-			{$CADDY_CACHE_CDN_CONFIG:"strategy hard"}
+			{$CADDY_CACHE_CDN_CONFIG:strategy hard}
 		}
 
 		key {
@@ -77,9 +77,7 @@
 
     @use_cache expression `
         !path('/logout') &&
-        !header({'Accept': 'text/event-stream'}) &&
-        !header({'Connection': '*Upgrade*', 'Upgrade': 'websocket'}) &&
-        (!method('BAN PURGE') || client_ip({$CACHE_ACL:"10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"}))
+        (!method('BAN', 'PURGE') || client_ip({$CACHE_ACL:"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"}))
     `
 
     cache @use_cache
