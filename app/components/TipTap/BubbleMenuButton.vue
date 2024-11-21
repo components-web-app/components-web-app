@@ -1,32 +1,36 @@
 <template>
-  <button class="px-1.5 py-1 content-center items-center" :class="[editor.isActive(isActiveName, attributes) ? bubbleMenuActiveClasses : null ]" @click="doEditorChain">
+  <button
+    class="px-1.5 py-1 content-center items-center"
+    :class="[editor.isActive(isActiveName, args) ? bubbleMenuActiveClasses : null]"
+    @click="doEditorChain"
+  >
     <slot />
   </button>
 </template>
 
 <script lang="ts" setup>
-import { Editor } from '@tiptap/core'
-import type { UnionCommands } from '@tiptap/core/src/types'
+import type { Editor, ChainedCommands } from '@tiptap/core'
 import { computed } from 'vue'
 
 type editorFnType = {
-  call: UnionCommands
-  attributes?: {}
+  call: keyof ChainedCommands
+  arguments?: (object | string | number)[]
 }
 
 const props = defineProps<{
-  editor: Editor,
-  editorFn: editorFnType,
+  editor: Editor
+  editorFn: editorFnType
   isActiveName: string
 }>()
 
 const bubbleMenuActiveClasses = ['bg-black text-white']
 
-const attributes = computed(() => {
-  return props.editorFn.attributes || []
+const args = computed(() => {
+  return props.editorFn.arguments || []
 })
 
-function doEditorChain () {
-  props.editor.chain().focus()[props.editorFn.call](attributes.value).run()
+function doEditorChain() {
+  // @ts-expect-error-next-line the function called could have many different requirements for arguments
+  props.editor.chain().focus()[props.editorFn.call](...args.value).run()
 }
 </script>

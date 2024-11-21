@@ -7,10 +7,10 @@
       :update-delay="0"
       @contextmenu.stop
     >
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 1 })">
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 1 }])">
         H1
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 2 })">
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 2 }])">
         H2
       </BubbleMenuButton>
       <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleBold', 'bold')">
@@ -28,10 +28,10 @@
       :update-delay="0"
       @contextmenu.stop
     >
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 1 })">
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 1 }])">
         H1
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', { level: 2 })">
+      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 2 }])">
         H2
       </BubbleMenuButton>
       <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleBulletList', 'bulletList')">
@@ -49,15 +49,14 @@ import {
   BubbleMenu,
   useEditor,
   EditorContent,
-  FloatingMenu
+  FloatingMenu,
 } from '@tiptap/vue-3'
 import { computed, toRef, watch } from 'vue'
-import type { UnionCommands } from '@tiptap/core/src/types.ts'
-import type { Editor } from '@tiptap/core'
+import type { Editor, ChainedCommands } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
 
 const props = defineProps<{
-  modelValue: string|null|undefined,
+  modelValue: string | null | undefined
   disabled?: boolean
 }>()
 
@@ -65,12 +64,12 @@ const emit = defineEmits(['update:modelValue'])
 
 // reactive updating of the model
 const value = computed({
-  get () {
+  get() {
     return props.modelValue
   },
-  set (value) {
+  set(value) {
     emit('update:modelValue', value)
-  }
+  },
 })
 
 // create the editor
@@ -80,8 +79,8 @@ const editor = useEditor({
     StarterKit,
     Placeholder.configure({
       placeholder: 'Write something …',
-      emptyEditorClass: 'is-editor-empty text-inherit opacity-50'
-    })
+      emptyEditorClass: 'is-editor-empty text-inherit opacity-50',
+    }),
   ],
   onUpdate: () => {
     // HTML
@@ -90,16 +89,16 @@ const editor = useEditor({
     // JSON
     // this.$emit('update:modelValue', this.editor.getJSON())
   },
-  editable: !props.disabled
+  editable: !props.disabled,
 })
 
 // match the editor value to the modelValue prop
-watch(value, () => {
+watch(value, (newValue) => {
   if (!editor.value) {
     return
   }
   // HTML
-  const isSame = editor.value.getHTML() === value.value
+  const isSame = editor.value.getHTML() === newValue
 
   // JSON
   // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
@@ -107,7 +106,7 @@ watch(value, () => {
     return
   }
 
-  editor.value.commands.setContent(value.value || null, false)
+  editor.value.commands.setContent(newValue || null, false)
 })
 
 // Toggle disabled prop and focus when enabled
@@ -124,19 +123,19 @@ watch(disabledRef, () => {
 })
 
 // Common menu item props
-const buttonBubbleMenuProps = computed(() => (call: UnionCommands, isActiveName: string, attributes?: {}) => {
+const buttonBubbleMenuProps = computed(() => (call: keyof ChainedCommands, isActiveName: string, editorArgs?: (string | number | object)[]) => {
   return {
     editor: editor.value as Editor,
     editorFn: {
       call,
-      attributes
+      arguments: editorArgs,
     },
-    isActiveName
+    isActiveName,
   }
 })
 
 defineExpose({
-  editor
+  editor,
 })
 </script>
 
@@ -144,7 +143,6 @@ defineExpose({
 .ProseMirror:focus {
   outline: none;
 }
-
 .ProseMirror {
   white-space: pre-wrap !important;
 }

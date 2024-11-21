@@ -77,6 +77,7 @@ export default defineNuxtConfig({
     }
   },
   typescript: {
+    typeCheck: true,
     tsConfig: {
       include: [
         '../src'
@@ -86,13 +87,6 @@ export default defineNuxtConfig({
         '../**/*.test.ts'
       ]
     }
-  },
-  alias: {
-    'lodash/isEqual.js': 'lodash/isEqual.js',
-    'lodash/isArray.js': 'lodash/isArray.js',
-    'lodash/mergeWith.js': 'lodash/mergeWith.js',
-    'dayjs': 'dayjs',
-    'slugify': 'slugify'
   },
   routeRules: {
     // '/': { prerender: true },
