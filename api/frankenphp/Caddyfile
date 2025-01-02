@@ -77,7 +77,7 @@
 
     @use_cache expression `
         !path('/logout') &&
-        (!method('BAN', 'PURGE') || client_ip({$CACHE_ACL:"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"}))
+        (!method('BAN', 'PURGE') || client_ip({$CACHE_ACL:"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1"}))
     `
 
     cache @use_cache

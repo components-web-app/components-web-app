@@ -10,28 +10,30 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@latest",
-    "@headlessui/vue": "latest",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-28929309.83c35b9",
+    "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.8.1",
     "@nuxtjs/tailwindcss": "^6.12.2",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
-    "@tiptap/extension-placeholder": "^2.10.0",
-    "@tiptap/pm": "^2.10.0",
-    "@tiptap/starter-kit": "^2.10.0",
-    "@tiptap/vue-3": "^2.10.0",
+    "@tiptap/extension-placeholder": "^2.11.0",
+    "@tiptap/pm": "^2.11.0",
+    "@tiptap/starter-kit": "^2.11.0",
+    "@tiptap/vue-3": "^2.11.0",
     "@vite-pwa/nuxt": "^0.10.6",
-    "nuxt-svgo": "^4.0.9"
+    "nuxt-svgo": "^4.0.10"
   },
   "devDependencies": {
-    "@nuxt/devtools": "^1.6.1",
-    "@types/node": "^22.9.1",
+    "@nuxt/devtools": "^1.7.0",
+    "@types/lodash-es": "^4.17.12",
+    "@types/luxon": "^3.4.2",
+    "@types/node": "^22.10.3",
     "escape-string-regexp": "^5.0.0",
     "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3",
-    "vue-tsc": "^2.1.10"
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vue-tsc": "^2.2.0"
   },
   "pnpm": {
     "overrides": {
@@ -40,5 +42,6 @@
     "auditConfig": {
       "ignoreCves": []
     }
-  }
+  },
+  "packageManager": "pnpm@9.15.2"
 }

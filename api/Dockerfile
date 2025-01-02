@@ -3,7 +3,7 @@
 # Adapted from https://github.com/dunglas/symfony-docker
 
 # Versions
-FROM dunglas/frankenphp:latest-builder AS builder
+FROM dunglas/frankenphp:latest-builder-php8.3 AS builder
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
 ENV CGO_ENABLED=1 \
@@ -23,7 +23,7 @@ RUN xcaddy build \
     --with github.com/darkweak/storages/go-redis/caddy \
     --with github.com/darkweak/storages/otter/caddy
 
-FROM dunglas/frankenphp:latest AS frankenphp_upstream
+FROM dunglas/frankenphp:latest-php8.3 AS frankenphp_upstream
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
 # The different stages of this Dockerfile are meant to be built into separate images

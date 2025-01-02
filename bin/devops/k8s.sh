@@ -217,6 +217,7 @@ deploy() {
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}"
+  CURRENT_DATE=$(date)
 
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
@@ -229,6 +230,10 @@ pwa:
   apiUrl: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
   apiUrlBrowser: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
 php:
+  image:
+    repository: ${PHP_REPOSITORY}
+    tag: ${TAG}
+    pullPolicy: Always
   admin:
     username: ${ADMIN_USERNAME:-"admin"}
     password: ${ADMIN_PASSWORD:-"admin"}
@@ -236,10 +241,6 @@ php:
   gcloud:
     jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
-  image:
-    repository: ${PHP_REPOSITORY}
-    tag: ${TAG}
-    pullPolicy: Always
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   apiSecretToken: ${VARNISH_TOKEN:-"~"}
@@ -268,19 +269,6 @@ mercure:
       algorithm: ${MERCURE_SUBSCRIBER_JWT_ALG:-"HS256"}
     publisher:
       algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"HS256"}
-caddy:
-  replicaCount: ${CADDY_REPLICA_COUNT:-"1"}
-  image:
-    repository: ${CADDY_REPOSITORY}
-    tag: ${TAG}
-    pullPolicy: Always
-varnish:
-  enabled: ${VARNISH_ENABLED:="true"}
-  replicaCount: ${VARNISH_REPLICA_COUNT:-"1"}
-  image:
-    repository: ${VARNISH_REPOSITORY}
-    tag: ${TAG}
-    pullPolicy: Always
 ingress:
   enabled: ${INGRESS_ENABLED:-"false"}
   annotations:
@@ -311,6 +299,7 @@ postgresql:
     password: ${POSTGRES_PASSWORD:-"pg_password"}
 replicaCount: ${REPLICA_COUNT:-"1"}
 podAnnotations:
+  timestamp: "${CURRENT_DATE}"
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 autoscaling:
