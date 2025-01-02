@@ -1,4 +1,4 @@
-ARG NODE_VERSION=21
+ARG NODE_VERSION=22
 
 # Versions
 FROM node:${NODE_VERSION}-alpine AS node_upstream
@@ -32,12 +32,12 @@ CMD ["sh", "-c", "pnpm install; pnpm dev"]
 
 FROM base AS builder
 
-COPY --link .npmrc package.json pnpm-lock.yaml ./
-
+COPY --link .npmrc package.json pnpm-*.yaml ./
 RUN pnpm fetch
 
-COPY --link . ./
-RUN	pnpm install -r --offline && \
+COPY --link . .
+
+RUN	pnpm install --frozen-lockfile --offline && \
     pnpm run build
 
 
