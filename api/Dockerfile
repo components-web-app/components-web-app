@@ -3,12 +3,15 @@
 # Adapted from https://github.com/dunglas/symfony-docker
 
 # Versions
-FROM dunglas/frankenphp:latest-builder-php8.3 AS builder
+FROM dunglas/frankenphp:builder AS builder
+
+# Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
 ENV CGO_ENABLED=1 \
 	XCADDY_SETCAP=1 \
-	XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\" -tags=nobadger,nomysql,nopgx,nowatcher"
+	XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\" -tags=nobadger,nomysql,nopgx" \
+	FRANKENPHP_CONFIG="worker ./public/index.php"
 
 RUN export CGO_CFLAGS=$(php-config --includes) && \
     export CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)"
@@ -23,7 +26,7 @@ RUN xcaddy build \
     --with github.com/darkweak/storages/go-redis/caddy \
     --with github.com/darkweak/storages/otter/caddy
 
-FROM dunglas/frankenphp:latest-php8.3 AS frankenphp_upstream
+FROM dunglas/frankenphp:latest AS frankenphp_upstream
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
 # The different stages of this Dockerfile are meant to be built into separate images
@@ -66,7 +69,7 @@ RUN set -eux; \
 ###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
-COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
+COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/conf.d/
 COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY --link frankenphp/Caddyfile /etc/caddy/Caddyfile
 
@@ -88,7 +91,7 @@ RUN set -eux; \
 		xdebug \
 	;
 
-COPY --link frankenphp/conf.d/app.dev.ini $PHP_INI_DIR/conf.d/
+COPY --link frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/conf.d/
 
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch" ]
 
@@ -105,7 +108,7 @@ RUN set -eux; \
 
 # Moved these below the composer install as they will not affect it and then if we change them it will miss cache and wait for composer install again
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-COPY --link frankenphp/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
+COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/conf.d/
 COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
 # copy sources

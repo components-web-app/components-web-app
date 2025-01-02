@@ -103,12 +103,13 @@
         )
         ||
         path(
-            '/favicon.ico', '/icon.png', '/logo.svg', '/pwa-*.png',
+            '/favicon.ico', '/brochure.pdf', '/logo.svg', '/pwa-*.png', '/maskable-icon-*.png', '/apple-touch-icon-*.png',
             '/robots.txt', '/sitemap*',
             '/manifest.json', '/manifest.webmanifest',
             '/_nuxt*', '/__nuxt*',
             '/*sw.js*', '/workbox-*.js*',
-            '/_ipx/*'
+            '/_ipx/*',
+            '/splash/*', '/fonts/*'
            )
         ||
         query({'_rsc': '*'})
