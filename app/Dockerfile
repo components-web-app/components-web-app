@@ -32,12 +32,12 @@ CMD ["sh", "-c", "pnpm install; pnpm dev"]
 
 FROM base AS builder
 
-COPY --link .npmrc package.json pnpm-*.yaml ./
+COPY --link .npmrc package.json pnpm-lock.yaml ./
+
 RUN pnpm fetch
 
-COPY --link . .
-
-RUN	pnpm install --frozen-lockfile --offline && \
+COPY --link . ./
+RUN	pnpm install -r --offline && \
     pnpm run build
 
 
