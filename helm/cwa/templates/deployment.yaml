@@ -31,6 +31,7 @@ spec:
       serviceAccountName: {{ include "cwa.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      restartPolicy: OnFailure
       containers:
         - name: {{ .Chart.Name }}-php
           securityContext:
