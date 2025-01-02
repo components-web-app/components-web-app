@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@1.0.0-28930487.4eb0ee0
-        version: '@cwa/nuxt-edge@1.0.0-28930487.4eb0ee0(@parcel/watcher@2.5.0)(@types/node@22.10.3)(db0@0.2.1)(ioredis@5.4.2)(magicast@0.3.5)(rollup@4.29.1)(terser@5.37.0)(typescript@5.7.2)(vite@6.0.6(@types/node@22.10.3)(jiti@2.4.2)(terser@5.37.0)(yaml@2.7.0))(vue-tsc@2.2.0(typescript@5.7.2))(yaml@2.7.0)'
+        specifier: npm:@cwa/nuxt-edge@1.0.0-28930623.55029e5
+        version: '@cwa/nuxt-edge@1.0.0-28930623.55029e5(@parcel/watcher@2.5.0)(@types/node@22.10.3)(db0@0.2.1)(ioredis@5.4.2)(magicast@0.3.5)(rollup@4.29.1)(terser@5.37.0)(typescript@5.7.2)(vite@6.0.6(@types/node@22.10.3)(jiti@2.4.2)(terser@5.37.0)(yaml@2.7.0))(vue-tsc@2.2.0(typescript@5.7.2))(yaml@2.7.0)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.13(typescript@5.7.2))
@@ -638,8 +638,8 @@ packages:
     peerDependencies:
       postcss-selector-parser: ^7.0.0
 
-  '@cwa/nuxt-edge@1.0.0-28930487.4eb0ee0':
-    resolution: {integrity: sha512-foM5NA5VHj56piCb94qnr2wDypEIkFSXlr6feYFEuLxWncrFVBwsZlCiYwxVqFvusNLM1xqFyjeW9pzsLYS5FQ==}
+  '@cwa/nuxt-edge@1.0.0-28930623.55029e5':
+    resolution: {integrity: sha512-jzpHRGe/3DngyC4wpmLD6NE7npqZ8EVLhIU5vK+Xcuqsxc+u0TBR684gXmMnyP2zZii3oEQULV208QwhsO8ikw==}
     engines: {pnpm: '>=9.15.2'}
 
   '@esbuild/aix-ppc64@0.21.5':
@@ -5787,7 +5787,7 @@ snapshots:
     dependencies:
       postcss-selector-parser: 7.0.0
 
-  '@cwa/nuxt-edge@1.0.0-28930487.4eb0ee0(@parcel/watcher@2.5.0)(@types/node@22.10.3)(db0@0.2.1)(ioredis@5.4.2)(magicast@0.3.5)(rollup@4.29.1)(terser@5.37.0)(typescript@5.7.2)(vite@6.0.6(@types/node@22.10.3)(jiti@2.4.2)(terser@5.37.0)(yaml@2.7.0))(vue-tsc@2.2.0(typescript@5.7.2))(yaml@2.7.0)':
+  '@cwa/nuxt-edge@1.0.0-28930623.55029e5(@parcel/watcher@2.5.0)(@types/node@22.10.3)(db0@0.2.1)(ioredis@5.4.2)(magicast@0.3.5)(rollup@4.29.1)(terser@5.37.0)(typescript@5.7.2)(vite@6.0.6(@types/node@22.10.3)(jiti@2.4.2)(terser@5.37.0)(yaml@2.7.0))(vue-tsc@2.2.0(typescript@5.7.2))(yaml@2.7.0)':
     dependencies:
       '@nuxtjs/color-mode': 3.5.2(magicast@0.3.5)(rollup@4.29.1)
       '@pinia/nuxt': 0.9.0(magicast@0.3.5)(pinia@2.3.0(typescript@5.7.2)(vue@3.5.13(typescript@5.7.2)))(rollup@4.29.1)
