@@ -8,7 +8,7 @@ rand_str() {
 install_dependencies() {
   echo "Adding openssl curl tar gzip ca-certificates git nodejs npm ..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
-  apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm openssh-keygen
+  apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm
 
   echo "Install glibc"
 	wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
