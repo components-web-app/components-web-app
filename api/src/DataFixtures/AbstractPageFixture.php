@@ -7,12 +7,13 @@ namespace App\DataFixtures;
 
 
 use ApiPlatform\Api\IriConverterInterface;
-use ApiPlatform\Api\UrlGeneratorInterface;
+use ApiPlatform\Metadata\UrlGeneratorInterface;
 use ApiPlatform\Metadata\GetCollection;
 use App\Entity\NavigationLink;
-use App\Lipsum\LipsumContentProvider;
+use App\PlaceholderProvider\CwaPlaceholderProvider;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Psr\Container\ContainerInterface;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractComponent;
 use Silverback\ApiComponentsBundle\Entity\Core\AbstractPageData;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentGroup;
@@ -20,38 +21,45 @@ use Silverback\ApiComponentsBundle\Entity\Core\ComponentPosition;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
 use Silverback\ApiComponentsBundle\Entity\Core\Route;
+use Silverback\ApiComponentsBundle\Helper\Route\RouteGeneratorInterface;
 use Silverback\ApiComponentsBundle\Helper\Timestamped\TimestampedDataPersister;
+use Symfony\Contracts\Service\ServiceSubscriberInterface;
 
 /**
  * @author Daniel West <daniel@silverback.is>
  */
-abstract class AbstractPageFixture extends Fixture
+abstract class AbstractPageFixture extends Fixture implements ServiceSubscriberInterface
 {
-    protected TimestampedDataPersister $timestampedDataPersister;
-    protected LipsumContentProvider $lipsumContentProvider;
-    protected IriConverterInterface $iriConverter;
+    public function __construct(
+        protected ContainerInterface $container
+    ) {}
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, IriConverterInterface $iriConverter)
-    {
-        $this->timestampedDataPersister = $timestampedDataPersister;
-        $this->lipsumContentProvider = $lipsumContentProvider;
-        $this->iriConverter = $iriConverter;
+    protected function getTimestampedDataPersister(): TimestampedDataPersister {
+        return $this->container->get(TimestampedDataPersister::class);
+    }
+
+    protected function getIriConverter(): IriConverterInterface {
+        return $this->container->get(IriConverterInterface::class);
+    }
+
+    protected function getCwaPlaceholderProvider(): CwaPlaceholderProvider {
+        return $this->container->get(CwaPlaceholderProvider::class);
     }
 
     protected function createLayout(ObjectManager $manager, string $reference, string $uiComponent): Layout
     {
         $fixtureRef = Layout::class . '_' . $reference;
-        if ($this->hasReference($fixtureRef)) {
-            return $this->getReference($fixtureRef);
+        if ($this->hasReference($fixtureRef, Layout::class)) {
+            return $this->getReference($fixtureRef, Layout::class);
         }
         $layout = new Layout();
         $layout->reference = $reference;
         $layout->uiComponent = $uiComponent;
-        $this->timestampedDataPersister->persistTimestampedFields($layout, true);
+        $this->getTimestampedDataPersister()->persistTimestampedFields($layout, true);
         $manager->persist($layout);
         $manager->flush();
         $componentGroupTop = $this->createComponentGroup( 'top', null, $layout);
-        $componentGroupTop->addAllowedComponent($this->iriConverter->getIriFromResource(NavigationLink::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(NavigationLink::class)));
+        $componentGroupTop->addAllowedComponent($this->getIriConverter()->getIriFromResource(NavigationLink::class, UrlGeneratorInterface::ABS_PATH, (new GetCollection())->withClass(NavigationLink::class)));
 
         $this->addNavigationLink($manager, $componentGroupTop, 'Home', '/', HomePageFixture::ROUTE_NAME, 1);
         $this->addNavigationLink($manager, $componentGroupTop, 'Blog', '/blog-articles', BlogCollectionPageFixture::ROUTE_NAME, 2);
@@ -89,15 +97,15 @@ abstract class AbstractPageFixture extends Fixture
     protected function createPage(string $reference, string $uiComponent, Layout $layout, bool $isTemplate = false): Page
     {
         $fixtureRef = Page::class . '_' . $reference;
-        if ($this->hasReference($fixtureRef)) {
-            return $this->getReference($fixtureRef);
+        if ($this->hasReference($fixtureRef, Page::class)) {
+            return $this->getReference($fixtureRef, Page::class);
         }
         $page = new Page();
         $page->isTemplate = $isTemplate;
         $page->reference = $reference;
         $page->uiComponent = $uiComponent;
         $page->layout = $layout;
-        $this->timestampedDataPersister->persistTimestampedFields($page, true);
+        $this->getTimestampedDataPersister()->persistTimestampedFields($page, true);
         $this->addReference($fixtureRef, $page);
         return $page;
     }
@@ -106,14 +114,14 @@ abstract class AbstractPageFixture extends Fixture
     {
         $ref = $reference;
         if ($page) {
-            $ref .= '_' . $this->iriConverter->getIriFromResource($page);
+            $ref .= '_' . $this->getIriConverter()->getIriFromResource($page);
         }
         if ($layout) {
-            $ref .= '_' . $this->iriConverter->getIriFromResource($layout);
+            $ref .= '_' . $this->getIriConverter()->getIriFromResource($layout);
         }
         $fixtureRef = ComponentGroup::class . '_' . $ref;
-        if ($this->hasReference($fixtureRef)) {
-            return $this->getReference($fixtureRef);
+        if ($this->hasReference($fixtureRef, ComponentGroup::class)) {
+            return $this->getReference($fixtureRef, ComponentGroup::class);
         }
         $componentGroup = new ComponentGroup();
         $componentGroup
@@ -126,7 +134,7 @@ abstract class AbstractPageFixture extends Fixture
         if ($layout) {
             $componentGroup->addLayout($layout);
         }
-        $this->timestampedDataPersister->persistTimestampedFields($componentGroup, true);
+        $this->getTimestampedDataPersister()->persistTimestampedFields($componentGroup, true);
         $this->addReference($fixtureRef, $componentGroup);
         return $componentGroup;
     }
@@ -140,18 +148,18 @@ abstract class AbstractPageFixture extends Fixture
         if ($component) {
             $position->setComponent($component);
         }
-        $this->timestampedDataPersister->persistTimestampedFields($position, true);
+        $this->getTimestampedDataPersister()->persistTimestampedFields($position, true);
         return $position;
     }
 
     protected function createRoute(string $path, string $name, ?Page $page = null, ?AbstractPageData $pageData = null): Route
     {
         $fixtureRef = Route::class . '_' . $name;
-        if ($this->hasReference($fixtureRef)) {
-            $route = $this->getReference($fixtureRef);
+        if ($this->hasReference($fixtureRef, Route::class)) {
+            $route = $this->getReference($fixtureRef, Route::class);
         } else {
             $route = new Route();
-            $this->timestampedDataPersister->persistTimestampedFields($route, true);
+            $this->getTimestampedDataPersister()->persistTimestampedFields($route, true);
             $this->addReference($fixtureRef, $route);
         }
         $route
@@ -165,5 +173,14 @@ abstract class AbstractPageFixture extends Fixture
             $route->setPageData($pageData);
         }
         return $route;
+    }
+
+    public static function getSubscribedServices(): array
+    {
+        return [
+            TimestampedDataPersister::class,
+            IriConverterInterface::class,
+            CwaPlaceholderProvider::class
+        ];
     }
 }

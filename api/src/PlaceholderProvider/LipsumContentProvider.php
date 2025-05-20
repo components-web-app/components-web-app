@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Lipsum;
+namespace App\PlaceholderProvider;
 
 use Symfony\Component\HttpClient\Exception\TimeoutException;
 use Symfony\Component\HttpClient\Exception\TransportException;

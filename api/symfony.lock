@@ -149,9 +149,6 @@
             "ref": ""
         }
     },
-    "friendsofphp/proxy-manager-lts": {
-        "version": "v1.0.3"
-    },
     "guzzlehttp/guzzle": {
         "version": "6.4.1"
     },
@@ -166,9 +163,6 @@
     },
     "justinrainbow/json-schema": {
         "version": "5.2.10"
-    },
-    "laminas/laminas-code": {
-        "version": "3.4.1"
     },
     "lcobucci/clock": {
         "version": "2.0.0"
@@ -598,9 +592,6 @@
     },
     "symfony/property-info": {
         "version": "v4.3.8"
-    },
-    "symfony/proxy-manager-bridge": {
-        "version": "v5.0.8"
     },
     "symfony/routing": {
         "version": "4.2",

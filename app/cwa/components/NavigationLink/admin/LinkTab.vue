@@ -33,7 +33,7 @@ defineExpose(exposeMeta)
 </script>
 
 <template>
-  <div class="cwa-flex cwa-space-x-8">
+  <div class="flex space-x-8">
     <CwaUiFormToggle v-model="showInternalRoute" :label="toggleLabel" />
     <CwaUiFormLabelWrapper v-if="showInternalRoute" label="Route">
       <CwaUiFormSearchResource v-model="routeModel.model.value" endpoint="/_/routes" property="path" />

@@ -15,12 +15,12 @@ class FormPageFixture extends AbstractPageFixture implements DependentFixtureInt
     public function load(ObjectManager $manager): void
     {
         $layout = $this->createLayout($manager, 'Main Layout', 'CwaLayoutPrimary');
-        // $this->addRegisterPage($manager, $layout);
+        // $this->addFormPage($manager, $layout);
 
         $manager->flush();
     }
 
-    private function addRegisterPage(ObjectManager $manager, Layout $layout): void
+    private function addFormPage(ObjectManager $manager, Layout $layout): void
     {
         $page = $this->createPage('form', 'PrimaryPageTemplate', $layout);
         $page->setTitle('Form')->setMetaDescription('A sample CWA register page using a form');
@@ -28,7 +28,7 @@ class FormPageFixture extends AbstractPageFixture implements DependentFixtureInt
 
         $form = new Form();
         $form->formType = ExampleFormType::class;
-        $this->timestampedDataPersister->persistTimestampedFields($form, true);
+        $this->getTimestampedDataPersister()->persistTimestampedFields($form, true);
         $manager->persist($form);
 
         $componentGroup = $this->createComponentGroup('primary', $page);

@@ -30,10 +30,10 @@ definePageMeta({
 useHead({
   title: 'Login',
   bodyAttrs: {
-    class: 'cwa-h-full'
+    class: 'h-full'
   },
   htmlAttrs: {
-    class: 'cwa-h-full cwa-bg-neutral-900'
+    class: 'h-full bg-neutral-900'
   }
 })
 </script>

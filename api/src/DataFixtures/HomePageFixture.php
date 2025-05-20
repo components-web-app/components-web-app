@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use App\Entity\HtmlContent;
 use App\Entity\Image;
+use App\PlaceholderProvider\CwaPlaceholderProvider;
 use DateTime;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
@@ -20,9 +21,10 @@ class HomePageFixture extends AbstractPageFixture
         $manager->flush();
     }
 
-    private function addHtmlContent(array $ops, bool $published = true) {
+    private function addHtmlContent(array $ops, bool $published = true): HtmlContent
+    {
         $htmlContent = new HtmlContent();
-        $htmlContent->html = $this->lipsumContentProvider->generate($ops);
+        $htmlContent->html = $this->getCwaPlaceholderProvider()->generate($ops);
         $htmlContent->setPublishedAt($published ? new DateTime() : null);
         return $htmlContent;
     }
@@ -37,10 +39,10 @@ class HomePageFixture extends AbstractPageFixture
         $manager->persist($componentGroup);
 
         $htmlContent = $this->addHtmlContent([
-            '2',
-            'short',
-            'headers',
-            'link',
+            'paragraphs' => 2,
+            'includeHeadings' => true,
+            'includeLinks' => true,
+            'paragraphLength' => CwaPlaceholderProvider::LENGTH_SHORT
         ]);
         $manager->persist($htmlContent);
         $position = $this->createComponentPosition($componentGroup, $htmlContent, 0);
@@ -59,9 +61,9 @@ class HomePageFixture extends AbstractPageFixture
         $manager->persist($position);
 
         $htmlContentBottom = $this->addHtmlContent([
-            '1',
-            'medium',
-            'link'
+            'paragraphs' => 1,
+            'includeLinks' => true,
+            'paragraphLength' => CwaPlaceholderProvider::LENGTH_MEDIUM
         ]);
         $manager->persist($htmlContentBottom);
         $position = $this->createComponentPosition($componentGroup, $htmlContentBottom, 2);

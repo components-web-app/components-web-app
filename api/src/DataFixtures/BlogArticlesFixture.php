@@ -2,11 +2,8 @@
 
 namespace App\DataFixtures;
 
-use ApiPlatform\Api\IriConverterInterface;
 use App\Entity\BlogArticleData;
 use App\Entity\HtmlContent;
-use App\Entity\NavigationLink;
-use App\Lipsum\LipsumContentProvider;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentGroup;
@@ -14,16 +11,15 @@ use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
 use Silverback\ApiComponentsBundle\Entity\Core\Route;
 use Silverback\ApiComponentsBundle\Helper\Route\RouteGeneratorInterface;
-use Silverback\ApiComponentsBundle\Helper\Timestamped\TimestampedDataPersister;
 
 class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtureInterface
 {
-    private RouteGeneratorInterface $routeGenerator;
 
-    public function __construct(TimestampedDataPersister $timestampedDataPersister, LipsumContentProvider $lipsumContentProvider, IriConverterInterface $iriConverter, RouteGeneratorInterface $routeGenerator)
+    public static function getSubscribedServices(): array
     {
-        $this->routeGenerator = $routeGenerator;
-        parent::__construct($timestampedDataPersister, $lipsumContentProvider, $iriConverter);
+        return array_merge(parent::getSubscribedServices(), [
+            RouteGeneratorInterface::class
+        ]);
     }
 
     public function load(ObjectManager $manager): void
@@ -34,7 +30,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
         $layoutGroup = $layout->getComponentGroups()->first();
 //        $navigationLink = new NavigationLink();
 //        $navigationLink->label = 'Blog Template';
-//        $navigationLink->rawPath = $this->iriConverter->getIriFromResource($page);
+//        $navigationLink->rawPath = $this->getIriConverter()->getIriFromResource($page);
 //        $navigationLink->setPublishedAt(new \DateTime());
 //        $position = $this->createComponentPosition($layoutGroup, $navigationLink, 5);
 //        $manager->persist($navigationLink);
@@ -60,13 +56,13 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
             ;
             $articleData->htmlContent = $htmlContent;
             $articleData->page = $page;
-            $this->timestampedDataPersister->persistTimestampedFields($articleData, true);
+            $this->getTimestampedDataPersister()->persistTimestampedFields($articleData, true);
             $manager->persist($articleData);
 
             $articleData->setParentRoute(
-                $this->getReference(sprintf(Route::class . '_%s', BlogCollectionPageFixture::ROUTE_NAME))
+                $this->getReference(sprintf(Route::class . '_%s', BlogCollectionPageFixture::ROUTE_NAME), Route::class)
             );
-            $route = $this->routeGenerator->create($articleData);
+            $route = $this->container->get(RouteGeneratorInterface::class)->create($articleData);
             $manager->persist($route);
         }
     }
