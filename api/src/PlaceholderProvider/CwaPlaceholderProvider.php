@@ -18,7 +18,7 @@ class CwaPlaceholderProvider
         'includeLists' => false,
         'includeQuotes' => false,
         'includeCode' => false,
-        'includeLinks' => false,
+        'includeLinks' => true,
         'format' => self::FORMAT_HTML,
     ];
 
@@ -167,13 +167,15 @@ class CwaPlaceholderProvider
             $phrase = $phrases[$i];
             $url = $this->links[$phrase];
 
-            if (stripos($text, $phrase) !== false) {
-                if ($this->options['format'] === self::FORMAT_HTML) {
-                    $replacement = "<a href=\"{$url}\">{$phrase}</a>";
-                } else {
-                    $replacement = "{$phrase} ({$url})";
-                }
-                $text = preg_replace("/\b" . preg_quote($phrase, '/') . "\b/i", $replacement, $text, 1);
+            if (strpos($text, $phrase) === false) {
+                // randomly insert the link phrase somewhere in the text
+                $words = explode(' ', $text);
+                $insertAt = rand(0, count($words) - 1);
+                $linkedPhrase = $this->options['format'] === self::FORMAT_HTML
+                    ? "<a href=\"{$url}\">{$phrase}</a>"
+                    : "{$phrase} ({$url})";
+                array_splice($words, $insertAt, 0, $linkedPhrase);
+                $text = implode(' ', $words);
             }
         }
 

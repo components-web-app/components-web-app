@@ -1,16 +1,7 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
-import { defineNuxtConfig } from 'nuxt/config'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-28',
-  runtimeConfig: {
-    public: {
-      cwa: {
-        apiUrl: '',
-        apiUrlBrowser: ''
-      }
-    }
-  },
   app: {
     head: {
       titleTemplate: '%s - CWA Preview',
@@ -24,19 +15,9 @@ export default defineNuxtConfig({
       }
     }
   },
-  extends: [
-    './node_modules/@cwa/nuxt/dist/layer'
+  css: [
+    '~/assets/css/tailwind.css',
   ],
-  modules: [
-    '@cwa/nuxt',
-    '@nuxtjs/tailwindcss',
-    '@nuxt/image',
-    '@vite-pwa/nuxt',
-    'nuxt-svgo'
-  ],
-  devtools: {
-    enabled: true
-  },
   cwa: {
     appName: 'CWA Preview Web App',
     resources: {
@@ -72,13 +53,35 @@ export default defineNuxtConfig({
       BlogArticleData: {
         name: 'Blog Articles'
       }
-    },
-    tailwind: {
-      base: false
+    }
+  },
+  devtools: {
+    enabled: true
+  },
+  extends: [
+    './node_modules/@cwa/nuxt/dist/layer'
+  ],
+  modules: [
+    '@cwa/nuxt',
+    '@nuxt/image',
+    '@vite-pwa/nuxt',
+    'nuxt-svgo'
+  ],
+  routeRules: {
+    // '/': { prerender: true },
+    // '/**': { isr: 30 }
+  },
+  runtimeConfig: {
+    public: {
+      cwa: {
+        apiUrl: '',
+        apiUrlBrowser: ''
+      }
     }
   },
   typescript: {
     typeCheck: true,
+    strict: false,
     tsConfig: {
       include: [
         '../src'
@@ -88,10 +91,6 @@ export default defineNuxtConfig({
         '../**/*.test.ts'
       ]
     }
-  },
-  routeRules: {
-    // '/': { prerender: true },
-    // '/**': { isr: 30 }
   },
   pwa: {
     registerType: 'autoUpdate',
@@ -168,20 +167,17 @@ export default defineNuxtConfig({
   svgo: {
     autoImportPath: './assets/svg/',
   },
-  // typescript: {
-  //   typeCheck: true,
-  //   strict: true
-  // },
   // behind caddy so we have this so we can predictably forward hmr sockets
   vite: {
-    server: {
-      hmr: {
-        protocol: "wss",
-        clientPort: 443,
-        path: "hmr/",
-      },
-    },
+    plugins: [
+      tailwindcss(),
+    ],
+    // server: {
+    //   hmr: {
+    //     protocol: "wss",
+    //     clientPort: 443,
+    //     path: "hmr/",
+    //   },
+    // },
   },
-
-
 })

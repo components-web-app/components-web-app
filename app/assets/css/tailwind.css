@@ -1,30 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@layer theme, base, components, utilities;
 
-[data-placeholder='true']::after {
-  content: " ";
-  box-shadow: 0 0 50px 9px rgba(254,254,254);
-  position: absolute;
-  top: 0;
-  left: -100%;
-  height: 100%;
-  animation: load 1s infinite;
-}
-@keyframes load {
-  0%{ left: -100%}
-  100%{ left: 150%}
-}
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@import "tailwindcss/utilities.css" layer(utilities);
 
-html {
-  height: 100%;
-}
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: row;
+@import "../../node_modules/@cwa/nuxt/dist/runtime/templates/assets/cwa.css" layer(components);
+
+@plugin '@tailwindcss/typography';
+@config "./tailwind.config.ts";
+
+@theme {
+  --color-primary: #999A77;
+  --color-background: #12212B;
+  --color-text-default: #FFFFFF;
 }
 
-#__nuxt {
-  flex-grow: 1;
+@layer base {
+  [data-placeholder='true']::after {
+    content: " ";
+    box-shadow: 0 0 50px 9px rgba(254,254,254);
+    position: absolute;
+    top: 0;
+    left: -100%;
+    height: 100%;
+    animation: load 1s infinite;
+  }
+
+  @keyframes load {
+    0%{ left: -100%}
+    100%{ left: 150%}
+  }
+
+  html {
+    height: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    display: flex;
+    flex-direction: row;
+  }
+
+  #__nuxt {
+    flex-grow: 1;
+  }
 }

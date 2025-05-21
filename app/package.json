@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-app",
+  "name": "cwa-app",
   "private": true,
   "scripts": {
     "build": "nuxt build",
@@ -10,38 +10,41 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-28936477.2db6a9a",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29131030.310fceb",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
-    "@nuxt/image": "^1.8.1",
-    "@nuxtjs/tailwindcss": "^6.12.2",
-    "@tailwindcss/forms": "^0.5.9",
-    "@tailwindcss/typography": "^0.5.15",
-    "@tiptap/extension-placeholder": "^2.11.0",
-    "@tiptap/pm": "^2.11.0",
-    "@tiptap/starter-kit": "^2.11.0",
-    "@tiptap/vue-3": "^2.11.0",
-    "@vite-pwa/nuxt": "^0.10.6",
-    "nuxt-svgo": "^4.0.10"
+    "@nuxt/image": "^1.10.0",
+    "@tiptap/extension-placeholder": "^2.12.0",
+    "@tiptap/pm": "^2.12.0",
+    "@tiptap/starter-kit": "^2.12.0",
+    "@tiptap/vue-3": "^2.12.0",
+    "@vite-pwa/nuxt": "^0.10.8",
+    "nuxt-svgo": "^4.2.1"
   },
   "devDependencies": {
     "@nuxt/devtools": "^1.7.0",
+    "@tailwindcss/typography": "^0.5.16",
     "@types/lodash-es": "^4.17.12",
-    "@types/luxon": "^3.4.2",
-    "@types/node": "^22.10.3",
+    "@types/luxon": "^3.6.2",
+    "@types/node": "^22.15.21",
     "escape-string-regexp": "^5.0.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2",
-    "vue-tsc": "^2.2.0"
+    "tailwindcss": "^4.1.7",
+    "typescript": "^5.8.3",
+    "vue-tsc": "^2.2.10"
   },
   "pnpm": {
     "overrides": {
-      "vue-tsc": ">=2.1.6"
+      "tar-fs": ">=3.0.7"
     },
     "auditConfig": {
       "ignoreCves": []
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@tailwindcss/oxide",
+      "esbuild",
+      "vue-demi"
+    ]
   },
-  "packageManager": "pnpm@10.6.1+sha512.40ee09af407fa9fbb5fbfb8e1cb40fbb74c0af0c3e10e9224d7b53c7658528615b2c92450e74cfad91e3a2dcafe3ce4050d80bda71d757756d2ce2b66213e9a3"
+  "packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677"
 }
