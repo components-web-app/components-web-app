@@ -6,7 +6,8 @@
       v-model="resourceModel.model.value"
       :disabled="disableEditor"
       data-placeholder="[Empty HTML Content Area]"
-      :class="[proseClasses, { 'is-empty opacity-50 text-inherit': disableEditor && !htmlContent }]"
+      :class="{ 'is-empty opacity-50 text-inherit': disableEditor && !htmlContent }"
+      :editor-classes="proseClasses"
     />
     <div
       v-else

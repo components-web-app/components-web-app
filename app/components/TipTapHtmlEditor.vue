@@ -58,6 +58,7 @@ import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
 const props = defineProps<{
   modelValue: string | null | undefined
   disabled?: boolean
+  editorClasses?: string
 }>()
 
 const emit = defineEmits(['update:modelValue'])
@@ -75,6 +76,11 @@ const value = computed({
 // create the editor
 const editor = useEditor({
   content: value.value,
+  editorProps: {
+    attributes: {
+      class: props.editorClasses || '',
+    },
+  },
   extensions: [
     StarterKit,
     Placeholder.configure({

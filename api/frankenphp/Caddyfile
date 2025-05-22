@@ -118,7 +118,10 @@
 
 	# Comment the following line if you don't want Next.js to catch requests for HTML documents.
 	# In this case, they will be handled by the PHP app.
-	reverse_proxy @app http://{$APP_UPSTREAM}
+	reverse_proxy @app http://{$APP_UPSTREAM} {
+        fail_duration 2s
+        unhealthy_request_count 20000
+    }
 
     @internal {
         header_regexp internal host ([A-Za-z\-0-9]+(?:\.local)?(?:\:[0-9]{1,4})?)
