@@ -180,4 +180,9 @@ export default defineNuxtConfig({
     //   },
     // },
   },
+  vue: {
+    compilerOptions: {
+      comments: true,
+    },
+  },
 })
