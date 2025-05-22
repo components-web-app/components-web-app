@@ -24,11 +24,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.7'
-          memory: '800M'
+          cpus: '1.5'
+          memory: '900M'
         reservations:
-          cpus: '0.5'
-          memory: '600M'
+          cpus: '1'
+          memory: '700M'
 
   app:
     build:
