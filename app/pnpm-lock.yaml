@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@1.0.0-29133659.31ee9de
-        version: '@cwa/nuxt-edge@1.0.0-29133659.31ee9de(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.0)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)'
+        specifier: npm:@cwa/nuxt-edge@1.0.0-29133705.bc21476
+        version: '@cwa/nuxt-edge@1.0.0-29133705.bc21476(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.0)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.14(typescript@5.8.3))
@@ -613,8 +613,8 @@ packages:
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
 
-  '@cwa/nuxt-edge@1.0.0-29133659.31ee9de':
-    resolution: {integrity: sha512-vERb+0SAwtd2EZ7kvS2PGcAGuP0t55q7YTTuRn1PUPezwuiGmX+aKFqOdieo5F4UX57b7Xf/3AuiuikKjX23SA==}
+  '@cwa/nuxt-edge@1.0.0-29133705.bc21476':
+    resolution: {integrity: sha512-eD/ntqsZl5esGHWyJoEqA3nRIoZjxcdEZXAAe7ZIi2j/3hc/A/U1lh1nteCqBpTk35JySVh9MT1Cd91WzWZElQ==}
     engines: {pnpm: '>=10.11.0'}
 
   '@dabh/diagnostics@2.0.3':
@@ -6033,7 +6033,7 @@ snapshots:
 
   '@colors/colors@1.6.0': {}
 
-  '@cwa/nuxt-edge@1.0.0-29133659.31ee9de(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.0)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)':
+  '@cwa/nuxt-edge@1.0.0-29133705.bc21476(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.0)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)':
     dependencies:
       '@nuxtjs/color-mode': 3.5.2(magicast@0.3.5)
       '@pinia/nuxt': 0.11.0(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.14(typescript@5.8.3)))
