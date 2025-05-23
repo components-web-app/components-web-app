@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eb89a9bc48d16b0e8c1f29ba305e6be8",
+    "content-hash": "a22f77663505672975d799062323bf1d",
     "packages": [
         {
             "name": "api-platform/core",
@@ -3203,20 +3203,23 @@
             "version": "3.x-dev",
             "source": {
                 "type": "git",
-                "url": "https://github.com/silverbackdan/flysystem.git",
-                "reference": "0f2f02d3b0096d340e1a95091cb3a1c65a10244d"
+                "url": "https://github.com/thephpleague/flysystem.git",
+                "reference": "3b8d678324d7651955483d7f416af8b97f121196"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/silverbackdan/flysystem/zipball/0f2f02d3b0096d340e1a95091cb3a1c65a10244d",
-                "reference": "0f2f02d3b0096d340e1a95091cb3a1c65a10244d",
+                "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/3b8d678324d7651955483d7f416af8b97f121196",
+                "reference": "3b8d678324d7651955483d7f416af8b97f121196",
                 "shasum": ""
             },
             "require": {
+                "league/flysystem-local": "^3.0.0",
                 "league/mime-type-detection": "^1.0.0",
                 "php": "^8.0.2"
             },
             "conflict": {
+                "async-aws/core": "<1.19.0",
+                "async-aws/s3": "<1.14.0",
                 "aws/aws-sdk-php": "3.209.31 || 3.210.0",
                 "guzzlehttp/guzzle": "<7.0",
                 "guzzlehttp/ringphp": "<1.1.1",
@@ -3224,20 +3227,23 @@
                 "symfony/http-client": "<5.2"
             },
             "require-dev": {
-                "async-aws/s3": "^1.5",
-                "async-aws/simple-s3": "^1.1",
-                "aws/aws-sdk-php": "^3.220.0",
+                "async-aws/s3": "^1.5 || ^2.0",
+                "async-aws/simple-s3": "^1.1 || ^2.0",
+                "aws/aws-sdk-php": "^3.295.10",
                 "composer/semver": "^3.0",
                 "ext-fileinfo": "*",
                 "ext-ftp": "*",
+                "ext-mongodb": "^1.3|^2",
                 "ext-zip": "*",
                 "friendsofphp/php-cs-fixer": "^3.5",
                 "google/cloud-storage": "^1.23",
+                "guzzlehttp/psr7": "^2.6",
                 "microsoft/azure-storage-blob": "^1.1",
-                "phpseclib/phpseclib": "^3.0.14",
-                "phpstan/phpstan": "^0.12.26",
-                "phpunit/phpunit": "^9.5.11",
-                "sabre/dav": "^4.3.1"
+                "mongodb/mongodb": "^1.2|^2",
+                "phpseclib/phpseclib": "^3.0.36",
+                "phpstan/phpstan": "^1.10",
+                "phpunit/phpunit": "^9.5.11|^10.0",
+                "sabre/dav": "^4.6.0"
             },
             "default-branch": true,
             "type": "library",
@@ -3246,11 +3252,7 @@
                     "League\\Flysystem\\": "src"
                 }
             },
-            "scripts": {
-                "phpstan": [
-                    "vendor/bin/phpstan analyse -l 6 src"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -3262,6 +3264,7 @@
             ],
             "description": "File storage abstraction for PHP",
             "keywords": [
+                "WebDAV",
                 "aws",
                 "cloud",
                 "file",
@@ -3271,40 +3274,26 @@
                 "ftp",
                 "s3",
                 "sftp",
-                "storage",
-                "webdav"
+                "storage"
             ],
             "support": {
-                "source": "https://github.com/silverbackdan/flysystem/tree/3.x"
+                "issues": "https://github.com/thephpleague/flysystem/issues",
+                "source": "https://github.com/thephpleague/flysystem/tree/3.x"
             },
-            "funding": [
-                {
-                    "type": "github",
-                    "url": "https://github.com/frankdejonge"
-                },
-                {
-                    "type": "tidelift",
-                    "url": "https://tidelift.com/funding/github/packagist/league/flysystem"
-                },
-                {
-                    "type": "custom",
-                    "url": "https://ecologi.com/frankdejonge"
-                }
-            ],
-            "time": "2023-01-25T13:11:04+00:00"
+            "time": "2025-05-21T07:16:06+00:00"
         },
         {
             "name": "league/flysystem-google-cloud-storage",
             "version": "3.x-dev",
             "source": {
                 "type": "git",
-                "url": "https://github.com/silverbackdan/flysystem-google-cloud-storage.git",
-                "reference": "e3573276a15058d385fd5013f4d7ce552dd2a4ed"
+                "url": "https://github.com/thephpleague/flysystem-google-cloud-storage.git",
+                "reference": "54a317aa1f6b6ef1b19e14ccf12930d8f95c75a7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/silverbackdan/flysystem-google-cloud-storage/zipball/e3573276a15058d385fd5013f4d7ce552dd2a4ed",
-                "reference": "e3573276a15058d385fd5013f4d7ce552dd2a4ed",
+                "url": "https://api.github.com/repos/thephpleague/flysystem-google-cloud-storage/zipball/54a317aa1f6b6ef1b19e14ccf12930d8f95c75a7",
+                "reference": "54a317aa1f6b6ef1b19e14ccf12930d8f95c75a7",
                 "shasum": ""
             },
             "require": {
@@ -3320,6 +3309,7 @@
                     "League\\Flysystem\\GoogleCloudStorage\\": ""
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -3331,29 +3321,64 @@
             ],
             "description": "Google Cloud Storage adapter for Flysystem.",
             "keywords": [
+                "Flysystem",
                 "filesystem",
-                "flysystem",
                 "gcs",
                 "google cloud storage"
             ],
             "support": {
-                "source": "https://github.com/silverbackdan/flysystem-google-cloud-storage/tree/3.x"
+                "source": "https://github.com/thephpleague/flysystem-google-cloud-storage/tree/3.x"
             },
-            "funding": [
+            "time": "2025-01-26T14:03:02+00:00"
+        },
+        {
+            "name": "league/flysystem-local",
+            "version": "3.29.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/flysystem-local.git",
+                "reference": "e0e8d52ce4b2ed154148453d321e97c8e931bd27"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/flysystem-local/zipball/e0e8d52ce4b2ed154148453d321e97c8e931bd27",
+                "reference": "e0e8d52ce4b2ed154148453d321e97c8e931bd27",
+                "shasum": ""
+            },
+            "require": {
+                "ext-fileinfo": "*",
+                "league/flysystem": "^3.0.0",
+                "league/mime-type-detection": "^1.0.0",
+                "php": "^8.0.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "League\\Flysystem\\Local\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
                 {
-                    "type": "github",
-                    "url": "https://github.com/frankdejonge"
-                },
-                {
-                    "type": "tidelift",
-                    "url": "https://tidelift.com/funding/github/packagist/league/flysystem"
-                },
-                {
-                    "type": "custom",
-                    "url": "https://ecologi.com/frankdejonge"
+                    "name": "Frank de Jonge",
+                    "email": "info@frankdejonge.nl"
                 }
             ],
-            "time": "2023-01-25T13:41:52+00:00"
+            "description": "Local filesystem adapter for Flysystem.",
+            "keywords": [
+                "Flysystem",
+                "file",
+                "files",
+                "filesystem",
+                "local"
+            ],
+            "support": {
+                "source": "https://github.com/thephpleague/flysystem-local/tree/3.29.0"
+            },
+            "time": "2024-08-09T21:24:39+00:00"
         },
         {
             "name": "league/mime-type-detection",

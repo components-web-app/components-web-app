@@ -1,23 +1,16 @@
 {
     "name": "components-web-app/component-web-app-api",
+    "version": "1.0.0",
     "description": "",
     "license": "MIT",
     "repositories": [
         {
             "type": "vcs",
             "url": "https://github.com/silverbackdan/contexts"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/silverbackdan/flysystem"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/silverbackdan/flysystem-google-cloud-storage"
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "components-web-app/api-components-bundle": "dev-main",
         "doctrine/doctrine-fixtures-bundle": "^3.3",
         "doctrine/doctrine-migrations-bundle": "^3.0",
