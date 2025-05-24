@@ -19,6 +19,13 @@
       <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleItalic', 'italic')">
         Italic
       </BubbleMenuButton>
+      <button
+        class="px-1.5 py-1 content-center items-center"
+        :class="[editor.isActive('link') ? 'bg-black text-white' : null]"
+        @click="showLinkManager"
+      >
+        Link
+      </button>
     </bubble-menu>
 
     <floating-menu
@@ -45,6 +52,7 @@
 <script lang="ts" setup>
 import { StarterKit } from '@tiptap/starter-kit'
 import { Placeholder } from '@tiptap/extension-placeholder'
+import { Link } from '@tiptap/extension-link'
 import {
   BubbleMenu,
   useEditor,
@@ -87,6 +95,10 @@ const editor = useEditor({
       placeholder: 'Write something …',
       emptyEditorClass: 'is-editor-empty text-inherit opacity-50',
     }),
+    Link.configure({
+      openOnClick: false,
+      defaultProtocol: 'https',
+    }),
   ],
   onUpdate: () => {
     // HTML
@@ -97,6 +109,37 @@ const editor = useEditor({
   },
   editable: !props.disabled,
 })
+
+function showLinkManager() {
+  if (!editor.value) return
+  const previousUrl = editor.value.getAttributes('link').href
+  const url = window.prompt('URL', previousUrl)
+
+  // cancelled
+  if (url === null) {
+    return
+  }
+
+  // empty
+  if (url === '') {
+    editor.value
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .unsetLink()
+      .run()
+
+    return
+  }
+
+  // update link
+  editor.value
+    .chain()
+    .focus()
+    .extendMarkRange('link')
+    .setLink({ href: url })
+    .run()
+}
 
 // match the editor value to the modelValue prop
 watch(value, (newValue) => {
