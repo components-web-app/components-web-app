@@ -260,7 +260,7 @@ php:
     mode: "${DATABASE_SSL_MODE:-"prefer"}"
   caddy:
     cdnConfig: "${CADDY_CDN_OPTIONS_B64}"
-    storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}"
+    storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"nuts otter"}"
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure

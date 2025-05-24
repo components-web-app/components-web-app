@@ -9,7 +9,19 @@
 @config "./tailwind.config.ts";
 
 @theme {
-  --color-primary: #999A77;
+  --color-gurkha-50: #f5f5f0;
+  --color-gurkha-100: #e8e8df;
+  --color-gurkha-200: #d4d4c2;
+  --color-gurkha-300: #b8b89e;
+  --color-gurkha-400: #999a77;
+  --color-gurkha-500: #818260;
+  --color-gurkha-600: #64664a;
+  --color-gurkha-700: #4e503b;
+  --color-gurkha-800: #414232;
+  --color-gurkha-900: #38392e;
+  --color-gurkha-950: #1c1d16;
+
+  --color-primary: var(--color-gurkha-400);
   --color-background: #12212B;
   --color-text-default: #FFFFFF;
 }
