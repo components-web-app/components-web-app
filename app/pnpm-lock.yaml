@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@1.0.0-29136325.14d0924
-        version: '@cwa/nuxt-edge@1.0.0-29136325.14d0924(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.1)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)'
+        specifier: npm:@cwa/nuxt-edge@1.0.0-29136494.9cb45a5
+        version: '@cwa/nuxt-edge@1.0.0-29136494.9cb45a5(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.1)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.14(typescript@5.8.3))
@@ -616,8 +616,8 @@ packages:
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
 
-  '@cwa/nuxt-edge@1.0.0-29136325.14d0924':
-    resolution: {integrity: sha512-MHf9ZKbXarEEQ64Az9xADKG+FcOwlo7QAUkEYJU45hIryjKVchklqZ2HNUUzciBF25M/Ute0N+IxJrB161HsjQ==}
+  '@cwa/nuxt-edge@1.0.0-29136494.9cb45a5':
+    resolution: {integrity: sha512-9VsxqOEetjiRHOSUZtcQmDVUrjZSqOrGtBlrLXM++L317taY4XGFzndK3JbkNnfh3YxcPxLZA9kUVj69i1hmcA==}
     engines: {pnpm: '>=10.11.0'}
 
   '@dabh/diagnostics@2.0.3':
@@ -4662,8 +4662,8 @@ packages:
     resolution: {integrity: sha512-Re10+NauLTMCudc7T5WLFLAwDhQ0JWdrMK+9B2M8zR5hRExKmsRDCBA7/aV/pNJFltmBFO5BAMlQFi/vq3nKOg==}
     engines: {node: '>=6'}
 
-  tar-fs@3.0.8:
-    resolution: {integrity: sha512-ZoROL70jptorGAlgAYiLoBLItEKw/fUxg9BSYK/dF/GAGYFJOJJJMvjPAKDJraCXFwadD456FCuvLWgfhMsPwg==}
+  tar-fs@3.0.9:
+    resolution: {integrity: sha512-XF4w9Xp+ZQgifKakjZYmFdkLoSWd34VGKcsTCwlNWM7QG3ZbaxnTsaBwnjFZqHRf/rROxaR8rXnbtwdvaDI+lA==}
 
   tar-stream@3.1.7:
     resolution: {integrity: sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ==}
@@ -4702,6 +4702,10 @@ packages:
 
   tinyglobby@0.2.13:
     resolution: {integrity: sha512-mEwzpUgrLySlveBwEVDMKk5B57bhLPYovRfPAXD5gA/98Opn0rCDj3GtLwFvCvH5RK9uPCExUROW5NjDwvqkxw==}
+    engines: {node: '>=12.0.0'}
+
+  tinyglobby@0.2.14:
+    resolution: {integrity: sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==}
     engines: {node: '>=12.0.0'}
 
   tippy.js@6.3.7:
@@ -6045,7 +6049,7 @@ snapshots:
 
   '@colors/colors@1.6.0': {}
 
-  '@cwa/nuxt-edge@1.0.0-29136325.14d0924(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.1)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)':
+  '@cwa/nuxt-edge@1.0.0-29136494.9cb45a5(@parcel/watcher@2.5.1)(@types/node@22.15.21)(db0@0.3.2)(ioredis@5.6.1)(lightningcss@1.30.1)(magicast@0.3.5)(rollup@4.41.1)(terser@5.39.2)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))(vue-tsc@2.2.10(typescript@5.8.3))(yaml@2.8.0)':
     dependencies:
       '@nuxtjs/color-mode': 3.5.2(magicast@0.3.5)
       '@pinia/nuxt': 0.11.0(magicast@0.3.5)(pinia@3.0.2(typescript@5.8.3)(vue@3.5.14(typescript@5.8.3)))
@@ -6507,7 +6511,7 @@ snapshots:
       semver: 7.7.2
       simple-git: 3.27.0
       sirv: 3.0.1
-      tinyglobby: 0.2.13
+      tinyglobby: 0.2.14
       unimport: 3.14.6(rollup@4.41.1)
       vite: 6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0)
       vite-plugin-inspect: 0.8.9(@nuxt/kit@3.17.4(magicast@0.3.5))(rollup@4.41.1)(vite@6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0))
@@ -6617,7 +6621,7 @@ snapshots:
       scule: 1.3.0
       semver: 7.7.2
       std-env: 3.9.0
-      tinyglobby: 0.2.13
+      tinyglobby: 0.2.14
       ufo: 1.6.1
       unctx: 2.4.1
       unimport: 5.0.1
@@ -10117,7 +10121,7 @@ snapshots:
       pump: 3.0.2
       rc: 1.2.8
       simple-get: 4.0.1
-      tar-fs: 3.0.8
+      tar-fs: 3.0.9
       tunnel-agent: 0.6.0
     transitivePeerDependencies:
       - bare-buffer
@@ -10561,7 +10565,7 @@ snapshots:
       prebuild-install: 7.1.3
       semver: 7.7.2
       simple-get: 4.0.1
-      tar-fs: 3.0.8
+      tar-fs: 3.0.9
       tunnel-agent: 0.6.0
     transitivePeerDependencies:
       - bare-buffer
@@ -10824,7 +10828,7 @@ snapshots:
 
   tapable@2.2.2: {}
 
-  tar-fs@3.0.8:
+  tar-fs@3.0.9:
     dependencies:
       pump: 3.0.2
       tar-stream: 3.1.7
@@ -10879,6 +10883,11 @@ snapshots:
   tinyexec@1.0.1: {}
 
   tinyglobby@0.2.13:
+    dependencies:
+      fdir: 6.4.4(picomatch@4.0.2)
+      picomatch: 4.0.2
+
+  tinyglobby@0.2.14:
     dependencies:
       fdir: 6.4.4(picomatch@4.0.2)
       picomatch: 4.0.2
@@ -11246,7 +11255,7 @@ snapshots:
     dependencies:
       debug: 4.4.1
       pretty-bytes: 6.1.1
-      tinyglobby: 0.2.13
+      tinyglobby: 0.2.14
       vite: 6.3.5(@types/node@22.15.21)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.39.2)(yaml@2.8.0)
       workbox-build: 7.3.0
       workbox-window: 7.3.0
