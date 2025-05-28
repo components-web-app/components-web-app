@@ -22,7 +22,7 @@
                 />
               </NuxtLink>
             </div>
-            <div class="grow w-auto flex gap-x-3 md:gap-x-5 justify-center items-center">
+            <div class="grow w-auto flex gap-x-3 md:gap-x-5 justify-end items-center">
               <CwaComponentGroup
                 v-if="$cwa.resources.layoutIri.value"
                 reference="top"
@@ -30,18 +30,6 @@
                 :allowed-components="['/component/navigation_links']"
               />
               <TryAdminLink />
-            </div>
-            <div class="leading-0">
-              <NuxtLink
-                to="https://silverbackwebapps.com"
-                target="_blank"
-                class="inline-block text-white/80 hover:text-white transition h-6.5 md:h-6.5"
-              >
-                <LazySvgoLogoSwa
-                  :font-controlled="false"
-                  class="h-full"
-                />
-              </NuxtLink>
             </div>
           </div>
         </nav>
