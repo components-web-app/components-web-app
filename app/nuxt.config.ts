@@ -9,9 +9,6 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: 'en-GB',
         class: 'bg-black'
-      },
-      bodyAttrs: {
-        class: 'bg-background'
       }
     }
   },
