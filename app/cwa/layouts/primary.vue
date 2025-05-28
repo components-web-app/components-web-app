@@ -22,7 +22,7 @@
                 />
               </NuxtLink>
             </div>
-            <div class="grow w-auto flex space-x-3 md:space-x-5 justify-center">
+            <div class="grow w-auto flex gap-x-3 md:gap-x-5 justify-center items-center">
               <CwaComponentGroup
                 v-if="$cwa.resources.layoutIri.value"
                 reference="top"
