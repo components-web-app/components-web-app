@@ -4,7 +4,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-28',
   app: {
     head: {
-      titleTemplate: '%s - CWA Preview',
       charset: 'utf-8',
       htmlAttrs: {
         lang: 'en-GB',
