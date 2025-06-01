@@ -10,7 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29145266.24c32c8",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29146507.6abe802",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.10.0",
