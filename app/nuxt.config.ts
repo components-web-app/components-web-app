@@ -15,7 +15,6 @@ export default defineNuxtConfig({
     '~/assets/css/tailwind.css',
   ],
   cwa: {
-    appName: 'CWA Preview Web App',
     resources: {
       NavigationLink: {
         name: 'Link',
@@ -49,6 +48,9 @@ export default defineNuxtConfig({
       BlogArticleData: {
         name: 'Blog Articles'
       }
+    },
+    siteConfig: {
+      siteName: 'CWA Preview Web App',
     }
   },
   devtools: {
