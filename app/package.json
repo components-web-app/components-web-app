@@ -7,10 +7,11 @@
     "dev-ssl": "nuxt dev --https --ssl-cert /certs/localhost/localhost.crt --ssl-key /certs/localhost/localhost.key",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29146507.6abe802",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29149098.7037b81",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.10.0",
@@ -28,6 +29,7 @@
     "@types/lodash-es": "^4.17.12",
     "@types/luxon": "^3.6.2",
     "@types/node": "^22.15.21",
+    "@vite-pwa/assets-generator": "^1.0.0",
     "escape-string-regexp": "^5.0.0",
     "tailwindcss": "^4.1.7",
     "typescript": "^5.8.3",
