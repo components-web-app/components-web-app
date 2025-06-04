@@ -29,6 +29,11 @@ services:
         reservations:
           cpus: '1'
           memory: '700M'
+    ports:
+      # CADDY ADMIN
+      - target: 2019
+        published: 2019
+        protocol: tcp
 
   app:
     build:

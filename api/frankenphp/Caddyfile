@@ -2,6 +2,8 @@
 {
 	{$CADDY_GLOBAL_CONFIG}
 
+    admin :2019
+
     cache {
         api {
 			souin
