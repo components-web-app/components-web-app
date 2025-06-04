@@ -35,10 +35,10 @@
           >{{ formatDate(post.createdAt) }}</time>
         </div>
         <h3 class="mt-3 text-lg font-semibold leading-6 text-white">
-          <NuxtLink :to="post.routePath || post['@id']">
+          <CwaLink :to="post.routePath || post['@id']">
             <span class="absolute inset-0" />
             {{ post.title }}
-          </NuxtLink>
+          </CwaLink>
         </h3>
       </article>
       <div
