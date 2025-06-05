@@ -5,6 +5,7 @@ services:
       - database
     restart: unless-stopped
     environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-~}
       APP_UPSTREAM: app:3000
       SERVER_NAME: ${SERVER_NAME:-localhost}, php.local:80, php.local:443
       # Will be needed for Server-side/internal loads to generate the doc headers
