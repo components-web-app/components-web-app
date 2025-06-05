@@ -37,6 +37,10 @@ services:
       - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
+      # CADDY ADMIN
+      - target: 2019
+        published: 2019
+        protocol: tcp
     deploy:
       resources:
         limits:
