@@ -65,10 +65,6 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
     'nuxt-svgo'
   ],
-  routeRules: {
-    // '/': { prerender: true },
-    // '/**': { isr: 30 }
-  },
   runtimeConfig: {
     public: {
       cwa: {
@@ -79,16 +75,7 @@ export default defineNuxtConfig({
   },
   typescript: {
     typeCheck: true,
-    strict: false,
-    tsConfig: {
-      include: [
-        '../src'
-      ],
-      exclude: [
-        '../**/*.spec.ts',
-        '../**/*.test.ts'
-      ]
-    }
+    strict: false
   },
   pwa: {
     registerType: 'autoUpdate',
