@@ -10,8 +10,7 @@ install_dependencies() {
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
   apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm
 
-  echo "Install glibc"
-	wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub
+  echo "Install gcompat"
 	apk add gcompat
 
   echo "Intalling helm..."
