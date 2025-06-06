@@ -52,14 +52,23 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
-          #livenessProbe:
-          #  httpGet:
-          #    path: /
-          #    port: http
-          #readinessProbe:
-          #  httpGet:
-          #    path: /
-          #    port: http
+          # check often but allow more failures to give startup time
+          startupProbe:
+            tcpSocket:
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+          # once started up, wait 5 seconds and then check every 5 seconds
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          # we are only ready for connections if the login page is loading
+          readinessProbe:
+            httpGet:
+              path: /cwa-healthcheck
+              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
