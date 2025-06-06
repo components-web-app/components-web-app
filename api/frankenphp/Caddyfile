@@ -106,7 +106,7 @@
         ||
         path(
             '/favicon.ico', '/logo.svg', '/icon.*', '/pwa-*.png', '/maskable-icon-*.png', '/apple-touch-icon-*.png',
-            '/robots.txt', '/sitemap*',
+            '/robots.txt', '/sitemap*', '/__sitemap__*',
             '/manifest.json', '/manifest.webmanifest',
             '/_nuxt*', '/__nuxt*',
             '/*sw.js*', '/workbox-*.js*',
