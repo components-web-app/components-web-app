@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useCwaResourceManagerTab, useCwaResourceModel, useCwaSelect } from '#imports'
+import type {SelectOption} from "#cwa/runtime/composables/cwa-select-input";
 
 const { exposeMeta, iri } = useCwaResourceManagerTab({
   name: 'Collection'
@@ -13,12 +14,20 @@ const defaultQueryParametersModel = useCwaResourceModel<string|null>(iri, 'defau
   debounceTime: 0
 })
 
-const resourceIriSelect = useCwaSelect(resourceIriModel.model, [
+const categoryOptions: SelectOption[] = [
   {
     label: 'Blog Articles',
-    value: '/page_data/blog_article_datas'
-  }
-])
+    value: '/page_data/blog_article_datas',
+  },
+]
+if (!resourceIriModel.model.value) {
+  categoryOptions.unshift({
+    label: 'Please select',
+    value: undefined,
+  })
+}
+const resourceIriSelect = useCwaSelect(resourceIriModel.model, categoryOptions)
+
 const defaultQueryParametersSelect = useCwaSelect(defaultQueryParametersModel.model, [
   {
     label: 'None',
