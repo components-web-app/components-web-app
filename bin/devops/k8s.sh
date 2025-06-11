@@ -277,6 +277,7 @@ ingress:
     "nginx.ingress.kubernetes.io/proxy-buffering": "on"
     "nginx.ingress.kubernetes.io/proxy-buffers-number": "4"
     "nginx.ingress.kubernetes.io/proxy-buffer-size": "8k"
+    "nginx.ingress.kubernetes.io/proxy-body-size": "6M"
   hosts:
     - host: ${DOMAIN:-"~"}
       paths:

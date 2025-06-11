@@ -77,13 +77,6 @@
 
 	vulcain
 
-    @use_cache expression `
-        !path('/logout') &&
-        (!method('BAN', 'PURGE') || client_ip({$CACHE_ACL:"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1"}))
-    `
-
-    cache @use_cache
-
 	# Add links to the API docs and to the Mercure Hub if not set explicitly (e.g. the PWA)
 	header ?Link `</docs.jsonld>; rel="http://www.w3.org/ns/hydra/core#apiDocumentation", </.well-known/mercure>; rel="mercure"`
 
@@ -131,6 +124,12 @@
 
     # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
     request_header @internal host {$BROWSER_SERVER_NAME}
+
+    @use_cache expression `
+        (!method('BAN', 'PURGE') || client_ip({$CACHE_ACL:"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1"}))
+    `
+
+    cache @use_cache
 
     php_server
 }
