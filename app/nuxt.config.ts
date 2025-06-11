@@ -78,6 +78,7 @@ export default defineNuxtConfig({
     strict: false
   },
   pwa: {
+    selfDestroying: true,
     registerType: 'autoUpdate',
     manifest: {
       name: 'CWA',
