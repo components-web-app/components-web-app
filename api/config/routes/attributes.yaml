@@ -3,7 +3,9 @@ controllers:
     path: ../../src/Controller/
     namespace: App\Controller
   type: attribute
+  prefix: /_api
 
 kernel:
   resource: App\Kernel
   type: attribute
+  prefix: /_api

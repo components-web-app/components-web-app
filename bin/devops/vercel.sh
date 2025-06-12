@@ -32,7 +32,7 @@ deploy_vercel_app() {
   else
     PROD_FLAG="--target=staging"
 	fi
-	API_ENDPOINT="https://${DOMAIN}"
+	API_ENDPOINT="https://${DOMAIN}/_api"
 
 	echo "Deploying Vercel with API ${API_ENDPOINT}..."
 	VERCEL_ORG_ID="$VERCEL_ORG_ID"

@@ -39,8 +39,8 @@ services:
       - /srv/app/.pnpm-store
     environment:
       NODE_TLS_REJECT_UNAUTHORIZED: 0
-      NUXT_PUBLIC_CWA_API_URL: ${API_URL:-https://php.local}
-      NUXT_PUBLIC_CWA_API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost}
+      NUXT_PUBLIC_CWA_API_URL: ${API_URL:-https://php.local/_api}
+      NUXT_PUBLIC_CWA_API_URL_BROWSER: ${API_URL_BROWSER:-https://localhost/_api}
     ports:
       - target: 3000
         published: 3001

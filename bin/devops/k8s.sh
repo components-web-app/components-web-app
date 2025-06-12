@@ -215,7 +215,7 @@ deploy() {
   CADDY_CACHE_EXTRA_CONFIG_B64=$(echo "${CADDY_CACHE_EXTRA_CONFIG:-"otter"}" | base64 -w0)
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
-  NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}"
+  NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
   CURRENT_DATE=$(date)
 
   cat >values.tmp.yaml <<EOF
