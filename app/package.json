@@ -11,7 +11,7 @@
     "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29162414.10ceeff",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29168504.3f84a82",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.10.0",
@@ -28,7 +28,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/lodash-es": "^4.17.12",
     "@types/luxon": "^3.6.2",
-    "@types/node": "^24.0.1",
+    "@types/node": "^24.0.3",
     "@vite-pwa/assets-generator": "^1.0.0",
     "escape-string-regexp": "^5.0.0",
     "tailwindcss": "^4.1.10",

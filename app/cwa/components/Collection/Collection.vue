@@ -35,7 +35,7 @@
           >{{ formatDate(post.createdAt) }}</time>
         </div>
         <h3 class="mt-3 text-lg font-semibold leading-6 text-white">
-          <CwaLink :to="post.routePath || post['@id']">
+          <CwaLink :to="resolveResourceLink(post, 'routePath')">
             <span class="absolute inset-0" />
             {{ post.title }}
           </CwaLink>
@@ -93,6 +93,7 @@ const {
   goToNextPage,
   goToPreviousPage,
   changePage,
+  resolveResourceLink,
 } = useCwaCollectionResource(toRef(props, 'iri'))
 
 function formatDate(dateStr: string) {

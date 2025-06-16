@@ -255,13 +255,14 @@ spec:
           # is the container ready for traffic, everything is going and ready?
           readinessProbe:
             httpGet:
-              path: /_/site_config_parameters.jsonld
+              path: /_api/_/site_config_parameters.jsonld
               port: http
               httpHeaders:
               - name: Accept
                 value: application/ld+json,application/json
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
