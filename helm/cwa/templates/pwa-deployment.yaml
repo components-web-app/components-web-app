@@ -72,7 +72,7 @@ spec:
           # we are only ready for connections if the login page is loading
           readinessProbe:
             httpGet:
-              path: /cwa-healthcheck
+              path: /_cwa/healthcheck
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

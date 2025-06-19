@@ -23,9 +23,9 @@ use Silverback\ApiComponentsBundle\Filter\OrSearchFilter;
 #[ApiResource(operations: [
     new GetCollection( order: ['createdAt' => 'DESC'], security: "is_granted('ROLE_SUPER_ADMIN')"),
     new Post( security: "is_granted('ROLE_SUPER_ADMIN')" ),
-    new Get( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
-    new Put( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
-    new Patch( security: "is_granted('ROLE_SUPER_ADMIN') or object == user" ),
+    new Get( security: "is_granted('ROLE_SUPER_ADMIN') or object.getId() == user.getId()" ),
+    new Put( security: "is_granted('ROLE_SUPER_ADMIN') or object.getId() == user.getId()" ),
+    new Patch( security: "is_granted('ROLE_SUPER_ADMIN') or object.getId() == user.getId()" ),
     new Delete( security: "is_granted('ROLE_SUPER_ADMIN')" )
 ])]
 #[ApiFilter(OrderFilter::class, properties: ['createdAt', 'username'], arguments: [ 'orderParameterName' => 'order' ])]

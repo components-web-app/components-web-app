@@ -74,3 +74,8 @@ indent_size = 2
 [phpunit.xml{,.dist}]
 indent_style = space
 indent_size = 4
+
+[*.*Caddyfile]
+[{Caddyfile,*.*Caddyfile}]
+indent_style = space
+indent_size = 4
