@@ -160,13 +160,6 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
-    // server: {
-    //   hmr: {
-    //     protocol: "wss",
-    //     clientPort: 443,
-    //     path: "hmr/",
-    //   },
-    // },
   },
   vue: {
     compilerOptions: {

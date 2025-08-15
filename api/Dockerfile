@@ -8,26 +8,23 @@ FROM dunglas/frankenphp:builder AS builder
 # Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
-ENV CGO_ENABLED=1 \
-	XCADDY_SETCAP=1 \
-	XCADDY_GO_BUILD_FLAGS="-ldflags \"-w -s -extldflags '-Wl,-z,stack-size=0x80000'\" -tags=nobadger,nomysql,nopgx" \
-	FRANKENPHP_CONFIG="worker ./public/index.php"
-
-RUN export CGO_CFLAGS=$(php-config --includes) && \
-    export CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)"
-
-RUN xcaddy build \
+RUN CGO_ENABLED=1 \
+    XCADDY_SETCAP=1 \
+    XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
+    CGO_CFLAGS=$(php-config --includes) \
+    CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)" \
+    xcaddy build \
     --output /usr/local/bin/frankenphp \
-    --with github.com/dunglas/frankenphp/caddy \
-    --with github.com/dunglas/caddy-cbrotli \
-    --with github.com/dunglas/mercure/caddy \
-    --with github.com/dunglas/mercure/caddy \
-    --with github.com/dunglas/vulcain/caddy \
-    --with github.com/darkweak/souin/plugins/caddy@v1.7.6 \
-    --with github.com/darkweak/storages/otter/caddy \
-    --with github.com/darkweak/storages/badger/caddy \
-    --with github.com/darkweak/storages/nuts/caddy
-    # --with github.com/darkweak/storages/go-redis/caddy \
+	--with github.com/dunglas/frankenphp/caddy \
+	--with github.com/dunglas/caddy-cbrotli \
+	--with github.com/dunglas/mercure/caddy \
+	--with github.com/dunglas/mercure/caddy \
+	--with github.com/dunglas/vulcain/caddy \
+	--with github.com/darkweak/souin/plugins/caddy@v1.7.6 \
+	--with github.com/darkweak/storages/otter/caddy \
+	--with github.com/darkweak/storages/badger/caddy \
+	--with github.com/darkweak/storages/nuts/caddy
+	# --with github.com/darkweak/storages/go-redis/caddy \
 
 FROM dunglas/frankenphp:latest AS frankenphp_upstream
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
