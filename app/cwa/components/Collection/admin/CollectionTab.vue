@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useCwaResourceManagerTab, useCwaResourceModel, useCwaSelect } from '#imports'
-import type {SelectOption} from "#cwa/runtime/composables/cwa-select-input";
+import type {SelectOption} from "#cwa/composables/cwa-select-input";
 
 const { exposeMeta, iri } = useCwaResourceManagerTab({
   name: 'Collection'

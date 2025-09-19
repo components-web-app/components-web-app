@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { useCwaImage } from '#cwa/runtime/composables/cwa-image'
+import { useCwaImage } from '#cwa/composables/cwa-image'
 import { toRef } from 'vue'
 import { useCwa } from '#imports'
 

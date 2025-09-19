@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Spinner from '#cwa/runtime/templates/components/utils/Spinner.vue'
+import Spinner from '#cwa/templates/components/utils/Spinner.vue'
 import { useCwa } from '#imports'
 import { useHead } from '#app'
 

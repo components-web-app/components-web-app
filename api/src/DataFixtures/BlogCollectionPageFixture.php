@@ -2,8 +2,8 @@
 
 namespace App\DataFixtures;
 
-use ApiPlatform\Api\UrlGeneratorInterface;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\UrlGeneratorInterface;
 use App\Entity\BlogArticleData;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;

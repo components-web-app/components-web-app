@@ -78,8 +78,8 @@
 <script setup lang="ts">
 import { toRef } from 'vue'
 import dayjs from 'dayjs'
-import Spinner from '#cwa/runtime/templates/components/utils/Spinner.vue'
-import type { IriProp } from '#cwa/runtime/composables/cwa-resource'
+import Spinner from '#cwa/templates/components/utils/Spinner.vue'
+import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaCollectionResource } from '#imports'
 
 const props = defineProps<IriProp>()

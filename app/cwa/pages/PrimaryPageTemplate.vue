@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IriProp } from '#cwa/runtime/composables/cwa-resource'
+import type { IriProp } from '#cwa/composables/cwa-resource'
 
 const props = defineProps<IriProp>()
 </script>

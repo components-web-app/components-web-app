@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CwaAuthStatus } from '#cwa/runtime/api/auth'
+import { CwaAuthStatus } from '#cwa/api/auth'
 </script>
 
 <template>

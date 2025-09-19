@@ -33,7 +33,7 @@ import {
   type CwaPaginationEmits,
   type CwaPaginationProps,
   useCwaCollectionPagination
-} from '#cwa/runtime/composables/cwa-collection-pagination'
+} from '#cwa/composables/cwa-collection-pagination'
 
 const pageClass = 'border-transparent text-gray-300 hover:border-gray-300 hover:text-white transition'
 const selectedPageClass = 'border-primary text-primary'

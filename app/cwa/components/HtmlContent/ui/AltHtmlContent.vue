@@ -15,7 +15,7 @@
 
 <script setup lang="ts">
 import { computed, ref, toRef } from 'vue'
-import type { IriProp } from '#cwa/runtime/composables/cwa-resource'
+import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaResource, useHtmlContent } from '#imports'
 import TipTapHtmlEditor from '~/components/TipTapHtmlEditor.vue'
 import { useCustomHtmlComponent } from '~/composables/useCustomHtmlComponent'
