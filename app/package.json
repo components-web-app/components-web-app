@@ -21,6 +21,7 @@
     "@tiptap/starter-kit": "^2.22.3",
     "@tiptap/vue-3": "^2.22.3",
     "@vite-pwa/nuxt": "^1.0.4",
+    "jwt-decode": "^4.0.0",
     "nuxt-svgo": "^4.2.2"
   },
   "devDependencies": {
