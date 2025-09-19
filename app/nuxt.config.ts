@@ -61,6 +61,7 @@ export default defineNuxtConfig({
   ],
   modules: [
     '@cwa/nuxt',
+    '@nuxtjs/seo',
     '@nuxt/image',
     '@vite-pwa/nuxt',
     'nuxt-svgo'
