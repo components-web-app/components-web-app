@@ -25,4 +25,4 @@ data:
   mailer-email: {{ .Values.php.mailer.email | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
-  cache-url: http://{{ include "cwa.fullname" . }}/souin-api/souin
+  cache-url: "http://localhost:2019/souin-api/souin"

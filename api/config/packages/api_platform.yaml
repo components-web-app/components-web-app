@@ -24,7 +24,6 @@ api_platform:
     public: true
   use_symfony_listeners: true
   defaults:
-    #standard_put: true
     extra_properties:
       rfc_7807_compliant_errors: true
     cache_headers:

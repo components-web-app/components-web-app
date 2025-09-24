@@ -20,7 +20,7 @@ RUN CGO_ENABLED=1 \
 	--with github.com/dunglas/mercure/caddy \
 	--with github.com/dunglas/mercure/caddy \
 	--with github.com/dunglas/vulcain/caddy \
-	--with github.com/darkweak/souin/plugins/caddy@v1.7.6 \
+	--with github.com/darkweak/souin/plugins/caddy \
 	--with github.com/darkweak/storages/otter/caddy \
 	--with github.com/darkweak/storages/badger/caddy \
 	--with github.com/darkweak/storages/nuts/caddy
