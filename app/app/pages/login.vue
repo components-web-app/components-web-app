@@ -12,16 +12,11 @@
         Use the username and password "admin" to log in to this preview version of CWA
       </div>
     </template>
-    <!-- @vue-expect-error footer is not types property for some reason when running -->
-    <template #footer>
-      Holaaa
-    </template>
   </CwaAuthLoginPage>
 </template>
 
 <script setup lang="ts">
 import { useHead } from '#app'
-import { CwaAuthLoginPage } from '#components'
 import { definePageMeta, useLogin } from '#imports'
 
 const { error, submitting, signIn, credentials } = useLogin()

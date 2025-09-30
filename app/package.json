@@ -11,7 +11,7 @@
     "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29320771.2cac87b",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29320786.d63ede8",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.11.0",
