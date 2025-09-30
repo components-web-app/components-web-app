@@ -15,6 +15,7 @@
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.11.0",
+    "@nuxtjs/sitemap": "github:silverbackdan/sitemap#feat/debug-extended",
     "@tiptap/extension-link": "^3.6.2",
     "@tiptap/extension-placeholder": "^3.6.2",
     "@tiptap/pm": "^3.6.2",
@@ -38,7 +39,8 @@
   },
   "pnpm": {
     "overrides": {
-      "tar-fs": ">=3.0.7"
+      "tar-fs": ">=3.0.7",
+      "@nuxtjs/sitemap": "github:silverbackdan/sitemap#feat/debug-extended"
     },
     "auditConfig": {
       "ignoreCves": []
