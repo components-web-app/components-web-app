@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@1.0.0-29321015.3ffa951
-        version: '@cwa/nuxt-edge@1.0.0-29321015.3ffa951(@unhead/vue@2.0.17(vue@3.5.22(typescript@5.9.2)))(db0@0.3.2)(h3@1.15.4)(ioredis@5.8.0)(magicast@0.3.5)(rollup@4.52.3)(typescript@5.9.2)(unhead@2.0.17)(unstorage@1.17.1(db0@0.3.2)(ioredis@5.8.0))(vite@7.1.7(@types/node@24.6.0)(jiti@2.6.0)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1))'
+        specifier: npm:@cwa/nuxt-edge@1.0.0-29321060.738aa9a
+        version: '@cwa/nuxt-edge@1.0.0-29321060.738aa9a(@unhead/vue@2.0.17(vue@3.5.22(typescript@5.9.2)))(db0@0.3.2)(h3@1.15.4)(ioredis@5.8.0)(magicast@0.3.5)(rollup@4.52.3)(typescript@5.9.2)(unhead@2.0.17)(unstorage@1.17.1(db0@0.3.2)(ioredis@5.8.0))(vite@7.1.7(@types/node@24.6.0)(jiti@2.6.0)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1))'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.22(typescript@5.9.2))
@@ -607,8 +607,8 @@ packages:
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
     engines: {node: '>=18.0.0'}
 
-  '@cwa/nuxt-edge@1.0.0-29321015.3ffa951':
-    resolution: {integrity: sha512-8aCxMHO+eu+eMWUc5S5MvYNAoowF5dF2cBMemOX1AnbSE0PvnRw2weU7Gsoq6SfxkvCwya0Jzv69fKLJL/mEeQ==}
+  '@cwa/nuxt-edge@1.0.0-29321060.738aa9a':
+    resolution: {integrity: sha512-Vc3GJawtuy1Kr5WHzF0a7HVHd2F6s3cvbpoPuRusbCgsFhRCwdekhOLQhMNUGK9EJCQ86p2C3P/tdeP5cEnNvA==}
     engines: {pnpm: '>=10.11.0'}
 
   '@emnapi/core@1.5.0':
@@ -6140,7 +6140,7 @@ snapshots:
     dependencies:
       mime: 3.0.0
 
-  '@cwa/nuxt-edge@1.0.0-29321015.3ffa951(@unhead/vue@2.0.17(vue@3.5.22(typescript@5.9.2)))(db0@0.3.2)(h3@1.15.4)(ioredis@5.8.0)(magicast@0.3.5)(rollup@4.52.3)(typescript@5.9.2)(unhead@2.0.17)(unstorage@1.17.1(db0@0.3.2)(ioredis@5.8.0))(vite@7.1.7(@types/node@24.6.0)(jiti@2.6.0)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1))':
+  '@cwa/nuxt-edge@1.0.0-29321060.738aa9a(@unhead/vue@2.0.17(vue@3.5.22(typescript@5.9.2)))(db0@0.3.2)(h3@1.15.4)(ioredis@5.8.0)(magicast@0.3.5)(rollup@4.52.3)(typescript@5.9.2)(unhead@2.0.17)(unstorage@1.17.1(db0@0.3.2)(ioredis@5.8.0))(vite@7.1.7(@types/node@24.6.0)(jiti@2.6.0)(lightningcss@1.30.1)(terser@5.44.0)(yaml@2.8.1))':
     dependencies:
       '@nuxtjs/color-mode': 3.5.2(magicast@0.3.5)
       '@nuxtjs/robots': 5.5.5(h3@1.15.4)(magicast@0.3.5)(vue@3.5.22(typescript@5.9.2))
