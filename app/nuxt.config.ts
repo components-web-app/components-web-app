@@ -176,6 +176,6 @@ export default defineNuxtConfig({
     }
   },
   site: {
-    url: 'https://localhost',
+    url: import.meta.dev ? 'https://localhost' : undefined,
   }
 })
