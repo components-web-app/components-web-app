@@ -60,7 +60,6 @@ export default defineNuxtConfig({
     './node_modules/@cwa/nuxt/dist/layer'
   ],
   modules: [
-    '@cwa/nuxt',
     '@nuxt/image',
     '@vite-pwa/nuxt',
     'nuxt-svgo'
