@@ -54,11 +54,14 @@ import { StarterKit } from '@tiptap/starter-kit'
 import { Placeholder } from '@tiptap/extension-placeholder'
 import { Link } from '@tiptap/extension-link'
 import {
-  BubbleMenu,
   useEditor,
   EditorContent,
-  FloatingMenu,
 } from '@tiptap/vue-3'
+import {
+  BubbleMenu,
+  FloatingMenu,
+} from '@tiptap/vue-3/menus'
+
 import { computed, toRef, watch } from 'vue'
 import type { Editor, ChainedCommands } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
@@ -155,7 +158,7 @@ watch(value, (newValue) => {
     return
   }
 
-  editor.value.commands.setContent(newValue || null, false)
+  editor.value.commands.setContent(newValue || null, {})
 })
 
 // Toggle disabled prop and focus when enabled

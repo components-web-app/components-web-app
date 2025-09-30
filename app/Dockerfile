@@ -6,7 +6,7 @@ FROM node:${NODE_VERSION}-alpine AS node_upstream
 # Base stage for dev and build
 FROM node_upstream AS base
 
-ARG PNPM_VERSION=10.11.1
+ARG PNPM_VERSION=10.17.1
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 # hadolint ignore=DL3018
@@ -31,6 +31,8 @@ CMD ["sh", "-c", "pnpm install; pnpm dev"]
 
 
 FROM base AS builder
+
+ARG CI
 
 COPY --link .npmrc package.json pnpm-*.yaml ./
 RUN pnpm fetch

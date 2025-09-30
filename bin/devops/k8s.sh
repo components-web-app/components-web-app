@@ -107,7 +107,9 @@ build_app() {
 	docker context create builder
   docker buildx create builder --driver=docker-container --use
 
-  docker buildx build --push \
+  docker buildx build \
+  	--push \
+  	--build-arg CI=true \
     --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
     --cache-from type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
