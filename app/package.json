@@ -15,7 +15,7 @@
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.11.0",
-    "@nuxtjs/sitemap": "github:silverbackdan/sitemap#feat/debug-extended",
+    "@nuxtjs/sitemap": "github:silverbackdan/sitemap#fix/empty-sitemap",
     "@tiptap/extension-link": "^3.6.2",
     "@tiptap/extension-placeholder": "^3.6.2",
     "@tiptap/pm": "^3.6.2",
@@ -40,12 +40,14 @@
   "pnpm": {
     "overrides": {
       "tar-fs": ">=3.0.7",
-      "@nuxtjs/sitemap": "github:silverbackdan/sitemap#feat/debug-extended"
+      "@nuxtjs/sitemap": "github:silverbackdan/sitemap#fix/empty-sitemap"
     },
     "auditConfig": {
       "ignoreCves": []
     },
     "onlyBuiltDependencies": [
+      "@intlify/vue-i18n-bridge",
+      "@intlify/vue-router-bridge",
       "@parcel/watcher",
       "@tailwindcss/oxide",
       "esbuild",
