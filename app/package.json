@@ -15,7 +15,8 @@
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.11.0",
-    "@nuxtjs/sitemap": "github:nuxt-modules/robots#0dd311b",
+    "@nuxtjs/sitemap": "^7.4.7",
+    "@nuxtjs/robots": "github:nuxt-modules/robots#0dd311b",
     "@tiptap/extension-link": "^3.6.6",
     "@tiptap/extension-placeholder": "^3.6.6",
     "@tiptap/pm": "^3.6.6",
@@ -40,7 +41,7 @@
   "pnpm": {
     "overrides": {
       "tar-fs": ">=3.0.7",
-      "@nuxtjs/sitemap": "github:nuxt-modules/robots#0dd311b"
+      "@nuxtjs/robots": "github:nuxt-modules/robots#0dd311b"
     },
     "auditConfig": {
       "ignoreCves": []
