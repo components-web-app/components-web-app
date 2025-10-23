@@ -3,7 +3,12 @@ set -e
 
 if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	if [ -z "$(ls -A 'vendor/' 2>/dev/null)" ]; then
-		composer config -g github-oauth.github.com "$GITHUB_TOKEN"
+	  if [[ -n "$GITHUB_TOKEN" ]]; then
+      composer config -g github-oauth.github.com "$GITHUB_TOKEN"
+    else
+		  # if invalid GITHUB_TOKEN characters this will need to be run to clear it
+      rm -rf /config/composer/auth.json
+    fi
 		composer install --prefer-dist --no-progress --no-interaction
 	fi
 

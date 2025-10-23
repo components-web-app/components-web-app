@@ -8,6 +8,7 @@ services:
       - ./api:/app
       - /app/var
       - ./api/frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./api/frankenphp/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint
       - ./api/frankenphp/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.dev.ini:ro
       # If you develop on Mac or Windows you can remove the vendor/ directory
       #  from the bind-mount for better performance by enabling the next line:
