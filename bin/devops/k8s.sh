@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 rand_str() {
   len=32
   head -c 256 /dev/urandom > /tmp/urandom.out
@@ -6,20 +8,20 @@ rand_str() {
 }
 
 install_dependencies() {
-  echo "Adding openssl curl tar gzip ca-certificates git nodejs npm ..."
+  echo "➡️ Installing prerequisites..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357
-  apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm
+  apk add --update-cache --upgrade --no-cache -U openssl curl tar gzip ca-certificates git nodejs npm bash
 
   echo "Install gcompat"
 	apk add gcompat
 
-  echo "Intalling helm..."
-  curl "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" | tar zx
-  mv linux-amd64/helm /usr/bin/
+	echo "➡️ Installing Helm..."
+	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+  chmod +x get_helm.sh
+  VERIFY_CHECKSUM=true ./get_helm.sh -v "v${HELM_VERSION}"
+	helm version
 
-  helm version
-
-  echo "Intalling kubectl v${KUBERNETES_VERSION}..."
+  echo "➡️ Installing kubectl v${KUBERNETES_VERSION}..."
   curl -L -o /usr/bin/kubectl "https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl"
   chmod +x /usr/bin/kubectl
   kubectl version --client
@@ -108,8 +110,8 @@ build_app() {
   docker buildx create builder --driver=docker-container --use
 
   docker buildx build \
-  	--push \
-  	--build-arg CI=true \
+    --build-arg CI=true \
+    --push \
     --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
     --cache-from type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
   	--tag $APP_REPOSITORY:$TAG \
@@ -196,8 +198,32 @@ create_docker_pull_secret() {
     -o yaml --dry-run | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
 }
 
+generate_alias_tls_yaml() {
+  track=${1:-stable}
+  if [ "$track" != "stable" ]; then
+    return
+  fi
+
+  alias_yaml=""
+
+  if [ -n "${KUBE_INGRESS_ALIAS_DOMAINS:-}" ]; then
+    OLD_IFS=$IFS
+    IFS=','
+    for alias in $KUBE_INGRESS_ALIAS_DOMAINS; do
+      alias=$(echo "$alias" | awk '{$1=$1;print}')
+      if [ -n "$alias" ]; then
+        alias_yaml="$alias_yaml        - $alias
+"
+      fi
+    done
+    IFS=$OLD_IFS
+  fi
+
+  printf "%s" "$alias_yaml"
+}
+
 deploy() {
-	track="${1-stable}"
+	local track="${1-stable}"
 	name="$RELEASE"
 	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
@@ -280,6 +306,8 @@ ingress:
     "nginx.ingress.kubernetes.io/proxy-buffers-number": "4"
     "nginx.ingress.kubernetes.io/proxy-buffer-size": "8k"
     "nginx.ingress.kubernetes.io/proxy-body-size": "6M"
+    "nginx.ingress.kubernetes.io/from-to-www-redirect": "${KUBE_INGRESS_WWW_REDIRECT:-false}"
+    "nginx.ingress.kubernetes.io/server-alias": "${KUBE_INGRESS_ALIAS_DOMAINS}"
   hosts:
     - host: ${DOMAIN:-"~"}
       paths:
@@ -289,6 +317,7 @@ ingress:
     - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
       hosts:
         - ${DOMAIN:-"~"}
+$(generate_alias_tls_yaml "$track")
 postgresql:
   image:
     tag: ${DATABASE_IMAGE_TAG:-"14"}

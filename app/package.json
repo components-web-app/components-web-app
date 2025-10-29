@@ -15,7 +15,6 @@
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^1.11.0",
-    "@nuxtjs/robots": "github:nuxt-modules/robots#0dd311b",
     "@nuxtjs/sitemap": "^7.4.7",
     "@tiptap/extension-link": "^3.7.2",
     "@tiptap/extension-placeholder": "^3.7.2",
