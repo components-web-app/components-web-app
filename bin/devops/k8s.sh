@@ -304,8 +304,9 @@ ingress:
     "nginx.ingress.kubernetes.io/connection-proxy-header": "keep-alive"
     "nginx.ingress.kubernetes.io/proxy-buffering": "on"
     "nginx.ingress.kubernetes.io/proxy-buffers-number": "4"
-    "nginx.ingress.kubernetes.io/proxy-buffer-size": "8k"
-    "nginx.ingress.kubernetes.io/proxy-body-size": "6M"
+    "nginx.ingress.kubernetes.io/proxy-buffer-size": "256k"
+    "nginx.ingress.kubernetes.io/proxy-body-size": "30m"
+    "nginx.ingress.kubernetes.io/proxy-max-temp-file-size": "1024m"
     "nginx.ingress.kubernetes.io/from-to-www-redirect": "${KUBE_INGRESS_WWW_REDIRECT:-false}"
     "nginx.ingress.kubernetes.io/server-alias": "${KUBE_INGRESS_ALIAS_DOMAINS}"
   hosts:
