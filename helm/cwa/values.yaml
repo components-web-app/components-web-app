@@ -46,6 +46,16 @@ php:
     key: ${DATABASE_CLIENT_KEY_B64}
     cert: ${DATABASE_CLIENT_CERT_B64}
     mode: ${DATABASE_SSL_MODE:-"prefer"}
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube.
+    limits:
+      cpu: 400m
+      memory: 800Mi
+    requests:
+      cpu: 201m
+      memory: 600Mi
 
 pwa:
   apiUrl: ~
@@ -55,6 +65,16 @@ pwa:
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
+  resources:
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube.
+    limits:
+      cpu: 400m
+      memory: 800Mi
+    requests:
+      cpu: 201m
+      memory: 600Mi
 
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
@@ -138,17 +158,6 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
-
-resources:
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube.
-  limits:
-    cpu: 700m
-    memory: 800Mi
-  requests:
-    cpu: 501m
-    memory: 600Mi
 
 # If you use Mercure, you need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
 replicaCount: 1
