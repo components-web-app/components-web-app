@@ -39,8 +39,7 @@
   },
   "pnpm": {
     "overrides": {
-      "tar-fs": ">=3.0.7",
-      "@nuxtjs/robots": "github:nuxt-modules/robots#0dd311b"
+      "tar-fs": ">=3.0.7"
     },
     "auditConfig": {
       "ignoreCves": []
@@ -55,5 +54,5 @@
       "vue-demi"
     ]
   },
-  "packageManager": "pnpm@10.18.2"
+  "packageManager": "pnpm@10.30.3"
 }
