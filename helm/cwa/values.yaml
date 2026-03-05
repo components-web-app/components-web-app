@@ -47,11 +47,11 @@ php:
     cert: ${DATABASE_CLIENT_CERT_B64}
     mode: ${DATABASE_SSL_MODE:-"prefer"}
   resources:
-    #limits:
-    #  cpu: 200m
-    #  memory: 500Mi
+    limits:
+      #cpu: 200m
+      memory: 500Mi
     requests:
-      cpu: 100m
+      cpu: 501m
       memory: 350Mi
 
 pwa:
@@ -63,9 +63,9 @@ pwa:
     # Overrides the image tag whose default is the chart appVersion.
     tag: ""
   resources:
-    #limits:
-    #  cpu: 150m
-    #  memory: 400Mi
+    limits:
+      cpu: 150m
+      memory: 400Mi
     requests:
       cpu: 80m
       memory: 200Mi
