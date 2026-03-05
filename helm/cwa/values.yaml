@@ -51,11 +51,11 @@ php:
     # choice for the user. This also increases chances charts run on environments with little
     # resources, such as Minikube.
     limits:
-      cpu: 400m
-      memory: 800Mi
+      cpu: 200m
+      memory: 500Mi
     requests:
-      cpu: 201m
-      memory: 600Mi
+      cpu: 50m
+      memory: 350Mi
 
 pwa:
   apiUrl: ~
@@ -70,11 +70,11 @@ pwa:
     # choice for the user. This also increases chances charts run on environments with little
     # resources, such as Minikube.
     limits:
-      cpu: 400m
-      memory: 800Mi
+      cpu: 100m
+      memory: 400Mi
     requests:
-      cpu: 201m
-      memory: 600Mi
+      cpu: 20m
+      memory: 200Mi
 
 # You may prefer using the managed version in production: https://mercure.rocks
 mercure:
