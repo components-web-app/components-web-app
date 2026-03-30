@@ -194,7 +194,7 @@ create_docker_pull_secret() {
     --docker-username="${CI_DEPLOY_USER:-$CI_REGISTRY_USER}" \
     --docker-password="${CI_DEPLOY_PASSWORD:-$CI_REGISTRY_PASSWORD}" \
     --docker-email="$GITLAB_USER_EMAIL" \
-    -o yaml --dry-run | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
+    -o yaml --dry-run=client | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
 }
 
 generate_alias_tls_yaml() {

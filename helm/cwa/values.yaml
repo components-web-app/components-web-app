@@ -163,7 +163,8 @@ autoscaling:
   targetCPUUtilizationPercentage: 90
   targetMemoryUtilizationPercentage: 90
 
-nodeSelector: {}
+nodeSelector:
+  cloud.google.com/compute-class: cost-optimized
 
 tolerations: []
 
