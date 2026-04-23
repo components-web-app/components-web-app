@@ -6,7 +6,6 @@
     submit-button-text="Sign In"
     @submit="signIn"
   >
-    <!-- @vue-expect-error header is not types property for some reason when running -->
     <template #header>
       <div class="py-2 px-3 border border-slate-600 bg-slate-900 rounded text-sm font-bold">
         Use the username and password "admin" to log in to this preview version of CWA

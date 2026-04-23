@@ -159,6 +159,13 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-kit',
+        '@vue/devtools-core',
+        'workbox-window'
+      ]
+    }
   },
   vue: {
     compilerOptions: {
