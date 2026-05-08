@@ -37,7 +37,7 @@ FROM base AS builder
 
 ARG CI
 
-COPY --link .npmrc package.json pnpm-*.yaml ./
+COPY --link package.json pnpm-*.yaml ./
 RUN pnpm fetch
 
 COPY --link . .
