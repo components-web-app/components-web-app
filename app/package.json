@@ -11,19 +11,20 @@
     "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29616337.bfed3cc",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@1.0.0-29637130.cf65283",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^2.0.0",
-    "@nuxtjs/sitemap": "^8.0.13",
-    "@tiptap/extension-link": "^3.22.4",
-    "@tiptap/extension-placeholder": "^3.22.4",
-    "@tiptap/pm": "^3.22.4",
-    "@tiptap/starter-kit": "^3.22.4",
-    "@tiptap/vue-3": "^3.22.4",
+    "@nuxtjs/sitemap": "^8.0.15",
+    "@tiptap/core": "^3.22.5",
+    "@tiptap/extension-link": "^3.22.5",
+    "@tiptap/extension-placeholder": "^3.22.5",
+    "@tiptap/pm": "^3.22.5",
+    "@tiptap/starter-kit": "^3.22.5",
+    "@tiptap/vue-3": "^3.22.5",
     "@vite-pwa/nuxt": "^1.1.1",
-    "nuxt": "4.4.2",
-    "nuxt-svgo": "^4.2.6"
+    "nuxt": "4.4.4",
+    "nuxt-svgo": "^5.3.0"
   },
   "devDependencies": {
     "@nuxt/devtools": "4.0.0-alpha.4",
@@ -35,7 +36,7 @@
     "escape-string-regexp": "^5.0.0",
     "tailwindcss": "^4.2.4",
     "typescript": "^6.0.3",
-    "vue-tsc": "^3.2.7"
+    "vue-tsc": "^3.2.8"
   },
   "pnpm": {
     "overrides": {
@@ -54,5 +55,5 @@
       "vue-demi"
     ]
   },
-  "packageManager": "pnpm@10.33.1"
+  "packageManager": "pnpm@11.0.8"
 }

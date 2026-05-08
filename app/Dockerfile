@@ -1,4 +1,4 @@
-ARG NODE_VERSION=22
+ARG NODE_VERSION=26
 
 # Versions
 FROM node:${NODE_VERSION}-alpine AS node_upstream
@@ -6,7 +6,7 @@ FROM node:${NODE_VERSION}-alpine AS node_upstream
 # Base stage for dev and build
 FROM node_upstream AS base
 
-ARG PNPM_VERSION=10.33.1
+ARG PNPM_VERSION=11.0.8
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 # hadolint ignore=DL3018
@@ -15,7 +15,10 @@ RUN apk update && \
 
 WORKDIR /srv/app
 
-RUN corepack enable && \
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME/bin:$PATH"
+
+RUN npm install -g corepack@latest && \
     corepack prepare pnpm@${PNPM_VERSION} --activate && \
     pnpm config -g set store-dir /.pnpm-store
 
