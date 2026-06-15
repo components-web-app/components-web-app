@@ -34,26 +34,8 @@
     "components-web-app/api-components-bundle": {
         "version": "dev-main"
     },
-    "doctrine/annotations": {
-        "version": "1.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "1.0",
-            "ref": "cb4152ebcadbe620ea2261da1a1c5a9b8cea7672"
-        },
-        "files": [
-            "config/routes/annotations.yaml"
-        ]
-    },
-    "doctrine/cache": {
-        "version": "1.9.1"
-    },
     "doctrine/collections": {
         "version": "1.6.4"
-    },
-    "doctrine/common": {
-        "version": "v2.11.0"
     },
     "doctrine/data-fixtures": {
         "version": "1.4.0"
@@ -130,12 +112,6 @@
     },
     "egulias/email-validator": {
         "version": "2.1.17"
-    },
-    "friends-of-behat/mink": {
-        "version": "v1.8.0"
-    },
-    "friends-of-behat/mink-browserkit-driver": {
-        "version": "v1.4.0"
     },
     "friends-of-behat/mink-extension": {
         "version": "v2.5.0"
@@ -573,9 +549,6 @@
         "version": "v1.17.0"
     },
     "symfony/polyfill-mbstring": {
-        "version": "v1.12.0"
-    },
-    "symfony/polyfill-php72": {
         "version": "v1.12.0"
     },
     "symfony/polyfill-php80": {

@@ -1,7 +1,12 @@
+overrides:
+  tar-fs: '>=3.0.7'
+auditConfig:
+  ignoreCves: []
+shamefullyHoist: true
+strictPeerDependencies: false
+minimumReleaseAge: 0
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
   sharp: true
   vue-demi: true
-shamefullyHoist: true
-strictPeerDependencies: false

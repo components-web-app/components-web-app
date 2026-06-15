@@ -5,6 +5,8 @@
     admin :2019
 
     cache {
+        mode strict
+
         api {
 			souin
 		}
@@ -15,10 +17,10 @@
 
 		key {
 		    hide
-			template "CWA-{http.request.method}-{http.request.host}-{http.request.uri.path}-{http.request.uri.query}-{http.request.header.accept}-{http.request.cookie.api_component}"
+			template "{http.request.method}-{http.request.host}-{http.request.uri.path}-{http.request.uri.query}-{http.request.header.accept}-{http.request.cookie.api_component}-{http.request.header.Authorization}"
 		}
 
-		default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
+		# default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
 
 		{$CADDY_CACHE_EXTRA_CONFIG}
 	}
@@ -85,9 +87,13 @@
 
     @use_cache expression `
         (
+            method('GET') &&
+            {path}.startsWith("/_api") &&
+            !{path}.startsWith("/_api/logout") &&
+            !{path}.startsWith("/_api/me") &&
             {file.ext} != "pdf" &&
             {http.request.cookie.api_component} == "" &&
-            {path}.startsWith("/_api/")
+            {http.request.header.Authorization} == ""
         ) &&
         (
             !method('BAN', 'PURGE') ||
@@ -101,7 +107,11 @@
         header_regexp internal host ([A-Za-z\-0-9]+(?:\.local)?(?:\:[0-9]{1,4})?)
     }
 
-    handle /_api* {
+    @api_handle expression `
+        {path}.startsWith("/_api") || {path}.startsWith("/uploads/") || {path}.startsWith("/bundles/")
+    `
+
+    handle @api_handle {
         # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
         request_header @internal host {$BROWSER_SERVER_NAME}
 

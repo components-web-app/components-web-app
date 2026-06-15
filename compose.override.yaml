@@ -37,6 +37,7 @@ services:
       target: dev
     volumes:
       - ./app:/srv/app:rw,cached
+      - ./app/node_modules:/srv/app/node_modules:rw,cached
       - /srv/app/.pnpm-store
     environment:
       NODE_TLS_REJECT_UNAUTHORIZED: 0

@@ -1,5 +1,3 @@
-import tailwindcss from '@tailwindcss/vite'
-
 export default defineNuxtConfig({
   compatibilityDate: '2025-06-18',
   app: {
@@ -154,11 +152,13 @@ export default defineNuxtConfig({
   svgo: {
     autoImportPath: './assets/svg/',
   },
-  // behind caddy so we have this so we can predictably forward hmr sockets
   vite: {
-    plugins: [
-      tailwindcss(),
-    ],
+    server: {
+      watch: {
+        ignored: ['!**/node_modules/@cwa/**'],
+        followSymlinks: true
+      }
+    },
     optimizeDeps: {
       include: [
         '@vue/devtools-kit',

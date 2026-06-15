@@ -5,43 +5,171 @@
     "license": "MIT",
     "repositories": [
         {
-            "type": "vcs",
-            "url": "https://github.com/silverbackdan/contexts"
+            "type": "package",
+            "package": {
+                "name": "behatch/contexts",
+                "version": "dev-master",
+                "require": {
+                    "php": ">=5.5",
+                    "behat/behat": "^3.0.13",
+                    "friends-of-behat/mink-extension": "^2.3.1",
+                    "justinrainbow/json-schema": "^5.0",
+                    "symfony/property-access": "^2.3|^3.0|^4.0|^5.0|^6.0|^7.0|^8.0",
+                    "symfony/http-foundation": "^2.3|^3.0|^4.0|^5.0|^6.0|^7.0|^8.0",
+                    "symfony/dom-crawler": "^2.4|^3.0|^4.0|^5.0|^6.0|^7.0|^8.0"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Behatch\\": "src/"
+                    }
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/silverbackdan/contexts.git",
+                    "reference": "master"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "runtime/frankenphp-symfony",
+                "version": "1.0.0",
+                "require": {
+                    "php": ">=7.4",
+                    "symfony/dependency-injection": "^5.4 || ^6.0 || ^7.0 || ^8.0",
+                    "symfony/http-kernel": "^5.4 || ^6.0 || ^7.0 || ^8.0",
+                    "symfony/runtime": "^5.4 || ^6.0 || ^7.0 || ^8.0"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Runtime\\FrankenPhpSymfony\\": "src/"
+                    }
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/php-runtime/frankenphp-symfony.git",
+                    "reference": "56822c3631d9522a3136a4c33082d006bdfe4bad"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "behat/behat",
+                "version": "v3.31.0",
+                "require": {
+                    "php": ">=8.2",
+                    "ext-mbstring": "*",
+                    "composer-runtime-api": "^2.2",
+                    "behat/gherkin": "^4.15.0",
+                    "composer/xdebug-handler": "^1.4 || ^2.0 || ^3.0",
+                    "nikic/php-parser": "^4.19.2 || ^5.2",
+                    "psr/container": "^1.0 || ^2.0",
+                    "symfony/config": "^5.4 || ^6.4 || ^7.0 || ^8.0",
+                    "symfony/console": "^5.4.9 || ^6.4 || ^7.0 || ^8.0",
+                    "symfony/dependency-injection": "^5.4 || ^6.4 || ^7.0 || ^8.0",
+                    "symfony/event-dispatcher": "^5.4 || ^6.4 || ^7.0 || ^8.0",
+                    "symfony/translation": "^5.4 || ^6.4 || ^7.0 || ^8.0",
+                    "symfony/yaml": "^5.4 || ^6.4 || ^7.0 || ^8.0"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "Behat\\Behat\\": "src/Behat/Behat/",
+                        "Behat\\Config\\": "src/Behat/Config/",
+                        "Behat\\Testwork\\": "src/Behat/Testwork/",
+                        "Behat\\Step\\": "src/Behat/Step/",
+                        "Behat\\Hook\\": "src/Behat/Hook/",
+                        "Behat\\Transformation\\": "src/Behat/Transformation/"
+                    }
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/Behat/Behat.git",
+                    "reference": "7fbdcda54ed653f032dd4fe1da5b2bb1546b24d6"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "friends-of-behat/mink-extension",
+                "version": "v2.7.5",
+                "require": {
+                    "php": ">=7.4",
+                    "behat/behat": "^3.0.5",
+                    "behat/mink": "^1.5",
+                    "symfony/config": "^4.4 || ^5.0 || ^6.0 || ^7.0 || ^8.0"
+                },
+                "autoload": {
+                    "psr-0": {
+                        "Behat\\MinkExtension": "src/"
+                    }
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/FriendsOfBehat/MinkExtension.git",
+                    "reference": "854336030e11983f580f49faad1b49a1238f9846"
+                }
+            }
+        },
+        {
+            "type": "package",
+            "package": {
+                "name": "friends-of-behat/symfony-extension",
+                "version": "v2.6.2",
+                "require": {
+                    "php": "^8.1",
+                    "behat/behat": "^3.22",
+                    "symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
+                    "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0"
+                },
+                "autoload": {
+                    "psr-4": {
+                        "FriendsOfBehat\\SymfonyExtension\\": "src/"
+                    }
+                },
+                "source": {
+                    "type": "git",
+                    "url": "https://github.com/FriendsOfBehat/SymfonyExtension.git",
+                    "reference": "3ed86d77923be089d67d952e7b75af48fec42e22"
+                }
+            }
         }
     ],
     "require": {
-        "php": "^8.5",
+        "php": ">=8.5",
         "components-web-app/api-components-bundle": "dev-main",
-        "doctrine/doctrine-fixtures-bundle": "^3.3",
-        "doctrine/doctrine-migrations-bundle": "^3.0",
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
+        "doctrine/doctrine-migrations-bundle": "^3.7",
         "league/flysystem": "3.x-dev",
         "league/flysystem-google-cloud-storage": "3.x-dev",
-        "runtime/frankenphp-symfony": "^0.2.0",
-        "symfony/console": "^7.0",
-        "symfony/dotenv": "^7.0",
-        "symfony/flex": "^1.1",
-        "symfony/framework-bundle": "^7.0",
-        "symfony/mercure-bundle": "^0.3.2",
-        "symfony/monolog-bundle": "^3.5",
-        "symfony/runtime": "^7.0",
-        "symfony/yaml": "^7.0"
+        "runtime/frankenphp-symfony": "^1.0.0",
+        "symfony/console": "^8.1",
+        "symfony/dotenv": "^8.1",
+        "symfony/flex": "^2.0",
+        "symfony/framework-bundle": "^8.1",
+        "symfony/mercure-bundle": "^v0.4.1",
+        "symfony/monolog-bundle": "^v4.0.2",
+        "symfony/runtime": "^8.1",
+        "symfony/yaml": "^8.1"
     },
     "require-dev": {
-        "behat/behat": "^3.6",
+        "behat/behat": "*",
+        "behat/mink": "*",
+        "behat/mink-browserkit-driver": "*",
         "behatch/contexts": "dev-master",
-        "friends-of-behat/mink": "^1.9",
-        "friends-of-behat/mink-browserkit-driver": "^1.5",
-        "friends-of-behat/mink-extension": "^2.5",
-        "friends-of-behat/symfony-extension": "^2.1",
+        "friends-of-behat/mink-extension": "^2.7",
+        "friends-of-behat/symfony-extension": "^2.4",
         "phpunit/phpunit": "^9.5",
         "roave/security-advisories": "dev-latest",
-        "symfony/browser-kit": "^7.0",
-        "symfony/css-selector": "^7.0",
-        "symfony/debug-bundle": "^7.0",
+        "symfony/browser-kit": "^8.1",
+        "symfony/css-selector": "^8.1",
+        "symfony/debug-bundle": "^8.1",
         "symfony/maker-bundle": "^1.11",
-        "symfony/phpunit-bridge": "^7.0",
-        "symfony/stopwatch": "^7.0",
-        "symfony/web-profiler-bundle": "^7.0"
+        "symfony/phpunit-bridge": "^8.1",
+        "symfony/stopwatch": "^8.1",
+        "symfony/web-profiler-bundle": "^8.1"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -90,7 +218,8 @@
     },
     "extra": {
         "symfony": {
-            "allow-contrib": true
+            "allow-contrib": true,
+            "require": "^8.1"
         }
     },
     "minimum-stability": "dev",
