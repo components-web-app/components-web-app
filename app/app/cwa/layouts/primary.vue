@@ -1,4 +1,5 @@
 <template>
+  <VitePwaManifest />
   <div :class="['relative', 'grow', 'flex', 'flex-col', ...($cwa.resources.layout?.value?.data?.uiClassNames || [])]">
     <CwaUiProgressBar
       :show="showPageLoadBar"

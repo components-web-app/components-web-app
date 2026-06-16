@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@1.0.0-29693363.048bbc6
-        version: '@cwa/nuxt-edge@1.0.0-29693363.048bbc6(9c5dfb90754144be3419f627ea53cc0d)'
+        specifier: npm:@cwa/nuxt-edge@1.0.0-29694179.8b2b9f2
+        version: '@cwa/nuxt-edge@1.0.0-29694179.8b2b9f2(9c5dfb90754144be3419f627ea53cc0d)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.38(typescript@6.0.3))
@@ -702,8 +702,8 @@ packages:
   '@colordx/core@5.4.3':
     resolution: {integrity: sha512-kIxYSfA5T8HXjav55UaaH/o/cKivF6jCCGIb8eqtcsfI46wsvlSiT8jMDyrl779qLec3c2c2oHBZo4oAhvbjrQ==}
 
-  '@cwa/nuxt-edge@1.0.0-29693363.048bbc6':
-    resolution: {integrity: sha512-K0MbRyWi/tC/Vvmmpj3QyrX32KxkZlo2q1yWEtq5aQXiMv15fNv18yoNPoI5/6iVTaQObTjN988AmGQkXBganA==}
+  '@cwa/nuxt-edge@1.0.0-29694179.8b2b9f2':
+    resolution: {integrity: sha512-K1pvET2CTBUMB3VqVxuHmqfJjZqQT1NgrjGCDEBNXP81abKdoWN1xyNG7CdUVmRB/5xNetmvekPxh7De4ZPONA==}
     engines: {pnpm: '>=11.5.3'}
 
   '@devframes/hub@0.5.4':
@@ -8171,7 +8171,7 @@ snapshots:
 
   '@colordx/core@5.4.3': {}
 
-  '@cwa/nuxt-edge@1.0.0-29693363.048bbc6(9c5dfb90754144be3419f627ea53cc0d)':
+  '@cwa/nuxt-edge@1.0.0-29694179.8b2b9f2(9c5dfb90754144be3419f627ea53cc0d)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.0(magicast@0.5.2)
       '@nuxtjs/robots': 6.0.8(4814fa5a70a80c765b7efff22f466845)
@@ -8847,7 +8847,7 @@ snapshots:
 
   '@nuxt/devtools-kit@3.2.4(magicast@0.5.2)(vite@7.3.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.0)(yaml@2.9.0))':
     dependencies:
-      '@nuxt/kit': 4.4.4(magicast@0.5.2)
+      '@nuxt/kit': 4.4.8(magicast@0.5.2)
       execa: 8.0.1
       vite: 7.3.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.0)(yaml@2.9.0)
     transitivePeerDependencies:
@@ -8855,7 +8855,7 @@ snapshots:
 
   '@nuxt/devtools-kit@3.2.4(magicast@0.5.3)(vite@7.3.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.0)(yaml@2.9.0))':
     dependencies:
-      '@nuxt/kit': 4.4.4(magicast@0.5.3)
+      '@nuxt/kit': 4.4.8(magicast@0.5.3)
       execa: 8.0.1
       vite: 7.3.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.0)(yaml@2.9.0)
     transitivePeerDependencies:
@@ -8894,7 +8894,7 @@ snapshots:
       magicast: 0.5.2
       pathe: 2.0.3
       pkg-types: 2.3.1
-      semver: 7.7.4
+      semver: 7.8.4
 
   '@nuxt/devtools@3.2.4(@vitejs/devtools@0.3.3(crossws@0.4.5(srvx@0.11.15))(db0@0.3.4)(ioredis@5.10.1)(typescript@6.0.3)(vite@7.3.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.0)(yaml@2.9.0)))(vite@7.3.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.47.0)(yaml@2.9.0))(vue@3.5.38(typescript@6.0.3))':
     dependencies:
@@ -9214,31 +9214,6 @@ snapshots:
   '@nuxt/kit@4.4.4(magicast@0.5.2)':
     dependencies:
       c12: 3.3.4(magicast@0.5.2)
-      consola: 3.4.2
-      defu: 6.1.7
-      destr: 2.0.5
-      errx: 0.1.0
-      exsolve: 1.0.8
-      ignore: 7.0.5
-      jiti: 2.7.0
-      klona: 2.0.6
-      mlly: 1.8.2
-      ohash: 2.0.11
-      pathe: 2.0.3
-      pkg-types: 2.3.1
-      rc9: 3.0.1
-      scule: 1.3.0
-      semver: 7.7.4
-      tinyglobby: 0.2.16
-      ufo: 1.6.4
-      unctx: 2.5.0
-      untyped: 2.0.0
-    transitivePeerDependencies:
-      - magicast
-
-  '@nuxt/kit@4.4.4(magicast@0.5.3)':
-    dependencies:
-      c12: 3.3.4(magicast@0.5.3)
       consola: 3.4.2
       defu: 6.1.7
       destr: 2.0.5
@@ -13555,7 +13530,7 @@ snapshots:
       rollup: 4.60.3
       rollup-plugin-visualizer: 7.0.1(rollup@4.60.3)
       scule: 1.3.0
-      semver: 7.7.4
+      semver: 7.8.4
       serve-placeholder: 2.0.2
       serve-static: 2.2.1
       source-map: 0.7.6
