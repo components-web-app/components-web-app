@@ -108,18 +108,10 @@ abstract class AbstractPageFixture extends Fixture implements ServiceSubscriberI
         return $page;
     }
 
-    /**
-     * When $pageData is provided, the group reference and location are keyed to the pageData IRI
-     * (matching what the module's ComponentGroupUtilSynchronizer creates at runtime). Pass $page
-     * alongside $pageData to associate the group with the template page so the module can fetch
-     * it for unauthenticated users via the page's componentGroups chain.
-     */
-    protected function createComponentGroup(string $reference, ?Page $page = null, ?Layout $layout = null, ?AbstractPageData $pageData = null): ComponentGroup
+    protected function createComponentGroup(string $reference, ?Page $page = null, ?Layout $layout = null): ComponentGroup
     {
         $ref = $reference;
-        if ($pageData) {
-            $ref .= '_' . $this->getIriConverter()->getIriFromResource($pageData);
-        } elseif ($page) {
+        if ($page) {
             $ref .= '_' . $this->getIriConverter()->getIriFromResource($page);
         }
         if ($layout) {
@@ -132,9 +124,7 @@ abstract class AbstractPageFixture extends Fixture implements ServiceSubscriberI
         $componentGroup = new ComponentGroup();
         $componentGroup
             ->setReference($ref)
-            ->setLocation($pageData
-                ? $this->getIriConverter()->getIriFromResource($pageData)
-                : $reference)
+            ->setLocation($reference)
         ;
         if ($page) {
             $componentGroup->addPage($page);

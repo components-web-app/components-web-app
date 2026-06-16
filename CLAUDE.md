@@ -8,11 +8,11 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 
 ---
 
-## Nested page templates — `pageDataIri` inject (complete)
+## Nested page templates — `pageDataProperty` pattern (complete)
 
 **Status: Done.**
 
-`NestedTopicTemplate.vue` and `NestedSubPageTemplate.vue` both inject `'cwa-page-data-iri'` and use it as the `CwaComponentGroup` location (falling back to `props.iri` when undefined). Fixtures create per-PageData component groups with `reference="primary_<pagedata-iri>"` and `location=<pagedata-iri>`, associated with the template page so they are fetched for unauthenticated users via the page's `componentGroups` chain. Fixtures have been reloaded.
+`NestedTopicTemplate.vue` and `NestedSubPageTemplate.vue` use `props.iri` as the `CwaComponentGroup` location (the template page IRI). The template page's primary group has a position with `pageDataProperty='introContent'` (no direct component) — CWA resolves this dynamically from the current `NestedPageData` instance's `introContent` field at render time. Fixtures set `$pageData->introContent` per instance and have been reloaded.
 
 ---
 

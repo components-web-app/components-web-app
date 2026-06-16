@@ -45,6 +45,7 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
         $templatePage = $this->createTopicTemplatePage($manager, $layout);
 
         $parents = $this->createTopics($manager, $templatePage);
+        $manager->flush();
 
         $layoutTopGroup = $this->createComponentGroup('top', null, $layout);
         $sort = 3;
@@ -60,9 +61,13 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
         $templatePage = $this->createPage('nested-topic-template', 'NestedTopicTemplate', $layout, true);
         $manager->persist($templatePage);
 
-        // Empty fallback group — used when pageDataIri is unavailable (e.g., direct admin access to the template page)
         $group = $this->createComponentGroup('primary', $templatePage);
         $manager->persist($group);
+
+        // Dynamic position: resolved at render time from the current PageData instance's introContent field.
+        $introPosition = $this->createComponentPosition($group, null, 0);
+        $introPosition->setPageDataProperty('introContent');
+        $manager->persist($introPosition);
 
         $manager->flush();
 
@@ -80,24 +85,6 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
                 $children
             ));
 
-            $pageData = new NestedPageData();
-            $pageData->setTitle(sprintf('Topic %d', $topicNum));
-            $pageData->setMetaDescription(sprintf('Nested topic %d demonstrating static child pages', $topicNum));
-            $pageData->page = $templatePage;
-            $this->getTimestampedDataPersister()->persistTimestampedFields($pageData, true);
-            $manager->persist($pageData);
-
-            $route = $this->container->get(RouteGeneratorInterface::class)->create($pageData);
-            $manager->persist($route);
-            $manager->flush(); // UUID must be assigned before we can compute the pageData IRI
-
-            // Per-instance component group: reference and location keyed to the pageData IRI so the
-            // module's CwaComponentGroup (location=pageDataIri) can find it. Associating with
-            // $templatePage means it is returned in the template page's componentGroups response
-            // and is therefore fetched for unauthenticated users via the page chain.
-            $group = $this->createComponentGroup('primary', $templatePage, null, $pageData);
-            $manager->persist($group);
-
             $intro = new HtmlContent();
             $intro->html = sprintf(
                 '<p>Introduction to Topic %d.</p><p>Child pages: %s</p>'
@@ -109,9 +96,16 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
             $intro->setPublishedAt(new \DateTime());
             $manager->persist($intro);
 
-            $position = $this->createComponentPosition($group, $intro, 0);
-            $manager->persist($position);
-            $manager->flush();
+            $pageData = new NestedPageData();
+            $pageData->setTitle(sprintf('Topic %d', $topicNum));
+            $pageData->setMetaDescription(sprintf('Nested topic %d demonstrating static child pages', $topicNum));
+            $pageData->introContent = $intro;
+            $pageData->page = $templatePage;
+            $this->getTimestampedDataPersister()->persistTimestampedFields($pageData, true);
+            $manager->persist($pageData);
+
+            $route = $this->container->get(RouteGeneratorInterface::class)->create($pageData);
+            $manager->persist($route);
 
             $parents[$topicNum] = $pageData;
         }
