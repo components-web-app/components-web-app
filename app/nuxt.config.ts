@@ -56,9 +56,6 @@ export default defineNuxtConfig({
       },
       NestedPageData: {
         name: 'Nested Topics'
-      },
-      NestedSubPageData: {
-        name: 'Nested Sub-Pages'
       }
     },
     siteConfig: {

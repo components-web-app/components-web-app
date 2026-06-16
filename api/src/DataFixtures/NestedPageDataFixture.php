@@ -6,7 +6,6 @@ namespace App\DataFixtures;
 
 use App\Entity\HtmlContent;
 use App\Entity\NestedPageData;
-use App\Entity\NestedSubPageData;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
@@ -14,11 +13,25 @@ use Silverback\ApiComponentsBundle\Entity\Core\Page;
 use Silverback\ApiComponentsBundle\Helper\Route\RouteGeneratorInterface;
 
 /**
- * Demonstrates nested page data: NestedPageData instances each contain child NestedSubPageData pages.
- * Child routes are automatically built as /{parent-slug}/{child-slug} by the route generator.
+ * Demonstrates CWA nested pages using static Page entities as children of NestedPageData instances.
+ * Setting parentPageData on a Page causes RouteGenerator to prefix its path with the parent route,
+ * and the module manifest groups them by depth so NestedTopicTemplate renders at depth 0 while the
+ * child Page's uiComponent renders at depth 1 via <CwaPage />.
  */
 class NestedPageDataFixture extends AbstractPageFixture implements DependentFixtureInterface
 {
+    // Child pages use unique titles so RouteGenerator produces clean, predictable route paths.
+    private const TOPIC_CHILDREN = [
+        1 => [
+            ['title' => 'Chapter One',   'path' => '/topic-1/chapter-one'],
+            ['title' => 'Chapter Two',   'path' => '/topic-1/chapter-two'],
+        ],
+        2 => [
+            ['title' => 'Chapter Three', 'path' => '/topic-2/chapter-three'],
+            ['title' => 'Chapter Four',  'path' => '/topic-2/chapter-four'],
+        ],
+    ];
+
     public static function getSubscribedServices(): array
     {
         return array_merge(parent::getSubscribedServices(), [
@@ -29,58 +42,56 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
     public function load(ObjectManager $manager): void
     {
         $layout = $this->createLayout($manager, 'Main Layout', 'CwaLayoutPrimary');
-        [$parentTemplatePage, $childTemplatePage] = $this->createTemplatePages($manager, $layout);
+        $templatePage = $this->createTopicTemplatePage($manager, $layout);
 
-        $parents = $this->createParentPages($manager, $parentTemplatePage);
-
+        $parents = $this->createTopics($manager, $templatePage);
         $manager->flush();
 
-        $this->createChildPages($manager, $childTemplatePage, $parents);
+        $this->createChildPages($manager, $layout, $parents);
     }
 
-    private function createTemplatePages(ObjectManager $manager, Layout $layout): array
+    private function createTopicTemplatePage(ObjectManager $manager, Layout $layout): Page
     {
-        $parentTemplatePage = $this->createPage('nested-topic-template', 'NestedTopicTemplate', $layout, true);
-        $manager->persist($parentTemplatePage);
+        $templatePage = $this->createPage('nested-topic-template', 'NestedTopicTemplate', $layout, true);
+        $manager->persist($templatePage);
 
-        $parentGroup = $this->createComponentGroup('primary', $parentTemplatePage);
-        $manager->persist($parentGroup);
+        $group = $this->createComponentGroup('primary', $templatePage);
+        $manager->persist($group);
 
-        $introPosition = $this->createComponentPosition($parentGroup, null, 0);
+        $introPosition = $this->createComponentPosition($group, null, 0);
         $introPosition->setPageDataProperty('introContent');
         $manager->persist($introPosition);
 
-        $childTemplatePage = $this->createPage('nested-sub-page-template', 'NestedSubPageTemplate', $layout, true);
-        $manager->persist($childTemplatePage);
-
-        $childGroup = $this->createComponentGroup('primary', $childTemplatePage);
-        $manager->persist($childGroup);
-
-        $bodyPosition = $this->createComponentPosition($childGroup, null, 0);
-        $bodyPosition->setPageDataProperty('bodyContent');
-        $manager->persist($bodyPosition);
-
         $manager->flush();
 
-        return [$parentTemplatePage, $childTemplatePage];
+        return $templatePage;
     }
 
-    /**
-     * @return NestedPageData[]
-     */
-    private function createParentPages(ObjectManager $manager, Page $templatePage): array
+    /** @return array<int, NestedPageData> keyed by topic number */
+    private function createTopics(ObjectManager $manager, Page $templatePage): array
     {
         $parents = [];
 
-        for ($i = 1; $i <= 2; $i++) {
+        foreach (self::TOPIC_CHILDREN as $topicNum => $children) {
+            $childLinks = implode(' | ', array_map(
+                fn(array $c) => sprintf('<a href="%s">%s</a>', $c['path'], $c['title']),
+                $children
+            ));
+
             $intro = new HtmlContent();
-            $intro->html = sprintf('<p>Introduction to topic %d. This page has nested sub-pages beneath it.</p>', $i);
+            $intro->html = sprintf(
+                '<p>Introduction to Topic %d.</p><p>Child pages: %s</p>'
+                . '<p>Navigate to a child URL to see nested rendering — the topic intro above '
+                . 'remains visible while the child page content appears below via <code>&lt;CwaPage /&gt;</code>.</p>',
+                $topicNum,
+                $childLinks
+            );
             $intro->setPublishedAt(new \DateTime());
             $manager->persist($intro);
 
             $pageData = new NestedPageData();
-            $pageData->setTitle(sprintf('Topic %d', $i));
-            $pageData->setMetaDescription(sprintf('A nested topic page with sub-pages beneath it (%d)', $i));
+            $pageData->setTitle(sprintf('Topic %d', $topicNum));
+            $pageData->setMetaDescription(sprintf('Nested topic %d demonstrating static child pages', $topicNum));
             $pageData->introContent = $intro;
             $pageData->page = $templatePage;
             $this->getTimestampedDataPersister()->persistTimestampedFields($pageData, true);
@@ -89,34 +100,50 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
             $route = $this->container->get(RouteGeneratorInterface::class)->create($pageData);
             $manager->persist($route);
 
-            $parents[] = $pageData;
+            $parents[$topicNum] = $pageData;
         }
 
         return $parents;
     }
 
     /**
-     * @param NestedPageData[] $parents
+     * Creates static Page entities as children of each NestedPageData.
+     *
+     * @param array<int, NestedPageData> $parents keyed by topic number
      */
-    private function createChildPages(ObjectManager $manager, Page $templatePage, array $parents): void
+    private function createChildPages(ObjectManager $manager, Layout $layout, array $parents): void
     {
-        foreach ($parents as $parentIndex => $parent) {
-            for ($j = 1; $j <= 2; $j++) {
-                $body = new HtmlContent();
-                $body->html = sprintf('<p>Content for sub-page %d under topic %d.</p>', $j, $parentIndex + 1);
-                $body->setPublishedAt(new \DateTime());
-                $manager->persist($body);
+        foreach (self::TOPIC_CHILDREN as $topicNum => $children) {
+            $parent = $parents[$topicNum];
 
-                $subPageData = new NestedSubPageData();
-                $subPageData->setTitle(sprintf('Sub Page %d', $j));
-                $subPageData->setMetaDescription(sprintf('Sub page %d under topic %d', $j, $parentIndex + 1));
-                $subPageData->bodyContent = $body;
-                $subPageData->page = $templatePage;
-                $subPageData->setParentPageData($parent);
-                $this->getTimestampedDataPersister()->persistTimestampedFields($subPageData, true);
-                $manager->persist($subPageData);
+            foreach ($children as $j => $child) {
+                $htmlContent = new HtmlContent();
+                $htmlContent->html = sprintf(
+                    '<p><strong>%s</strong> — a static child <code>Page</code> of Topic %d\'s <code>NestedPageData</code>. '
+                    . 'The topic template is rendered at depth 0; this page renders at depth 1 via <code>&lt;CwaPage /&gt;</code>.</p>',
+                    $child['title'],
+                    $topicNum
+                );
+                $htmlContent->setPublishedAt(new \DateTime());
+                $manager->persist($htmlContent);
 
-                $route = $this->container->get(RouteGeneratorInterface::class)->create($subPageData);
+                $childPage = $this->createPage(
+                    sprintf('topic-%d-chapter-%d', $topicNum, $j + 1),
+                    'NestedSubPageTemplate',
+                    $layout,
+                    false
+                );
+                $childPage->setTitle($child['title']);
+                $childPage->setParentPageData($parent);
+                $manager->persist($childPage);
+
+                $childGroup = $this->createComponentGroup('primary', $childPage);
+                $manager->persist($childGroup);
+
+                $position = $this->createComponentPosition($childGroup, $htmlContent, 0);
+                $manager->persist($position);
+
+                $route = $this->container->get(RouteGeneratorInterface::class)->create($childPage);
                 $manager->persist($route);
             }
 

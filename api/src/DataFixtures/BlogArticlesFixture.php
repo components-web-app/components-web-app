@@ -9,31 +9,15 @@ use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentGroup;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
-use Silverback\ApiComponentsBundle\Helper\Route\RouteGeneratorInterface;
 
 class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtureInterface
 {
-
-    public static function getSubscribedServices(): array
-    {
-        return array_merge(parent::getSubscribedServices(), [
-            RouteGeneratorInterface::class
-        ]);
-    }
-
     public function load(ObjectManager $manager): void
     {
         $layout = $this->createLayout($manager, 'Main Layout', 'CwaLayoutPrimary');
         $page = $this->addArticlePage($manager, $layout);
 
         $layoutGroup = $layout->getComponentGroups()->first();
-//        $navigationLink = new NavigationLink();
-//        $navigationLink->label = 'Blog Template';
-//        $navigationLink->rawPath = $this->getIriConverter()->getIriFromResource($page);
-//        $navigationLink->setPublishedAt(new \DateTime());
-//        $position = $this->createComponentPosition($layoutGroup, $navigationLink, 5);
-//        $manager->persist($navigationLink);
-//        $manager->persist($position);
 
         $this->addBlogArticles($manager, $page, $layoutGroup);
 
@@ -42,9 +26,7 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 
     private function addBlogArticles(ObjectManager $manager, Page $page, ComponentGroup $layoutComponentGroup): void
     {
-        $collectionPage = $this->getReference(Page::class . '_blog-list', Page::class);
-
-        for($x=0; $x<10; $x++) {
+        for ($x = 0; $x < 10; $x++) {
             $htmlContent = new HtmlContent();
             $htmlContent->html = sprintf('<p>Bonjour mon ami %d</p>', $x);
             $htmlContent->setPublishedAt(new \DateTime());
@@ -57,11 +39,17 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
             ;
             $articleData->htmlContent = $htmlContent;
             $articleData->page = $page;
-            $articleData->setParentPage($collectionPage);
             $this->getTimestampedDataPersister()->persistTimestampedFields($articleData, true);
             $manager->persist($articleData);
 
-            $route = $this->container->get(RouteGeneratorInterface::class)->create($articleData);
+            // Blog articles sit under /blog-articles/ by URL convention only — they are NOT
+            // rendering-children of the collection page (no parentPage set intentionally).
+            $route = $this->createRoute(
+                sprintf('/blog-articles/blog-article-%d', $x),
+                sprintf('blog-article-%d', $x),
+                null,
+                $articleData
+            );
             $manager->persist($route);
         }
     }
