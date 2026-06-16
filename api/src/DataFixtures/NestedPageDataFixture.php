@@ -47,6 +47,12 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
         $parents = $this->createTopics($manager, $templatePage);
         $manager->flush();
 
+        $layoutTopGroup = $this->createComponentGroup('top', null, $layout);
+        $sort = 3;
+        foreach ($parents as $topicNum => $parent) {
+            $this->addNavigationLink($manager, $layoutTopGroup, sprintf('Topic %d', $topicNum), null, null, $sort++, $parent->getRoute());
+        }
+
         $this->createChildPages($manager, $layout, $parents);
     }
 
