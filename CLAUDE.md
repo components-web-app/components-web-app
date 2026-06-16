@@ -8,11 +8,21 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 
 ---
 
-## Nested page templates — `pageDataProperty` pattern (complete)
+## Nested page templates — `pageDataProperty` pattern (complete, pending module fix)
 
-**Status: Done.**
+**Status: Fixtures done. Templates correct. Blocked on a module-side path header bug for the child-page case.**
 
-`NestedTopicTemplate.vue` and `NestedSubPageTemplate.vue` use `props.iri` as the `CwaComponentGroup` location (the template page IRI). The template page's primary group has a position with `pageDataProperty='introContent'` (no direct component) — CWA resolves this dynamically from the current `NestedPageData` instance's `introContent` field at render time. Fixtures set `$pageData->introContent` per instance and have been reloaded.
+Templates (`NestedTopicTemplate.vue`, `NestedSubPageTemplate.vue`) use `props.iri` as the `CwaComponentGroup` location. The template page's primary group has a `ComponentPosition` with `pageDataProperty='introContent'` (no direct component). Each `NestedPageData` instance has `introContent` set to its own `HtmlContent` entity. Fixtures reloaded 2026-06-16.
+
+**What works now:**
+- `/topic-1` → intro content shows ✓ (path header = `/topic-1`, resolves Topic 1's PageData, reads `introContent`)
+
+**What is broken (module bug):**
+- `/topic-1/chapter-one` → parent template's intro slot is empty ✗
+
+Root cause: the module sends `path = <leaf URL>` as a single header applied to ALL requests in the manifest batch. `ComponentPositionNormalizer` uses that path to look up the current PageData via `PageDataProvider::getPageData()` → `route->getPageData()`. For route `/topic-1/chapter-one` the route resolves to a static `Page` (no PageData), so `getPageData()` returns `null` and `introContent` is not substituted.
+
+**Fix needed in the module** — tracked in module CLAUDE.md. The fetcher must send depth-appropriate `path` headers: when fetching a resource that belongs to depth N, use the route path from depth N's manifest group, not the leaf (deepest) path.
 
 ---
 
