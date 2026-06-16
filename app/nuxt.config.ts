@@ -1,3 +1,5 @@
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-06-18',
   app: {
@@ -165,6 +167,9 @@ export default defineNuxtConfig({
     autoImportPath: './assets/svg/',
   },
   vite: {
+    plugins: [
+      tailwindcss(),
+    ],
     server: {
       watch: {
         ignored: ['!**/node_modules/@cwa/**'],
