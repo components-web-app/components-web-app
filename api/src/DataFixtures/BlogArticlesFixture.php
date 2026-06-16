@@ -9,7 +9,6 @@ use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Entity\Core\ComponentGroup;
 use Silverback\ApiComponentsBundle\Entity\Core\Layout;
 use Silverback\ApiComponentsBundle\Entity\Core\Page;
-use Silverback\ApiComponentsBundle\Entity\Core\Route;
 use Silverback\ApiComponentsBundle\Helper\Route\RouteGeneratorInterface;
 
 class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtureInterface
@@ -43,6 +42,8 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
 
     private function addBlogArticles(ObjectManager $manager, Page $page, ComponentGroup $layoutComponentGroup): void
     {
+        $collectionPage = $this->getReference(Page::class . '_blog-list', Page::class);
+
         for($x=0; $x<10; $x++) {
             $htmlContent = new HtmlContent();
             $htmlContent->html = sprintf('<p>Bonjour mon ami %d</p>', $x);
@@ -56,12 +57,10 @@ class BlogArticlesFixture extends AbstractPageFixture implements DependentFixtur
             ;
             $articleData->htmlContent = $htmlContent;
             $articleData->page = $page;
+            $articleData->setParentPage($collectionPage);
             $this->getTimestampedDataPersister()->persistTimestampedFields($articleData, true);
             $manager->persist($articleData);
 
-            $articleData->setParentRoute(
-                $this->getReference(sprintf(Route::class . '_%s', BlogCollectionPageFixture::ROUTE_NAME), Route::class)
-            );
             $route = $this->container->get(RouteGeneratorInterface::class)->create($articleData);
             $manager->persist($route);
         }
