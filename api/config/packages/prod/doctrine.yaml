@@ -9,7 +9,6 @@ doctrine:
     sslkey: '%env(resolve:DOCTRINE_CLIENT_KEY)%'
     sslmode: '%env(resolve:DATABASE_SSL_MODE)%'
   orm:
-    auto_generate_proxy_classes: false
     metadata_cache_driver:
       type: pool
       pool: doctrine.system_cache_pool
