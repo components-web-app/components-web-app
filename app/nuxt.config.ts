@@ -40,11 +40,23 @@ export default defineNuxtConfig({
         classes: {
           'Big Text': ['text-2xl']
         }
+      },
+      NestedTopicTemplate: {
+        name: 'Nested Topic Page'
+      },
+      NestedSubPageTemplate: {
+        name: 'Nested Sub-Page'
       }
     },
     pageData: {
       BlogArticleData: {
         name: 'Blog Articles'
+      },
+      NestedPageData: {
+        name: 'Nested Topics'
+      },
+      NestedSubPageData: {
+        name: 'Nested Sub-Pages'
       }
     },
     siteConfig: {

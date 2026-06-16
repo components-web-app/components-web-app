@@ -40,7 +40,7 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
 
     private function createTemplatePages(ObjectManager $manager, Layout $layout): array
     {
-        $parentTemplatePage = $this->createPage('nested-topic-template', 'PrimaryPageTemplate', $layout, true);
+        $parentTemplatePage = $this->createPage('nested-topic-template', 'NestedTopicTemplate', $layout, true);
         $manager->persist($parentTemplatePage);
 
         $parentGroup = $this->createComponentGroup('primary', $parentTemplatePage);
@@ -50,7 +50,7 @@ class NestedPageDataFixture extends AbstractPageFixture implements DependentFixt
         $introPosition->setPageDataProperty('introContent');
         $manager->persist($introPosition);
 
-        $childTemplatePage = $this->createPage('nested-sub-page-template', 'PrimaryPageTemplate', $layout, true);
+        $childTemplatePage = $this->createPage('nested-sub-page-template', 'NestedSubPageTemplate', $layout, true);
         $manager->persist($childTemplatePage);
 
         $childGroup = $this->createComponentGroup('primary', $childTemplatePage);
