@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@1.0.0-29695071.0da4359
-        version: '@cwa/nuxt-edge@1.0.0-29695071.0da4359(9c5dfb90754144be3419f627ea53cc0d)'
+        specifier: npm:@cwa/nuxt-edge@1.0.0-29695188.2d27783
+        version: '@cwa/nuxt-edge@1.0.0-29695188.2d27783(9c5dfb90754144be3419f627ea53cc0d)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.38(typescript@6.0.3))
@@ -702,8 +702,8 @@ packages:
   '@colordx/core@5.4.3':
     resolution: {integrity: sha512-kIxYSfA5T8HXjav55UaaH/o/cKivF6jCCGIb8eqtcsfI46wsvlSiT8jMDyrl779qLec3c2c2oHBZo4oAhvbjrQ==}
 
-  '@cwa/nuxt-edge@1.0.0-29695071.0da4359':
-    resolution: {integrity: sha512-KHE7XkRxwhLpZgLRro51JSBKGn5t+tdXXi5ERew1LXdkjyy+gxLmncmP65oaDxF7i1JaFeDpP2CqqOB5cI8G2g==}
+  '@cwa/nuxt-edge@1.0.0-29695188.2d27783':
+    resolution: {integrity: sha512-GJThEIpBphc5641BTOHnYbrWlm4NSBC4PcGdoplAGj9dk4JqGhBOm2N3LSW5W9hx/7aI+3m7gfd6dmB0RmWcPw==}
     engines: {pnpm: '>=11.5.3'}
 
   '@devframes/hub@0.5.4':
@@ -8171,7 +8171,7 @@ snapshots:
 
   '@colordx/core@5.4.3': {}
 
-  '@cwa/nuxt-edge@1.0.0-29695071.0da4359(9c5dfb90754144be3419f627ea53cc0d)':
+  '@cwa/nuxt-edge@1.0.0-29695188.2d27783(9c5dfb90754144be3419f627ea53cc0d)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.0(magicast@0.5.2)
       '@nuxtjs/robots': 6.0.8(4814fa5a70a80c765b7efff22f466845)
