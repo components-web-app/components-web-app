@@ -364,12 +364,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "a209f81e21360197b7c23e11fbe74c68ba48d01f"
+                "reference": "e6349824b16385903185cb58b9f7d08def62f023"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/a209f81e21360197b7c23e11fbe74c68ba48d01f",
-                "reference": "a209f81e21360197b7c23e11fbe74c68ba48d01f",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/e6349824b16385903185cb58b9f7d08def62f023",
+                "reference": "e6349824b16385903185cb58b9f7d08def62f023",
                 "shasum": ""
             },
             "require": {
