@@ -46,6 +46,8 @@ final class Version20260616070213 extends AbstractMigration
         $this->addSql('CREATE INDEX IDX_2D7554F77E0E17A2 ON _acb_abstract_page_data (parent_page_id)');
         $this->addSql('CREATE INDEX IDX_2D7554F79DFB1787 ON _acb_abstract_page_data (parent_page_data_id)');
         $this->addSql('COMMENT ON COLUMN _acb_collection.id IS \'\'');
+        // allowed_components was DC2Type:array (PHP serialized); convert any non-JSON values to empty array
+        $this->addSql('UPDATE _acb_component_group SET allowed_components = \'[]\' WHERE allowed_components IS NULL OR allowed_components NOT SIMILAR TO \'[\\[{"]%\'');
         $this->addSql('ALTER TABLE _acb_component_group ALTER allowed_components TYPE JSON USING allowed_components::json');
         $this->addSql('COMMENT ON COLUMN _acb_component_group.id IS \'\'');
         $this->addSql('COMMENT ON COLUMN _acb_component_group.allowed_components IS \'\'');
@@ -117,6 +119,8 @@ final class Version20260616070213 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_2B36786B6AAFFC9A ON title (published_resource_id)');
         $this->addSql('DROP INDEX username_idx');
         $this->addSql('DROP INDEX email_address_idx');
+        // roles was DC2Type:array (PHP serialized); convert any non-JSON values to empty array
+        $this->addSql('UPDATE "user" SET roles = \'[]\' WHERE roles IS NULL OR roles NOT SIMILAR TO \'[\\[{"]%\'');
         $this->addSql('ALTER TABLE "user" ALTER roles TYPE JSON USING roles::json');
         $this->addSql('COMMENT ON COLUMN "user".id IS \'\'');
         $this->addSql('COMMENT ON COLUMN "user".roles IS \'\'');
