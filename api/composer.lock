@@ -10660,6 +10660,9 @@
                 "url": "https://github.com/Behat/Behat.git",
                 "reference": "da1df00576bf07603e8d1190b93bf7617593f93d"
             },
+            "bin": [
+                "bin/behat"
+            ],
             "require": {
                 "behat/gherkin": "^4.15.0",
                 "composer-runtime-api": "^2.2",

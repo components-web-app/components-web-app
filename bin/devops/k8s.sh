@@ -135,7 +135,7 @@ run_test_behat() {
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
   php scripts/patch-behat.php
   APP_ENV=test php bin/console dbal:run-sql "CREATE EXTENSION IF NOT EXISTS citext;"
-  vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
+  php vendor/behat/behat/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
 }
 
 check_kube_domain() {

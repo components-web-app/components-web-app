@@ -83,6 +83,7 @@
                         "Behat\\Transformation\\": "src/Behat/Transformation/"
                     }
                 },
+                "bin": ["bin/behat"],
                 "source": {
                     "type": "git",
                     "url": "https://github.com/Behat/Behat.git",
