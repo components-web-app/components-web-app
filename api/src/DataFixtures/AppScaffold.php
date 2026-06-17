@@ -145,44 +145,46 @@ class AppScaffold extends AbstractCwaScaffold
             ['title' => 'Chapter Two'],
         ];
 
-        $childLinks = implode(' | ', array_map(
-            fn(array $c) => sprintf('<a href="#">%s</a>', $c['title']),
-            $chapters
-        ));
-
         $intro = new HtmlContent();
-        $intro->html = sprintf(
-            '<p>Introduction to Topic 1.</p><p>Chapters: %s</p>'
-            . '<p>Navigate to a child URL to see nested rendering.</p>',
-            $childLinks
-        );
         $intro->setPublishedAt(new \DateTime());
 
         $topicPageData = new NestedPageData();
         $topicPageData->setTitle('Topic 1')->setMetaDescription('Nested topic 1 demonstrating static child pages');
         $topicPageData->introContent = $intro;
 
-        $cwa->pageData($topicPageData, template: 'nested-topic-template', routeName: 'topic-1')
-            ->nested(function (CwaFixtureBuilder $child) use ($chapters) {
-                foreach ($chapters as $j => $chapter) {
-                    $htmlContent = new HtmlContent();
-                    $htmlContent->html = sprintf(
-                        '<p><strong>%s</strong> — a static child <code>Page</code> of Topic 1\'s <code>NestedPageData</code>. '
-                        . 'The topic template renders at depth 0; this page renders at depth 1 via <code>&lt;CwaPage /&gt;</code>.</p>',
-                        $chapter['title']
-                    );
-                    $htmlContent->setPublishedAt(new \DateTime());
+        $topicBuilder = $cwa->pageData($topicPageData, template: 'nested-topic-template', routeName: 'topic-1');
 
-                    $child->page(
-                        sprintf('topic-1-chapter-%d', $j + 1),
-                        'NestedSubPageTemplate',
-                        layout: 'main',
-                        configure: function (PageBuilder $p) use ($chapter, $htmlContent) {
-                            $p->title($chapter['title']);
-                            $p->group('primary')->add($htmlContent);
-                        }
-                    );
-                }
-            });
+        $topicBuilder->nested(function (CwaFixtureBuilder $child) use ($chapters) {
+            foreach ($chapters as $j => $chapter) {
+                $htmlContent = new HtmlContent();
+                $htmlContent->html = sprintf(
+                    '<p><strong>%s</strong> — a static child <code>Page</code> of Topic 1\'s <code>NestedPageData</code>. '
+                    . 'The topic template renders at depth 0; this page renders at depth 1 via <code>&lt;CwaPage /&gt;</code>.</p>',
+                    $chapter['title']
+                );
+                $htmlContent->setPublishedAt(new \DateTime());
+
+                $child->page(
+                    sprintf('topic-1-chapter-%d', $j + 1),
+                    'NestedSubPageTemplate',
+                    layout: 'main',
+                    configure: function (PageBuilder $p) use ($chapter, $htmlContent) {
+                        $p->title($chapter['title']);
+                        $p->group('primary')->add($htmlContent);
+                    }
+                );
+            }
+        });
+
+        $topicBuilder->onRoutesCreated(function (array $childBuilders) use ($intro) {
+            $links = implode(' | ', array_map(
+                fn(PageBuilder $b) => sprintf('<a href="%s">%s</a>', $b->getRoute()->getPath(), $b->getPage()->getTitle()),
+                $childBuilders
+            ));
+            $intro->html = sprintf(
+                '<p>Introduction to Topic 1.</p><p>Chapters: %s</p><p>Navigate to a child URL to see nested rendering.</p>',
+                $links
+            );
+        });
     }
 }
