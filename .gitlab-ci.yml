@@ -84,7 +84,13 @@ behat tests:
   image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG
   variables:
     COMPOSER_PACKAGIST_TOKEN: 1548c14cbc7ef945787cad19913d10ef73068d7cdc61ff19513bfb4f72ea
+    POSTGRES_USER: runner
+    POSTGRES_PASSWORD: "password"
+    POSTGRES_DB: test
+    POSTGRES_HOST_AUTH_METHOD: trust
   allow_failure: false
+  services:
+    - postgres:14
   script:
     - setup_test_db_environment
     - run_test_behat
