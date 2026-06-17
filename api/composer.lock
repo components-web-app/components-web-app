@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b62e47ffabee5d6277510f4b7e159aad",
+    "content-hash": "f25fdcb8602d9772d09e5ae3ece57786",
     "packages": [
         {
             "name": "api-platform/core",
@@ -491,7 +491,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2026-06-17T07:01:43+00:00"
+            "time": "2026-06-17T08:01:28+00:00"
         },
         {
             "name": "composer/semver",
@@ -10660,9 +10660,6 @@
                 "url": "https://github.com/Behat/Behat.git",
                 "reference": "da1df00576bf07603e8d1190b93bf7617593f93d"
             },
-            "bin": [
-                "bin/behat"
-            ],
             "require": {
                 "behat/gherkin": "^4.15.0",
                 "composer-runtime-api": "^2.2",
@@ -10678,6 +10675,9 @@
                 "symfony/translation": "^5.4 || ^6.4 || ^7.0 || ^8.0",
                 "symfony/yaml": "^5.4 || ^6.4 || ^7.0 || ^8.0"
             },
+            "bin": [
+                "bin/behat"
+            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
