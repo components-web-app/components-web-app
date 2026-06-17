@@ -133,7 +133,7 @@ run_test_behat() {
   cd ./api || return
   mkdir -p build/logs/behat/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
-  APP_ENV=test php bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS citext;"
+  php scripts/patch-behat.php
   vendor/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
 }
 
