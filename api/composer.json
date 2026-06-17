@@ -86,7 +86,7 @@
                 "source": {
                     "type": "git",
                     "url": "https://github.com/Behat/Behat.git",
-                    "reference": "7fbdcda54ed653f032dd4fe1da5b2bb1546b24d6"
+                    "reference": "da1df00576bf07603e8d1190b93bf7617593f93d"
                 }
             }
         },
@@ -109,7 +109,7 @@
                 "source": {
                     "type": "git",
                     "url": "https://github.com/FriendsOfBehat/MinkExtension.git",
-                    "reference": "854336030e11983f580f49faad1b49a1238f9846"
+                    "reference": "6230f2ffdcdc67ebd53f2aabc063870ecb997f79"
                 }
             }
         },
@@ -209,10 +209,13 @@
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
+        "patch-behat": "php scripts/patch-behat.php",
         "post-install-cmd": [
+            "@patch-behat",
             "@auto-scripts"
         ],
         "post-update-cmd": [
+            "@patch-behat",
             "@auto-scripts"
         ]
     },

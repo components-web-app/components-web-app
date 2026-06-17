@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "eb5703d550e107db47c9674f735f5cfd",
+    "content-hash": "b62e47ffabee5d6277510f4b7e159aad",
     "packages": [
         {
             "name": "api-platform/core",
@@ -10658,7 +10658,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Behat/Behat.git",
-                "reference": "7fbdcda54ed653f032dd4fe1da5b2bb1546b24d6"
+                "reference": "da1df00576bf07603e8d1190b93bf7617593f93d"
             },
             "require": {
                 "behat/gherkin": "^4.15.0",
@@ -11077,7 +11077,7 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/FriendsOfBehat/MinkExtension.git",
-                "reference": "854336030e11983f580f49faad1b49a1238f9846"
+                "reference": "6230f2ffdcdc67ebd53f2aabc063870ecb997f79"
             },
             "require": {
                 "behat/behat": "^3.0.5",

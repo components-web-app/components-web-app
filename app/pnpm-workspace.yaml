@@ -2,7 +2,6 @@ overrides:
   tar-fs: '>=3.0.7'
 auditConfig:
   ignoreCves: []
-confirmModulesPurge: false
 shamefullyHoist: true
 strictPeerDependencies: false
 minimumReleaseAge: 0
