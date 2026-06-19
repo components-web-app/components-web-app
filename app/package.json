@@ -28,6 +28,9 @@
   },
   "devDependencies": {
     "@nuxt/devtools": "4.0.0-alpha.7",
+    "@tiptap/y-tiptap": ">=3.0.5",
+    "workbox-build": ">=7.4.1",
+    "workbox-window": ">=7.4.1",
     "@tailwindcss/typography": "^0.5.20",
     "@types/lodash-es": "^4.17.12",
     "@types/luxon": "^3.7.1",
