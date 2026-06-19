@@ -12,8 +12,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@0.0.0-29696608.3441703
-        version: '@cwa/nuxt-edge@0.0.0-29696608.3441703(91356bc1269b59026e5c4f833f57aa49)'
+        specifier: npm:@cwa/nuxt-edge@0.0.0-29696856.2d56f0f
+        version: '@cwa/nuxt-edge@0.0.0-29696856.2d56f0f(91356bc1269b59026e5c4f833f57aa49)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.38(typescript@6.0.3))
@@ -784,8 +784,8 @@ packages:
   '@colordx/core@5.4.3':
     resolution: {integrity: sha512-kIxYSfA5T8HXjav55UaaH/o/cKivF6jCCGIb8eqtcsfI46wsvlSiT8jMDyrl779qLec3c2c2oHBZo4oAhvbjrQ==}
 
-  '@cwa/nuxt-edge@0.0.0-29696608.3441703':
-    resolution: {integrity: sha512-GD7FG0MAN1XiWIx3udFV0/t6gtOXeIX72lPKz/gdZ/tWD+clfpBpfJ6x4a5UXBaaLWqPwE4Y2yBjp6lAe1AQHw==}
+  '@cwa/nuxt-edge@0.0.0-29696856.2d56f0f':
+    resolution: {integrity: sha512-fSUb14k4cJSfVXpRIq7wLkJZHf5wltelvYTY9KI+fGEgvW2etN00wdMUyVBSHAbETnV6hwaxMhPSj+gYNGjo0Q==}
     engines: {pnpm: '>=11.5.3'}
 
   '@devframes/hub@0.5.4':
@@ -8441,7 +8441,7 @@ snapshots:
 
   '@colordx/core@5.4.3': {}
 
-  '@cwa/nuxt-edge@0.0.0-29696608.3441703(91356bc1269b59026e5c4f833f57aa49)':
+  '@cwa/nuxt-edge@0.0.0-29696856.2d56f0f(91356bc1269b59026e5c4f833f57aa49)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.1(magicast@0.5.3)
       '@nuxtjs/robots': 6.1.1(7002670c5c36d67d5cc7db6ccd89bde4)
@@ -11962,7 +11962,7 @@ snapshots:
   '@vueuse/core@7.7.1(vue@3.5.38(typescript@6.0.3))':
     dependencies:
       '@vueuse/shared': 7.7.1(vue@3.5.38(typescript@6.0.3))
-      vue-demi: 0.13.11(vue@3.5.38(typescript@6.0.3))
+      vue-demi: 0.14.10(vue@3.5.38(typescript@6.0.3))
     optionalDependencies:
       vue: 3.5.38(typescript@6.0.3)
 
@@ -12003,7 +12003,7 @@ snapshots:
 
   '@vueuse/shared@7.7.1(vue@3.5.38(typescript@6.0.3))':
     dependencies:
-      vue-demi: 0.13.11(vue@3.5.38(typescript@6.0.3))
+      vue-demi: 0.14.10(vue@3.5.38(typescript@6.0.3))
     optionalDependencies:
       vue: 3.5.38(typescript@6.0.3)
 

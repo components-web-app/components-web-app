@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
-use App\DataFixtures\AppScaffold;
 use App\DataFixtures\UsersFixture;
 use App\Flysystem\GoogleCloudStorageFactory;
-use Silverback\ApiComponentsBundle\Fixture\CwaFixtureBuilder;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
@@ -42,12 +40,6 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->load('App\\Controller\\', '../src/Controller')
         ->tag('controller.service_subscriber');
-
-    $services
-        ->set(AppScaffold::class)
-        ->autowire()
-        ->tag('doctrine.fixture.orm')
-    ;
 
     $services
         ->set(UsersFixture::class)
