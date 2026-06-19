@@ -363,12 +363,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "4d88ba442350314807f7d6b5fd2aa894c3ca4641"
+                "reference": "8fda5bcf37eabd9386a5cba3da93b64e60010fcc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/4d88ba442350314807f7d6b5fd2aa894c3ca4641",
-                "reference": "4d88ba442350314807f7d6b5fd2aa894c3ca4641",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/8fda5bcf37eabd9386a5cba3da93b64e60010fcc",
+                "reference": "8fda5bcf37eabd9386a5cba3da93b64e60010fcc",
                 "shasum": ""
             },
             "require": {
@@ -490,7 +490,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2026-06-19T14:57:57+00:00"
+            "time": "2026-06-19T21:06:59+00:00"
         },
         {
             "name": "composer/semver",
@@ -11852,12 +11852,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "d33848f116e98995a13af9d6a7b1ce0037ae1ff6"
+                "reference": "2ac91eb2e2659b4b4faf65e446feb1bbbec7c5ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/d33848f116e98995a13af9d6a7b1ce0037ae1ff6",
-                "reference": "d33848f116e98995a13af9d6a7b1ce0037ae1ff6",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/2ac91eb2e2659b4b4faf65e446feb1bbbec7c5ce",
+                "reference": "2ac91eb2e2659b4b4faf65e446feb1bbbec7c5ce",
                 "shasum": ""
             },
             "conflict": {
@@ -11963,9 +11963,9 @@
                 "cakephp/database": ">=4.2,<4.2.12|>=4.3,<4.3.11|>=4.4,<4.4.10",
                 "cardgate/magento2": "<2.0.33",
                 "cardgate/woocommerce": "<=3.1.15",
-                "cart2quote/module-quotation": ">=4.1.6,<=4.4.5|>=5,<5.4.4",
+                "cart2quote/module-quotation": ">=4.1.6,<4.4.6|>=5,<5.4.4",
                 "cart2quote/module-quotation-encoded": ">=4.1.6,<=4.4.5|>=5,<5.4.4",
-                "cartalyst/sentry": "<=2.1.6",
+                "cartalyst/sentry": "<2.1.7",
                 "catfan/medoo": "<1.7.5",
                 "causal/oidc": "<4",
                 "cecil/cecil": "<7.47.1",
@@ -12537,8 +12537,8 @@
                 "prestashop/ps_linklist": "<3.1",
                 "privatebin/privatebin": "<1.4|>=1.5,<1.7.4|>=1.7.7,<2.0.3",
                 "processwire/processwire": "<=3.0.255",
-                "propel/propel": ">=2.0.0.0-alpha1,<=2.0.0.0-alpha7",
-                "propel/propel1": ">=1,<=1.7.1",
+                "propel/propel": ">=2.0.0.0-alpha1,<2.0.0.0-alpha8",
+                "propel/propel1": ">=1,<1.7.2",
                 "psy/psysh": "<=0.11.22|>=0.12,<=0.12.18",
                 "pterodactyl/panel": "<1.12.3",
                 "ptheofan/yii2-statemachine": ">=2.0.0.0-RC1-dev,<=2",
@@ -12601,7 +12601,7 @@
                 "silverstripe/assets": "<2.4.5|>=3,<3.1.3",
                 "silverstripe/cms": "<4.11.3",
                 "silverstripe/comments": ">=1.3,<3.1.1",
-                "silverstripe/forum": "<=0.6.1|>=0.7,<=0.7.3",
+                "silverstripe/forum": "<0.6.2|>=0.7,<0.7.4",
                 "silverstripe/framework": "<5.3.23",
                 "silverstripe/graphql": ">=2,<2.0.5|>=3,<3.8.2|>=4,<4.3.7|>=5,<5.1.3",
                 "silverstripe/hybridsessions": ">=1,<2.4.1|>=2.5,<2.5.1",
@@ -12951,7 +12951,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-19T15:05:12+00:00"
+            "time": "2026-06-19T16:52:16+00:00"
         },
         {
             "name": "sebastian/cli-parser",

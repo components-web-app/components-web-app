@@ -69,7 +69,10 @@ class AppScaffold extends AbstractCwaScaffold
         $htmlContent->setPublishedAt(new \DateTime());
 
         $htmlContentDraft = new HtmlContent();
-        $htmlContentDraft->html = $this->placeholderProvider->generate(['1', 'medium']);
+        $htmlContentDraft->html = $this->placeholderProvider->generate([
+            'paragraphs' => 1,
+            'paragraphLength' => CwaPlaceholderProvider::LENGTH_MEDIUM,
+        ]);
         $htmlContentDraft->setPublishedResource($htmlContent);
 
         $htmlContentBottom = new HtmlContent();
@@ -121,14 +124,21 @@ class AppScaffold extends AbstractCwaScaffold
 
         for ($i = 0; $i < 10; $i++) {
             $htmlContent = new HtmlContent();
-            $htmlContent->html = sprintf('<p>Bonjour mon ami %d</p>', $i);
+            $htmlContent->html = $this->placeholderProvider->generate([
+                'paragraphs' => 2,
+                'includeHeadings' => true,
+                'paragraphLength' => CwaPlaceholderProvider::LENGTH_SHORT,
+            ]);
             $htmlContent->setPublishedAt(new \DateTime());
 
+            $cwa->persist($htmlContent);
+
             $articleData = new BlogArticleData();
-            $articleData->setTitle(sprintf('Blog Article %s', $i))->setMetaDescription(strip_tags($htmlContent->html));
+            $articleData->setTitle(sprintf('Blog Article %d', $i + 1))
+                ->setMetaDescription(sprintf('A sample CWA blog article — article number %d.', $i + 1));
             $articleData->htmlContent = $htmlContent;
 
-            $cwa->pageData($articleData, template: 'blog-template', route: sprintf('/blog-articles/blog-article-%d', $i));
+            $cwa->pageData($articleData, template: 'blog-template', route: sprintf('/blog-articles/blog-article-%d', $i + 1));
         }
     }
 
@@ -147,6 +157,8 @@ class AppScaffold extends AbstractCwaScaffold
 
         $intro = new HtmlContent();
         $intro->setPublishedAt(new \DateTime());
+
+        $cwa->persist($intro);
 
         $topicPageData = new NestedPageData();
         $topicPageData->setTitle('Topic 1')->setMetaDescription('Nested topic 1 demonstrating static child pages');
