@@ -1,6 +1,18 @@
 import tailwindcss from '@tailwindcss/vite'
+import { resolve } from 'node:path'
+import { execSync } from 'node:child_process'
 
 export default defineNuxtConfig({
+  hooks: process.env.LOAD_FIXTURES === 'true' ? {
+    listen() {
+      const root = resolve(__dirname, '..')
+      console.log('[fixtures] Loading...')
+      execSync('docker compose exec -T php bin/console doctrine:fixtures:load --no-interaction', { stdio: 'inherit', cwd: root })
+      console.log('[fixtures] Purging Souin cache...')
+      execSync('curl -sf -X DELETE http://localhost:2019/souin -H "Content-Type: application/json" -d \'{"regex":".*"}\' || true', { stdio: 'pipe', cwd: root })
+      console.log('[fixtures] Done.')
+    },
+  } : {},
   compatibilityDate: '2025-06-18',
   app: {
     head: {
