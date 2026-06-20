@@ -229,6 +229,8 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: cache-url
+            - name: RESET_DATABASE
+              value: {{ .Values.php.resetDatabase | quote }}
           ports:
             - name: http
               containerPort: 80

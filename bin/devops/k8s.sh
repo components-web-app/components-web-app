@@ -270,6 +270,7 @@ php:
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
+  resetDatabase: "${RESET_DATABASE:-false}"
   apiSecretToken: ${VARNISH_TOKEN:-"~"}
   mailer:
     dsn: ${MAILER_DSN:-"~"}

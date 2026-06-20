@@ -18,6 +18,7 @@ php:
   appEnv: prod
   appDebug: "0"
   appSecret: ""
+  resetDatabase: "false"
   corsAllowOrigin: "^https?://.*?\\.chart-example\\.local$"
   trustedHosts: "^127\\.0\\.0\\.1|localhost|.*\\.chart-example\\.local$"
   trustedProxies:
