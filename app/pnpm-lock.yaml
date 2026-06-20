@@ -6,17 +6,14 @@ settings:
 
 overrides:
   tar-fs: '>=3.0.7'
-  '@tiptap/y-tiptap': '>=3.0.5'
-  workbox-build: '>=7.4.1'
-  workbox-window: '>=7.4.1'
 
 importers:
 
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@0.0.0-29698403.f59e11c
-        version: '@cwa/nuxt-edge@0.0.0-29698403.f59e11c(c28f81099a67691e4dafd73fe89ba93d)'
+        specifier: npm:@cwa/nuxt-edge@0.0.0-29698567.a44ef19
+        version: '@cwa/nuxt-edge@0.0.0-29698567.a44ef19(c28f81099a67691e4dafd73fe89ba93d)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.38(typescript@6.0.3))
@@ -744,8 +741,8 @@ packages:
   '@colordx/core@5.4.3':
     resolution: {integrity: sha512-kIxYSfA5T8HXjav55UaaH/o/cKivF6jCCGIb8eqtcsfI46wsvlSiT8jMDyrl779qLec3c2c2oHBZo4oAhvbjrQ==}
 
-  '@cwa/nuxt-edge@0.0.0-29698403.f59e11c':
-    resolution: {integrity: sha512-5LrcwpYTBKW8YL67Xri0J4Gi5ZK8jGm8HBYtslhX/b+E436ZrQA7qYOdXLvsFtCsptfQhbnREy2ZeRZDHUELbw==}
+  '@cwa/nuxt-edge@0.0.0-29698567.a44ef19':
+    resolution: {integrity: sha512-jJyXiY48lwTn30+thVDU5cORQtRZq0qlO+9mxGDvbMycZxpHxQjT881i74gSL2kOCcDho+q5wPsVHoW6MewGsw==}
     engines: {pnpm: '>=11.5.3'}
 
   '@devframes/hub@0.5.4':
@@ -3119,7 +3116,7 @@ packages:
     peerDependencies:
       '@tiptap/core': 3.26.1
       '@tiptap/pm': 3.26.1
-      '@tiptap/y-tiptap': '>=3.0.5'
+      '@tiptap/y-tiptap': ^3.0.5
       yjs: ^13
 
   '@tiptap/extension-document@3.26.1':
@@ -3142,7 +3139,7 @@ packages:
       '@tiptap/extension-collaboration': 3.26.1
       '@tiptap/extension-node-range': 3.26.1
       '@tiptap/pm': 3.26.1
-      '@tiptap/y-tiptap': '>=3.0.5'
+      '@tiptap/y-tiptap': ^3.0.5
 
   '@tiptap/extension-dropcursor@3.26.1':
     resolution: {integrity: sha512-eVq3BvFIa3YD+pBIlj1i72vYEixlegGVKHnSYiVF2ovkQOSAH9sca7pkq6WgV1sMTCyWCU8e+WznTqtydvHUWA==}
@@ -6908,8 +6905,8 @@ packages:
     peerDependencies:
       '@vite-pwa/assets-generator': ^1.0.0
       vite: ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-      workbox-build: '>=7.4.1'
-      workbox-window: '>=7.4.1'
+      workbox-build: ^7.4.1
+      workbox-window: ^7.4.1
     peerDependenciesMeta:
       '@vite-pwa/assets-generator':
         optional: true
@@ -8075,7 +8072,7 @@ snapshots:
 
   '@colordx/core@5.4.3': {}
 
-  '@cwa/nuxt-edge@0.0.0-29698403.f59e11c(c28f81099a67691e4dafd73fe89ba93d)':
+  '@cwa/nuxt-edge@0.0.0-29698567.a44ef19(c28f81099a67691e4dafd73fe89ba93d)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.1(magicast@0.5.3)
       '@nuxtjs/robots': 6.1.1(2efdedc4a5e806001ebb20135c223d9f)
