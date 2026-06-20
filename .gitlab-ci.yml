@@ -241,6 +241,7 @@ production:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy
+    - load_fixtures
     - delete canary
     - delete staging
     - persist_environment_url
