@@ -212,6 +212,10 @@ class AppScaffold extends AbstractCwaScaffold
     {
         $formComponent = new Form();
         $formComponent->formType = ExampleFormType::class;
+        // Workaround: CwaFixtureBuilder::createPositions() does not call persistTimestampedFields
+        // on components added via GroupBuilder::add() — only on their ComponentPosition.
+        // Bundle entities with NOT NULL Timestamped fields must set createdAt manually until fixed.
+        $formComponent->createdAt = new \DateTimeImmutable();
 
         $cwa->page('form', 'PrimaryPageTemplate', layout: 'main', route: '/form', routeName: 'form-page',
             configure: function (PageBuilder $p) use ($formComponent) {
