@@ -20,7 +20,7 @@ final class Version20260620002745 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE SCHEMA public');
+        $this->addSql('CREATE SCHEMA IF NOT EXISTS public');
         $this->addSql('CREATE TABLE _acb_abstract_component (id UUID NOT NULL, ui_component VARCHAR(255) DEFAULT NULL, ui_class_names JSON DEFAULT NULL, dtype VARCHAR(255) NOT NULL, PRIMARY KEY (id))');
         $this->addSql('CREATE TABLE _acb_abstract_component_component_group (abstract_component_id UUID NOT NULL, component_group_id UUID NOT NULL, PRIMARY KEY (abstract_component_id, component_group_id))');
         $this->addSql('CREATE INDEX IDX_8217637E71C016CE ON _acb_abstract_component_component_group (abstract_component_id)');
