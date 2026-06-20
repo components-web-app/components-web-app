@@ -196,7 +196,12 @@ class AppScaffold extends AbstractCwaScaffold
             }
         });
 
-        $topicBuilder->onRoutesCreated(function (array $childBuilders) use ($intro) {
+        $topicBuilder->onRoutesCreated(function (array $childBuilders) use ($intro, $topicPageData) {
+            // Forward /topic-1 visitors to the first chapter automatically
+            if (!empty($childBuilders) && null !== $topicPageData->getRoute()) {
+                $topicPageData->getRoute()->setRedirect($childBuilders[0]->getRoute());
+            }
+
             $links = implode(' | ', array_map(
                 fn(PageBuilder $b) => sprintf('<a href="%s">%s</a>', $b->getRoute()->getPath(), $b->getPage()->getTitle()),
                 $childBuilders
