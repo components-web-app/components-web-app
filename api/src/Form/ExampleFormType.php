@@ -66,17 +66,8 @@ class ExampleFormType extends AbstractType
                         return $val === '' ? ['disabled' => ''] : [];
                     },
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "Please select what the message is regarding"
-                            ]
-                        ),
-                        new Length(
-                            [
-                                "min" => 2,
-                                "minMessage" => "The option selected is invalid"
-                            ]
-                        )
+                        new NotBlank(message: "Please select what the message is regarding"),
+                        new Length(min: 2, minMessage: "The option selected is invalid"),
                     ]
                 ]
             )
@@ -90,16 +81,8 @@ class ExampleFormType extends AbstractType
                     ],
                     'label' => 'Your Email',
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "Please provide a valid email"
-                            ]
-                        ),
-                        new Email(
-                            [
-                                "message" => "Your email doesn't seems to be valid"
-                            ]
-                        ),
+                        new NotBlank(message: "Please provide a valid email"),
+                        new Email(message: "Your email doesn't seem to be valid"),
                     ]
                 ]
             )
@@ -113,11 +96,7 @@ class ExampleFormType extends AbstractType
                     ],
                     'label' => 'Message',
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "Please provide a message here"
-                            ]
-                        )
+                        new NotBlank(message: "Please provide a message here"),
                     ]
                 ]
             )
@@ -136,11 +115,7 @@ class ExampleFormType extends AbstractType
                     'expanded' => true,
                     'required' => true,
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "Please select if you are a developer"
-                            ]
-                        )
+                        new NotBlank(message: "Please select if you are a developer"),
                     ]
                 ]
             )
@@ -154,11 +129,7 @@ class ExampleFormType extends AbstractType
                     'label' => 'To check or not to check? <b>That</b> is a question',
                     'required' => true,
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "The correct answer to the question is to check, it is required"
-                            ]
-                        )
+                        new NotBlank(message: "The correct answer to the question is to check, it is required"),
                     ]
                 ]
             )
@@ -178,11 +149,7 @@ class ExampleFormType extends AbstractType
                     'expanded' => true,
                     'multiple' => true,
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "An interest is needed"
-                            ]
-                        )
+                        new NotBlank(message: "An interest is needed"),
                     ]
                 ]
             )
@@ -205,11 +172,7 @@ class ExampleFormType extends AbstractType
                     'multiple' => true,
                     'required' => true,
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                "message" => "Please select at least one"
-                            ]
-                        )
+                        new NotBlank(message: "Please select at least one"),
                     ]
                 ]
             )
@@ -226,12 +189,7 @@ class ExampleFormType extends AbstractType
                     'error_bubbling' => false,
                     'empty_data' => [new ChildType()],
                     'constraints' => [
-                        new Count(
-                            [
-                                'min' => 1,
-                                'minMessage' => 'At least one child is required with a name',
-                            ]
-                        ),
+                        new Count(min: 1, minMessage: 'At least one child is required with a name'),
                     ],
                 ]
             )
@@ -248,16 +206,9 @@ class ExampleFormType extends AbstractType
                     'error_bubbling' => false,
                     'empty_data' => [],
                     'constraints' => [
-                        new All(
-                            [
-                                new Length(
-                                    [
-                                        'min' => 2,
-                                        'minMessage' => 'Must be at least 2 characters',
-                                    ]
-                                ),
-                            ]
-                        ),
+                        new All(constraints: [
+                            new Length(min: 2, minMessage: 'Must be at least 2 characters'),
+                        ]),
                     ],
                 ]
             )
