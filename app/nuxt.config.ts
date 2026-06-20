@@ -5,6 +5,11 @@ import { execSync } from 'node:child_process'
 export default defineNuxtConfig({
   hooks: process.env.LOAD_FIXTURES === 'true' ? {
     listen() {
+      const { existsSync } = require('node:fs')
+      if (existsSync('/.dockerenv')) {
+        console.log('[fixtures] Skipping — running inside Docker container')
+        return
+      }
       const root = resolve(__dirname, '..')
       console.log('[fixtures] Loading...')
       execSync('docker compose exec -T php bin/console doctrine:fixtures:load --no-interaction', { stdio: 'inherit', cwd: root })

@@ -39,6 +39,8 @@
       <UInput
         v-model="text.value.value"
         class="w-full"
+        :trailing-icon="trailingIcon(text)"
+        :ui="{ trailingIcon: trailingIconClass(text) }"
         @blur="text.onBlur"
         @input="text.onInput"
       />
@@ -55,6 +57,8 @@
         type="password"
         class="w-full"
         autocomplete="new-password"
+        :trailing-icon="trailingIcon(password.first)"
+        :ui="{ trailingIcon: trailingIconClass(password.first) }"
         @blur="password.first.onBlur"
         @input="password.first.onInput"
       />
@@ -69,6 +73,8 @@
         type="password"
         class="w-full"
         autocomplete="new-password"
+        :trailing-icon="trailingIcon(password.second)"
+        :ui="{ trailingIcon: trailingIconClass(password.second) }"
         @blur="password.second.onBlur"
         @input="password.second.onInput"
       />
@@ -105,6 +111,8 @@
         v-model="email.value.value"
         type="email"
         class="w-full"
+        :trailing-icon="trailingIcon(email)"
+        :ui="{ trailingIcon: trailingIconClass(email) }"
         @blur="email.onBlur"
         @input="email.onInput"
       />
@@ -119,6 +127,8 @@
       <UTextarea
         v-model="message.value.value"
         class="w-full"
+        :trailing-icon="trailingIcon(message)"
+        :ui="{ trailingIcon: trailingIconClass(message) }"
         @blur="message.onBlur"
         @input="message.onInput"
       />
@@ -244,6 +254,18 @@ import { computed, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
 import FormChildEntry from './FormChildEntry.vue'
 import FormTextEntry from './FormTextEntry.vue'
+
+function trailingIcon(field: { validating: { value: boolean }, valid: { value: boolean | null } }) {
+  if (field.validating.value) return 'i-lucide-loader-circle'
+  if (field.valid.value === true) return 'i-lucide-circle-check'
+  return undefined
+}
+
+function trailingIconClass(field: { validating: { value: boolean }, valid: { value: boolean | null } }) {
+  if (field.validating.value) return 'animate-spin text-gray-400'
+  if (field.valid.value === true) return 'text-green-500'
+  return undefined
+}
 
 const props = defineProps<IriProp>()
 const iriRef = toRef(props, 'iri')
