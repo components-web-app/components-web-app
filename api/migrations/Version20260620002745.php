@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20260620001953 extends AbstractMigration
+final class Version20260620002745 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -68,8 +68,6 @@ final class Version20260620001953 extends AbstractMigration
         $this->addSql('CREATE UNIQUE INDEX UNIQ_12C4C836AAFFC9A ON navigation_link (published_resource_id)');
         $this->addSql('CREATE TABLE nested_page_data (intro_content_id UUID DEFAULT NULL, id UUID NOT NULL, PRIMARY KEY (id))');
         $this->addSql('CREATE INDEX IDX_BC5F93ED580D710B ON nested_page_data (intro_content_id)');
-        $this->addSql('CREATE TABLE nested_sub_page_data (body_content_id UUID DEFAULT NULL, id UUID NOT NULL, PRIMARY KEY (id))');
-        $this->addSql('CREATE INDEX IDX_95F677181CE7259E ON nested_sub_page_data (body_content_id)');
         $this->addSql('CREATE TABLE refresh_token (created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, expired_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, version INT DEFAULT 1 NOT NULL, id UUID NOT NULL, user_id UUID NOT NULL, PRIMARY KEY (id))');
         $this->addSql('CREATE INDEX IDX_C74F2195A76ED395 ON refresh_token (user_id)');
         $this->addSql('CREATE TABLE title (title TEXT DEFAULT NULL, published_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT NULL, published_resource_id UUID DEFAULT NULL, id UUID NOT NULL, PRIMARY KEY (id))');
@@ -106,8 +104,6 @@ final class Version20260620001953 extends AbstractMigration
         $this->addSql('ALTER TABLE navigation_link ADD CONSTRAINT FK_12C4C83BF396750 FOREIGN KEY (id) REFERENCES _acb_abstract_component (id) ON DELETE CASCADE');
         $this->addSql('ALTER TABLE nested_page_data ADD CONSTRAINT FK_BC5F93ED580D710B FOREIGN KEY (intro_content_id) REFERENCES html_content (id) ON DELETE SET NULL NOT DEFERRABLE');
         $this->addSql('ALTER TABLE nested_page_data ADD CONSTRAINT FK_BC5F93EDBF396750 FOREIGN KEY (id) REFERENCES _acb_abstract_page_data (id) ON DELETE CASCADE');
-        $this->addSql('ALTER TABLE nested_sub_page_data ADD CONSTRAINT FK_95F677181CE7259E FOREIGN KEY (body_content_id) REFERENCES html_content (id) ON DELETE SET NULL NOT DEFERRABLE');
-        $this->addSql('ALTER TABLE nested_sub_page_data ADD CONSTRAINT FK_95F67718BF396750 FOREIGN KEY (id) REFERENCES _acb_abstract_page_data (id) ON DELETE CASCADE');
         $this->addSql('ALTER TABLE refresh_token ADD CONSTRAINT FK_C74F2195A76ED395 FOREIGN KEY (user_id) REFERENCES "user" (id) ON DELETE CASCADE NOT DEFERRABLE');
         $this->addSql('ALTER TABLE title ADD CONSTRAINT FK_2B36786B6AAFFC9A FOREIGN KEY (published_resource_id) REFERENCES title (id) ON DELETE SET NULL');
         $this->addSql('ALTER TABLE title ADD CONSTRAINT FK_2B36786BBF396750 FOREIGN KEY (id) REFERENCES _acb_abstract_component (id) ON DELETE CASCADE');
@@ -147,8 +143,6 @@ final class Version20260620001953 extends AbstractMigration
         $this->addSql('ALTER TABLE navigation_link DROP CONSTRAINT FK_12C4C83BF396750');
         $this->addSql('ALTER TABLE nested_page_data DROP CONSTRAINT FK_BC5F93ED580D710B');
         $this->addSql('ALTER TABLE nested_page_data DROP CONSTRAINT FK_BC5F93EDBF396750');
-        $this->addSql('ALTER TABLE nested_sub_page_data DROP CONSTRAINT FK_95F677181CE7259E');
-        $this->addSql('ALTER TABLE nested_sub_page_data DROP CONSTRAINT FK_95F67718BF396750');
         $this->addSql('ALTER TABLE refresh_token DROP CONSTRAINT FK_C74F2195A76ED395');
         $this->addSql('ALTER TABLE title DROP CONSTRAINT FK_2B36786B6AAFFC9A');
         $this->addSql('ALTER TABLE title DROP CONSTRAINT FK_2B36786BBF396750');
@@ -171,7 +165,6 @@ final class Version20260620001953 extends AbstractMigration
         $this->addSql('DROP TABLE image');
         $this->addSql('DROP TABLE navigation_link');
         $this->addSql('DROP TABLE nested_page_data');
-        $this->addSql('DROP TABLE nested_sub_page_data');
         $this->addSql('DROP TABLE refresh_token');
         $this->addSql('DROP TABLE title');
         $this->addSql('DROP TABLE "user"');
