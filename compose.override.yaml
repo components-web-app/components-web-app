@@ -20,7 +20,7 @@ services:
       RESET_DATABASE: "true"
       # CADDY_GLOBAL_CONFIG: "local_certs"
     extra_hosts:
-      # Ensure that host.docker.internal is correctly defined on Linux
+      # Ensure that host.docker.ito wrnternal is correctly defined on Linux
       - host.docker.internal:host-gateway
     tty: true
     deploy:
@@ -50,12 +50,6 @@ services:
         protocol: tcp
     links:
       - "php:php.local"
-
-  fixtures:
-    volumes:
-      - ./api:/app
-    environment:
-      APP_ENV: dev
 
 ###> doctrine/doctrine-bundle ###
   database:
