@@ -262,9 +262,9 @@ const developer = useCwaFormInput(iriRef, 'example_form[developer]')
 
 const checkbox = useCwaFormInput(iriRef, 'example_form[randomCheckbox]')
 const isChecked = computed({
-  get: () => checkbox.vars.value?.checked ?? false,
+  get: () => !!checkbox.value.value,
   set: (v: boolean) => {
-    checkbox.value.value = v ? '1' : ''
+    checkbox.value.value = v ? '1' : null
     checkbox.onInput()
   },
 })

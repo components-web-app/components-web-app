@@ -35,7 +35,7 @@ Rather than maintaining a separate skeleton branch, the plan is to build a `crea
 
 ---
 
-### Form Composables Demo Component (#172)
+### Form Composables Demo Component (#172) ✅
 
 The `@cwa/nuxt` module ships four form composables. The playground demo is at `playground/app/cwa/components/ExampleForm/ExampleForm.vue` in the module repo. Mirror it here so new projects start with a working example.
 
@@ -207,7 +207,7 @@ const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[n
 
 - **`choices` shape and placeholders:** Symfony `ChoiceType` emits placeholder entries as `{ value: '', label: 'Choose…' }`. These are filtered in the template (`c.value !== ''`) and the label is passed as `:placeholder`. Always add `value-key="value"` and `label-key="label"` to all choice components — without them Nuxt UI binds the full `ChoiceView` object and Symfony rejects it with 422.
 
-- **Checkbox v-model:** The template currently uses `checkbox.vars.value?.checked ?? false` as getter. This has a known snap-back issue — waiting for the module to expose `booleanValue` from `useCwaFormInput`. See module CLAUDE.md "Known Bug: Unchecked checkbox submits `""` instead of `null`".
+- **Checkbox v-model:** Use `get: () => !!checkbox.value.value` / `set: (v) => { checkbox.value.value = v ? '1' : null; checkbox.onInput() }`. The module now initialises unchecked checkboxes to `null` (not `''`), so this pattern is correct and avoids snap-back.
 
 - **Checkbox label HTML:** The `randomCheckbox` label may contain HTML. The template renders it via `v-html` in a `#label` slot.
 
