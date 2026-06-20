@@ -63,18 +63,51 @@ The `@cwa/nuxt` module ships four form composables. The playground demo is at `p
 **Key implementation rules:**
 - `field.value.value` = reactive field value → bind with `v-model="field.value.value"`
 - `field.vars.value?.choices` = Symfony ChoiceView array `[{ value, label }]` → pass as `:items` to `USelect` / `URadioGroup` / `UCheckboxGroup` / `USelectMenu`
-- `field.displayErrors.value` gates when to show `field.errors.value[0]` — triggered by blur, having-been-valid, or submit attempt
+- `field.displayErrors.value` gates when to show `field.errors.value[0]` — triggered by blur, having-been-valid, or submit attempt; automatically suppressed while `field.validating.value` is true so stale errors do not flash during a pending PATCH
 - `form.formErrors.value` = root-level Symfony errors
 - `form.unregisteredFieldErrors.value` = API errors for fields not bound to any `useCwaFormInput` — show in a fallback block, never alongside registered field errors
 - **CheckboxType pattern**: `useCwaFormInput` initialises `value` as `'1'` (checked) or `null` (unchecked), derived from `vars.checked`. Bind to an app-level computed: `get: () => !!checkbox.value.value`, `set: (v) => { checkbox.value.value = v ? '1' : null; checkbox.onInput() }`. Do NOT read `vars.value?.checked` — that snaps back before the PATCH returns. Sending `null` for unchecked is required: Symfony's `BooleanToStringTransformer` only treats `null` as `false`; `""` is silently treated as `true`.
 - **ChoiceType (expanded, single = radio group)**: children in the `formView` tree share the same `full_name` as the parent. `useCwaFormInput` reads from the parent entry (which has `choices`, `label`). Use `vars.value?.choices` as `:items` for `URadioGroup`.
 - **ChoiceType (not-expanded, multiple = multi-select)**: Symfony appends `[]` to `full_name` (e.g. `example_form[other_interests][]`). The module normalises this — use the key WITHOUT `[]` when calling `useCwaFormInput` (e.g. `'example_form[other_interests]'`).
 
-**Nuxt UI event bindings:**
+**TipTap v3 — StarterKit includes Link by default:**
+
+TipTap v3's `StarterKit` includes `Link` as a built-in extension. Adding `Link.configure()` explicitly alongside `StarterKit.configure()` results in "Duplicate extension names: ['link']" warning and potential conflicts. Fix: disable Link inside StarterKit and register it explicitly to apply custom config:
+
+```ts
+extensions: [
+  StarterKit.configure({ link: false }),
+  Link.configure({ openOnClick: false, defaultProtocol: 'https' }),
+]
+```
+
+**Nuxt UI event bindings and `:value-key` / `:label-key`:**
+
+Symfony `ChoiceView` items are objects with extra fields (`data`, `attr`, `labelTranslationParameters`) beyond `{ label, value }`. Nuxt UI components bind the **entire item** by default unless told which field to use. Always pass `:value-key="'value'"` and `:label-key="'label'"` to all choice-based components:
+
+```vue
+<!-- USelect (collapsed, single) -->
+<USelect v-model="field.value.value" :items="choices" value-key="value" label-key="label"
+  @update:model-value="field.onInput()" @blur="field.onBlur" />
+
+<!-- USelectMenu (collapsed, multiple) -->
+<USelectMenu v-model="field.value.value" :items="choices" :multiple="true"
+  value-key="value" label-key="label" @update:model-value="field.onInput()" />
+
+<!-- URadioGroup (expanded, single) -->
+<URadioGroup v-model="field.value.value" :items="choices"
+  value-key="value" label-key="label" @change="field.onInput()" />
+
+<!-- UCheckboxGroup (expanded, multiple) -->
+<UCheckboxGroup v-model="field.value.value" :items="choices"
+  value-key="value" label-key="label" @change="field.onInput()" />
+```
+
+Without these keys, `USelectMenu` (confirmed) and potentially others bind the full `ChoiceView` object to v-model. Symfony then rejects the value with 422 "The option selected is invalid" because the full object is not in the allowed choices list.
+
+Reminder for filtering: filter out the placeholder empty choice (`c.value !== ''`) when not using a `:placeholder` on `USelect` / `USelectMenu`.
+
 - `UInput` / `UTextarea`: `@blur="field.onBlur"` + `@input="field.onInput"`
-- `USelect`: `@update:model-value="field.onInput()"`
-- `URadioGroup` / `UCheckboxGroup`: `@change="field.onInput()"`
-- `USelectMenu :multiple`: `@update:model-value="field.onInput()"`
 
 **Error display pattern:**
 ```vue
@@ -92,6 +125,9 @@ The `@cwa/nuxt` module ships four form composables. The playground demo is at `p
 ```
 
 **Collection entry child component pattern:**
+
+Put the remove button **inside** the `UFormField` default slot alongside the input, wrapped in `flex items-center`. This keeps the button pinned next to the input even when a validation error expands the field height below.
+
 ```vue
 <!-- FormChildEntry.vue — for compound ChildType entries; import directly, not a CWA component -->
 <script setup lang="ts">
@@ -100,14 +136,36 @@ defineEmits<{ remove: [] }>()
 const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[name]`)
 </script>
 <template>
-  <div class="flex gap-2">
-    <UFormField :error="nameField.displayErrors.value ? nameField.errors.value[0] : undefined">
-      <UInput v-model="nameField.value.value" @blur="nameField.onBlur" @input="nameField.onInput" />
-    </UFormField>
-    <UButton color="error" variant="soft" @click="$emit('remove')">Remove</UButton>
-  </div>
+  <UFormField
+    :label="nameField.vars.value?.label || 'Name'"
+    :error="nameField.displayErrors.value ? nameField.errors.value[0] : undefined"
+  >
+    <div class="flex items-center gap-2">
+      <UInput class="flex-1" v-model="nameField.value.value" @blur="nameField.onBlur" @input="nameField.onInput" />
+      <UButton color="error" variant="soft" icon="i-lucide-trash-2" @click.prevent="$emit('remove')" />
+    </div>
+  </UFormField>
 </template>
 ```
+
+**Same layout for `FormTextEntry.vue`** (simple TextType entries):
+
+```vue
+<!-- FormTextEntry.vue -->
+<template>
+  <UFormField
+    :label="entryField.vars.value?.label || 'Text'"
+    :error="entryField.displayErrors.value ? entryField.errors.value[0] : undefined"
+  >
+    <div class="flex items-center gap-2">
+      <UInput class="flex-1" v-model="entryField.value.value" @blur="entryField.onBlur" @input="entryField.onInput" />
+      <UButton color="error" variant="soft" icon="i-lucide-trash-2" @click.prevent="$emit('remove')" />
+    </div>
+  </UFormField>
+</template>
+```
+
+**Labels for new collection entries** — `useCwaFormCollection.addEntry()` registers the cloned prototype in `$cwa.forms` so `useCwaFormInput.vars` is populated immediately (enabling realtime validation before first submit). Symfony's `"__name__label__"` sentinel label is automatically cleared during cloning, so the `|| 'Name'` / `|| 'Text'` fallbacks take effect for entries without explicit labels. Explicit sub-field labels (e.g. `"Child object text label"` on `[name]`) are preserved.
 
 **Parent iterates entries and manages collection:**
 ```vue
@@ -125,9 +183,9 @@ const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[n
 
 ---
 
-### API Fixture: ExampleFormType scaffold
+### API Fixture: ExampleFormType scaffold ✅
 
-`AppScaffold.php` currently has no `Form` component. Add one wired to `ExampleFormType` so the demo page shows the full form.
+`AppScaffold.php` has a `/form` page with a `Form` entity wired to `ExampleFormType`. `uiComponent` is set to `'ExampleForm'` so the module resolves `CwaComponentExampleForm`. A "Form Demo" nav link points to the page.
 
 **`ExampleFormType` covers every Symfony form field type:**
 - `TextType` — plain text, no validation
@@ -136,41 +194,22 @@ const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[n
 - `EmailType` — email with NotBlank + Email constraints
 - `TextareaType` — message with NotBlank constraint
 - `ChoiceType` (expanded, single = radio) — yes/no developer question
-- `CheckboxType` — single boolean checkbox with NotBlank
+- `CheckboxType` — single boolean checkbox with `IsTrue` (`NotBlank` does not fire on `false`; see checkbox bug in module CLAUDE.md)
 - `ChoiceType` (expanded, multiple = checkbox group) — food interests
 - `ChoiceType` (not expanded, multiple = multi-select) — other interests
 - `CollectionType` + `ChildType` (compound — `name` sub-field) — use `useCwaFormCollection` with `FormChildEntry`
 - `CollectionType` + `TextType` (simple text entries) — use `useCwaFormCollection` with `FormTextEntry`
 - `SubmitType` — handled by `useCwaForm.submit()`, no composable needed
 
-**Fixture snippet (add to `AppScaffold.php`):**
-```php
-use App\Form\ExampleFormType;
-use Silverback\ApiComponentsBundle\Entity\Component\Form;
+**Implementation notes:**
 
-// In load() — add Form component to an existing page's main component group:
-$formComponent = (new Form())->setFormType(ExampleFormType::class);
-// $cwa->component($formComponent, 'main-cg-reference', 'example-form');
-// (Adjust the CwaFixtureBuilder API to match how other components are added)
-```
+- **Timestamp workaround:** `Form` uses `TimestampedTrait`. Until the `CwaFixtureBuilder::createPositions()` timestamp bug is fixed in the API bundle, `createdAt` and `modifiedAt` are set manually in the fixture before adding to the group.
 
-**Known issues and requirements when wiring the fixture:**
+- **`choices` shape and placeholders:** Symfony `ChoiceType` emits placeholder entries as `{ value: '', label: 'Choose…' }`. These are filtered in the template (`c.value !== ''`) and the label is passed as `:placeholder`. Always add `value-key="value"` and `label-key="label"` to all choice components — without them Nuxt UI binds the full `ChoiceView` object and Symfony rejects it with 422.
 
-- **Timestamp workaround:** `Form` uses `TimestampedTrait`. Until the `CwaFixtureBuilder::createPositions()` timestamp bug is fixed in the API bundle, set both fields manually before adding to the group:
-  ```php
-  $formComponent->createdAt = new \DateTimeImmutable();
-  $formComponent->modifiedAt = new \DateTime();
-  ```
+- **Checkbox v-model:** The template currently uses `checkbox.vars.value?.checked ?? false` as getter. This has a known snap-back issue — waiting for the module to expose `booleanValue` from `useCwaFormInput`. See module CLAUDE.md "Known Bug: Unchecked checkbox submits `""` instead of `null`".
 
-- **`choices` shape and placeholders:** Symfony `ChoiceType` emits placeholder entries as `{ value: '', label: 'Choose…' }`. The Nuxt module's `USelect`/`USelectMenu` bindings filter these out and use `vars.placeholder` instead. No fixture change needed — handled in the template component.
-
-- **`other_interests` field:** Verify that the `other_interests` field has at least one choice with a non-empty `value`. If all choices are empty strings the dropdown will appear blank after placeholder filtering.
-
-- **CollectionType fields (`children`, `text_children`):** `allow_add`, `allow_delete`, and `prototype` are already exposed by the API bundle. After the module fix (2026-06-20), `getForm()` now preserves `prototype` on the `FormView` entry alongside `vars`. The `useCwaFormCollection` reads `formEntry.prototype` (not `vars.prototype`). Buttons appear when `vars.allow_add` is truthy and `prototype` is defined.
-
-- **Checkbox v-model pattern:** Use an app-level computed: `get: () => !!checkbox.value.value`, `set: (v) => { checkbox.value.value = v ? '1' : null; checkbox.onInput() }`. A future `booleanValue` computed ref from `useCwaFormInput` will replace this boilerplate — not yet implemented.
-
-- **Checkbox label HTML:** The `randomCheckbox` label may contain HTML (e.g. `<b>bold</b>`). The template component renders it via `v-html` in a `#label` slot — intentional. The fixture label can safely include HTML markup.
+- **Checkbox label HTML:** The `randomCheckbox` label may contain HTML. The template renders it via `v-html` in a `#label` slot.
 
 ---
 
