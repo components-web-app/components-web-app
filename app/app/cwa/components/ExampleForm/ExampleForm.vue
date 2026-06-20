@@ -87,6 +87,8 @@
         v-model="subject.value.value"
         :items="(subject.vars.value?.choices || []).filter(c => c.value !== '')"
         :placeholder="subject.vars.value?.choices?.find(c => c.value === '')?.label || 'Please select'"
+        value-key="value"
+        label-key="label"
         class="w-full"
         @update:model-value="subject.onInput()"
         @blur="subject.onBlur"
@@ -131,17 +133,20 @@
       <URadioGroup
         v-model="developer.value.value"
         :items="developer.vars.value?.choices || []"
+        value-key="value"
+        label-key="label"
         @change="developer.onInput()"
       />
     </UFormField>
 
     <!-- randomCheckbox (CheckboxType) -->
     <UFormField :error="checkbox.displayErrors.value ? checkbox.errors.value[0] : undefined">
-      <UCheckbox
-        v-model="isChecked"
-        :label="checkbox.vars.value?.label || 'Check this box'"
-        @change="checkbox.onInput()"
-      />
+      <UCheckbox v-model="isChecked" @change="checkbox.onInput()">
+        <template #label>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <span v-html="checkbox.vars.value?.label || 'Check this box'" />
+        </template>
+      </UCheckbox>
     </UFormField>
 
     <!-- interests (ChoiceType — expanded, multiple = checkbox group) -->
@@ -153,6 +158,8 @@
       <UCheckboxGroup
         v-model="interests.value.value"
         :items="interests.vars.value?.choices || []"
+        value-key="value"
+        label-key="label"
         @change="interests.onInput()"
       />
     </UFormField>
@@ -167,6 +174,8 @@
         v-model="otherInterests.value.value"
         :items="otherInterests.vars.value?.choices || []"
         :multiple="true"
+        value-key="value"
+        label-key="label"
         class="w-full"
         @update:model-value="otherInterests.onInput()"
       />

@@ -1,25 +1,13 @@
 <template>
-  <div class="flex items-start gap-2">
-    <UFormField
-      class="flex-1"
-      :label="nameField.vars.value?.label"
-      :error="nameField.displayErrors.value ? nameField.errors.value[0] : undefined"
-    >
-      <UInput
-        v-model="nameField.value.value"
-        @blur="nameField.onBlur"
-        @input="nameField.onInput"
-      />
-    </UFormField>
-    <UButton
-      color="error"
-      variant="soft"
-      class="mt-6"
-      @click="$emit('remove')"
-    >
-      Remove
-    </UButton>
-  </div>
+  <UFormField
+    :label="nameField.vars.value?.label || 'Name'"
+    :error="nameField.displayErrors.value ? nameField.errors.value[0] : undefined"
+  >
+    <div class="flex items-center gap-2">
+      <UInput class="flex-1" v-model="nameField.value.value" @blur="nameField.onBlur" @input="nameField.onInput" />
+      <UButton color="error" variant="soft" icon="i-lucide-trash-2" @click.prevent="$emit('remove')" />
+    </div>
+  </UFormField>
 </template>
 
 <script setup lang="ts">
