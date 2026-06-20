@@ -29,11 +29,7 @@ class ChildType extends AbstractType
                 [
                     'label' => 'Child object text label',
                     'constraints' => [
-                        new NotBlank(
-                            [
-                                'message' => 'Please provide your name',
-                            ]
-                        ),
+                        new NotBlank(message: 'Please provide your name'),
                     ],
                 ]
             );
