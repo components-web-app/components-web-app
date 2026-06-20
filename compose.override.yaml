@@ -17,6 +17,7 @@ services:
       MERCURE_EXTRA_DIRECTIVES: demo # - CHECK WHETHER WE STILL NEED THIS PATH ARG (/srv/mercure-assets/)
       # See https://xdebug.org/docs/all_settings#mode
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+      RESET_DATABASE: "true"
       # CADDY_GLOBAL_CONFIG: "local_certs"
     extra_hosts:
       # Ensure that host.docker.internal is correctly defined on Linux
@@ -49,6 +50,13 @@ services:
         protocol: tcp
     links:
       - "php:php.local"
+
+  fixtures:
+    profiles: []
+    volumes:
+      - ./api:/app
+    environment:
+      APP_ENV: dev
 
 ###> doctrine/doctrine-bundle ###
   database:

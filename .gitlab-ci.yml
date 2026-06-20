@@ -136,6 +136,7 @@ review:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy review
+    - load_fixtures review
     - persist_environment_url
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -189,6 +190,7 @@ staging:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy staging
+    - load_fixtures staging
   environment:
     name: production
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN

@@ -358,6 +358,31 @@ persist_environment_url() {
 	echo $CI_ENVIRONMENT_URL > environment_url.txt
 }
 
+load_fixtures() {
+  if [[ "${LOAD_DATABASE_FIXTURES:-false}" != "true" ]]; then
+    echo "LOAD_DATABASE_FIXTURES is not true, skipping fixtures"
+    return 0
+  fi
+
+  local track="${1-stable}"
+  local release_name="$RELEASE"
+  if [[ "$track" != "stable" ]]; then
+    release_name="$release_name-$track"
+  fi
+
+  local deploy
+  deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
+    -o name | head -1)
+
+  echo "Waiting for PHP deployment to be ready..."
+  kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=300s
+
+  echo "Loading database fixtures..."
+  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
+    -- php bin/console doctrine:fixtures:load --no-interaction
+}
+
 function delete() {
 	track="${1-stable}"
 	name="$RELEASE"
