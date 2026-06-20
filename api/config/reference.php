@@ -1019,8 +1019,8 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * }
  * @psalm-type MercureConfig = array{
  *     hubs?: array<string, array{ // Default: []
- *         url?: scalar|Param|null, // URL of the hub's publish endpoint // Default: null
- *         public_url?: scalar|Param|null, // URL of the hub's public endpoint
+ *         url?: scalar|Param|null, // URL of the hub's publish endpoint
+ *         public_url?: scalar|Param|null, // URL of the hub's public endpoint // Default: null
  *         jwt?: string|array{ // JSON Web Token configuration.
  *             value?: scalar|Param|null, // JSON Web Token to use to publish to this hub.
  *             provider?: scalar|Param|null, // The ID of a service to call to provide the JSON Web Token.
@@ -1958,7 +1958,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *                 default_redirect_path?: scalar|Param|null,
  *                 subject?: scalar|Param|null, // Default: "Your password reset request"
  *             },
- *             repeat_ttl_seconds?: int|Param, // Default: 8600
+ *             repeat_ttl_seconds?: int|Param, // Default: 86400
  *             request_timeout_seconds?: int|Param, // Default: 3600
  *         },
  *         emails?: array{

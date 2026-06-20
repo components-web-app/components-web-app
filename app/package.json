@@ -11,11 +11,11 @@
     "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@0.0.0-29699354.b4ce80a",
-    "@nuxt/ui": "^4.8.2",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@0.0.0-29699768.08e95ef",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^2.0.0",
+    "@nuxt/ui": "^4.9.0",
     "@nuxtjs/sitemap": "^8.2.1",
     "@resvg/resvg-js": "^2.6.2",
     "@tiptap/core": "^3.27.1",

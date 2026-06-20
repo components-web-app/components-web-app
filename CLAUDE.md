@@ -150,6 +150,34 @@ $formComponent = (new Form())->setFormType(ExampleFormType::class);
 // (Adjust the CwaFixtureBuilder API to match how other components are added)
 ```
 
+**Known issues and requirements when wiring the fixture:**
+
+- **Timestamp workaround:** `Form` uses `TimestampedTrait`. Until the `CwaFixtureBuilder::createPositions()` timestamp bug is fixed in the API bundle, set both fields manually before adding to the group:
+  ```php
+  $formComponent->createdAt = new \DateTimeImmutable();
+  $formComponent->modifiedAt = new \DateTime();
+  ```
+
+- **`choices` shape and placeholders:** Symfony `ChoiceType` emits placeholder entries as `{ value: '', label: 'Choose…' }`. The Nuxt module's `USelect`/`USelectMenu` bindings filter these out and use `vars.placeholder` instead. No fixture change needed — handled in the template component.
+
+- **`other_interests` field:** Verify that the `other_interests` field has at least one choice with a non-empty `value`. If all choices are empty strings the dropdown will appear blank after placeholder filtering.
+
+- **CollectionType fields (`children`, `text_children`):** `allow_add`, `allow_delete`, and `prototype` are already exposed by the API bundle. After the module fix (2026-06-20), `getForm()` now preserves `prototype` on the `FormView` entry alongside `vars`. The `useCwaFormCollection` reads `formEntry.prototype` (not `vars.prototype`). Buttons appear when `vars.allow_add` is truthy and `prototype` is defined.
+
+- **Checkbox v-model pattern:** `useCwaFormInput` now initialises `value` from `vars.checked ? '1' : ''` when `block_prefixes` includes `'checkbox'`. The correct v-model pattern in the consuming template is:
+  ```ts
+  const isChecked = computed({
+    get: () => !!checkbox.value.value,   // reads local ref — immediate visual feedback
+    set: (v: boolean) => {
+      checkbox.value.value = v ? '1' : ''
+      checkbox.onInput()
+    },
+  })
+  ```
+  Do NOT use `checkbox.vars.value?.checked` as the getter — it reads from the Pinia store (async) and causes the checkbox to snap back visually until the PATCH response arrives. `Form.vue` needs updating to use this pattern.
+
+- **Checkbox label HTML:** The `randomCheckbox` label may contain HTML (e.g. `<b>bold</b>`). The template component renders it via `v-html` in a `#label` slot — intentional. The fixture label can safely include HTML markup.
+
 ---
 
 ### GitHub Actions CI/CD
