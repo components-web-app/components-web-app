@@ -52,10 +52,17 @@ export default defineNuxtConfig({
     },
     pageData: {
       BlogArticleData: {
-        name: 'Blog Articles'
+        name: 'Blog Articles',
+        properties: {
+          image: 'Hero Image',
+          htmlContent: 'Article Body'
+        }
       },
       NestedPageData: {
-        name: 'Nested Topics'
+        name: 'Nested Topics',
+        properties: {
+          introContent: 'Introduction Content'
+        }
       }
     },
     siteConfig: {
