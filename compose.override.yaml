@@ -52,7 +52,6 @@ services:
       - "php:php.local"
 
   fixtures:
-    profiles: []
     volumes:
       - ./api:/app
     environment:
