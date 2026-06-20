@@ -363,12 +363,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "e1334f5fff4bf8aaf7d8ff9f9fbd16004bade85c"
+                "reference": "1eb30f2bbf1ca1734616cb1772c166eb624d6658"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/e1334f5fff4bf8aaf7d8ff9f9fbd16004bade85c",
-                "reference": "e1334f5fff4bf8aaf7d8ff9f9fbd16004bade85c",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/1eb30f2bbf1ca1734616cb1772c166eb624d6658",
+                "reference": "1eb30f2bbf1ca1734616cb1772c166eb624d6658",
                 "shasum": ""
             },
             "require": {
@@ -432,6 +432,7 @@
                 "friends-of-behat/mink-extension": "^2.7",
                 "friends-of-behat/symfony-extension": "^2.4",
                 "friendsofphp/php-cs-fixer": "^v3",
+                "infection/infection": "^0.31.1",
                 "justinrainbow/json-schema": "^5.4",
                 "league/flysystem": "^3.11",
                 "league/flysystem-memory": "^3.0.0",
@@ -490,7 +491,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2026-06-20T01:33:27+00:00"
+            "time": "2026-06-20T09:01:45+00:00"
         },
         {
             "name": "composer/semver",
