@@ -75,6 +75,9 @@
     </UFormField>
 
     <!-- subject (ChoiceType — collapsed select) -->
+    <!-- Nuxt UI USelect forbids empty-string values (reserved for clearing selection). -->
+    <!-- The Symfony placeholder choice ('Please select' => '') is stripped from items -->
+    <!-- and passed as the :placeholder prop instead.                                  -->
     <UFormField
       :label="subject.vars.value?.label || 'Regarding'"
       :error="subject.displayErrors.value ? subject.errors.value[0] : undefined"
@@ -82,7 +85,8 @@
     >
       <USelect
         v-model="subject.value.value"
-        :items="subject.vars.value?.choices || []"
+        :items="(subject.vars.value?.choices || []).filter(c => c.value !== '')"
+        :placeholder="subject.vars.value?.choices?.find(c => c.value === '')?.label || 'Please select'"
         class="w-full"
         @update:model-value="subject.onInput()"
         @blur="subject.onBlur"
