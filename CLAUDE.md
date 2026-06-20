@@ -12,49 +12,148 @@ Any change made to this template application must be reflected in the docs proje
 
 ## Planned Features
 
+### Project Installer / Scaffolder CLI
+
+Rather than maintaining a separate skeleton branch, the plan is to build a `create-cwa-app` CLI installer that scaffolds a new CWA project interactively. This is a better long-term approach because it keeps `main` as the single source of truth and eliminates branch drift.
+
+**What it would do:**
+- Prompt: GitLab CI or GitHub Actions?
+- Prompt: which components to include? (nav, forms, blog, collections, etc.)
+- Output a ready-to-run project with only what was selected
+
+**Minimal skeleton component (for installer default):**
+- One custom entity with a single plain `text: string` field (e.g. `TextBlock`) — no rich-text editor dependencies, no opinionated UI libraries
+- One page template (`PrimaryPageTemplate`) with a single component group
+- One fixture that creates the page and adds a `TextBlock` to it
+- No `HtmlContent`, `Image`, `BlogArticleData`, `NestedPageData`, `NavigationLink`, or collection components in the default output
+
+**Dependency philosophy:** The skeleton/default output should have minimal, unopinionated dependencies. `HtmlContent` is excluded from the default because it requires a rich-text editor (Tiptap etc.) which is an opinionated choice.
+
+**GitHub issue:** [#56](https://github.com/components-web-app/components-web-app/issues/56)
+
+**Docs:** The docs will need a new "Install" section documenting the CLI and the available prompts. Flag to docs CLAUDE.md when this is implemented.
+
+---
+
 ### Form Composables Demo Component (#172)
 
-The `@cwa/nuxt` module now ships `useCwaFormInput`, `useCwaForm`, and `useCwaFormRepeated` (composables-only; no built-in input components). A playground demo component is being built at `playground/app/cwa/components/ContactForm/ContactForm.vue`. Once the playground component is complete, the template should get a matching `app/cwa/components/ContactForm/ContactForm.vue` so users have a working example of forms out of the box.
+The `@cwa/nuxt` module ships four form composables. The playground demo is at `playground/app/cwa/components/Form/Form.vue` in the module repo. Mirror it here so new projects start with a working example.
 
-**How the composables work (brief for template implementation):**
+**Files to create/update:**
 
+1. **`app/cwa/components/Form/Form.vue`** — the main CWA component using `ExampleFormType` field names. Replace the current stub.
+
+2. **`app/components/FormChildEntry.vue`** — sub-component for compound `ChildType` collection entries (one `name` sub-field). Called via `v-for` over `children.entries.value`. Calls `useCwaFormInput(iriRef, entryFullName + '[name]')`.
+
+3. **`app/components/FormTextEntry.vue`** — sub-component for simple `TextType` collection entries. Calls `useCwaFormInput(iriRef, entryFullName)`.
+
+**Also install `@nuxt/ui` and add `<UApp>` to `app/app.vue`.**
+
+**Composable quick reference:**
+
+| Composable | Use for |
+|---|---|
+| `useCwaFormInput(iri, fullName)` | Any single field |
+| `useCwaFormRepeated(iri, fullName)` | Symfony `RepeatedType` — returns `{ first, second }` |
+| `useCwaFormCollection(iri, fullName)` | Symfony `CollectionType` — returns `{ entries, addEntry, removeEntry, vars }` |
+| `useCwaForm(iri)` | Form lifecycle — returns `{ submit, submitting, success, formErrors, unregisteredFieldErrors }` |
+
+**Key implementation rules:**
+- `field.value.value` = reactive field value → bind with `v-model="field.value.value"`
+- `field.vars.value?.choices` = Symfony ChoiceView array `[{ value, label }]` → pass as `:items` to `USelect` / `URadioGroup` / `UCheckboxGroup` / `USelectMenu`
+- `field.displayErrors.value` gates when to show `field.errors.value[0]` — triggered by blur, having-been-valid, or submit attempt
+- `form.formErrors.value` = root-level Symfony errors
+- `form.unregisteredFieldErrors.value` = API errors for fields not bound to any `useCwaFormInput` — show in a fallback block, never alongside registered field errors
+- **CheckboxType quirk**: `vars.value` is always `'1'`; use `vars.checked` for initial boolean state; use a computed to map `true ↔ '1'` and `false ↔ ''`
+
+**Nuxt UI event bindings:**
+- `UInput` / `UTextarea`: `@blur="field.onBlur"` + `@input="field.onInput"`
+- `USelect`: `@update:model-value="field.onInput()"`
+- `URadioGroup` / `UCheckboxGroup`: `@change="field.onInput()"`
+- `USelectMenu :multiple`: `@update:model-value="field.onInput()"`
+
+**Error display pattern:**
 ```vue
+<UAlert v-if="form.success.value" color="success" title="Submitted!" />
+<template v-else-if="form.formErrors.value.length || form.unregisteredFieldErrors.value.length">
+  <UAlert v-if="form.formErrors.value.length" color="error" :description="form.formErrors.value[0]" />
+  <UAlert v-if="form.unregisteredFieldErrors.value.length" color="error"
+    title="Additional errors" :description="form.unregisteredFieldErrors.value.join(' · ')" />
+</template>
+
+<!-- Per-field (for each registered field): -->
+<UFormField :error="field.displayErrors.value ? field.errors.value[0] : undefined">
+  <UInput v-model="field.value.value" @blur="field.onBlur" @input="field.onInput" />
+</UFormField>
+```
+
+**Collection entry child component pattern:**
+```vue
+<!-- FormChildEntry.vue — for compound ChildType entries -->
 <script setup lang="ts">
-const props = defineProps<IriProp>()
-const { getResource, exposeMeta } = useCwaResource(toRef(props, 'iri'))
-defineExpose(exposeMeta)
-
-const form = useCwaForm(toRef(props, 'iri'))
-const name = useCwaFormInput(toRef(props, 'iri'), 'contact_form[name]')
-const email = useCwaFormInput(toRef(props, 'iri'), 'contact_form[email]')
-const message = useCwaFormInput(toRef(props, 'iri'), 'contact_form[message]')
+const props = defineProps<{ iri: string | undefined; entryFullName: string }>()
+defineEmits<{ remove: [] }>()
+const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[name]`)
 </script>
-
 <template>
-  <form @submit.prevent="form.submit()">
-    <label>{{ name.vars.value?.label }}</label>
-    <input v-model="name.value.value" @blur="name.onBlur" @input="name.onInput" />
-    <p v-if="name.displayErrors.value">{{ name.errors.value[0] }}</p>
-    <button type="submit" :disabled="form.submitting.value">Send</button>
-    <p v-if="form.success.value">Thank you!</p>
-    <p v-if="form.formErrors.value.length">{{ form.formErrors.value[0] }}</p>
-  </form>
+  <div class="flex gap-2">
+    <UFormField :error="nameField.displayErrors.value ? nameField.errors.value[0] : undefined">
+      <UInput v-model="nameField.value.value" @blur="nameField.onBlur" @input="nameField.onInput" />
+    </UFormField>
+    <UButton color="error" variant="soft" @click="$emit('remove')">Remove</UButton>
+  </div>
 </template>
 ```
 
-For a `RepeatedType` field (e.g. new password + confirm):
-```ts
-const password = useCwaFormRepeated(toRef(props, 'iri'), 'reset_password[password]')
-// password.first and password.second each have: value, vars, errors, displayErrors, onBlur, onInput
+**Parent iterates entries and manages collection:**
+```vue
+<FormChildEntry
+  v-for="entry in children.entries.value"
+  :key="entry"
+  :iri="props.iri"
+  :entry-full-name="entry"
+  @remove="children.removeEntry(entry)"
+/>
+<UButton v-if="children.vars.value?.allow_add" @click.prevent="children.addEntry()">
+  Add Child
+</UButton>
 ```
 
-**Key rules:**
-- `value.value` is the field's local reactive value (bind to `v-model`)
-- `onBlur` / `onInput` trigger validation; `displayErrors` gates when errors are shown
-- POST forms: realtime per-field validation is disabled; errors only appear on submit
-- PATCH forms: each field PATCHes on blur/input; errors show progressively
-- `form.formErrors` reads root-level form errors reactively from the store
+---
+
+### API Fixture: ExampleFormType scaffold
+
+`AppScaffold.php` currently has no `Form` component. Add one wired to `ExampleFormType` so the demo page shows the full form.
+
+**`ExampleFormType` covers every Symfony form field type:**
+- `TextType` — plain text, no validation
+- `RepeatedType` + `PasswordType` — password + confirm (use `useCwaFormRepeated`)
+- `ChoiceType` (select, not expanded) — "Regarding" subject dropdown
+- `EmailType` — email with NotBlank + Email constraints
+- `TextareaType` — message with NotBlank constraint
+- `ChoiceType` (expanded, single = radio) — yes/no developer question
+- `CheckboxType` — single boolean checkbox with NotBlank
+- `ChoiceType` (expanded, multiple = checkbox group) — food interests
+- `ChoiceType` (not expanded, multiple = multi-select) — other interests
+- `CollectionType` + `ChildType` (compound — `name` sub-field) — use `useCwaFormCollection` with `FormChildEntry`
+- `CollectionType` + `TextType` (simple text entries) — use `useCwaFormCollection` with `FormTextEntry`
+- `SubmitType` — handled by `useCwaForm.submit()`, no composable needed
+
+**Fixture snippet (add to `AppScaffold.php`):**
+```php
+use App\Form\ExampleFormType;
+use Silverback\ApiComponentsBundle\Entity\Component\Form;
+
+// In load() — add Form component to an existing page's main component group:
+$formComponent = (new Form())->setFormType(ExampleFormType::class);
+// $cwa->component($formComponent, 'main-cg-reference', 'example-form');
+// (Adjust the CwaFixtureBuilder API to match how other components are added)
+```
+
+---
 
 ### GitHub Actions CI/CD
 
 The template currently ships GitLab CI only (`.gitlab-ci.yml`). GitHub Actions support is planned. The shell functions in `bin/devops/` are the reusable CI primitives — a GitHub Actions implementation would write workflow YAML files (`.github/workflows/`) that call the same functions. This would allow teams on GitHub to get the same build/test/deploy pipeline without rewriting the logic.
+
+**GitHub issue:** [#55](https://github.com/components-web-app/components-web-app/issues/55)
