@@ -45,6 +45,11 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 			echo "* The database is now ready and reachable"
 		fi
 
+		if [ "${RESET_DATABASE:-false}" = "true" ]; then
+			echo "* RESET_DATABASE=true: dropping schema before migrations..."
+			php bin/console doctrine:schema:drop --force --full-database
+		fi
+
 		if [ "$( find ./migrations -iname '*.php' -print -quit )" ]; then
 			php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
 		fi
