@@ -233,6 +233,8 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import FormChildEntry from './FormChildEntry.vue'
+import FormTextEntry from './FormTextEntry.vue'
 
 const props = defineProps<IriProp>()
 const iriRef = toRef(props, 'iri')

@@ -28,7 +28,7 @@ export default defineNuxtConfig({
       Image: {
         instantAdd: true
       },
-      Form: {
+      ExampleForm: {
         name: 'Example Form',
         description: '<p>Demonstrates all Symfony form field types using the CWA form composables.</p>'
       }

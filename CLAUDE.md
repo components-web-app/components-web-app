@@ -37,15 +37,17 @@ Rather than maintaining a separate skeleton branch, the plan is to build a `crea
 
 ### Form Composables Demo Component (#172)
 
-The `@cwa/nuxt` module ships four form composables. The playground demo is at `playground/app/cwa/components/Form/Form.vue` in the module repo. Mirror it here so new projects start with a working example.
+The `@cwa/nuxt` module ships four form composables. The playground demo is at `playground/app/cwa/components/ExampleForm/ExampleForm.vue` in the module repo. Mirror it here so new projects start with a working example.
+
+> **Naming**: The component directory was renamed from `Form/` → `ExampleForm/` to avoid IDE confusion between the `Form` Vue component and the native `<form>` HTML element. Use `ExampleForm` throughout.
 
 **Files to create/update:**
 
-1. **`app/cwa/components/Form/Form.vue`** — the main CWA component using `ExampleFormType` field names. Replace the current stub.
+1. **`app/cwa/components/ExampleForm/ExampleForm.vue`** — the main CWA component (auto-imported as `CwaComponentExampleForm`) using `ExampleFormType` field names. Replace any current stub.
 
-2. **`app/components/FormChildEntry.vue`** — sub-component for compound `ChildType` collection entries (one `name` sub-field). Called via `v-for` over `children.entries.value`. Calls `useCwaFormInput(iriRef, entryFullName + '[name]')`.
+2. **`app/cwa/components/ExampleForm/FormChildEntry.vue`** — sub-component for compound `ChildType` collection entries (one `name` sub-field). Called via `v-for` over `children.entries.value`. Calls `useCwaFormInput(toRef(props, 'iri'), entryFullName + '[name]')`. Import it directly in `ExampleForm.vue` (it is not itself a CWA component): `import FormChildEntry from './FormChildEntry.vue'`.
 
-3. **`app/components/FormTextEntry.vue`** — sub-component for simple `TextType` collection entries. Calls `useCwaFormInput(iriRef, entryFullName)`.
+3. **`app/cwa/components/ExampleForm/FormTextEntry.vue`** — sub-component for simple `TextType` collection entries. Calls `useCwaFormInput(toRef(props, 'iri'), entryFullName)`. Import directly: `import FormTextEntry from './FormTextEntry.vue'`.
 
 **Also install `@nuxt/ui` and add `<UApp>` to `app/app.vue`.**
 
@@ -64,7 +66,9 @@ The `@cwa/nuxt` module ships four form composables. The playground demo is at `p
 - `field.displayErrors.value` gates when to show `field.errors.value[0]` — triggered by blur, having-been-valid, or submit attempt
 - `form.formErrors.value` = root-level Symfony errors
 - `form.unregisteredFieldErrors.value` = API errors for fields not bound to any `useCwaFormInput` — show in a fallback block, never alongside registered field errors
-- **CheckboxType quirk**: `vars.value` is always `'1'`; use `vars.checked` for initial boolean state; use a computed to map `true ↔ '1'` and `false ↔ ''`
+- **CheckboxType pattern**: `useCwaFormInput` initialises `value` as `'1'` (checked) or `null` (unchecked), derived from `vars.checked`. Bind to an app-level computed: `get: () => !!checkbox.value.value`, `set: (v) => { checkbox.value.value = v ? '1' : null; checkbox.onInput() }`. Do NOT read `vars.value?.checked` — that snaps back before the PATCH returns. Sending `null` for unchecked is required: Symfony's `BooleanToStringTransformer` only treats `null` as `false`; `""` is silently treated as `true`.
+- **ChoiceType (expanded, single = radio group)**: children in the `formView` tree share the same `full_name` as the parent. `useCwaFormInput` reads from the parent entry (which has `choices`, `label`). Use `vars.value?.choices` as `:items` for `URadioGroup`.
+- **ChoiceType (not-expanded, multiple = multi-select)**: Symfony appends `[]` to `full_name` (e.g. `example_form[other_interests][]`). The module normalises this — use the key WITHOUT `[]` when calling `useCwaFormInput` (e.g. `'example_form[other_interests]'`).
 
 **Nuxt UI event bindings:**
 - `UInput` / `UTextarea`: `@blur="field.onBlur"` + `@input="field.onInput"`
@@ -89,9 +93,9 @@ The `@cwa/nuxt` module ships four form composables. The playground demo is at `p
 
 **Collection entry child component pattern:**
 ```vue
-<!-- FormChildEntry.vue — for compound ChildType entries -->
+<!-- FormChildEntry.vue — for compound ChildType entries; import directly, not a CWA component -->
 <script setup lang="ts">
-const props = defineProps<{ iri: string | undefined; entryFullName: string }>()
+const props = defineProps<{ iri: string; entryFullName: string }>()
 defineEmits<{ remove: [] }>()
 const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[name]`)
 </script>
@@ -164,17 +168,7 @@ $formComponent = (new Form())->setFormType(ExampleFormType::class);
 
 - **CollectionType fields (`children`, `text_children`):** `allow_add`, `allow_delete`, and `prototype` are already exposed by the API bundle. After the module fix (2026-06-20), `getForm()` now preserves `prototype` on the `FormView` entry alongside `vars`. The `useCwaFormCollection` reads `formEntry.prototype` (not `vars.prototype`). Buttons appear when `vars.allow_add` is truthy and `prototype` is defined.
 
-- **Checkbox v-model pattern:** `useCwaFormInput` now initialises `value` from `vars.checked ? '1' : ''` when `block_prefixes` includes `'checkbox'`. The correct v-model pattern in the consuming template is:
-  ```ts
-  const isChecked = computed({
-    get: () => !!checkbox.value.value,   // reads local ref — immediate visual feedback
-    set: (v: boolean) => {
-      checkbox.value.value = v ? '1' : ''
-      checkbox.onInput()
-    },
-  })
-  ```
-  Do NOT use `checkbox.vars.value?.checked` as the getter — it reads from the Pinia store (async) and causes the checkbox to snap back visually until the PATCH response arrives. `Form.vue` needs updating to use this pattern.
+- **Checkbox v-model pattern:** Use an app-level computed: `get: () => !!checkbox.value.value`, `set: (v) => { checkbox.value.value = v ? '1' : null; checkbox.onInput() }`. A future `booleanValue` computed ref from `useCwaFormInput` will replace this boilerplate — not yet implemented.
 
 - **Checkbox label HTML:** The `randomCheckbox` label may contain HTML (e.g. `<b>bold</b>`). The template component renders it via `v-html` in a `#label` slot — intentional. The fixture label can safely include HTML markup.
 

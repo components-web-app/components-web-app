@@ -18,6 +18,7 @@ use Symfony\Component\Validator\Constraints\All;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\IsTrue;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 class ExampleFormType extends AbstractType
@@ -129,7 +130,7 @@ class ExampleFormType extends AbstractType
                     'label' => 'To check or not to check? <b>That</b> is a question',
                     'required' => true,
                     'constraints' => [
-                        new NotBlank(message: "The correct answer to the question is to check, it is required"),
+                        new IsTrue(message: "The correct answer to the question is to check, it is required"),
                     ]
                 ]
             )
