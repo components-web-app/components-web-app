@@ -1,5 +1,6 @@
 overrides:
   tar-fs: '>=3.0.7'
+  ws: '>=8.21.0'
 auditConfig:
   ignoreCves: []
 shamefullyHoist: true
