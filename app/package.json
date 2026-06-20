@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@cwa/nuxt": "npm:@cwa/nuxt-edge@0.0.0-29699354.b4ce80a",
+    "@nuxt/ui": "^4.8.2",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^2.0.0",

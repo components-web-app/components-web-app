@@ -27,6 +27,10 @@ export default defineNuxtConfig({
       },
       Image: {
         instantAdd: true
+      },
+      Form: {
+        name: 'Example Form',
+        description: '<p>Demonstrates all Symfony form field types using the CWA form composables.</p>'
       }
     },
     layouts: {
@@ -77,6 +81,7 @@ export default defineNuxtConfig({
     './node_modules/@cwa/nuxt/dist/layer'
   ],
   modules: [
+    '@nuxt/ui',
     '@nuxt/image',
     '@vite-pwa/nuxt',
     'nuxt-svgo'

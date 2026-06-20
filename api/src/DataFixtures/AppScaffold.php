@@ -12,8 +12,10 @@ use App\Entity\HtmlContent;
 use App\Entity\Image;
 use App\Entity\NavigationLink;
 use App\Entity\NestedPageData;
-use Silverback\ApiComponentsBundle\Fixture\Placeholder\HtmlContentPlaceholder;
+use App\Form\ExampleFormType;
 use Silverback\ApiComponentsBundle\Entity\Component\Collection;
+use Silverback\ApiComponentsBundle\Entity\Component\Form;
+use Silverback\ApiComponentsBundle\Fixture\Placeholder\HtmlContentPlaceholder;
 use Silverback\ApiComponentsBundle\Fixture\AbstractCwaScaffold;
 use Silverback\ApiComponentsBundle\Fixture\Builder\PageBuilder;
 use Silverback\ApiComponentsBundle\Fixture\CwaFixtureBuilder;
@@ -36,6 +38,7 @@ class AppScaffold extends AbstractCwaScaffold
         $this->addHomePage($cwa);
         $this->addBlogPages($cwa);
         $this->addNestedTopicPages($cwa);
+        $this->addFormPage($cwa);
 
         $cwa->flush();
 
@@ -54,7 +57,12 @@ class AppScaffold extends AbstractCwaScaffold
         $topic1Link->route = $cwa->getRoute('topic-1');
         $topic1Link->setPublishedAt(new \DateTime());
 
-        $navGroup->add($homeLink)->add($blogLink)->add($topic1Link);
+        $formLink = new NavigationLink();
+        $formLink->label = 'Form Demo';
+        $formLink->route = $cwa->getRoute('form-page');
+        $formLink->setPublishedAt(new \DateTime());
+
+        $navGroup->add($homeLink)->add($blogLink)->add($topic1Link)->add($formLink);
     }
 
     private function addHomePage(CwaFixtureBuilder $cwa): void
@@ -198,5 +206,18 @@ class AppScaffold extends AbstractCwaScaffold
                 $links
             );
         });
+    }
+
+    private function addFormPage(CwaFixtureBuilder $cwa): void
+    {
+        $formComponent = new Form();
+        $formComponent->formType = ExampleFormType::class;
+
+        $cwa->page('form', 'PrimaryPageTemplate', layout: 'main', route: '/form', routeName: 'form-page',
+            configure: function (PageBuilder $p) use ($formComponent) {
+                $p->title('Form Demo')->metaDescription('A demo form showing all Symfony form field types with CWA form composables');
+                $p->group('primary')->add($formComponent);
+            }
+        );
     }
 }
