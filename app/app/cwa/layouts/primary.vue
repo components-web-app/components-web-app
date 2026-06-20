@@ -1,5 +1,4 @@
 <template>
-  <VitePwaManifest />
   <div :class="['relative', 'grow', 'flex', 'flex-col', ...($cwa.resources.layout?.value?.data?.uiClassNames || [])]">
     <CwaUiProgressBar
       :show="showPageLoadBar"
@@ -60,8 +59,6 @@
           <CwaLink
             to="https://silverbackwebapps.com"
             target="_blank"
-            :no-prefetch="undefined"
-            :prefetch="false"
           >
             site by Silverback Web Apps
           </CwaLink>

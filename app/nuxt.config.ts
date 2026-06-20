@@ -9,7 +9,8 @@ export default defineNuxtConfig({
         lang: 'en-GB',
         class: 'bg-black'
       }
-    }
+    },
+    pageTransition: { name: 'page', mode: 'out-in' },
   },
   css: [
     '~/assets/css/tailwind.css',
