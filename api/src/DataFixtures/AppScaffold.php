@@ -12,7 +12,7 @@ use App\Entity\HtmlContent;
 use App\Entity\Image;
 use App\Entity\NavigationLink;
 use App\Entity\NestedPageData;
-use App\PlaceholderProvider\CwaPlaceholderProvider;
+use Silverback\ApiComponentsBundle\Fixture\Placeholder\HtmlContentPlaceholder;
 use Silverback\ApiComponentsBundle\Entity\Component\Collection;
 use Silverback\ApiComponentsBundle\Fixture\AbstractCwaScaffold;
 use Silverback\ApiComponentsBundle\Fixture\Builder\PageBuilder;
@@ -22,7 +22,7 @@ class AppScaffold extends AbstractCwaScaffold
 {
     public function __construct(
         CwaFixtureBuilder $cwa,
-        private readonly CwaPlaceholderProvider $placeholderProvider,
+        private readonly HtmlContentPlaceholder $placeholderProvider,
         private readonly IriConverterInterface $iriConverter,
     ) {
         parent::__construct($cwa);
@@ -64,14 +64,14 @@ class AppScaffold extends AbstractCwaScaffold
             'paragraphs' => 2,
             'includeHeadings' => true,
             'includeLinks' => true,
-            'paragraphLength' => CwaPlaceholderProvider::LENGTH_SHORT,
+            'paragraphLength' => HtmlContentPlaceholder::LENGTH_SHORT,
         ]);
         $htmlContent->setPublishedAt(new \DateTime());
 
         $htmlContentDraft = new HtmlContent();
         $htmlContentDraft->html = $this->placeholderProvider->generate([
             'paragraphs' => 1,
-            'paragraphLength' => CwaPlaceholderProvider::LENGTH_MEDIUM,
+            'paragraphLength' => HtmlContentPlaceholder::LENGTH_MEDIUM,
         ]);
         $htmlContentDraft->setPublishedResource($htmlContent);
 
@@ -79,7 +79,7 @@ class AppScaffold extends AbstractCwaScaffold
         $htmlContentBottom->html = $this->placeholderProvider->generate([
             'paragraphs' => 1,
             'includeLinks' => true,
-            'paragraphLength' => CwaPlaceholderProvider::LENGTH_MEDIUM,
+            'paragraphLength' => HtmlContentPlaceholder::LENGTH_MEDIUM,
         ]);
         $htmlContentBottom->setPublishedAt(new \DateTime());
 
@@ -127,7 +127,7 @@ class AppScaffold extends AbstractCwaScaffold
             $htmlContent->html = $this->placeholderProvider->generate([
                 'paragraphs' => 2,
                 'includeHeadings' => true,
-                'paragraphLength' => CwaPlaceholderProvider::LENGTH_SHORT,
+                'paragraphLength' => HtmlContentPlaceholder::LENGTH_SHORT,
             ]);
             $htmlContent->setPublishedAt(new \DateTime());
 
