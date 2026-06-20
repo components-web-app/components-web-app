@@ -1906,6 +1906,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     metadata_key?: scalar|Param|null, // Default: "_metadata"
  *     mercure?: array{
  *         hub_name?: scalar|Param|null, // Default: null
+ *         secure_subscriptions?: bool|Param, // When true, subscriber JWT tokens only include topics for resources the current user can access. Requires class-level security expressions (i.e. no "object" variable) on API operations to be evaluated at subscription time. // Default: false
  *         cookie?: array{
  *             samesite?: scalar|Param|null, // Default: "strict"
  *         },

@@ -117,8 +117,8 @@ class AppScaffold extends AbstractCwaScaffold
         $cwa->page('blog-template', 'PrimaryPageTemplate', layout: 'main', isTemplate: true,
             configure: function (PageBuilder $p) {
                 $p->group('primary')
-                    ->pageDataPosition('image')
-                    ->pageDataPosition('htmlContent');
+                    ->pageDataPosition(BlogArticleData::class, 'image')
+                    ->pageDataPosition(BlogArticleData::class, 'htmlContent');
             }
         );
 
@@ -146,7 +146,7 @@ class AppScaffold extends AbstractCwaScaffold
     {
         $cwa->page('nested-topic-template', 'NestedTopicTemplate', layout: 'main', isTemplate: true,
             configure: function (PageBuilder $p) {
-                $p->group('primary')->pageDataPosition('introContent');
+                $p->group('primary')->pageDataPosition(NestedPageData::class, 'introContent');
             }
         );
 
