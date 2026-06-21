@@ -6,6 +6,7 @@ namespace App\Resources\config;
 
 use App\DataFixtures\UsersFixture;
 use App\Flysystem\GoogleCloudStorageFactory;
+use App\Mercure\SkipAwareMercureHub;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
@@ -104,6 +105,11 @@ return static function (ContainerConfigurator $configurator) {
             ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
     }
 
+
+    $services
+        ->set(SkipAwareMercureHub::class)
+        ->decorate('mercure.hub.default')
+        ->args([service('.inner')]);
 
     $envServicesFile = sprintf('services_%s.php', $configurator->env());
     $configurator->import($envServicesFile, null, 'not_found');

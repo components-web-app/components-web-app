@@ -381,7 +381,7 @@ load_fixtures() {
 
   echo "Loading database fixtures..."
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
-    -- php bin/console doctrine:fixtures:load --no-interaction
+    -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load --no-interaction
 }
 
 function delete() {
