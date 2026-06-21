@@ -109,7 +109,7 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->set(SkipAwareMercureHub::class)
         ->decorate('mercure.hub.default')
-        ->args([service('.inner')]);
+        ->args([new Reference(SkipAwareMercureHub::class . '.inner')]);
 
     $envServicesFile = sprintf('services_%s.php', $configurator->env());
     $configurator->import($envServicesFile, null, 'not_found');
