@@ -1,0 +1,30 @@
+name: Performance
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment_url:
+        description: 'URL to test (leave empty to use production URL)'
+        required: false
+        type: string
+
+jobs:
+  performance:
+    name: Performance Test
+    runs-on: ubuntu-latest
+    if: vars.PERFORMANCE_DISABLED != 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run performance tests
+        env:
+          CI_ENVIRONMENT_URL: ${{ inputs.environment_url || format('https://{0}', vars.KUBE_INGRESS_BASE_DOMAIN) }}
+        run: |
+          source ./bin/devops/performance.sh
+          performance
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-results
+          path: |
+            performance.json
+            sitespeed-results/

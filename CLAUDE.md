@@ -213,8 +213,23 @@ const nameField = useCwaFormInput(toRef(props, 'iri'), `${props.entryFullName}[n
 
 ---
 
-### GitHub Actions CI/CD
+### GitHub Actions CI/CD ✅
 
-The template currently ships GitLab CI only (`.gitlab-ci.yml`). GitHub Actions support is planned. The shell functions in `bin/devops/` are the reusable CI primitives — a GitHub Actions implementation would write workflow YAML files (`.github/workflows/`) that call the same functions. This would allow teams on GitHub to get the same build/test/deploy pipeline without rewriting the logic.
+Four workflow files have been added to `.github/workflows/`, each calling the same `bin/devops/` shell functions as the GitLab CI:
+
+| File | Trigger | Purpose |
+|---|---|---|
+| `ci.yml` | Push to any branch | Build API + app images, PHPUnit, Behat, deploy review (non-main) or staging (main) |
+| `production.yml` | Manual (`workflow_dispatch`) | Canary or full production deploy via action dropdown |
+| `cleanup.yml` | PR closed | Tears down the review environment |
+| `performance.yml` | Manual (`workflow_dispatch`) | Sitespeed performance test against any URL |
+
+Images are pushed to GHCR (`ghcr.io/<repo>`). `install_dependencies` (Alpine/`apk`) is skipped in favour of `azure/setup-kubectl` and `azure/setup-helm` actions. All other `bin/devops/k8s.sh` functions are called directly.
+
+**Required secrets:** `KUBECONFIG`, `KUBE_CONTEXT`, `KUBE_NAMESPACE_PRODUCTION`, `JWT_PASSPHRASE`, `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `MERCURE_JWT_SECRET`, `DATABASE_URL`, `ADMIN_PASSWORD`
+
+**Required variables (`vars.`):** `KUBE_INGRESS_BASE_DOMAIN`, `RELEASE_PRODUCTION`, `CORS_ALLOW_ORIGIN`, `TRUSTED_HOSTS`, `ADMIN_USERNAME`, `ADMIN_EMAIL`, `LOAD_DATABASE_FIXTURES`
+
+**Optional flags (`vars.`):** `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `PERFORMANCE_DISABLED`, `KUBERNETES_VERSION`, `HELM_VERSION`
 
 **GitHub issue:** [#55](https://github.com/components-web-app/components-web-app/issues/55)

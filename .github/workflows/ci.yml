@@ -1,0 +1,279 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      ref_slug: ${{ steps.vars.outputs.ref_slug }}
+      env_slug: ${{ steps.vars.outputs.env_slug }}
+    steps:
+      - name: Compute CI variables
+        id: vars
+        run: |
+          REF_SLUG=$(echo "${{ github.ref_name }}" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
+          echo "ref_slug=$REF_SLUG" >> "$GITHUB_OUTPUT"
+          echo "env_slug=review-${REF_SLUG}" >> "$GITHUB_OUTPUT"
+
+  build-api:
+    name: Build API
+    runs-on: ubuntu-latest
+    needs: setup
+    if: vars.BUILD_DISABLED != 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push API image
+        env:
+          CI_REGISTRY: ghcr.io
+          CI_REGISTRY_USER: ${{ github.actor }}
+          CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+          CI_COMMIT_REF_SLUG: ${{ needs.setup.outputs.ref_slug }}
+          CI_COMMIT_SHA: ${{ github.sha }}
+          CI_COMMIT_REF_NAME: ${{ github.ref_name }}
+          KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          build_api
+
+  build-app:
+    name: Build App
+    runs-on: ubuntu-latest
+    needs: setup
+    if: vars.BUILD_DISABLED != 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push app image
+        env:
+          CI_REGISTRY: ghcr.io
+          CI_REGISTRY_USER: ${{ github.actor }}
+          CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+          CI_COMMIT_REF_SLUG: ${{ needs.setup.outputs.ref_slug }}
+          CI_COMMIT_SHA: ${{ github.sha }}
+          CI_COMMIT_REF_NAME: ${{ github.ref_name }}
+          KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          build_app
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [setup, build-api]
+    if: always() && vars.TEST_DISABLED != 'true' && needs.build-api.result != 'failure'
+    container:
+      image: ghcr.io/${{ github.repository }}/php:${{ needs.setup.outputs.ref_slug }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run PHPUnit
+        run: |
+          source ./bin/devops/k8s.sh
+          run_test_phpunit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phpunit-results
+          path: api/build/logs/phpunit/junit.xml
+
+  behat-tests:
+    name: Behat Tests
+    runs-on: ubuntu-latest
+    needs: [setup, build-api]
+    if: always() && vars.TEST_DISABLED != 'true' && needs.build-api.result != 'failure'
+    container:
+      image: ghcr.io/${{ github.repository }}/php:${{ needs.setup.outputs.ref_slug }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: runner
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      POSTGRES_USER: runner
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Behat
+        run: |
+          source ./bin/devops/k8s.sh
+          setup_test_db_environment
+          run_test_behat
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: behat-results
+          path: api/build/logs/behat/junit/
+
+  review:
+    name: Deploy Review
+    runs-on: ubuntu-latest
+    needs: [setup, build-api, build-app, unit-tests, behat-tests]
+    if: |
+      always() &&
+      github.ref != 'refs/heads/main' &&
+      vars.REVIEW_DISABLED != 'true' &&
+      needs.build-api.result != 'failure' &&
+      needs.build-app.result != 'failure' &&
+      needs.unit-tests.result != 'failure' &&
+      needs.behat-tests.result != 'failure'
+    environment:
+      name: review/${{ github.ref_name }}
+      url: https://${{ needs.setup.outputs.ref_slug }}-review.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+    env:
+      CI_REGISTRY: ghcr.io
+      CI_REGISTRY_USER: ${{ github.actor }}
+      CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+      CI_COMMIT_REF_SLUG: ${{ needs.setup.outputs.ref_slug }}
+      CI_COMMIT_SHA: ${{ github.sha }}
+      CI_COMMIT_REF_NAME: ${{ github.ref_name }}
+      CI_ENVIRONMENT_SLUG: ${{ needs.setup.outputs.env_slug }}
+      CI_ENVIRONMENT_URL: https://${{ needs.setup.outputs.ref_slug }}-review.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      CI_PROJECT_NAME: ${{ github.event.repository.name }}
+      CI_PROJECT_PATH_SLUG: ${{ github.repository }}
+      GITLAB_USER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+      KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      KUBE_CONTEXT: ${{ secrets.KUBE_CONTEXT }}
+      KUBE_NAMESPACE: ${{ github.event.repository.name }}-${{ needs.setup.outputs.env_slug }}
+      RELEASE: ${{ needs.setup.outputs.env_slug }}
+      JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+      MERCURE_JWT_SECRET: ${{ secrets.MERCURE_JWT_SECRET }}
+      CORS_ALLOW_ORIGIN: ${{ vars.CORS_ALLOW_ORIGIN }}
+      TRUSTED_HOSTS: ${{ vars.TRUSTED_HOSTS }}
+      POSTGRESQL_ENABLED: "true"
+      ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+      LOAD_DATABASE_FIXTURES: ${{ vars.LOAD_DATABASE_FIXTURES }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ vars.HELM_VERSION || '3.19.0' }}
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+      - name: Deploy review environment
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          check_kube_domain
+          generate_jwt_keys
+          helm_init
+          apply_kube_context
+          ensure_namespace
+          create_docker_pull_secret
+          deploy review
+          load_fixtures review
+
+  staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [setup, build-api, build-app, unit-tests, behat-tests]
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      vars.STAGING_ENABLED == 'true' &&
+      needs.build-api.result != 'failure' &&
+      needs.build-app.result != 'failure' &&
+      needs.unit-tests.result != 'failure' &&
+      needs.behat-tests.result != 'failure'
+    environment:
+      name: staging
+      url: https://staging.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+    env:
+      CI_REGISTRY: ghcr.io
+      CI_REGISTRY_USER: ${{ github.actor }}
+      CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+      CI_COMMIT_REF_SLUG: ${{ needs.setup.outputs.ref_slug }}
+      CI_COMMIT_SHA: ${{ github.sha }}
+      CI_COMMIT_REF_NAME: ${{ github.ref_name }}
+      CI_ENVIRONMENT_SLUG: staging
+      CI_ENVIRONMENT_URL: https://staging.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      CI_PROJECT_NAME: ${{ github.event.repository.name }}
+      CI_PROJECT_PATH_SLUG: ${{ github.repository }}
+      GITLAB_USER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+      KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      KUBE_CONTEXT: ${{ secrets.KUBE_CONTEXT }}
+      KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE_PRODUCTION }}
+      RELEASE: ${{ vars.RELEASE_PRODUCTION }}
+      JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+      MERCURE_JWT_SECRET: ${{ secrets.MERCURE_JWT_SECRET }}
+      CORS_ALLOW_ORIGIN: ${{ vars.CORS_ALLOW_ORIGIN }}
+      TRUSTED_HOSTS: ${{ vars.TRUSTED_HOSTS }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+      LOAD_DATABASE_FIXTURES: ${{ vars.LOAD_DATABASE_FIXTURES }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ vars.HELM_VERSION || '3.19.0' }}
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+      - name: Deploy to staging
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          check_kube_domain
+          generate_jwt_keys
+          helm_init
+          apply_kube_context
+          ensure_namespace
+          create_docker_pull_secret
+          deploy staging
+          load_fixtures staging

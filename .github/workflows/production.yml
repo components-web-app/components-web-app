@@ -1,0 +1,95 @@
+name: Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Deployment action'
+        required: true
+        type: choice
+        options:
+          - canary
+          - production
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+    env:
+      CI_REGISTRY: ghcr.io
+      CI_REGISTRY_USER: ${{ github.actor }}
+      CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+      CI_COMMIT_REF_SLUG: main
+      CI_COMMIT_SHA: ${{ github.sha }}
+      CI_COMMIT_REF_NAME: main
+      CI_ENVIRONMENT_SLUG: production
+      CI_ENVIRONMENT_URL: https://${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      CI_PROJECT_NAME: ${{ github.event.repository.name }}
+      CI_PROJECT_PATH_SLUG: ${{ github.repository }}
+      GITLAB_USER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+      KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      KUBE_CONTEXT: ${{ secrets.KUBE_CONTEXT }}
+      KUBE_NAMESPACE: ${{ secrets.KUBE_NAMESPACE_PRODUCTION }}
+      RELEASE: ${{ vars.RELEASE_PRODUCTION }}
+      JWT_PASSPHRASE: ${{ secrets.JWT_PASSPHRASE }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+      MERCURE_JWT_SECRET: ${{ secrets.MERCURE_JWT_SECRET }}
+      CORS_ALLOW_ORIGIN: ${{ vars.CORS_ALLOW_ORIGIN }}
+      TRUSTED_HOSTS: ${{ vars.TRUSTED_HOSTS }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ vars.HELM_VERSION || '3.19.0' }}
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+      - name: Deploy canary
+        if: inputs.action == 'canary'
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          check_kube_domain
+          generate_jwt_keys
+          ensure_namespace
+          helm_init
+          apply_kube_context
+          create_docker_pull_secret
+          deploy canary
+      - name: Deploy production
+        if: inputs.action == 'production'
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          check_kube_domain
+          generate_jwt_keys
+          helm_init
+          apply_kube_context
+          ensure_namespace
+          create_docker_pull_secret
+          deploy
+          load_fixtures
+          delete canary
+          delete staging
+          persist_environment_url
+      - uses: actions/upload-artifact@v4
+        if: inputs.action == 'production'
+        with:
+          name: environment-url
+          path: environment_url.txt

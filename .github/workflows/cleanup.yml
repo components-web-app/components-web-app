@@ -1,0 +1,53 @@
+name: Cleanup Review
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      ref_slug: ${{ steps.vars.outputs.ref_slug }}
+      env_slug: ${{ steps.vars.outputs.env_slug }}
+    steps:
+      - name: Compute CI variables
+        id: vars
+        run: |
+          REF_SLUG=$(echo "${{ github.head_ref }}" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
+          echo "ref_slug=$REF_SLUG" >> "$GITHUB_OUTPUT"
+          echo "env_slug=review-${REF_SLUG}" >> "$GITHUB_OUTPUT"
+
+  stop-review:
+    name: Stop Review Environment
+    runs-on: ubuntu-latest
+    needs: setup
+    if: vars.REVIEW_DISABLED != 'true'
+    environment:
+      name: review/${{ github.head_ref }}
+    env:
+      CI_ENVIRONMENT_SLUG: ${{ needs.setup.outputs.env_slug }}
+      KUBE_CONTEXT: ${{ secrets.KUBE_CONTEXT }}
+      KUBE_NAMESPACE: ${{ github.event.repository.name }}-${{ needs.setup.outputs.env_slug }}
+      RELEASE: ${{ needs.setup.outputs.env_slug }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ vars.HELM_VERSION || '3.19.0' }}
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+      - name: Stop review environment
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          set_namespace
+          delete review
