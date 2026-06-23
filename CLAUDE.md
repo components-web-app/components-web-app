@@ -19,7 +19,13 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag 
 
 The GitHub Actions workflow (`.github/workflows/publish-create-cwa.yml`) triggers on `create-cwa/v*` tags and runs `npm publish --access public` using the `NPM_TOKEN` secret.
 
-**No stored token needed.** Publishing uses npm's OIDC Trusted Publishing — GitHub Actions mints a short-lived identity token automatically. Before the first publish, configure the trusted publisher once on npmjs.com: go to `npmjs.com/package/create-cwa/access`, add a Trusted Publisher, set org `components-web-app`, repo `components-web-app`, workflow `publish-create-cwa.yml`.
+**No stored token needed for CI.** Publishing uses npm's OIDC Trusted Publishing — GitHub Actions mints a short-lived identity token automatically. Before the first publish, configure the trusted publisher once on npmjs.com: go to `npmjs.com/package/create-cwa/access`, add a Trusted Publisher, set org `components-web-app`, repo `components-web-app`, workflow `publish-create-cwa.yml`.
+
+**First publish (one-time, local):** The package must exist on npm before OIDC can be configured. Run once from inside `packages/create-cwa/`:
+```bash
+pnpm install && pnpm run build && pnpm publish --access public --no-git-checks
+```
+Do NOT add `--provenance` here — provenance requires a GitHub Actions runner and will error locally.
 
 **When to bump the version:**
 - Changes to `packages/create-cwa/src/` (CLI logic, prompts, post-creation flow)
