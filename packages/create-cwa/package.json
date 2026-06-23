@@ -1,10 +1,10 @@
 {
-  "name": "create-cwa-app",
+  "name": "create-cwa",
   "version": "1.0.0",
   "description": "Create a new CWA (Components Web App) project",
   "type": "module",
   "bin": {
-    "create-cwa-app": "./bin/create-cwa-app.js"
+    "create-cwa": "./bin/create-cwa.js"
   },
   "main": "./dist/index.js",
   "scripts": {
