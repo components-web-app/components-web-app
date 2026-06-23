@@ -12,7 +12,7 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag 
 
 **To release a new version:**
 
-1. Bump the version in `packages/create-cwa/package.json`
+1. Bump the version in `packages/create-cwa/package.json` (stays on `0.x.x` until CWA v1)
 2. Commit: `git commit -m "Bump create-cwa to x.y.z"`
 3. Tag with the scoped format: `git tag create-cwa/vx.y.z`
 4. Push both: `git push && git push --tags`
