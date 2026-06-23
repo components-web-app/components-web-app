@@ -6,32 +6,47 @@ This is the demo/template application for `@cwa/nuxt`. It runs against the share
 
 This CLAUDE.md is the primary place to track demo fixes, fixture updates, and template changes needed as a result of module-side decisions. Do not modify application code directly unless explicitly asked.
 
+## Publishing `create-cwa` to npm
+
+The CLI lives in `packages/create-cwa/`. It is published manually via a git tag — there is no automatic nightly publishing.
+
+**To release a new version:**
+
+1. Bump the version in `packages/create-cwa/package.json`
+2. Commit: `git commit -m "Bump create-cwa to x.y.z"`
+3. Tag with the scoped format: `git tag create-cwa/vx.y.z`
+4. Push both: `git push && git push --tags`
+
+The GitHub Actions workflow (`.github/workflows/publish-create-cwa.yml`) triggers on `create-cwa/v*` tags and runs `npm publish --access public` using the `NPM_TOKEN` secret.
+
+**Required GitHub secret:** `NPM_TOKEN` — a token from npmjs.com with publish access to the `create-cwa` package.
+
+**When to bump the version:**
+- Changes to `packages/create-cwa/src/` (CLI logic, prompts, post-creation flow)
+- Changes to `cwa-manifest.json` that affect what the CLI does (new features, new excludes, new questions)
+- Template file changes do NOT need a version bump — the CLI always fetches `main` at runtime, so users get the latest template without a CLI release
+
 ## Docs
 
 Any change made to this template application must be reflected in the docs project at `/Users/danielwest/Documents/GitHub/_CWA/docs`. After completing work here, always check whether the docs need updating and flag it if so.
 
 ## Planned Features
 
-### Project Installer / Scaffolder CLI
+### Project Installer / Scaffolder CLI ✅
 
-Rather than maintaining a separate skeleton branch, the plan is to build a `create-cwa-app` CLI installer that scaffolds a new CWA project interactively. This is a better long-term approach because it keeps `main` as the single source of truth and eliminates branch drift.
+`packages/create-cwa/` — published to npm as `create-cwa` (`npx create-cwa my-project`).
 
-**What it would do:**
-- Prompt: GitLab CI or GitHub Actions?
-- Prompt: which components to include? (nav, forms, blog, collections, etc.)
-- Output a ready-to-run project with only what was selected
+Prompts: project name, CI/CD (GitHub Actions / GitLab CI / none), feature multiselect, include fixtures. Fetches `main` via `giget`, removes unselected feature files, strips `@cwa-if:feature` blocks from `nuxt.config.ts`, generates a README, then offers to run `docker compose up -d` and `pnpm install` interactively.
 
-**Minimal skeleton component (for installer default):**
-- One custom entity with a single plain `text: string` field (e.g. `TextBlock`) — no rich-text editor dependencies, no opinionated UI libraries
-- One page template (`PrimaryPageTemplate`) with a single component group
-- One fixture that creates the page and adds a `TextBlock` to it
-- No `HtmlContent`, `Image`, `BlogArticleData`, `NestedPageData`, `NavigationLink`, or collection components in the default output
+`cwa-manifest.json` at the repo root is the contract between the CLI and the template. Template file changes (entities, components, fixture parts) take effect immediately for new installs without a CLI release. Only changes to CLI logic or the manifest itself need a version bump — see **Publishing `create-cwa` to npm** above.
 
-**Dependency philosophy:** The skeleton/default output should have minimal, unopinionated dependencies. `HtmlContent` is excluded from the default because it requires a rich-text editor (Tiptap etc.) which is an opinionated choice.
+Two install paths are documented in the repo README:
+- `npx create-cwa` — tailored, picks features, clean output
+- Clone the repo — full example; users delete `packages/` afterwards
 
 **GitHub issue:** [#56](https://github.com/components-web-app/components-web-app/issues/56)
 
-**Docs:** The docs will need a new "Install" section documenting the CLI and the available prompts. Flag to docs CLAUDE.md when this is implemented.
+**Docs:** Needs a new "Install" section — logged in the docs CLAUDE.md pending review.
 
 ---
 

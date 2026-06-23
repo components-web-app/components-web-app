@@ -2,21 +2,8 @@ name: Publish create-cwa
 
 on:
   push:
-    branches:
-      - dev
-    paths:
-      - 'packages/create-cwa/**'
-      - 'cwa-manifest.json'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'npm dist-tag to publish to'
-        required: true
-        type: choice
-        options:
-          - latest
-          - next
-        default: latest
+    tags:
+      - 'create-cwa/v*'
 
 jobs:
   publish:
@@ -39,23 +26,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Dev branch: stamp a nightly pre-release version and publish to @dev tag
-      - name: Stamp nightly version
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        run: |
-          BASE=$(node -p "require('./package.json').version")
-          DATE=$(date -u +'%Y%m%d%H%M%S')
-          npm version "${BASE}-dev.${DATE}" --no-git-tag-version
-
-      # Main branch (manual): publish the version in package.json as-is
-      - name: Publish (latest or next)
-        if: github.event_name == 'workflow_dispatch'
-        run: npm publish --tag ${{ inputs.tag }} --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish nightly (@dev)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-        run: npm publish --tag dev --access public
+      - name: Publish
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
