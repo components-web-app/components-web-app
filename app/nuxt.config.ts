@@ -34,21 +34,33 @@ export default defineNuxtConfig({
   ],
   cwa: {
     resources: {
+      Title: {
+        name: 'Title',
+        description: '<p>A simple title component for page headings.</p>'
+      },
+      // @cwa-if:navigation
       NavigationLink: {
         name: 'Link',
         description: '<p>Use this component to display a link for a website user to click so they can visit another page or URL</p>'
       },
+      // @cwa-end:navigation
+      // @cwa-if:html-content
       HtmlContent: {
         name: 'Body Text',
         description: '<p>Easily create a body of text with the ability to style and format the content using themes in-keeping with your website.</p>'
       },
+      // @cwa-end:html-content
+      // @cwa-if:image
       Image: {
         instantAdd: true
       },
+      // @cwa-end:image
+      // @cwa-if:forms
       ExampleForm: {
         name: 'Example Form',
         description: '<p>Demonstrates all Symfony form field types using the CWA form composables.</p>'
-      }
+      },
+      // @cwa-end:forms
     },
     layouts: {
       Primary: {
@@ -65,14 +77,17 @@ export default defineNuxtConfig({
           'Big Text': ['text-2xl']
         }
       },
+      // @cwa-if:nested-pages
       NestedTopicTemplate: {
         name: 'Nested Topic Page'
       },
       NestedSubPageTemplate: {
         name: 'Nested Sub-Page'
-      }
+      },
+      // @cwa-end:nested-pages
     },
     pageData: {
+      // @cwa-if:blog
       BlogArticleData: {
         name: 'Blog Articles',
         properties: {
@@ -80,12 +95,15 @@ export default defineNuxtConfig({
           htmlContent: 'Article Body'
         }
       },
+      // @cwa-end:blog
+      // @cwa-if:nested-pages
       NestedPageData: {
         name: 'Nested Topics',
         properties: {
           introContent: 'Introduction Content'
         }
-      }
+      },
+      // @cwa-end:nested-pages
     },
     siteConfig: {
       siteName: 'CWA Preview Web App',
@@ -99,7 +117,9 @@ export default defineNuxtConfig({
   ],
   modules: [
     '@nuxt/ui',
+    // @cwa-if:image
     '@nuxt/image',
+    // @cwa-end:image
     '@vite-pwa/nuxt',
     'nuxt-svgo'
   ],

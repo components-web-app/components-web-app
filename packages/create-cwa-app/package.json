@@ -1,0 +1,32 @@
+{
+  "name": "create-cwa-app",
+  "version": "1.0.0",
+  "description": "Create a new CWA (Components Web App) project",
+  "type": "module",
+  "bin": {
+    "create-cwa-app": "./bin/create-cwa-app.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["cwa", "nuxt", "api-platform", "symfony", "scaffolder"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.0",
+    "fast-glob": "^3.3.0",
+    "fs-extra": "^11.2.0",
+    "giget": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

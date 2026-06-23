@@ -1,0 +1,112 @@
+{
+  "version": "1.0",
+  "repo": "components-web-app/components-web-app",
+  "branch": "main",
+  "alwaysExclude": [
+    "CLAUDE.md",
+    "packages/",
+    "cwa-manifest.json",
+    "blackfire-io_secondary_horizontal_transparent.png",
+    ".github/FUNDING.yml"
+  ],
+  "questions": [
+    {
+      "id": "projectName",
+      "type": "text",
+      "message": "Project name?",
+      "placeholder": "my-cwa-app"
+    },
+    {
+      "id": "ci",
+      "type": "select",
+      "message": "CI/CD pipeline?",
+      "choices": [
+        { "value": "github", "label": "GitHub Actions" },
+        { "value": "gitlab", "label": "GitLab CI" },
+        { "value": "none", "label": "None" }
+      ]
+    },
+    {
+      "id": "features",
+      "type": "multiselect",
+      "message": "Which features to include?",
+      "choices": [
+        { "value": "navigation", "label": "Navigation links" },
+        { "value": "html-content", "label": "HTML content editor (requires TipTap)" },
+        { "value": "image", "label": "Image uploads (requires cloud storage)" },
+        { "value": "blog", "label": "Blog / articles", "requires": ["html-content", "image"] },
+        { "value": "nested-pages", "label": "Nested pages / topics", "requires": ["html-content"] },
+        { "value": "forms", "label": "Example form (Symfony form composables demo)" }
+      ]
+    },
+    {
+      "id": "fixtures",
+      "type": "confirm",
+      "message": "Include database fixtures for selected features?",
+      "hint": "Scaffolds sample content so the site works out of the box",
+      "default": true
+    }
+  ],
+  "features": {
+    "navigation": {
+      "exclude": [
+        "api/src/Entity/NavigationLink.php",
+        "app/app/cwa/components/NavigationLink/",
+        "api/src/DataFixtures/Parts/NavigationScaffoldPart.php"
+      ]
+    },
+    "html-content": {
+      "exclude": [
+        "api/src/Entity/HtmlContent.php",
+        "app/app/cwa/components/HtmlContent/",
+        "app/app/components/TipTap/",
+        "app/app/components/TipTapHtmlEditor.vue",
+        "api/src/DataFixtures/Parts/HtmlContentScaffoldPart.php"
+      ]
+    },
+    "image": {
+      "exclude": [
+        "api/src/Entity/Image.php",
+        "app/app/cwa/components/Image/",
+        "api/src/DataFixtures/Parts/ImageScaffoldPart.php"
+      ]
+    },
+    "blog": {
+      "requires": ["html-content", "image"],
+      "exclude": [
+        "api/src/Entity/BlogArticleData.php",
+        "api/config/serializer/BlogArticleData.yaml",
+        "app/app/cwa/components/Collection/",
+        "app/app/components/CollectionImage.vue",
+        "app/app/components/CollectionPagination.vue",
+        "app/app/components/CollectionSearch.vue",
+        "api/src/DataFixtures/Parts/BlogScaffoldPart.php"
+      ]
+    },
+    "nested-pages": {
+      "requires": ["html-content"],
+      "exclude": [
+        "api/src/Entity/NestedPageData.php",
+        "api/src/DataFixtures/Parts/NestedPagesScaffoldPart.php"
+      ]
+    },
+    "forms": {
+      "exclude": [
+        "app/app/cwa/components/ExampleForm/",
+        "api/src/Form/",
+        "api/src/DataFixtures/Parts/FormsScaffoldPart.php"
+      ]
+    }
+  },
+  "ci": {
+    "github": {
+      "exclude": [".gitlab-ci.yml"]
+    },
+    "gitlab": {
+      "exclude": [".github/"]
+    },
+    "none": {
+      "exclude": [".github/", ".gitlab-ci.yml", "bin/devops/"]
+    }
+  }
+}
