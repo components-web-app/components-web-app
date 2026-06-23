@@ -5,6 +5,10 @@ on:
     tags:
       - 'create-cwa/v*'
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     name: Publish to npm
@@ -17,7 +21,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -27,6 +31,4 @@ jobs:
         run: npm run build
 
       - name: Publish
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

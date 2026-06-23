@@ -14,6 +14,11 @@
   },
   "keywords": ["cwa", "nuxt", "api-platform", "symfony", "scaffolder"],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/components-web-app/components-web-app.git",
+    "directory": "packages/create-cwa"
+  },
   "engines": {
     "node": ">=18.0.0"
   },

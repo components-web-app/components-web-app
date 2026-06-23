@@ -19,7 +19,7 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag 
 
 The GitHub Actions workflow (`.github/workflows/publish-create-cwa.yml`) triggers on `create-cwa/v*` tags and runs `npm publish --access public` using the `NPM_TOKEN` secret.
 
-**Required GitHub secret:** `NPM_TOKEN` — a token from npmjs.com with publish access to the `create-cwa` package.
+**No stored token needed.** Publishing uses npm's OIDC Trusted Publishing — GitHub Actions mints a short-lived identity token automatically. Before the first publish, configure the trusted publisher once on npmjs.com: go to `npmjs.com/package/create-cwa/access`, add a Trusted Publisher, set org `components-web-app`, repo `components-web-app`, workflow `publish-create-cwa.yml`.
 
 **When to bump the version:**
 - Changes to `packages/create-cwa/src/` (CLI logic, prompts, post-creation flow)
