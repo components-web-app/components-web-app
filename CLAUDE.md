@@ -10,15 +10,16 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 
 The CLI lives in `packages/create-cwa/`. It is published manually via a git tag — there is no automatic nightly publishing.
 
-**Remotes:** `origin` = GitLab (deploys the application), `upstream` = GitHub (runs GitHub Actions, including the publish workflow). Tags must be pushed to `upstream`.
+**Remotes:** `origin` = GitLab (deploys the application, mirrors to GitHub), `upstream` = GitHub (runs GitHub Actions). Always push to `origin` only — GitLab mirrors commits and tags to GitHub automatically, which triggers the Actions workflow. Do not push directly to `upstream` as it can conflict with the mirror.
 
 **To release a new version:**
 
 1. Bump the version in `packages/create-cwa/package.json` (stays on `0.x.x` until CWA v1)
-2. Commit and push to both remotes: `git commit -m "Bump create-cwa to x.y.z" && git push origin && git push upstream`
-3. Tag and push to GitHub: `git tag create-cwa/vx.y.z && git push upstream --tags`
+2. Commit and push: `git commit -m "Bump create-cwa to x.y.z" && git push origin`
+3. Tag and push: `git tag create-cwa/vx.y.z && git push origin --tags`
+4. GitLab mirrors the tag to GitHub → GitHub Actions workflow triggers → publishes to npm via OIDC
 
-The GitHub Actions workflow (`.github/workflows/publish-create-cwa.yml`) triggers on `create-cwa/v*` tags pushed to `upstream` and publishes to npm via OIDC trusted publishing.
+**If the mirror is behind:** Go to GitLab → Settings → Repository → Mirroring repositories and click the sync button (↻) to force an immediate sync.
 
 **No stored token needed for CI.** Publishing uses npm's OIDC Trusted Publishing — GitHub Actions mints a short-lived identity token automatically. Before the first publish, configure the trusted publisher once on npmjs.com: go to `npmjs.com/package/create-cwa/access`, add a Trusted Publisher, set org `components-web-app`, repo `components-web-app`, workflow `publish-create-cwa.yml`.
 
