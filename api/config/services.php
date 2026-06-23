@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
+use App\DataFixtures\AppScaffold;
 use App\DataFixtures\UsersFixture;
 use App\Flysystem\GoogleCloudStorageFactory;
 use App\Mercure\SkipAwareMercureHub;
@@ -13,6 +14,7 @@ use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
 use Silverback\ApiComponentsBundle\Imagine\FlysystemCacheResolver;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 use Symfony\Component\DependencyInjection\Reference;
 
 
@@ -49,6 +51,11 @@ return static function (ContainerConfigurator $configurator) {
             '$adminPassword' => '%env(ADMIN_PASSWORD)%',
             '$adminEmail' => '%env(ADMIN_EMAIL)%'
         ])
+    ;
+
+    $services
+        ->set(AppScaffold::class)
+        ->args(['$parts' => tagged_iterator('cwa.scaffold_part', defaultPriorityMethod: 'getPriority')])
     ;
 
     $services
