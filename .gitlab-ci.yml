@@ -195,7 +195,6 @@ staging:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy staging
-    - load_fixtures staging
   environment:
     name: production
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
@@ -246,7 +245,6 @@ production:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy
-    - load_fixtures
     - delete canary
     - delete staging
     - persist_environment_url
@@ -294,6 +292,8 @@ performance:
 
 load fixtures review:
   stage: review
+  variables:
+    LOAD_DATABASE_FIXTURES: "true"
   script:
     - install_dependencies
     - apply_kube_context
@@ -312,6 +312,44 @@ load fixtures review:
       - main
     variables:
       - $REVIEW_DISABLED == "true"
+
+load fixtures staging:
+  stage: staging
+  variables:
+    LOAD_DATABASE_FIXTURES: "true"
+  script:
+    - install_dependencies
+    - apply_kube_context
+    - load_fixtures staging
+  environment:
+    name: production
+    url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
+  when: manual
+  allow_failure: true
+  needs: ['staging']
+  only:
+    refs:
+      - main
+    variables:
+      - $STAGING_ENABLED == "true"
+
+load fixtures production:
+  stage: production
+  variables:
+    LOAD_DATABASE_FIXTURES: "true"
+  script:
+    - install_dependencies
+    - apply_kube_context
+    - load_fixtures
+  environment:
+    name: production
+    url: https://$KUBE_INGRESS_BASE_DOMAIN
+  when: manual
+  allow_failure: true
+  needs: ['production']
+  only:
+    refs:
+      - main
 
 stop review:
   stage: cleanup
