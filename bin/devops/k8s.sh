@@ -377,7 +377,7 @@ load_fixtures() {
     -o name | head -1)
 
   echo "Waiting for PHP deployment to be ready..."
-  kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=300s
+  kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
   echo "Loading database fixtures..."
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \

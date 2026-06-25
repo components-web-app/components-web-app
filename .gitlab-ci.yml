@@ -142,7 +142,6 @@ review:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy review
-    - load_fixtures review
     - persist_environment_url
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -292,6 +291,27 @@ performance:
   except:
     variables:
       - $PERFORMANCE_DISABLED == "true"
+
+load fixtures review:
+  stage: review
+  script:
+    - install_dependencies
+    - apply_kube_context
+    - load_fixtures review
+  environment:
+    name: review/$CI_COMMIT_REF_NAME
+    url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
+  when: manual
+  allow_failure: true
+  needs: ['review']
+  only:
+    refs:
+      - branches
+  except:
+    refs:
+      - main
+    variables:
+      - $REVIEW_DISABLED == "true"
 
 stop review:
   stage: cleanup
