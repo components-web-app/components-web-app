@@ -4,10 +4,15 @@ on:
   pull_request:
     types: [closed]
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
+    if: vars.CI_DISABLED != 'true'
     outputs:
       ref_slug: ${{ steps.vars.outputs.ref_slug }}
       env_slug: ${{ steps.vars.outputs.env_slug }}
@@ -23,7 +28,7 @@ jobs:
     name: Stop Review Environment
     runs-on: ubuntu-latest
     needs: setup
-    if: vars.REVIEW_DISABLED != 'true'
+    if: needs.setup.result == 'success' && vars.REVIEW_DISABLED != 'true'
     environment:
       name: review/${{ github.head_ref }}
     env:

@@ -22,7 +22,7 @@ Full installation instructions are at **[cwa.rocks](https://cwa.rocks/getting-st
 The `create-cwa` CLI prompts for the features you want and generates a clean project with only what you selected:
 
 ```bash
-npx create-cwa my-project
+pnpm create cwa my-project
 ```
 
 ### Option B — Clone this repo

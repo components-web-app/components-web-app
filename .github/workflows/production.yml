@@ -11,6 +11,10 @@ on:
           - canary
           - production
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   deploy:
     name: Deploy ${{ inputs.action }}
