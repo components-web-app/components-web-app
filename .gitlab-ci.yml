@@ -295,6 +295,7 @@ load fixtures review:
   script:
     - install_dependencies
     - apply_kube_context
+    - set_namespace
     - load_fixtures review
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -316,6 +317,7 @@ load fixtures staging:
   script:
     - install_dependencies
     - apply_kube_context
+    - set_namespace
     - load_fixtures staging
   environment:
     name: production
@@ -334,6 +336,7 @@ load fixtures production:
   script:
     - install_dependencies
     - apply_kube_context
+    - set_namespace
     - load_fixtures
   environment:
     name: production
