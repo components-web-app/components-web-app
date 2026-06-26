@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@0.0.0-29700008.e9136bd
-        version: '@cwa/nuxt-edge@0.0.0-29700008.e9136bd(03be4d515f20b7da0f6fbae472e19267)'
+        specifier: npm:@cwa/nuxt-edge@0.0.0-29708540.affe46b
+        version: '@cwa/nuxt-edge@0.0.0-29708540.affe46b(03be4d515f20b7da0f6fbae472e19267)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.38(typescript@6.0.3))
@@ -696,9 +696,10 @@ packages:
   '@colordx/core@5.4.3':
     resolution: {integrity: sha512-kIxYSfA5T8HXjav55UaaH/o/cKivF6jCCGIb8eqtcsfI46wsvlSiT8jMDyrl779qLec3c2c2oHBZo4oAhvbjrQ==}
 
-  '@cwa/nuxt-edge@0.0.0-29700008.e9136bd':
-    resolution: {integrity: sha512-ss6/ejudoOhdAJ1e5y66fizfaY8Ei6B9FerfGiGHrW6048TLQruBwd0qknY1XsK9CMfPMTuPBV6Cx3C/bAR/0w==}
+  '@cwa/nuxt-edge@0.0.0-29708540.affe46b':
+    resolution: {integrity: sha512-4mbwumLTEMC+TlPueE/ITh3670uBASpFOmz4Zs1MKsx8unwZ1qQsyl0kOeHSpm6qOqvHMemBBcfOGqkMv1yiVA==}
     engines: {pnpm: '>=11.5.3'}
+    hasBin: true
 
   '@devframes/hub@0.5.4':
     resolution: {integrity: sha512-NZs5RFuNb6tjQd2JBsRYQT+OqE+z16Kg9/72HG4k+uJdzK90sAGtAjOwK8bsvav/9l85KGx4agfkgxnfbl313w==}
@@ -7953,7 +7954,7 @@ snapshots:
 
   '@colordx/core@5.4.3': {}
 
-  '@cwa/nuxt-edge@0.0.0-29700008.e9136bd(03be4d515f20b7da0f6fbae472e19267)':
+  '@cwa/nuxt-edge@0.0.0-29708540.affe46b(03be4d515f20b7da0f6fbae472e19267)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.1(magicast@0.5.3)
       '@nuxtjs/robots': 6.1.1(03a1f171db1a3f797c7b6584e992ac6a)
@@ -11038,7 +11039,7 @@ snapshots:
   '@vueuse/core@7.7.1(vue@3.5.38(typescript@6.0.3))':
     dependencies:
       '@vueuse/shared': 7.7.1(vue@3.5.38(typescript@6.0.3))
-      vue-demi: 0.13.11(vue@3.5.38(typescript@6.0.3))
+      vue-demi: 0.14.10(vue@3.5.38(typescript@6.0.3))
     optionalDependencies:
       vue: 3.5.38(typescript@6.0.3)
 
@@ -11079,7 +11080,7 @@ snapshots:
 
   '@vueuse/shared@7.7.1(vue@3.5.38(typescript@6.0.3))':
     dependencies:
-      vue-demi: 0.13.11(vue@3.5.38(typescript@6.0.3))
+      vue-demi: 0.14.10(vue@3.5.38(typescript@6.0.3))
     optionalDependencies:
       vue: 3.5.38(typescript@6.0.3)
 

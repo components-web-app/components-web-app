@@ -76,14 +76,11 @@
 </template>
 
 <script setup lang="ts">
-import { toRef } from 'vue'
 import dayjs from 'dayjs'
 import Spinner from '#cwa/templates/components/utils/Spinner.vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { useCwaCollectionResource } from '#imports'
 
 const props = defineProps<IriProp>()
-
 const {
   exposeMeta,
   collectionItems,
@@ -94,7 +91,7 @@ const {
   goToPreviousPage,
   changePage,
   resolveResourceLink,
-} = useCwaCollectionResource(toRef(props, 'iri'))
+} = useCwaComponent(props, [withCollection()])
 
 function formatDate(dateStr: string) {
   return dayjs(dateStr).format('DD/MM/YY')

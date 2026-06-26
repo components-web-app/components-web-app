@@ -21,14 +21,12 @@
 <script setup lang="ts">
 import { computed, ref, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { useCwaResource, useHtmlContent } from '#imports'
+import { useHtmlContent } from '#imports'
 import TipTapHtmlEditor from '~/components/TipTapHtmlEditor.vue'
 import { useCustomHtmlComponent } from '~/composables/useCustomHtmlComponent'
 
-// Set up the resource
 const props = defineProps<IriProp>()
-const iriRef = toRef(props, 'iri')
-const { getResource, exposeMeta, $cwa } = useCwaResource(iriRef, {
+const { resource, exposeMeta, $cwa } = useCwaComponent(props, undefined, {
   styles: {
     multiple: true,
     classes: {
@@ -38,16 +36,11 @@ const { getResource, exposeMeta, $cwa } = useCwaResource(iriRef, {
 })
 defineExpose(exposeMeta)
 
-const resource = getResource()
-
-// HTML Content composable, converting anchors to nuxt link and link enable/disable with editable status
 const htmlContainer = ref<null | HTMLElement>(null)
-
 const htmlContent = computed<string>(() => resource.value?.data?.html)
 useHtmlContent(htmlContainer)
 
-// This deals with the HTML editor
-const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(iriRef)
+const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(toRef(props, 'iri'))
 
 const proseClasses = 'prose prose-invert prose-primary max-w-none'
 </script>
