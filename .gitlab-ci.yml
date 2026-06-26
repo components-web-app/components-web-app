@@ -12,6 +12,7 @@ variables:
   STAGING_ENABLED: "true"
   CANARY_ENABLED: "true"
   PERFORMANCE_DISABLED: "false"
+  ENABLE_DATABASE_FIXTURES: "false"
 
 stages:
   - build
@@ -300,17 +301,15 @@ load fixtures review:
   environment:
     name: review/$CI_COMMIT_REF_NAME
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
-  when: manual
-  allow_failure: true
+  rules:
+    - if: '$ENABLE_DATABASE_FIXTURES != "true"'
+      when: never
+    - if: '$REVIEW_DISABLED == "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
   needs: ['review']
-  only:
-    refs:
-      - branches
-  except:
-    refs:
-      - main
-    variables:
-      - $REVIEW_DISABLED == "true"
 
 load fixtures staging:
   stage: staging
@@ -322,14 +321,15 @@ load fixtures staging:
   environment:
     name: production
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
-  when: manual
-  allow_failure: true
+  rules:
+    - if: '$ENABLE_DATABASE_FIXTURES != "true"'
+      when: never
+    - if: '$STAGING_ENABLED != "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
   needs: ['staging']
-  only:
-    refs:
-      - main
-    variables:
-      - $STAGING_ENABLED == "true"
 
 load fixtures production:
   stage: production
@@ -341,12 +341,13 @@ load fixtures production:
   environment:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
-  when: manual
-  allow_failure: true
+  rules:
+    - if: '$ENABLE_DATABASE_FIXTURES != "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: manual
+      allow_failure: true
   needs: ['production']
-  only:
-    refs:
-      - main
 
 stop review:
   stage: cleanup
