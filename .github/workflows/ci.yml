@@ -182,7 +182,6 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
-      LOAD_DATABASE_FIXTURES: ${{ vars.LOAD_DATABASE_FIXTURES }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
@@ -251,7 +250,6 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
-      LOAD_DATABASE_FIXTURES: ${{ vars.LOAD_DATABASE_FIXTURES }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4

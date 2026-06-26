@@ -292,8 +292,6 @@ performance:
 
 load fixtures review:
   stage: review
-  variables:
-    LOAD_DATABASE_FIXTURES: "true"
   script:
     - install_dependencies
     - apply_kube_context
@@ -315,8 +313,6 @@ load fixtures review:
 
 load fixtures staging:
   stage: staging
-  variables:
-    LOAD_DATABASE_FIXTURES: "true"
   script:
     - install_dependencies
     - apply_kube_context
@@ -335,8 +331,6 @@ load fixtures staging:
 
 load fixtures production:
   stage: production
-  variables:
-    LOAD_DATABASE_FIXTURES: "true"
   script:
     - install_dependencies
     - apply_kube_context

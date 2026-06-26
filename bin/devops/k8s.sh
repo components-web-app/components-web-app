@@ -360,11 +360,6 @@ persist_environment_url() {
 }
 
 load_fixtures() {
-  if [[ "${LOAD_DATABASE_FIXTURES:-false}" != "true" ]]; then
-    echo "LOAD_DATABASE_FIXTURES is not true, skipping fixtures"
-    return 0
-  fi
-
   local track="${1-stable}"
   local release_name="$RELEASE"
   if [[ "$track" != "stable" ]]; then
