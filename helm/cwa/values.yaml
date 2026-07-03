@@ -52,7 +52,7 @@ php:
       #cpu: 200m
       memory: 500Mi
     requests:
-      cpu: 501m
+      #cpu: 501m
       memory: 350Mi
 
 pwa:
