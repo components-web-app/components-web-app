@@ -1,6 +1,9 @@
 <template>
   <article class="prose prose-stone prose-invert max-w-none min-h-[20px] bg-gray-900 px-4 pt-4 pb-0 border-4 border-dotted border-stone-200">
-    <nuxt-img src="/logo.svg" placeholder />
+    <nuxt-img
+      src="/logo.svg"
+      placeholder
+    />
     <TipTapHtmlEditor
       v-if="$cwa.admin.isEditing"
       ref="editorComponent"
@@ -9,7 +12,11 @@
       data-placeholder="[Empty HTML Content Area]"
       :class="{ 'is-empty opacity-50 text-inherit': disableEditor && !htmlContent }"
     />
-    <div v-else ref="htmlContainer" v-html="htmlContent" />
+    <div
+      v-else
+      ref="htmlContainer"
+      v-html="htmlContent"
+    />
   </article>
 </template>
 
@@ -17,8 +24,8 @@
 import { computed, ref, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaResource, useHtmlContent } from '#imports'
-import TipTapHtmlEditor from '~/components/TipTapHtmlEditor.vue'
-import { useCustomHtmlComponent } from '~/composables/useCustomHtmlComponent'
+import TipTapHtmlEditor from '../../../../components/TipTapHtmlEditor.vue'
+import { useCustomHtmlComponent } from '../../../../composables/useCustomHtmlComponent'
 
 // Setup the resource
 const props = defineProps<IriProp>()
@@ -29,7 +36,7 @@ defineExpose(exposeMeta)
 const resource = getResource()
 
 // HTML Content composable, converting anchors to nuxt link and link enable/disable with editable status
-const htmlContainer = ref<null|HTMLElement>(null)
+const htmlContainer = ref<null | HTMLElement>(null)
 
 const htmlContent = computed<string>(() => resource.value?.data?.html)
 useHtmlContent(htmlContainer)

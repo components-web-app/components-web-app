@@ -7,14 +7,14 @@
 <script setup lang="ts">
 import {
   useCwaResourceManagerTab,
-  useCwaResourceModel
+  useCwaResourceModel,
 } from '#imports'
 
-const { exposeMeta, iri } =
-  useCwaResourceManagerTab({ name: 'Title' })
+const { exposeMeta, iri }
+  = useCwaResourceManagerTab({ name: 'Title' })
 
-const titleModel =
-  useCwaResourceModel<string>(iri, 'title')
+const titleModel
+  = useCwaResourceModel<string>(iri, 'title')
 
 defineExpose(exposeMeta)
 </script>

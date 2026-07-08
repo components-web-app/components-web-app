@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { CwaAuthStatus } from '#cwa/api/auth'
+import { useCwa } from '#cwa/composables/cwa'
+
+const $cwa = useCwa()
 </script>
 
 <template>

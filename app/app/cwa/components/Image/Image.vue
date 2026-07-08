@@ -35,6 +35,12 @@ import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaComponent, withFile } from '#imports'
 
 const props = defineProps<IriProp>()
-const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'thumbnail' })])
+const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'thumbnail' })], {
+  styles: {
+    classes: {
+      'my style': ['text-xl'],
+    },
+  },
+})
 defineExpose(exposeMeta)
 </script>

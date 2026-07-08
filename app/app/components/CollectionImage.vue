@@ -18,7 +18,11 @@
         @load="handleLoad"
       />
     </Transition>
-    <div data-placeholder="true" class="absolute top-0 left-0 w-full h-full overflow-hidden bg-gray-200 pointer-events-none cwa:transition-opacity" :class="{ 'opacity-0': loaded }" />
+    <div
+      data-placeholder="true"
+      class="absolute top-0 left-0 w-full h-full overflow-hidden bg-gray-200 pointer-events-none cwa:transition-opacity"
+      :class="{ 'opacity-0': loaded }"
+    />
   </div>
 </template>
 
@@ -32,7 +36,7 @@ const props = defineProps<{
 const $cwa = useCwa()
 
 await $cwa.fetchResource({
-  path: props.iri
+  path: props.iri,
 })
 
 const { contentUrl, displayMedia, handleLoad, loaded } = useCwaFileField(props, { imagineFilterName: 'thumbnail' })

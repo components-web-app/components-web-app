@@ -79,6 +79,7 @@
 import dayjs from 'dayjs'
 import Spinner from '#cwa/templates/components/utils/Spinner.vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import { useCwaComponent, withCollection } from '#imports'
 
 const props = defineProps<IriProp>()
 const {

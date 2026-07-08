@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import { useCwaComponent } from '#imports'
 
 const props = defineProps<IriProp>()
 const { resource, exposeMeta } = useCwaComponent(props)

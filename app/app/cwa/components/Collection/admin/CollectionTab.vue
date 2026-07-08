@@ -3,15 +3,15 @@ import { useCwaResourceManagerTab, useCwaResourceModel, useCwaSelect } from '#im
 import type { SelectOption } from '#cwa/composables/cwa-select-input'
 
 const { exposeMeta, iri } = useCwaResourceManagerTab({
-  name: 'Collection'
+  name: 'Collection',
 })
 
-const perPageModel = useCwaResourceModel<string|null>(iri, 'perPage')
-const resourceIriModel = useCwaResourceModel<string|null>(iri, 'resourceIri', {
-  debounceTime: 0
+const perPageModel = useCwaResourceModel<string | null>(iri, 'perPage')
+const resourceIriModel = useCwaResourceModel<string | null>(iri, 'resourceIri', {
+  debounceTime: 0,
 })
-const defaultQueryParametersModel = useCwaResourceModel<string|null>(iri, 'defaultQueryParameters', {
-  debounceTime: 0
+const defaultQueryParametersModel = useCwaResourceModel<string | null>(iri, 'defaultQueryParameters', {
+  debounceTime: 0,
 })
 
 const categoryOptions: SelectOption[] = [
@@ -31,8 +31,8 @@ const resourceIriSelect = useCwaSelect(resourceIriModel.model, categoryOptions)
 const defaultQueryParametersSelect = useCwaSelect(defaultQueryParametersModel.model, [
   {
     label: 'None',
-    value: ''
-  }
+    value: '',
+  },
 ])
 
 defineExpose(exposeMeta)
@@ -41,10 +41,16 @@ defineExpose(exposeMeta)
 <template>
   <div class="flex space-x-4">
     <CwaUiFormLabelWrapper label="Data Category">
-      <CwaUiFormSelect v-model="resourceIriSelect.model.value" :options="resourceIriSelect.options.value" />
+      <CwaUiFormSelect
+        v-model="resourceIriSelect.model.value"
+        :options="resourceIriSelect.options.value"
+      />
     </CwaUiFormLabelWrapper>
     <CwaUiFormLabelWrapper label="Filter">
-      <CwaUiFormSelect v-model="defaultQueryParametersSelect.model.value" :options="defaultQueryParametersSelect.options.value" />
+      <CwaUiFormSelect
+        v-model="defaultQueryParametersSelect.model.value"
+        :options="defaultQueryParametersSelect.options.value"
+      />
     </CwaUiFormLabelWrapper>
     <CwaUiFormLabelWrapper label="Items Per Page">
       <CwaUiFormInput v-model.number="perPageModel.model.value" />

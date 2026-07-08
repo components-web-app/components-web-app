@@ -2,7 +2,9 @@
   <div v-if="editor">
     <bubble-menu
       class="bg-stone-700 text-stone-100 rounded overflow-hidden text-sm"
-      :tippy-options="{ duration: 150, animation: 'fade' }"
+      style="z-index: 760"
+      :append-to="appendToBody"
+      :options="{ strategy: 'fixed' }"
       :editor="editor"
       :update-delay="0"
       @contextmenu.stop
@@ -30,7 +32,9 @@
 
     <floating-menu
       class="floating-menu bg-stone-200 text-stone-700 rounded overflow-hidden"
-      :tippy-options="{ duration: 150, animation: 'fade' }"
+      style="z-index: 760"
+      :append-to="appendToBody"
+      :options="{ strategy: 'fixed' }"
       :editor="editor"
       :update-delay="0"
       @contextmenu.stop
@@ -57,11 +61,7 @@ import {
   useEditor,
   EditorContent,
 } from '@tiptap/vue-3'
-import {
-  BubbleMenu,
-  FloatingMenu,
-} from '@tiptap/vue-3/menus'
-
+import { BubbleMenu, FloatingMenu } from '@tiptap/vue-3/menus'
 import { computed, toRef, watch } from 'vue'
 import type { Editor, ChainedCommands } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
@@ -73,6 +73,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue'])
+
+// Render the menus at the top level so they escape the editor's stacking context and clear the CWA
+// page overlay. `document` isn't available in the template expression scope, so define it here.
+const appendToBody = () => document.body
 
 // reactive updating of the model
 const value = computed({
@@ -93,7 +97,11 @@ const editor = useEditor({
     },
   },
   extensions: [
-    StarterKit,
+    StarterKit.configure({
+      // TipTap v3 StarterKit includes Link by default — disable it here and
+      // register it explicitly below so we can apply custom configuration.
+      link: false,
+    }),
     Placeholder.configure({
       placeholder: 'Write something …',
       emptyEditorClass: 'is-editor-empty text-inherit opacity-50',

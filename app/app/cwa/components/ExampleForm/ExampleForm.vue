@@ -7,6 +7,7 @@
       Example Form
     </h2>
 
+    <!-- Form-level success / error feedback -->
     <UAlert
       v-if="form.success.value"
       color="success"
@@ -21,6 +22,7 @@
         icon="i-lucide-circle-x"
         :description="form.formErrors.value[0]"
       />
+      <!-- Errors from fields the API returned but this template did not bind a useCwaFormInput for -->
       <UAlert
         v-if="form.unregisteredFieldErrors.value.length"
         color="error"
@@ -46,7 +48,7 @@
       />
     </UFormField>
 
-    <!-- plainPassword (RepeatedType) -->
+    <!-- plainPassword (RepeatedType → useCwaFormRepeated) -->
     <UFormField
       :label="password.first.vars.value?.label || 'Create Password'"
       :error="password.first.displayErrors.value ? password.first.errors.value[0] : undefined"
@@ -81,9 +83,6 @@
     </UFormField>
 
     <!-- subject (ChoiceType — collapsed select) -->
-    <!-- Nuxt UI USelect forbids empty-string values (reserved for clearing selection). -->
-    <!-- The Symfony placeholder choice ('Please select' => '') is stripped from items -->
-    <!-- and passed as the :placeholder prop instead.                                  -->
     <UFormField
       :label="subject.vars.value?.label || 'Regarding'"
       :error="subject.displayErrors.value ? subject.errors.value[0] : undefined"
@@ -91,8 +90,8 @@
     >
       <USelect
         v-model="subject.value.value"
-        :items="(subject.vars.value?.choices || []).filter(c => c.value !== '')"
-        :placeholder="subject.vars.value?.choices?.find(c => c.value === '')?.label || 'Please select'"
+        :items="(subject.vars.value?.choices || []).filter((c: any) => c.value !== '')"
+        :placeholder="subject.vars.value?.placeholder"
         value-key="value"
         label-key="label"
         class="w-full"
@@ -150,8 +149,10 @@
     </UFormField>
 
     <!-- randomCheckbox (CheckboxType) -->
+    <!-- Symfony CheckboxType: vars.value is always '1'; vars.checked is the boolean state. -->
+    <!-- label may contain HTML (e.g. <b>bold</b>) so we use a slot with v-html instead of :label -->
     <UFormField :error="checkbox.displayErrors.value ? checkbox.errors.value[0] : undefined">
-      <UCheckbox v-model="isChecked" @change="checkbox.onInput()">
+      <UCheckbox v-model="isChecked">
         <template #label>
           <!-- eslint-disable-next-line vue/no-v-html -->
           <span v-html="checkbox.vars.value?.label || 'Check this box'" />
@@ -182,7 +183,8 @@
     >
       <USelectMenu
         v-model="otherInterests.value.value"
-        :items="otherInterests.vars.value?.choices || []"
+        :items="(otherInterests.vars.value?.choices || []).filter((c: any) => c.value !== '')"
+        :placeholder="otherInterests.vars.value?.placeholder"
         :multiple="true"
         value-key="value"
         label-key="label"
@@ -192,6 +194,8 @@
     </UFormField>
 
     <!-- children (CollectionType — compound ChildType with 'name' sub-field) -->
+    <!-- Each <FormChildEntry> mounts its own useCwaFormInput for the sub-field, -->
+    <!-- registering the value into form state automatically.                    -->
     <div class="space-y-3">
       <p class="text-sm font-medium">
         {{ children.vars.value?.label || 'Children' }}
@@ -252,9 +256,11 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import { useCwaResource, useCwaForm, useCwaFormInput, useCwaFormRepeated, useCwaFormCollection } from '#imports'
 import FormChildEntry from './FormChildEntry.vue'
 import FormTextEntry from './FormTextEntry.vue'
 
+// Returns a trailing icon name for text-like inputs: spinner while validating, tick when valid.
 function trailingIcon(field: { validating: { value: boolean }, valid: { value: boolean | null } }) {
   if (field.validating.value) return 'i-lucide-loader-circle'
   if (field.valid.value === true) return 'i-lucide-circle-check'
@@ -273,15 +279,25 @@ const iriRef = toRef(props, 'iri')
 const { exposeMeta } = useCwaResource(iriRef)
 defineExpose(exposeMeta)
 
+// Form-level lifecycle (submit, success, formErrors)
 const form = useCwaForm(iriRef)
 
+// Text / email / textarea
 const text = useCwaFormInput(iriRef, 'example_form[text]')
 const email = useCwaFormInput(iriRef, 'example_form[email]')
 const message = useCwaFormInput(iriRef, 'example_form[message]')
+
+// Password pair (RepeatedType)
 const password = useCwaFormRepeated(iriRef, 'example_form[plainPassword]')
+
+// Choice: collapsed select (ChoiceType, expanded: false, multiple: false)
 const subject = useCwaFormInput(iriRef, 'example_form[subject]')
+
+// Choice: radio group (ChoiceType, expanded: true, multiple: false)
 const developer = useCwaFormInput(iriRef, 'example_form[developer]')
 
+// Single checkbox (CheckboxType)
+// Symfony: vars.value is always '1'; track the boolean state via vars.checked.
 const checkbox = useCwaFormInput(iriRef, 'example_form[randomCheckbox]')
 const isChecked = computed({
   get: () => !!checkbox.value.value,
@@ -291,8 +307,15 @@ const isChecked = computed({
   },
 })
 
+// Choice: checkbox group (ChoiceType, expanded: true, multiple: true) → value is string[]
 const interests = useCwaFormInput(iriRef, 'example_form[interests]')
+
+// Choice: multi-select (ChoiceType, expanded: false, multiple: true) → value is string[]
 const otherInterests = useCwaFormInput(iriRef, 'example_form[other_interests]')
+
+// CollectionType: compound entries (ChildType has one 'name' sub-field)
 const children = useCwaFormCollection(iriRef, 'example_form[children]')
+
+// CollectionType: simple text entries
 const textChildren = useCwaFormCollection(iriRef, 'example_form[text_children]')
 </script>

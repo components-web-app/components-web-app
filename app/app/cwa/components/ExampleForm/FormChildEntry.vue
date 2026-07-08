@@ -1,21 +1,46 @@
 <template>
   <UFormField
-    :label="nameField.vars.value?.label || 'Name'"
-    :error="nameField.displayErrors.value ? nameField.errors.value[0] : undefined"
+    :label="name.vars.value?.label || 'Name'"
+    :error="name.displayErrors.value ? name.errors.value[0] : undefined"
   >
     <div class="flex items-center gap-2">
-      <UInput class="flex-1" v-model="nameField.value.value" @blur="nameField.onBlur" @input="nameField.onInput" />
-      <UButton color="error" variant="soft" icon="i-lucide-trash-2" @click.prevent="$emit('remove')" />
+      <UInput
+        v-model="name.value.value"
+        class="flex-1"
+        :trailing-icon="trailingIcon(name)"
+        :ui="{ trailingIcon: trailingIconClass(name) }"
+        @blur="name.onBlur"
+        @input="name.onInput"
+      />
+      <UButton
+        color="error"
+        variant="soft"
+        icon="i-lucide-trash-2"
+        @click.prevent="$emit('remove')"
+      />
     </div>
   </UFormField>
 </template>
 
 <script setup lang="ts">
 import { toRef } from 'vue'
+import { useCwaFormInput } from '#imports'
 
-const props = defineProps<{ iri: string | undefined, entryFullName: string }>()
+const props = defineProps<{ iri: string, entryFullName: string }>()
 defineEmits<{ remove: [] }>()
 
 const iriRef = toRef(props, 'iri')
-const nameField = useCwaFormInput(iriRef, `${props.entryFullName}[name]`)
+const name = useCwaFormInput(iriRef, `${props.entryFullName}[name]`)
+
+function trailingIcon(field: { validating: { value: boolean }, valid: { value: boolean | null } }) {
+  if (field.validating.value) return 'i-lucide-loader-circle'
+  if (field.valid.value === true) return 'i-lucide-circle-check'
+  return undefined
+}
+
+function trailingIconClass(field: { validating: { value: boolean }, valid: { value: boolean | null } }) {
+  if (field.validating.value) return 'animate-spin text-gray-400'
+  if (field.valid.value === true) return 'text-green-500'
+  return undefined
+}
 </script>
