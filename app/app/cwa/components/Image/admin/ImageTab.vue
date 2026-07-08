@@ -2,10 +2,10 @@
 import { useCwaResourceManagerTab, useCwaResourceUpload } from '#imports'
 
 const { exposeMeta, iri } = useCwaResourceManagerTab({
-  name: 'Upload'
+  name: 'Upload',
 })
 
-const { filenameInputModel, updating, fileExists, handleInputChangeFile, handleInputDeleteFile } = useCwaResourceUpload(iri)
+const { bind } = useCwaResourceUpload(iri)
 
 defineExpose(exposeMeta)
 </script>
@@ -13,12 +13,8 @@ defineExpose(exposeMeta)
 <template>
   <div>
     <CwaUiFormFile
-      v-model="filenameInputModel"
+      v-bind="bind"
       label="Upload Image"
-      :disabled="updating"
-      :file-exists="fileExists"
-      @change="handleInputChangeFile"
-      @delete="handleInputDeleteFile"
     />
   </div>
 </template>

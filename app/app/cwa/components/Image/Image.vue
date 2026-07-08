@@ -1,23 +1,22 @@
 <template>
   <div class="w-full relative my-5">
     <div
-      v-if="displayMedia"
+      v-if="files.file?.displayMedia"
       class="relative flex overflow-hidden max-w-[300px]"
     >
       <NuxtImg
-        v-if="displayMedia"
-        ref="image"
-        :src="contentUrl"
-        :width="displayMedia?.width"
-        :height="displayMedia?.height"
+        ref="file"
+        :src="files.file.contentUrl"
+        :width="files.file.displayMedia?.width"
+        :height="files.file.displayMedia?.height"
         class="max-w-full h-auto"
-        :style="{ 'aspect-ratio': `${displayMedia.width} / ${displayMedia.height}` }"
-        @load="handleLoad"
+        :style="{ 'aspect-ratio': `${files.file.displayMedia.width} / ${files.file.displayMedia.height}` }"
+        @load="files.file.handleLoad"
       />
       <div
         data-placeholder="true"
         class="absolute top-0 left-0 w-full h-full overflow-hidden bg-gray-200 pointer-events-none cwa:transition-opacity"
-        :class="{ 'opacity-0': loaded }"
+        :class="{ 'opacity-0': files.file.loaded }"
       />
     </div>
     <div v-else>
@@ -33,8 +32,9 @@
 
 <script setup lang="ts">
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import { useCwaComponent, withFile } from '#imports'
 
 const props = defineProps<IriProp>()
-const { exposeMeta, contentUrl, displayMedia, handleLoad, loaded } = useCwaComponent(props, [withImage({ imagineFilterName: 'thumbnail' })])
+const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'thumbnail' })])
 defineExpose(exposeMeta)
 </script>
