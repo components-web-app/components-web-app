@@ -6,6 +6,12 @@ This is the demo/template application for `@cwa/nuxt`. It runs against the share
 
 This CLAUDE.md is the primary place to track demo fixes, fixture updates, and template changes needed as a result of module-side decisions. Do not modify application code directly unless explicitly asked.
 
+## ⚠ Dependency pins
+
+**`typescript` is pinned to exact `6.0.3` in `app/package.json`** (not `^6`). Do **not** bump it to `7.x`. TypeScript 7 is the native (Go) rewrite with a different package layout — `vue-tsc` (currently 3.3.7) can't drive it and fails the build with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. `pnpm up --latest` will keep reporting "7.0.2 available" and skipping it; that's intentional. Revisit only once `vue-tsc` officially supports TS 7.
+
+**Watch for duplicate `vue` copies after dependency changes.** A split (e.g. `3.5.38` pulled by `@unhead/vue` / older `@nuxt/devtools` vs `3.5.39` elsewhere) makes `vue-tsc` throw a huge structural `Ref<HTMLElement>`-not-assignable error (surfaced in `HtmlContent.vue` / `AltHtmlContent.vue` on the `useHtmlContent(...)` call). It can pass a local dev build yet fail CI's `--frozen-lockfile --offline` install. If it recurs, dedupe with `pnpm up --latest` (re-resolves to one vue) or a `pnpm.overrides` pin on `vue`, then verify with `pnpm install --frozen-lockfile && pnpm run build`.
+
 ## ✅ Completed migration — cwa-nuxt-module #252: File API rename (Image → File)
 
 Done (module edge `0.0.0-29725175.a5bb3b4`). All three files migrated and the app builds clean:
