@@ -11,7 +11,7 @@
     "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "npm:@cwa/nuxt-edge@0.0.0-29725454.a6a0567",
+    "@cwa/nuxt": "npm:@cwa/nuxt-edge@0.0.0-29725918.f358872",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^2.0.0",
@@ -44,5 +44,5 @@
     "workbox-build": "^7.4.1",
     "workbox-window": "^7.4.1"
   },
-  "packageManager": "pnpm@11.8.0"
+  "packageManager": "pnpm@11.10.0"
 }
