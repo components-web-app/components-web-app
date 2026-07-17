@@ -7,12 +7,19 @@ services:
     volumes:
       - ./api:/app
       - /app/var
-      - ./api/frankenphp/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./api/frankenphp/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint
-      - ./api/frankenphp/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.dev.ini:ro
+      # Deliberately no single-file bind mounts here. A single-file mount caches
+      # the file's size, so an edit that replaces it with a longer file is served
+      # to the container truncated to the old length, and Caddy then fails to
+      # parse a file that is perfectly valid on disk (issue #57). The ./api:/app
+      # directory mount above already exposes these same files and is immune, so
+      # the entrypoint and command below read them from /app/frankenphp instead.
       # If you develop on Mac or Windows you can remove the vendor/ directory
       #  from the bind-mount for better performance by enabling the next line:
       #- /app/vendor
+    entrypoint: /app/frankenphp/docker-entrypoint.sh
+    # Mirrors the frankenphp_dev CMD in api/Dockerfile, but reads the Caddyfile
+    # through the directory mount above. Keep the two in sync.
+    command: ["frankenphp", "run", "--config", "/app/frankenphp/Caddyfile", "--watch"]
     environment:
       MERCURE_EXTRA_DIRECTIVES: demo # - CHECK WHETHER WE STILL NEED THIS PATH ARG (/srv/mercure-assets/)
       # See https://xdebug.org/docs/all_settings#mode

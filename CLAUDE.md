@@ -92,13 +92,31 @@ The clause's only job is to **never cache an authenticated response**, and this 
 Verified — `frankenphp adapt` clean, and: anon → **cached**; `api_component=` → **cached**; `api_component=abc123` → **not cached**; `/_api/me`, `/_api/logout`, and the Nuxt app `/` → **not cached** (caching stays API-only).
 
 **Gotchas for anyone touching this file:**
-- **`unexpected EOF` / `unexpected token` errors after an edit are usually [#57](https://github.com/components-web-app/components-web-app/issues/57), not your syntax.** The Caddyfile is a **single-file bind mount** (`compose.override.yaml:10`), which caches the file's size. An edit that **replaces the file with a longer one** (new inode — what atomic IDE saves, `mv`, and most editor tools do) leaves the container reading it **clipped to the old byte count**, so Caddy parses a truncated config while the host file is perfectly valid. Reproduced 2026-07-17: host 4349 B / container 4119 B, ending mid-word — and the resulting `unexpected token 'h'` pointed at the `http://` in `reverse_proxy`, i.e. exactly where the cut landed. Edits that shrink or preserve length work; only *longer* ones break, which is what makes it look random. In-place writes (`python open(p,'w')`, `sed -i` without a temp file) are unaffected.
-  - **Tell it apart from a real syntax error by comparing sizes:** `wc -c < api/frankenphp/Caddyfile` vs `docker compose exec php sh -c 'wc -c < /etc/caddy/Caddyfile'`. A mismatch means you are hitting this, not a typo.
-  - It does **not** self-heal, and `docker compose restart php` is **not** enough — use `docker compose up -d --force-recreate php`.
-  - `docker-entrypoint.sh` and `conf.d/app.dev.ini` (`compose.override.yaml:11-12`) are single-file mounts too and share the exposure.
+- **`unexpected EOF` / `unexpected token` errors after an edit were [#57](https://github.com/components-web-app/components-web-app/issues/57) — FIXED 2026-07-17, see the section below.** If you ever see this again, the single-file mount has come back: check `wc -c < api/frankenphp/Caddyfile` against `docker compose exec php sh -c 'wc -c < /app/frankenphp/Caddyfile'`. A size mismatch means truncation, not a typo. It does not self-heal and `restart` is not enough — `docker compose up -d --force-recreate php`.
 - **Quote characters in comments are fine.** An earlier revision of this file claimed Caddy's lexer mis-parses `"` inside a `#` comment — **that was wrong**, and was really the truncation above. Verified: a comment containing quotes added via an in-place write adapts cleanly.
 - **`--watch` (dev target, `api/Dockerfile:96`) logs `unable to load latest config` on a partial read** while a file is being written, then loads fine. Those errors are usually noise. **Never read `/config/...` from the admin API to judge a change** — it races the reload and will lie. Use `frankenphp adapt` for syntax, and `docker compose restart php` before measuring.
 - The Souin API is on the **admin port 2019**, not 443: `curl http://localhost:2019/souin-api/souin` lists stored keys (`[]` = nothing cached). See `api/.env:30` `CACHE_URL`.
+
+### 7. Single-file bind mounts served a truncated Caddyfile — FIXED (issue #57, 2026-07-17)
+
+**Symptom:** edit the Caddyfile, and Caddy reports `unexpected EOF` / `unexpected token` on a file that is **perfectly valid on disk**. Intermittent-looking, and it sends you hunting for a syntax error that does not exist.
+
+**Cause:** a **single-file** bind mount caches the file's *size*. Replacing the file with a **longer** one (new inode — atomic IDE saves, `mv`, most editor tooling) leaves the container reading it **clipped to the old byte count**. Edits that shrink or preserve length work fine, which is what makes it look random. Measured here: host **4349 B** vs container **4119 B**, cut mid-word — and the reported `unexpected token 'h'` landed on the `http://` in `reverse_proxy`, exactly at the cut.
+
+> **This bug is a liar, and it cost real time.** It caused a wrong conclusion to be written into this file — that quote characters in a `#` comment break Caddy's lexer. They do not. The "evidence" was that atomic edits failed and an in-place edit passed; the variable was the **write method**, never the quotes. If you are debugging a Caddyfile parse error, **compare host vs container byte counts before believing the parser.**
+
+**The fix** (`compose.override.yaml`): stop reading these files through single-file mounts. `./api:/app` was **already** a directory mount — which is immune — so the files were always present at `/app/frankenphp/`; nothing needed rearranging. Removed all three single-file mounts and pointed the dev container at the directory-mounted copies:
+```yaml
+    entrypoint: /app/frankenphp/docker-entrypoint.sh
+    command: ["frankenphp", "run", "--config", "/app/frankenphp/Caddyfile", "--watch"]
+```
+The `command:` belongs in `compose.override.yaml`, **not** the Dockerfile — the dev image alone has no `/app/frankenphp/` (`COPY --link . ./` only happens in `frankenphp_prod`), so the dependency on the bind mount lives beside the mount. It does duplicate the `frankenphp_dev` CMD in `api/Dockerfile:96`; keep them in sync.
+
+**Verified:** atomic lengthening edit now gives host **4355** = container **4355**; `frankenphp adapt` clean; **`--watch` still hot-reloads over the directory mount** (a header added by an atomic edit appeared in ~1s with no restart, and disappeared again when reverted) — so this strictly *improves* `--watch`, which previously reloaded truncated files. Souin matrix and the entrypoint `ANALYZE` both still pass.
+
+**Bonus — a dead mount removed.** `./api/frankenphp/conf.d/app.dev.ini` **did not exist in git**. Docker's auto-create-missing-source therefore made it on the host as an **empty directory** (dated Jan 2 2025), which is untracked and invisible to `git status` (git cannot track empty dirs). It was mounted over `/usr/local/etc/php/conf.d/app.dev.ini`, where PHP ignored it — `conf.d` only loads `.ini` **files**, not directories. The real dev ini is `20-app.dev.ini`, baked in at `api/Dockerfile:94`. The mount had been silently doing nothing; both it and the stray host directory are gone.
+
+**Production is unaffected** — the Dockerfile bakes the Caddyfile into the prod image; only dev bind-mounts it. CI only builds `--target frankenphp_prod`.
 
 ### 6. `composer update` fails with a Flex recipes 404 — stale token in the `/config` volume
 
@@ -169,6 +187,44 @@ Do NOT add `--provenance` here — provenance requires a GitHub Actions runner a
 Any change made to this template application must be reflected in the docs project at `/Users/danielwest/Documents/GitHub/_CWA/docs`. After completing work here, always check whether the docs need updating and flag it if so.
 
 ## Planned Features
+
+### PWA / offline support (cwa-nuxt-module #258) — vetted, not yet implemented
+
+**This repo is where the real implementation lands.** The module deliberately ships no service worker (a module dep would force one on every consuming app — the #236 transitive-dep principle), so the template carries the reference config. The investigation was done module-side against real source; **the conclusions below overturn the original issue text, so implement from this, not from the issue.**
+
+**Fits the CLI feature system:** add a `pwa` choice to the `features` multiselect in `cwa-manifest.json` and gate the `pwa: {}` block in `app/nuxt.config.ts` with `// @cwa-if:pwa`, matching the existing `navigation`/`image`/`forms` pattern. `@vite-pwa/nuxt` goes in `app/package.json` **devDependencies** (as in the module playground), never a runtime dep.
+
+**Verified stack:** `@vite-pwa/nuxt@1.1.1`. Nuxt 4 works but is **undeclared** — README/npm still say "Zero-config PWA for Nuxt 3"; Nuxt 4 support is real in source (`compatibility: { nuxt: '>=3.6.5' }` since v0.9.0). The only "broken on Nuxt 4" report was a stale-version mistake, since retracted.
+
+**1. App shell precache — safe, do this.**
+```ts
+pwa: {
+  registerType: 'prompt',
+  workbox: {
+    navigateFallback: null, // MUST be written explicitly — see gotcha
+    globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+  },
+}
+```
+**⚠ `navigateFallback` gotcha:** `@vite-pwa/nuxt` checks `if (!('navigateFallback' in options.workbox))` and defaults it to `'/'`. **Omitting the key silently serves the `/` app shell for every SSR navigation.** *Presence of the key*, not its value, disables it. (Undocumented upstream; the module playground already does this correctly.) With it null there is no navigation interception, so `/_cwa/**` needs no denylist — but if an app ever sets a fallback it must add `navigateFallbackDenylist: [/^\/_cwa\//, /^\/login/]`.
+
+**2. ⛔ Do NOT add `runtimeCaching` for the CWA API.** The issue asked for SWR caching of `/_/routes/`, `/_/resource_manifest/` and resource GETs "with auth/draft excluded". **That exclusion is not implementable.** Four verified reasons:
+1. **Draft and published responses share an identical URL** — the primary fetch requests `/_/routes/{path}` and `/_/resource_manifest/{path}` with **no `?published=` marker**; the API decides draft-vs-published from the **auth cookie alone**.
+2. **The API sends no `Vary: Cookie`** (only `Vary: path` on ComponentPosition), so the Cache API cannot partition anon from authed entries.
+3. **Every CWA request is `credentials: 'include'`**, cross-origin to `apiUrlBrowser` — a readable 200 that **Workbox caches happily; Workbox does not honour `Cache-Control: no-store`.**
+4. **A Workbox `urlPattern` match callback must be synchronous**, so it cannot read auth state — a SW has no `document.cookie`, and `cookieStore` is async + Chromium-only.
+
+⇒ Admin browses drafts → SW caches them under the public URL → the next anonymous visitor on that device/profile is served the **draft**. **A URL denylist cannot fix this: there is no distinguishing URL.** Also, a broad API-origin `urlPattern` would match the **Mercure SSE stream** and break real-time updates.
+
+**3. Offline data belongs in IndexedDB, in the page — not the SW.** The issue calls this a "lighter middle ground"; it is actually the **correct** tier, because auth state is only readable in the page (`$cwa.auth.signedIn` / the `cwa_auth` cookie). The app can therefore persist only when signed out and purge on sign-in/sign-out. It layers straight onto module #257's `routeCache` (already `markRaw`, route-path-keyed, bounded by `routeCacheLimit`, default 50 — already serialisable). Cross-ref module #259.
+
+**4. Update UX — `registerType: 'prompt'`, not `autoUpdate`.** CWA admins edit inline, so an auto-updating SW can swap assets mid-edit. Prompt **requires UI** (none exists yet anywhere): `const $pwa = usePWA()` → `$pwa?.needRefresh` → `$pwa.updateServiceWorker(true)`, gated on `$cwa.admin.isEditing`. Note it is **`usePWA()`** (`usedPWAState`/`usePWAState` do not exist), `$pwa` is optional/client-only, and because it is `UnwrapNestedRefs`, **`needRefresh` is a plain boolean, not a ref**.
+
+**5. Mercure offline — do not promise "revalidate on reconnect".** The module attaches **only `onmessage`** to its EventSource; there is no `onerror`, no reconnect handler and no `online`/`offline` listener. So it never error-spams, but it also never revalidates — recovery relies solely on the browser's native EventSource reconnect replaying via the `Last-Event-ID` header, which only backfills if the Mercure hub runs an event store. Otherwise events missed while offline are **lost silently and the store stays stale**. Flagged module-side as a separate follow-up; it is a prerequisite for a real offline story.
+
+**Long-term unlock (API-side):** if `api-components-bundle` sends `Vary: Cookie` + `Cache-Control: private, no-store` on content endpoints, SW API caching becomes safe by construction. Worth raising there regardless — **without `Vary: Cookie`, any shared HTTP cache or CDN in front of the API has this same leak today, service worker or not.**
+
+---
 
 ### Project Installer / Scaffolder CLI ✅
 
