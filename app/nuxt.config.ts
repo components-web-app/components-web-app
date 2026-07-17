@@ -136,8 +136,11 @@ export default defineNuxtConfig({
     strict: false
   },
   pwa: {
-    selfDestroying: true,
-    registerType: 'autoUpdate',
+    // 'prompt', not 'autoUpdate': CWA admins edit inline, and an auto-updating SW
+    // can swap assets mid-edit. Applying the update needs a small UI wired to
+    // usePWA() (gated on $cwa.admin.isEditing) — not built yet, tracked as a
+    // follow-up. Until then updates simply wait rather than apply silently.
+    registerType: 'prompt',
     manifest: {
       name: 'CWA',
       short_name: 'CWA',
@@ -162,52 +165,49 @@ export default defineNuxtConfig({
       ]
     },
     workbox: {
+      // Presence of this key (not its value) disables navigation interception in
+      // the PROD build, so SSR navigations are not served the app shell. Do not
+      // remove it. (In dev the plugin coalesces null -> '/', but devOptions is
+      // disabled below so the dev SW never runs.)
       navigateFallback: null,
       cleanupOutdatedCaches: true,
       sourcemap: true,
-      globPatterns: ['**/*.{js,mjs,ts,json,css,html,png,svg,ico,jpg,jpeg,webp,woff2}'],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2,webp,jpg,jpeg}'],
       runtimeCaching: [
-        // {
-        //   urlPattern: new RegExp(`^${escapeStringRegexp(API_URL_BROWSER)}\/.*`, 'i'),
-        //   handler: 'NetworkFirst',
-        //   options: {
-        //     cacheName: 'web-app-api',
-        //     expiration: {
-        //       maxEntries: 10000,
-        //       maxAgeSeconds: 60 * 60 * 24 * 30 // <== 30 days
-        //     },
-        //     cacheableResponse: {
-        //       statuses: [0, 200]
-        //     }
-        //   }
-        // },
-        // {
-        //   urlPattern: /^https:\/\/res.cloudinary\.com\/dxt7m8fqi\/image\/upload\/v1700228271\/.*/i,
-        //   handler: 'StaleWhileRevalidate',
-        //   options: {
-        //     cacheName: 'cloudinary-uploads',
-        //     expiration: {
-        //       maxEntries: 100,
-        //       maxAgeSeconds: 60 * 60 * 24 * 30 // <== 30 days
-        //     },
-        //     cacheableResponse: {
-        //       statuses: [0, 200]
-        //     }
-        //   }
-        // }
+        {
+          // Anchored to the /_api content paths (see the module's resource-utils.ts
+          // endpoint map). Must match every content endpoint or offline layout
+          // breaks; must NOT be broadened to all of /_api or it swallows the
+          // Mercure SSE stream and /me. If the module adds a resource type, add it.
+          urlPattern: ({ url }) => /\/_api\/(?:_\/(?:routes|resource_manifest|pages|layouts|component_groups|component_positions)|page_data|component)\b/.test(url.pathname),
+          // Cache is only ever read offline; online the network always wins.
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'cwa-api',
+            networkTimeoutSeconds: 3,
+            plugins: [{
+              // The authoritative gate: api-components-bundle #200 marks an
+              // authenticated GET of an affected resource `private, no-store`, so
+              // the SW cache only ever holds public (published) data.
+              cacheWillUpdate: async ({ response }) => {
+                const cc = response.headers.get('cache-control') || ''
+                if (/no-store|private/.test(cc)) return null
+                return response.status === 200 ? response : null
+              },
+            }],
+            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+          },
+        },
       ]
     },
     client: {
       installPrompt: true,
-      // you don't need to include this: only for testing purposes
-      // if enabling periodic sync for update use 1 hour or so (periodicSyncForUpdates: 3600)
-      // periodicSyncForUpdates: 20,
     },
+    // Do not run the service worker in dev: a SW intercepting requests during
+    // development is a common source of confusing issues (it was the reason PWA
+    // was previously parked), and it avoids the dev-only navigateFallback coalesce.
     devOptions: {
-      enabled: true,
-      suppressWarnings: true,
-      // navigateFallbackAllowlist: [/^\/$/],
-      type: 'module'
+      enabled: false,
     }
   },
   svgo: {

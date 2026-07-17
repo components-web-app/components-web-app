@@ -188,9 +188,19 @@ Any change made to this template application must be reflected in the docs proje
 
 ## Planned Features
 
-### PWA / offline support (cwa-nuxt-module #258) — vetted, not yet implemented
+### PWA / offline support (cwa-nuxt-module #258) — ✅ implemented 2026-07-17
 
-**This repo is where the real implementation lands.** The module deliberately ships no service worker (a module dep would force one on every consuming app — the #236 transitive-dep principle), so the template carries the reference config. The investigation was done module-side against real source; **the conclusions below overturn the original issue text, so implement from this, not from the issue.**
+**This repo is where the real implementation lands.** The module deliberately ships no service worker (a module dep would force one on every consuming app — the #236 transitive-dep principle), so the template carries the reference config. **The one blocker (safely caching auth-varying API responses) was solved API-side in [api-components-bundle #200](https://github.com/components-web-app/api-components-bundle/issues/200), merged to `main`** — so SW API caching is now safe and is part of this recommendation. Implement from here, not from the original issue text.
+
+> **Implementation status (2026-07-17).** Applied to `app/nuxt.config.ts` and verified with a real `nuxt build`: the generated `.output/public/sw.js` contains the anchored `cwa-api` NetworkFirst route, the `no-store`/`private` `cacheWillUpdate` gate, and `manifest.webmanifest` with the icons. This **replaced a stale parked block** that had been left disabled after PWA "caused issues" — the reconciliation, point by point:
+> - `selfDestroying: true` (a kill-switch that unregistered the SW) — **removed**.
+> - `registerType: 'autoUpdate'` → **`'prompt'`** (see §4).
+> - `runtimeCaching` was commented out; the commented draft was a broad `^${API_URL_BROWSER}/.*` pattern — the exact **over-match anti-pattern** §2 warns against — plus a leftover **Cloudinary** rule from another app. Both **dropped**, replaced with the anchored + gated config in §2.
+> - `devOptions.enabled: true` → **`false`**. Running the SW in dev is a prime suspect for the original "issues" (a SW intercepting requests mid-development), and it sidesteps the dev-only `navigateFallback` coalesce below. Enable it deliberately only to test the PWA.
+> - `@vite-pwa/nuxt` moved from `dependencies` → **`devDependencies`** (it's a build-time Nuxt module).
+> - Manifest (name/short_name/theme_color/icons) was already correct — **kept**.
+>
+> **Still deferred (not blocking, but not done):** the §4 update-prompt UI (`usePWA()` gated on `$cwa.admin.isEditing` — with `registerType: 'prompt'` and no UI, updates simply wait rather than apply) and the §6 sign-out/401 cache purge (needs custom SW message handling ⇒ the `injectManifest` strategy; `generateSW` can't add a message listener). The `no-store` gate already keeps authed data out of the cache; §6 only closes the logout-window edge on a shared device.
 
 **Fits the CLI feature system:** add a `pwa` choice to the `features` multiselect in `cwa-manifest.json` and gate the `pwa: {}` block in `app/nuxt.config.ts` with `// @cwa-if:pwa`, matching the existing `navigation`/`image`/`forms` pattern. `@vite-pwa/nuxt` goes in `app/package.json` **devDependencies** (as in the module playground), never a runtime dep.
 
@@ -206,23 +216,50 @@ pwa: {
   },
 }
 ```
-**⚠ `navigateFallback` gotcha:** `@vite-pwa/nuxt` checks `if (!('navigateFallback' in options.workbox))` and defaults it to `'/'`. **Omitting the key silently serves the `/` app shell for every SSR navigation.** *Presence of the key*, not its value, disables it. (Undocumented upstream; the module playground already does this correctly.) With it null there is no navigation interception, so `/_cwa/**` needs no denylist — but if an app ever sets a fallback it must add `navigateFallbackDenylist: [/^\/_cwa\//, /^\/login/]`.
+**⚠ `navigateFallback` gotcha:** in the **production** build `@vite-pwa/nuxt` runs `if (!('navigateFallback' in options.workbox)) → default nuxt.options.app.baseURL ?? '/'`. **Omitting the key silently serves the base-URL (usually `/`) app shell for every SSR navigation.** In the prod build *presence of the key*, not its value, disables it — so `navigateFallback: null` works. (Undocumented upstream; the module playground does this correctly.) With it null there is no navigation interception, so `/_cwa/**` needs no denylist — but if an app ever sets a fallback it must add `navigateFallbackDenylist: [/^\/_cwa\//, /^\/login/]`.
 
-**2. ⛔ Do NOT add `runtimeCaching` for the CWA API.** The issue asked for SWR caching of `/_/routes/`, `/_/resource_manifest/` and resource GETs "with auth/draft excluded". **That exclusion is not implementable.** Four verified reasons:
-1. **Draft and published responses share an identical URL** — the primary fetch requests `/_/routes/{path}` and `/_/resource_manifest/{path}` with **no `?published=` marker**; the API decides draft-vs-published from the **auth cookie alone**.
-2. **The API sends no `Vary: Cookie`** (only `Vary: path` on ComponentPosition), so the Cache API cannot partition anon from authed entries.
-3. **Every CWA request is `credentials: 'include'`**, cross-origin to `apiUrlBrowser` — a readable 200 that **Workbox caches happily; Workbox does not honour `Cache-Control: no-store`.**
-4. **A Workbox `urlPattern` match callback must be synchronous**, so it cannot read auth state — a SW has no `document.cookie`, and `cookieStore` is async + Chromium-only.
+> **Precise mechanic (verified in the package source, 2026-07-17):** there are **two** code paths. Prod uses the `in` check above (value-agnostic). But a **dev-only** line runs first — `navigateFallback = navigateFallback ?? baseURL ?? '/'` — and `??` treats `null` as absent, so in **dev the value is coalesced to `/` regardless**. So the "presence, not value" rule holds only for the shipped prod SW; if you ever set `devOptions.enabled: true`, `navigateFallback: null` will *not* disable it in dev. This template sets `devOptions.enabled: false`, so the dev path never runs.
 
-⇒ Admin browses drafts → SW caches them under the public URL → the next anonymous visitor on that device/profile is served the **draft**. **A URL denylist cannot fix this: there is no distinguishing URL.** Also, a broad API-origin `urlPattern` would match the **Mercure SSE stream** and break real-time updates.
+**2. CWA API runtime caching — now safe, via NetworkFirst + a `no-store` gate.** The original issue asked to cache `/_/routes/`, `/_/resource_manifest/` and resource GETs "with auth/draft excluded". Excluding by **URL** is impossible — draft and published share an identical URL (no `?published=` marker; the API picks from the auth cookie alone), the SW can't read auth state (`urlPattern` callback is synchronous; no `document.cookie`; `cookieStore` async + Chromium-only), and Workbox doesn't honour `Cache-Control: no-store` for a configured route. **The fix is not a URL denylist — it's the API marking each response.** As of #200 (`CacheHeadersEventListener`), an authenticated GET of an affected resource (`Route`, `ResourceManifest`, `ComponentPosition`, any Publishable) returns **`Cache-Control: private, no-store`**; anonymous / unaffected responses stay **`public`**. A `cacheWillUpdate` plugin drops anything carrying `no-store`, so the SW cache only ever holds public data — the same rule Souin enforces at the edge.
 
-**3. Offline data belongs in IndexedDB, in the page — not the SW.** The issue calls this a "lighter middle ground"; it is actually the **correct** tier, because auth state is only readable in the page (`$cwa.auth.signedIn` / the `cwa_auth` cookie). The app can therefore persist only when signed out and purge on sign-in/sign-out. It layers straight onto module #257's `routeCache` (already `markRaw`, route-path-keyed, bounded by `routeCacheLimit`, default 50 — already serialisable). Cross-ref module #259.
+```ts
+runtimeCaching: [
+  {
+    // anchored to the /_api content paths so the Mercure SSE stream is NOT matched
+    // (a broad API-origin pattern would swallow it and break real-time updates)
+    urlPattern: ({ url }) => /\/_api\/(?:_\/(?:routes|resource_manifest|pages|layouts|component_groups|component_positions)|page_data|component)\b/.test(url.pathname),
+    handler: 'NetworkFirst', // cache is READ only offline; online the network always wins
+    options: {
+      cacheName: 'cwa-api',
+      networkTimeoutSeconds: 3,
+      plugins: [{
+        cacheWillUpdate: async ({ response }) => {
+          const cc = response.headers.get('cache-control') || ''
+          if (/no-store|private/.test(cc)) return null // the authoritative gate
+          return response.status === 200 ? response : null
+        },
+      }],
+      expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+    },
+  },
+]
+```
+
+> **⚠ `urlPattern` gotcha — the pattern must be exhaustive AND anchored. Two ways to get it wrong, both silent:**
+> - **Under-match:** it must list **every** content endpoint, or offline breaks in a way that's easy to miss. In an early draft of this config the pattern **omitted `resource_manifest`** — and that is the endpoint the primary fetch needs to lay out a page (module #250). Cached routes without their manifest ⇒ **the page cannot render offline**, while the home page (whose manifest happened to be precached differently) still worked — so it looks like "offline mostly works" rather than an outright failure. The current pattern lists `routes`, `resource_manifest`, `pages`, `layouts`, `component_groups`, `component_positions`, `page_data`, `component`. If the module adds a resource type, add it here.
+> - **Over-match:** a broad API-origin pattern (e.g. `url.pathname.startsWith('/_api')`) also swallows the **Mercure SSE stream** and `/_api/me`, breaking real-time updates and re-caching auth checks. Keep it anchored to the content paths above. Verify a new pattern against both lists: it MUST match `/_api/_/routes//x`, `/_api/_/resource_manifest//x`, `/_api/page_data/x`, `/_api/component/images/x`; it MUST NOT match `/_api/.well-known/mercure` or `/_api/me`.
+
+**Why NetworkFirst is load-bearing:** the SW cache is only ever *read offline*, so an anonymous visitor can't be served a cached draft online even before the marker is seen. The one residual window — a cache outliving a **logout / cookie expiry** on one device — is closed by **purging the caches on sign-out and on any 401** (see §6). Also mind the HTTP-cache layer: the API must set long **`s-maxage`** (shared/Souin, purgeable) with **`max-age: 0`** — a long `max-age` puts an un-purgeable copy in the browser HTTP cache that a Workbox `fetch()` passes through, so NetworkFirst would serve it stale without reaching Souin.
+
+**3. IndexedDB is a complementary data tier, not a replacement.** The SW now gives app-shell + public-API offline. Page-side IndexedDB persistence of module #257's `routeCache` (already `markRaw`, route-keyed, bounded, serialisable) is still worth having for **auth-aware** data the SW must not hold — the page can read `$cwa.auth.signedIn` / the `cwa_auth` cookie, so it persists only when appropriate. Not either/or. Cross-ref module #259.
 
 **4. Update UX — `registerType: 'prompt'`, not `autoUpdate`.** CWA admins edit inline, so an auto-updating SW can swap assets mid-edit. Prompt **requires UI** (none exists yet anywhere): `const $pwa = usePWA()` → `$pwa?.needRefresh` → `$pwa.updateServiceWorker(true)`, gated on `$cwa.admin.isEditing`. Note it is **`usePWA()`** (`usedPWAState`/`usePWAState` do not exist), `$pwa` is optional/client-only, and because it is `UnwrapNestedRefs`, **`needRefresh` is a plain boolean, not a ref**.
 
 **5. Mercure offline — do not promise "revalidate on reconnect".** The module attaches **only `onmessage`** to its EventSource; there is no `onerror`, no reconnect handler and no `online`/`offline` listener. So it never error-spams, but it also never revalidates — recovery relies solely on the browser's native EventSource reconnect replaying via the `Last-Event-ID` header, which only backfills if the Mercure hub runs an event store. Otherwise events missed while offline are **lost silently and the store stays stale**. Flagged module-side as a separate follow-up; it is a prerequisite for a real offline story.
 
-**Long-term unlock (API-side):** if `api-components-bundle` sends `Vary: Cookie` + `Cache-Control: private, no-store` on content endpoints, SW API caching becomes safe by construction. Worth raising there regardless — **without `Vary: Cookie`, any shared HTTP cache or CDN in front of the API has this same leak today, service worker or not.**
+**6. Purge the SW caches on sign-out and on 401 (the offline-window closer).** NetworkFirst keeps the cache off the critical path online, but a cache populated by an admin can outlive their session on a shared device. On `signOut` and on any 401 from the API, delete the `cwa-api` cache from the **page** (not the SW): `navigator.serviceWorker.controller?.postMessage({ type: 'cwa-purge' })` with a `message` listener in the SW calling `caches.delete('cwa-api')`. Page-side because it's reliable — a SW-held auth flag fails *open* on SW restart (the SW loses the flag, keeps serving). Short `maxAgeSeconds` bounds the window further.
+
+**API relationship (done):** the `Cache-Control: private, no-store` marker this config depends on is emitted by `api-components-bundle` #200 (merged). Note the API deliberately does **not** send `Vary: Cookie` — it would collapse the static cache-hit rate (cookie cardinality is high and cookies churn), and moving the token to a JS-readable header to `Vary` on instead would trade httpOnly security for cacheability. Marking authenticated responses `no-store` sidesteps `Vary` entirely: the unsafe responses simply aren't stored, so there's no variant to partition.
 
 ---
 

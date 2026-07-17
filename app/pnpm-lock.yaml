@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@0.0.0-29738065.042c452
-        version: '@cwa/nuxt-edge@0.0.0-29738065.042c452(ab63d6721e88ec5361893d10b957f646)'
+        specifier: npm:@cwa/nuxt-edge@0.0.0-29738617.f442ed3
+        version: '@cwa/nuxt-edge@0.0.0-29738617.f442ed3(ab63d6721e88ec5361893d10b957f646)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.40(typescript@6.0.3))
@@ -51,9 +51,6 @@ importers:
       '@tiptap/vue-3':
         specifier: ^3.28.0
         version: 3.28.0(@floating-ui/dom@1.8.0)(@tiptap/core@3.28.0(@tiptap/pm@3.28.0))(@tiptap/pm@3.28.0)(vue@3.5.40(typescript@6.0.3))
-      '@vite-pwa/nuxt':
-        specifier: ^1.1.1
-        version: 1.1.1(@vite-pwa/assets-generator@1.0.2(@types/node@26.1.1))(magicast@0.5.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
       nuxt:
         specifier: ^4.4.8
         version: 4.4.8(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.7))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7))(@parcel/watcher@2.5.6)(@rollup/plugin-babel@6.1.0(@babel/core@7.29.7)(rollup@4.62.2))(@types/node@26.1.1)(@vitejs/devtools@0.3.4(crossws@0.4.10(srvx@0.11.22))(db0@0.3.4)(esbuild@0.28.1)(ioredis@5.11.1)(rollup@4.62.2)(typescript@6.0.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0)))(@vue/compiler-sfc@3.5.40)(cac@6.7.14)(db0@0.3.4)(esbuild@0.28.1)(ioredis@5.11.1)(lightningcss@1.32.0)(magicast@0.5.3)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rollup-plugin-visualizer@7.0.1(rollup@4.62.2))(rollup@4.62.2)(srvx@0.11.22)(terser@5.49.0)(typescript@6.0.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0))(vue-tsc@3.3.7(typescript@6.0.3))(yaml@2.9.0)
@@ -85,6 +82,9 @@ importers:
       '@vite-pwa/assets-generator':
         specifier: ^1.0.2
         version: 1.0.2(@types/node@26.1.1)
+      '@vite-pwa/nuxt':
+        specifier: ^1.1.1
+        version: 1.1.1(@vite-pwa/assets-generator@1.0.2(@types/node@26.1.1))(magicast@0.5.3)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.49.0)(yaml@2.9.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
       escape-string-regexp:
         specifier: ^5.0.0
         version: 5.0.0
@@ -696,8 +696,8 @@ packages:
   '@colordx/core@5.5.0':
     resolution: {integrity: sha512-3PxTH8itZzltK0U9jTwVVnjLXvnDYuq3m+QXsHkENxWiPRh4WaoLcs1SQjqgZ55kS+QyirpH5BVwzP2gMVG6EQ==}
 
-  '@cwa/nuxt-edge@0.0.0-29738065.042c452':
-    resolution: {integrity: sha512-q5zc6kdwJplIUrQVT4XpK+EQnVjCm67C+Xar2yUtTXJk6g1M6BO/57wLgthwlP3XuWHdErOQIQ03n1gxCSz5pw==}
+  '@cwa/nuxt-edge@0.0.0-29738617.f442ed3':
+    resolution: {integrity: sha512-cP9iG93aztEn7nf5q2XFO+eOq9V8cRgf2GUCoIUy+APtXmnDmnzOtFkmCGEB0L0XiqdfLSEywgisJCGFHtUMKw==}
     engines: {pnpm: '>=11.5.3'}
     hasBin: true
 
@@ -8157,7 +8157,7 @@ snapshots:
 
   '@colordx/core@5.5.0': {}
 
-  '@cwa/nuxt-edge@0.0.0-29738065.042c452(ab63d6721e88ec5361893d10b957f646)':
+  '@cwa/nuxt-edge@0.0.0-29738617.f442ed3(ab63d6721e88ec5361893d10b957f646)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.1(magicast@0.5.3)
       '@nuxtjs/robots': 6.1.2(fa1371e3f26f85047444421cd7e88d91)
