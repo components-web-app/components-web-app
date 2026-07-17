@@ -1980,6 +1980,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             },
  *         },
  *     },
+ *     http_cache?: array{ // Cache-safety headers for responses that vary by the authenticated session.
+ *         personalised_resource_classes?: list<scalar|Param|null>,
+ *     },
  * }
  * @psalm-type LiipImagineConfig = array{
  *     resolvers?: array<string, array{ // Default: []
