@@ -8,7 +8,9 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 
 ## ⚠ Dependency pins
 
-**`typescript` is pinned to exact `6.0.3` in `app/package.json`** (not `^6`). Do **not** bump it to `7.x`. TypeScript 7 is the native (Go) rewrite with a different package layout — `vue-tsc` (currently 3.3.7) can't drive it and fails the build with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. `pnpm up --latest` will keep reporting "7.0.2 available" and skipping it; that's intentional. Revisit only once `vue-tsc` officially supports TS 7.
+**`typescript` is pinned to exact `6.0.3` in `app/package.json`** (not `^6`). Do **not** bump it to `7.x`. TypeScript 7 is the native (Go) rewrite with a different package layout — `vue-tsc` (still 3.3.7 as of 2026-07-17, and still the latest) can't drive it and fails the build with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. Revisit only once `vue-tsc` officially supports TS 7.
+
+> **⚠ `pnpm up --latest` DOES bump typescript to 7.x — it does not skip it.** (This file previously claimed it "keeps reporting 7.0.2 available and skipping it"; that is wrong. Verified 2026-07-17: it rewrote the exact pin to `"typescript": "7.0.2"`.) An exact pin is **not** protection against `--latest`. After any `pnpm up --latest`, **manually revert `typescript` to `6.0.3` and re-run `pnpm install`**, then confirm the lockfile check below. A correct install prints `- typescript 7.0.2 / + typescript 6.0.3 (7.0.2 is available)` — that skip message is what you want to see.
 
 **Watch for duplicate `vue` copies after dependency changes.** A split (e.g. `3.5.38` pulled by `@unhead/vue` / older `@nuxt/devtools` vs `3.5.39` elsewhere) makes `vue-tsc` throw a huge structural `Ref<HTMLElement>`-not-assignable error (surfaced in `HtmlContent.vue` / `AltHtmlContent.vue` on the `useHtmlContent(...)` call). It can pass a local dev build yet fail CI's `--frozen-lockfile --offline` install. If it recurs, dedupe with `pnpm up --latest` (re-resolves to one vue) or a `pnpm.overrides` pin on `vue`, then verify with `pnpm install --frozen-lockfile && pnpm run build`.
 
@@ -93,6 +95,26 @@ Verified — `frankenphp adapt` clean, and: anon → **cached**; `api_component=
 - **No quote characters in comments near the backtick expression blocks** — Caddy's lexer does not treat `"` inside a `#` comment as inert and it corrupts the parse below.
 - **`--watch` (dev target, `api/Dockerfile:96`) logs `unable to load latest config` on a partial read** while a file is being written, then loads fine. Those errors are usually noise. **Never read `/config/...` from the admin API to judge a change** — it races the reload and will lie. Use `frankenphp adapt` for syntax, and `docker compose restart php` before measuring.
 - The Souin API is on the **admin port 2019**, not 443: `curl http://localhost:2019/souin-api/souin` lists stored keys (`[]` = nothing cached). See `api/.env:30` `CACHE_URL`.
+
+### 6. `composer update` fails with a Flex recipes 404 — stale token in the `/config` volume
+
+**Symptom:** `composer update` dies with
+```
+The "https://raw.githubusercontent.com/symfony/recipes-contrib/flex/main/index.json"
+file could not be downloaded (HTTP/2 404)
+```
+It looks like a transient GitHub outage or a dead endpoint. **It is neither, and it does not fix itself.**
+
+**Cause:** a **stale GitHub PAT** in the container's `/config/composer/auth.json`. GitHub returns **404, not 401**, for a bad token on `raw.githubusercontent.com`, which is what makes this so misleading. `curl` from the same container returns **200** because it sends no auth — so testing the URL by hand "proves" the network is fine and sends you the wrong way. Test with the token to see it:
+```sh
+docker compose exec php curl -s -o /dev/null -w "%{http_code}\n" \
+  -H "Authorization: token <the-token-from-auth.json>" \
+  "https://raw.githubusercontent.com/symfony/recipes-contrib/flex/main/index.json"   # -> 404
+```
+
+**Why it persists:** the entrypoint only clears `auth.json` (when `GITHUB_TOKEN` is empty) **inside the `if vendor/ is empty` block**, so once `vendor/` is populated it never runs again — and `/config` is a **persistent volume** (`caddy_config`), so the bad token outlives `compose down`/`up`.
+
+**Fix:** `docker compose exec php rm -f /config/composer/auth.json` (or set a valid `GITHUB_TOKEN`), then re-run `composer update`.
 
 ### 5. `[nuxt] instance unavailable` in SSR — RESOLVED, no longer current
 
