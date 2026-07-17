@@ -42,12 +42,6 @@ services:
       - target: 2019
         published: 2019
         protocol: tcp
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-        reservations:
-          cpus: '0.5'
     extra_hosts:
       - "php.local:127.0.0.1"
   
@@ -57,6 +51,14 @@ services:
 ###> doctrine/doctrine-bundle ###
   database:
     image: postgres:${POSTGRES_VERSION:-16}-alpine
+    # Component subclass tables hold 1-26 rows, permanently below autoanalyze's
+    # hard floor of 50 modifications, so they would otherwise never be analyzed.
+    # Set as a server startup flag rather than ALTER SYSTEM/DATABASE, which the
+    # unprivileged app user has no grant for.
+    command:
+      - postgres
+      - -c
+      - autovacuum_analyze_threshold=0
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-app}
       # You should definitely change the password in production
