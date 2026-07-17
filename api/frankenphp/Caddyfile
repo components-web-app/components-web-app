@@ -85,6 +85,13 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
+    # The api_component clause exists so an authenticated response is never cached:
+    # skip the cache only when that cookie carries an actual value.
+    # Do not compare the cookie placeholder against an empty string. An absent
+    # cookie does not resolve to empty (unlike a missing header, which does), so
+    # that form matches only when the cookie is present AND empty. A logged-out
+    # browser sends it empty, so it looks like it works, while any client sending
+    # no cookie at all, such as SSR or curl, silently misses the cache entirely.
     @use_cache expression `
         (
             method('GET') &&
@@ -92,7 +99,7 @@
             !{path}.startsWith("/_api/logout") &&
             !{path}.startsWith("/_api/me") &&
             {file.ext} != "pdf" &&
-            {http.request.cookie.api_component} == "" &&
+            !{http.request.header.Cookie}.matches("api_component=[^;]+") &&
             {http.request.header.Authorization} == ""
         ) &&
         (
