@@ -24,6 +24,17 @@ class UsersFixture extends Fixture
 
     public function load(ObjectManager $manager): void
     {
-        $this->factory->create($this->adminUsername ?: 'admin', $this->adminPassword ?: 'admin', $this->adminEmail ?: 'hello@cwa.rocks', false, true);
+        // overwrite: true is required for idempotency — without it the factory never
+        // looks up the existing user and every re-run persists another admin with the
+        // same username, which makes login 500 (NonUniqueResultException). The columns
+        // are not unique at the database level, so nothing else prevents it.
+        // Trade-off: the admin password is reset to ADMIN_PASSWORD on every run.
+        $this->factory->create(
+            $this->adminUsername ?: 'admin',
+            $this->adminPassword ?: 'admin',
+            $this->adminEmail ?: 'hello@cwa.rocks',
+            superAdmin: true,
+            overwrite: true,
+        );
     }
 }

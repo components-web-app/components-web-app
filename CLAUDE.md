@@ -186,6 +186,73 @@ Do NOT add `--provenance` here — provenance requires a GitHub Actions runner a
 
 Any change made to this template application must be reflected in the docs project at `/Users/danielwest/Documents/GitHub/_CWA/docs`. After completing work here, always check whether the docs need updating and flag it if so.
 
+## ✅ Fixed — `UsersFixture` was not idempotent, a second run broke login
+
+**Fixed 2026-08-13** in `api/src/DataFixtures/UsersFixture.php`. Keep the
+diagnosis: it is non-obvious, and any site generated from this template before
+that date still needs the duplicate-row cleanup at the end.
+
+The fixture used to call the factory with `$overwrite` left at its default:
+
+```php
+$this->factory->create($this->adminUsername ?: 'admin', $this->adminPassword ?: 'admin', $this->adminEmail ?: 'hello@cwa.rocks', false, true);
+```
+
+`UserFactory::create()` only looks up the existing user when `$overwrite` is
+true; otherwise it unconditionally constructs a new one. So every run after the
+first persists **another** user with the same username. Nothing at the database
+level prevents it — `AbstractUser` declares `#[UniqueEntity]` for `username` and
+`emailAddress`, but those are validator constraints and the columns are plain
+`#[ORM\Column(length: 255)]` with no `unique: true`; `UserFactory` calls
+`$this->validator->validate($user)` and discards the result, so the violation is
+computed and thrown away.
+
+The failure surfaces at login, not at fixture load. `UserRepository::loadUserByIdentifier()`
+ends in `getOneOrNullResult()`, so two rows raise
+`Doctrine\ORM\NonUniqueResultException` and `POST /_api/login` returns a 500.
+
+The fix applied — pass `overwrite: true`, with named arguments so the flags are
+readable (the signature is
+`create($username, $password, $email, $inactive, $superAdmin, $admin, $overwrite)`,
+so the old trailing `false, true` was `inactive: false, superAdmin: true`):
+
+```php
+$this->factory->create(
+    $this->adminUsername ?: 'admin',
+    $this->adminPassword ?: 'admin',
+    $this->adminEmail ?: 'hello@cwa.rocks',
+    superAdmin: true,
+    overwrite: true,
+);
+```
+
+Note the behaviour this buys: `overwrite: true` **resets the admin password** to
+`ADMIN_PASSWORD` on every fixtures run. That is the right trade for a seed
+fixture, but it means a password changed through the admin UI will not survive a
+reload.
+
+Applied downstream in the smoking/alcohol six-site project (2026-08-10) after a
+`doctrine:fixtures:load --append` on `preview.smokinginwales.info` produced a
+duplicate admin and 500s on login. Any site already generated from this template
+needs both the code fix *and* a cleanup of the duplicate rows —
+`DELETE FROM "user"` keeping the oldest row per username.
+
+## ✋ Decided against — `LOAD_DEMO_SCAFFOLD`
+
+The downstream six-site project added a `LOAD_DEMO_SCAFFOLD` env flag on
+2026-08-10 so `AppScaffold::build()` could be skipped while `UsersFixture` still
+seeded the admin. **Do not port it here, and do not re-propose it.**
+
+Loading fixtures *is* loading the scaffold — that is what the fixtures are. A
+site that wants an empty database simply does not run
+`doctrine:fixtures:load`, so a second flag to half-run them adds a config
+surface (env → `services.php` → `k8s.sh` → helm values → deployment template)
+that duplicates a decision the operator already makes by choosing whether to
+run the command at all.
+
+If a downstream project genuinely needs admin-only seeding, that belongs there,
+not in the template.
+
 ## Planned Features
 
 ### PWA / offline support (cwa-nuxt-module #258) — ✅ implemented 2026-07-17
@@ -329,3 +396,28 @@ Images are pushed to GHCR (`ghcr.io/<repo>`). `install_dependencies` (Alpine/`ap
 **Optional flags (`vars.`):** `CI_DISABLED` (set to `"true"` in this repo on GitHub to prevent mirrored pushes triggering the app pipeline), `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `PERFORMANCE_DISABLED`, `ENABLE_DATABASE_FIXTURES`, `KUBERNETES_VERSION`, `HELM_VERSION`
 
 **GitHub issue:** [#55](https://github.com/components-web-app/components-web-app/issues/55)
+
+---
+
+## ✅ Removed — the `LOAD_FIXTURES` hook in `app/nuxt.config.ts`
+
+**Removed 2026-08-13.** Do not reintroduce a build-time fixtures hook.
+
+It gated a Nuxt `listen()` hook on `process.env.LOAD_FIXTURES === 'true'`, which
+nothing in this repository ever set — absent from `compose.yaml`,
+`compose.override.yaml`, the app `Dockerfile`, `package.json` and CI. The hook
+had never run, and would not have done the right thing if it had: the body
+returned early when `/.dockerenv` existed, and the app only ever runs in a
+container here, so the guard disabled it exactly where it would be invoked. It
+also shelled out to `doctrine:fixtures:load` **without** `--append`, purging
+every table — the opposite of the supported path (`load_fixtures` in
+`bin/devops/k8s.sh`, wired to the manual CI jobs), which must leave existing
+content alone because a fixtures run against a real site exists to seed its
+first admin user.
+
+Loading fixtures locally is
+`docker compose exec php bin/console doctrine:fixtures:load --append` — no
+build-time configuration needed. The `resolve`/`execSync` imports went with it.
+
+Found in smoking-in-england-cwa (2026-08-12), which inherited the same block from
+this template and removed it there first.
