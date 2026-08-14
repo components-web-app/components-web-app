@@ -265,6 +265,22 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 3
+            # Unset, this defaults to 1s, and a probe that gives up mid-flight is
+            # not merely a failed probe here. This path is cached (it matches
+            # @use_cache in the Caddyfile), and Souin coalesces upstream fetches
+            # through singleflight keyed on the cache key; a caller that
+            # disconnects before the shared fetch returns leaves that entry
+            # holding a WaitGroup nobody releases, so every later request for the
+            # same key - which means every subsequent probe - blocks until the 10s
+            # backend timeout and 504s. The pod then never becomes ready and never
+            # recovers. The container spends its first seconds on migrations, so
+            # by the time Caddy serves, the 30s delay above has passed and the
+            # first probe lands on a cold worker: exactly the race this needs
+            # slack for. See components-web-app#62 for the incident that found it
+            # (a production pod stuck 0/1 for three hours after a node upgrade)
+            # and darkweak/souin#849, where a fix is pending for the underlying
+            # defect - a stalled call should not cost the key.
+            timeoutSeconds: 5
           resources:
             {{- toYaml .Values.php.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

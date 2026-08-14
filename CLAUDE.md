@@ -144,6 +144,73 @@ Fired from `Fetcher.fetchResource` in production SSR logs; traced to `useRequest
 
 **Resolved in srnte through dependency updates — do not re-apply anything for this.** No mitigation is present in this template's `nuxt.config.ts` (there is no `experimental: { asyncContext: true }` here) and none is needed. Kept only so the old advice isn't actioned again.
 
+## ⚠ Kubernetes probes — a 1s readiness timeout can brick a pod for good (fixed 2026-08-14)
+
+**Applied here 2026-08-14** — `timeoutSeconds: 5` on the php `readinessProbe`
+(`helm/cwa/templates/deployment.yaml`), matching the downstream fix. Issue
+[#62](https://github.com/components-web-app/components-web-app/issues/62).
+Keep the reasoning: the consequence is far worse than "a probe sometimes fails",
+and the git history shows probes being added and removed repeatedly over the
+years by people who never got to the bottom of it.
+
+**What happened** (six-site smoking/alcohol project, `alcohol-scotland`,
+2026-08-14): a pod sat `0/1 Running` for **three hours** after a GKE node
+upgrade rescheduled it overnight. Nothing had deployed — the deployment was
+seven days old. The pod was healthy: the probe URL returned **200 in 7ms** when
+requested with any other cache key, and `var/prod.log` was empty because the
+requests never reached PHP.
+
+| request | result |
+|---|---|
+| probe's exact key | **504 after 10.0s, every time** |
+| same host, `?cb=44219` appended | 200 in 7ms |
+| same host, different path | 200 in 0.3s |
+
+10.0s is Souin's backend timeout, logged at startup as `Set backend timeout to 10s`.
+
+**The mechanism.** Souin coalesces upstream fetches through `singleflight`,
+keyed on the cache key. A goroutine dump showed the owning call —
+`singleflight.doCall` → `Upstream.func2` → FrankenPHP — blocked in `select` for
+**177 minutes** (i.e. since pod start) with **1127 later requests parked behind
+it** in `wg.Wait()`. That entry never completes, so every subsequent request on
+that key waits out the backend timeout and 504s.
+
+The stuck call was **the first probe**. `timeoutSeconds` was unset, so it was
+Kubernetes' default of **1 second**. The container waits for the database, runs
+migrations and `ANALYZE` before Caddy listens, so by the time it serves anything
+the probe's `initialDelaySeconds: 30` has already elapsed and the kubelet polls
+immediately — logs show the first probe arriving **0.8s after** `serving initial
+configuration` and being cancelled at the 1s mark. That cancelled request is the
+goroutine that never returned.
+
+So the chain is: **cold start slower than the initial delay → first probe hits a
+cold worker → 1s timeout cancels it → that cache key is dead for the life of the
+pod → readiness never succeeds → the pod never joins the Service and never
+recovers.** Deleting the pod is the only fix, and only because the replacement
+starts with an empty cache. It is a race; five sibling pods happened to win it,
+and any pod can lose it on any reschedule.
+
+**Why this template is affected and not just that app:** the probe path
+`/_api/_/site_config_parameters.jsonld` matches `@use_cache` in
+`api/frankenphp/Caddyfile` (GET, `/_api` prefix, no `api_component` cookie, no
+`Authorization`), so it goes through Souin by design.
+
+**The rejected alternative — probe a path Souin does not cache.** It removes the
+failure mode rather than narrowing the window, and the matcher already carries
+path exclusions (`/_api/logout`, `/_api/me`) so it is easy to add. **Do not do
+it.** Those paths are excluded *because* they are auth-varying: an uncached
+endpoint here either exposes something that should not be public or does not
+answer 200 to an anonymous request, so it cannot serve as a readiness check.
+The upstream defect is Souin's — a stalled call should not render its key
+permanently unusable — raised as
+[darkweak/souin#849](https://github.com/darkweak/souin/issues/849), **where a fix
+is now pending**.
+
+**Not changed:** `helm/cwa/templates/pwa-deployment.yaml` also leaves
+`timeoutSeconds` unset on its `/_cwa/healthcheck` readiness probe, but that goes
+straight to Nuxt with no Souin in front, so a cancelled probe can only flap — it
+cannot poison anything.
+
 ## ✅ Completed migration — cwa-nuxt-module #252: File API rename (Image → File)
 
 Done (module edge `0.0.0-29725175.a5bb3b4`). All three files migrated and the app builds clean:
