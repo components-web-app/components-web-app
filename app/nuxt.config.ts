@@ -120,9 +120,9 @@ export default defineNuxtConfig({
   },
   pwa: {
     // 'prompt', not 'autoUpdate': CWA admins edit inline, and an auto-updating SW
-    // can swap assets mid-edit. Applying the update needs a small UI wired to
-    // usePWA() (gated on $cwa.admin.isEditing) — not built yet, tracked as a
-    // follow-up. Until then updates simply wait rather than apply silently.
+    // can swap assets mid-edit. A waiting worker is applied by the user through
+    // app/components/PwaUpdatePrompt.client.vue, which wires usePWA() to a notice
+    // and holds it back while $cwa.admin.isEditing is true.
     registerType: 'prompt',
     manifest: {
       name: 'CWA',
@@ -178,7 +178,12 @@ export default defineNuxtConfig({
                 return response.status === 200 ? response : null
               },
             }],
-            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+            // 4 hours, deliberately short. The no-store gate above is what keeps
+            // authenticated data out of this cache; this bounds the one window it
+            // cannot close — a cache populated while signed in outliving the session
+            // on a shared device. Until the sign-out/401 purge lands (issue #63) this
+            // is the only thing limiting that window, at the cost of offline reach.
+            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 4 },
           },
         },
       ]
