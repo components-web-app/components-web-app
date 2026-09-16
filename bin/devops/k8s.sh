@@ -287,7 +287,7 @@ php:
     cert: "${DATABASE_CLIENT_CERT_B64}"
     mode: "${DATABASE_SSL_MODE:-"prefer"}"
   caddy:
-    cdnConfig: "${CADDY_CDN_OPTIONS_B64}"
+    cdnConfig: "${CADDY_CACHE_CDN_CONFIG_B64}"
     storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}"
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
