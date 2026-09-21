@@ -310,12 +310,12 @@ php:
     email: ${ADMIN_EMAIL:-"hello@cwa.rocks"}
   gcloud:
     jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
+    bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
+    publicUrl: "${GCLOUD_PUBLIC_URL:-}"
   resources:
     requests:
       cpu: ${PHP_CPU_REQUEST:-$PHP_CPU_REQUEST_DEFAULT}
       memory: ${PHP_MEMORY_REQUEST:-$PHP_MEMORY_REQUEST_DEFAULT}
-    bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
-    publicUrl: "${GCLOUD_PUBLIC_URL:-}"
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${RESET_DATABASE:-false}"
