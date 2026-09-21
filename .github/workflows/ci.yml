@@ -234,12 +234,16 @@ jobs:
           source ./bin/devops/k8s.sh
           apply_kube_context
           load_fixtures review
-      # Refill the page cache the purge emptied (#80). Its own step with
+      # Refill the page cache the purge emptied (#80). Only production is warmed
+      # by default (WARM_CACHE_PRODUCTION="false" turns it off); review, staging
+      # and canary are opt-in via WARM_CACHE_REVIEW / _STAGING / _CANARY="true"
+      # (repository variables). Its own step with
       # continue-on-error: a page that does not return 200 marks this step failed,
       # and warm_cache adds an ::error annotation, without failing the job, because
       # the release is already live. It runs after the fixtures step, so a new
       # environment is warmed once its content exists.
       - name: Warm the page cache
+        if: vars.WARM_CACHE_REVIEW == 'true'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh
@@ -335,12 +339,16 @@ jobs:
           source ./bin/devops/k8s.sh
           apply_kube_context
           load_fixtures staging
-      # Refill the page cache the purge emptied (#80). Its own step with
+      # Refill the page cache the purge emptied (#80). Only production is warmed
+      # by default (WARM_CACHE_PRODUCTION="false" turns it off); review, staging
+      # and canary are opt-in via WARM_CACHE_REVIEW / _STAGING / _CANARY="true"
+      # (repository variables). Its own step with
       # continue-on-error: a page that does not return 200 marks this step failed,
       # and warm_cache adds an ::error annotation, without failing the job, because
       # the release is already live. It runs after the fixtures step, so a new
       # environment is warmed once its content exists.
       - name: Warm the page cache
+        if: vars.WARM_CACHE_STAGING == 'true'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh

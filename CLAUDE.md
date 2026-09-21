@@ -690,6 +690,20 @@ followed, so a 3xx in the sitemap counts as a failure. XML is parsed with
 ash (GitLab sources k8s.sh before `bash` exists), which was verified in `alpine`.
 `WARM_CACHE_INSECURE=true` is for testing against the local self-signed stack only.
 
+**Only production is warmed by default** (Daniel, 2026-09-21: warming exists for
+production). Per-track variables work on both GitLab and GitHub:
+- `WARM_CACHE_PRODUCTION`: **on** unless set to `"false"`.
+- `WARM_CACHE_STAGING`, `WARM_CACHE_REVIEW`, `WARM_CACHE_CANARY`: **off** unless set to
+  `"true"`.
+
+These are per-track variables, **not GitLab environment-scoped ones**, because the
+`staging` deploy job uses `environment: production`, so an environment scope cannot
+tell staging from production. On GitLab the warm jobs use `rules:`, since GitLab won't
+mix `rules` with `only`/`except`. Each rule restates its deploy job's conditions plus
+the flag, and the file passes `glab ci lint`. On GitHub the step `if:` reads
+`vars.WARM_CACHE_*` directly, so no `env:` mapping is needed. **Production does not
+wait for any warm job:** `production` needs only the `staging` deploy job.
+
 **It runs as its own job or step, never inside the deploy job** (Daniel's choice,
 2026-09-21). `warm_cache` exits 1 on any non-200. The release is already live by then,
 so that must not fail the deploy: that would mark a good deploy red, skip what follows
