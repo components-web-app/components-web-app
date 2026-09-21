@@ -460,7 +460,7 @@ extended to page HTML. Worth remembering if a first hit 504s in dev.
 `0.0.0-29833462.0f360ce` → `0.0.0-29833650.80c32cb` (admin "purge page cache" button in site settings, verified against the bundle's `POST /_/rendered_html/purge`: admin 204 and pages purged, anonymous 401; admin edits now send only changed fields) → `0.0.0-29833659.4f1d4bb` (session-end cache purge, #293) → `0.0.0-29833694.0536f7c` → `0.0.0-29833722.a6d5fe9` (form fixes #310, #311, #312) → **`0.0.0-29833778.72df02b`** (the concurrent SSR fixes #313/#314. Verified on the template: the concurrent 404-swap test is **0/12 wrong on a production build** (was 3/8) and 0/12 on the warm dev server (was 8/8); a freshly restarted dev server times out with 504s under concurrency while Vite compiles, and that is not the bug), after (module fixes #298 dot-path merge, #299 repeated password honours `realtime_validate_disabled`, #300 query-bound fallback, #301 form success resets on a new submit, #302, #303 `allowedComponents` untouched when the prop is omitted, #304 site name on the default OG image, #307 `/_cwa` redirects to the pages listing; previously `4f1d4bb`: the npm package listing lagged the publish by several minutes, but the exact version resolved; earlier, the second bump, same day, brings page caching on by
 default, the one-hour page backstop, and the route-binding fix #292; the lockfile
 still holds one `vue@3.5.43`, and `pnpm run build` passes), and
-`components-web-app/api-components-bundle` `dev-main c629748` → `20aabaf` → `6f86229` → `3cd5034` → `d6c4213` → **`1ae433f`** (21 commits; no schema changes; fixtures give the same 9 routes in a throwaway DB; `lint:container` OK. `66723b4` now asks the Filesystem for a public URL before falling back to the api URL. That changes nothing here: in prod `GoogleCloudStorageAdapter` implements `PublicUrlGenerator`, so media already used `GCLOUD_PUBLIC_URL`, and in dev the local adapter has no `public_url`, so it still falls back to the api URL) (#248: `make:rename-component` wired; `lint:container` now passes).
+`components-web-app/api-components-bundle` `dev-main c629748` → `20aabaf` → `6f86229` → `3cd5034` → `d6c4213` → `1ae433f` → **`b753b92`** (#254: `UserFactory` now throws `ValidationFailedException` instead of silently saving an invalid user. Verified in a throwaway DB: `UsersFixture` still loads fresh, and `--append --group=UsersFixture` twice over the existing admin gives exit 0 with still 1 user; the default password `admin` passes; a real duplicate via `user:create` is rejected with exit 1), previously (21 commits; no schema changes; fixtures give the same 9 routes in a throwaway DB; `lint:container` OK. `66723b4` now asks the Filesystem for a public URL before falling back to the api URL. That changes nothing here: in prod `GoogleCloudStorageAdapter` implements `PublicUrlGenerator`, so media already used `GCLOUD_PUBLIC_URL`, and in dev the local adapter has no `public_url`, so it still falls back to the api URL) (#248: `make:rename-component` wired; `lint:container` now passes).
 The second bump brought in the `purge-rendered-html` command (#247). The third
 brought in api-components-bundle#245/#246: `RouteGenerator` now throws
 `UnroutedParentException` for a page whose parent has no route, and
@@ -968,7 +968,10 @@ level prevents it — `AbstractUser` declares `#[UniqueEntity]` for `username` a
 `emailAddress`, but those are validator constraints and the columns are plain
 `#[ORM\Column(length: 255)]` with no `unique: true`; `UserFactory` calls
 `$this->validator->validate($user)` and discards the result, so the violation is
-computed and thrown away.
+computed and thrown away. **Since bundle `b753b92` (#254) the factory throws `ValidationFailedException`
+instead**, so a duplicate can no longer be written. That closes this at the source.
+`overwrite: true` is still needed for idempotency: without it a rerun now *fails*
+instead of duplicating.
 
 The failure surfaces at login, not at fixture load. `UserRepository::loadUserByIdentifier()`
 ends in `getOneOrNullResult()`, so two rows raise
