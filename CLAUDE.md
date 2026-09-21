@@ -724,6 +724,53 @@ Two rules if you do this again:
   *exactly* the hunks you left out. A misplaced hunk shows up as an extra move
   in that diff, so the check fails loudly instead of committing mangled text.
 
+## ✅ Node scale-down took the site down — eviction protection (#78, 2026-09-21)
+
+Found on srnte in production: a 503 from nginx-ingress with no deploy running.
+The GKE cluster autoscaler removed a node to consolidate
+(`deleting pod for node scale down`) and evicted **the only API pod and both
+SSR pods at once**. Rolling-update surge protects rollouts only; **an eviction
+kills the pod first**. With the API deliberately at one replica (#69: Souin's
+`otter` store and Mercure's `bolt` are pod-local), the ingress had no ready
+backend until the replacement booted and passed readiness, which takes at least
+30–40s given `initialDelaySeconds: 30`. The `cost-optimized` compute class
+consolidates actively, so this recurs on every site. **Capping the API at one
+replica is what makes a single eviction fatal**, so this protection is part of
+that decision.
+
+Ported from srnte `20859f4` unchanged (`git apply` of its chart diff):
+- **API pod:** `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"`, so the
+  autoscaler will not evict it to save a node. **GKE node upgrades still drain
+  it.** That is a brief, scheduled outage, unavoidable with one replica.
+- **SSR pods:** `pwa-pdb.yaml`, a PodDisruptionBudget with **`maxUnavailable: 1`**,
+  plus `topologySpreadConstraints` on `kubernetes.io/hostname` with
+  `ScheduleAnyway`, so replicas prefer separate nodes.
+
+Why **not** the obvious alternatives:
+- A PDB on the **API** would block every drain of its node. On a single replica,
+  `minAvailable: 1` makes voluntary eviction impossible, so upgrades hang until
+  GKE force-evicts it after an hour anyway. The annotation stops only the
+  autoscaler's optional evictions, which is the actual trigger.
+- `minAvailable: 1` for the **SSR** pods would do the same whenever there is one
+  replica, which is exactly this demo's setting (`PWA_AUTOSCALE_MIN=1`).
+  `maxUnavailable: 1` evicts one at a time with 2+ pods and still lets a single
+  pod go. With one SSR pod, cached pages keep serving (Souin is in the API pod)
+  and only uncached requests fail until it is back.
+
+Verified by rendering: `helm lint` passes, the annotation is on the API pod
+template, and the PDB's selector exactly equals the SSR pods' labels
+(`name=cwa-pwa`) and does **not** match the API pod (`name=cwa`). **A PDB
+whose selector matches nothing protects nothing and raises no error**, so check
+this whenever labels change.
+
+**Left alone:** readiness `initialDelaySeconds: 30`. Shortening it would reduce
+any unavoidable outage (upgrades), but it has to be checked against #62 first:
+a probe that times out partway through a request can leave Souin stuck on that
+key for good. If you shorten it, keep `timeoutSeconds: 5`.
+
+**Open:** if the `cost-optimized` compute class places pods on Spot VMs,
+preemptions are *involuntary*, and neither the annotation nor the PDB applies.
+
 ## ✅ Completed migration — cwa-nuxt-module #252: File API rename (Image → File)
 
 Done (module edge `0.0.0-29725175.a5bb3b4`). All three files migrated and the app builds clean:

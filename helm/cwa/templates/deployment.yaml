@@ -23,6 +23,8 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        # Single replica: stop the cluster autoscaler evicting it to consolidate nodes.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
         {{- with .Values.podAnnotations }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
