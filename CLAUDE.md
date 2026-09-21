@@ -211,6 +211,518 @@ is now pending**.
 straight to Nuxt with no Souin in front, so a cancelled probe can only flap — it
 cannot poison anything.
 
+## ✅ Capacity, autoscaling and build fixes — issue [#69](https://github.com/components-web-app/components-web-app/issues/69) (2026-09-21)
+
+Ported from an srnte deployment that was serving **~1 page/second, flat from 1
+to 15 concurrent visitors**. Every item was a template bug, not anything
+project-specific. Keep the reasoning: several of these had been wrong for
+months while looking fine.
+
+### The HPA had never once worked
+
+`hpa.yaml` targeted `{{ include "cwa.fullname" . }}-api`; `deployment.yaml`
+creates the bare `{{ $fullName }}` with **no suffix**. The autoscaler therefore
+reported `AbleToScale False / FailedGetScale — deployments.apps
+"production-cwa-api" not found` and retried forever — **42,746 events over 161
+days** on that cluster. Suffix dropped.
+
+**And fixing the name alone would not have been enough:** `php.resources` had
+both CPU lines commented out, and an HPA expresses CPU as a *percentage of the
+request*. With no request it reports `cpu: <unknown>` and still never scales.
+Added `requests.cpu: 200m`, and deliberately **no CPU limit** — Caddy serves
+cached responses on the same thread as everything else and should be free to
+burst.
+
+### The PWA could not be scaled at all, and was capped at ~1 render/second
+
+Two separate defects that hid each other:
+
+- `pwa-deployment.yaml` read **`.Values.autoscaling.enabled`** — the *API's*
+  flag — to decide whether to emit `replicas:`. With autoscaling on (the
+  default) it emitted none, K8s defaulted it to 1, and there was no knob
+  anywhere that could change it. It now has its own `pwa.replicaCount` /
+  `pwa.autoscaling`, and a new **`pwa-hpa.yaml`**.
+- `pwa.resources.limits.cpu: 150m` was the single worst number in the chart. A
+  page render costs roughly **150ms of CPU**, so a 0.15-core limit *is* one
+  request per second however many pods or visitors there are — the container
+  just gets throttled. Now `1000m` limit / `250m` request, memory `1Gi` /
+  `256Mi` (an OOMKill mid-render is worse than being slow).
+
+PWA autoscaling targets **70%**, not the API's 90%: SSR is CPU-bound per
+render, so at 90% the queue has already formed and the latency is already gone.
+The `behavior` block matters as much as the threshold —
+`scaleUp.stabilizationWindowSeconds: 0` because a launch spike arrives inside a
+minute and the default 5-minute window adds pods *after* it has passed, and a
+slow `scaleDown` (600s) so a lull does not leave the next burst cold. Measured
+2→4→6 in about two minutes.
+
+### The API is capped at one replica on purpose
+
+`autoscaling.maxReplicas` is now **1** (was 3), and `AUTOSCALE_MAX` in
+`bin/devops/k8s.sh` defaults to 1 to match. This is a **behaviour change** for
+anyone who was relying on the old default.
+
+It is the stateful tier. Souin's default `otter` store is **in-memory**, and
+API Platform purges it at `cache-url: http://localhost:2019/...` — so a write
+handled by a second pod never purges the first pod's cache, and with a long
+`s-maxage` that staleness is effectively permanent. Mercure's `bolt` transport
+is pod-local for the same reason. It also does not *need* to scale: one pod
+served **974 req/s** of cached responses. Raise it only alongside a shared cache
+store and a clustered Mercure hub.
+
+### `api-url` defaulted to something unusable, so CI overrode it with the worst option
+
+The default was `http://<fullname>` with **no `/_api` prefix** — the API lives
+under `/_api` (see `@api_handle` in the Caddyfile), so nothing could use it, and
+`bin/devops/k8s.sh` overrode it with the **public** URL. Every SSR render then
+hairpinned pod → load balancer → ingress → Caddy → PHP **over TLS, per API
+call**. `mercure-url` sitting right beside it in the same configmap already used
+the internal service.
+
+Both defaults now carry `/_api`, and `k8s.sh` passes `apiUrl: ~` so the
+in-cluster default applies. `apiUrlBrowser` still gets the public URL — that one
+genuinely needs it. The Caddyfile's `@internal` matcher + `BROWSER_SERVER_NAME`
+exist precisely to rewrite `Host` on these, so generated IRIs still come back
+with the public hostname.
+
+**Keep this in the chart, not `k8s.sh`** — `cwa.fullname` handles `trunc 63` and
+the "release name already contains the chart name" case, which a shell string
+would get wrong.
+
+### `NOTES.txt` called helpers that do not exist
+
+Four calls to `api-platform.name` / `api-platform.fullname` — leftovers from the
+api-platform chart this was forked from; there is no such helper in
+`_helpers.tpl`. Harmless in CI only because they sit in `else` branches and CI
+sets `ingress.enabled=true`. Any `helm lint` or `helm template` with ingress
+**disabled** failed outright. Verified both ways: with the old names `helm lint`
+fails on `NOTES.txt:18`, with the new ones it passes.
+
+### The Caddy build was broken, and had a duplicate plugin
+
+`--with github.com/dunglas/mercure/caddy` was listed **twice** in
+`api/Dockerfile`, and unpinned. `mercure/caddy@v1.0.0` declares `go 1.27`, but
+`dunglas/frankenphp:builder` ships **Go 1.26.8 with `GOTOOLCHAIN=local`** so the
+toolchain will not self-upgrade — the build dies with `module requires go >=
+1.27`. Verified against the module proxy and the image itself:
+
+```
+$ docker run --rm --entrypoint sh dunglas/frankenphp:builder -c 'go version; go env GOTOOLCHAIN'
+go version go1.26.8 linux/arm64
+local                                    # FrankenPHP v1.12.7, Caddy v2.11.4
+```
+
+Pinned to **`@v0.24.2`**, the last release declaring `go 1.26`. Checked all
+eight plugins against the proxy — mercure is the only one above 1.26, so
+nothing else needs pinning. Verified by a real `docker build --target
+frankenphp_prod`: it succeeds, and the image carries all eight plugins
+(`http.handlers.mercure` with `.bolt`/`.local`, `http.handlers.cache`,
+`storages.cache.{otter,badger,nuts}`, `http.handlers.vulcain`).
+
+> **Unpinning checklist — carried over from issue
+> [#67](https://github.com/components-web-app/components-web-app/issues/67),
+> which was closed once the pin landed. Do all three together:**
+> 1. Confirm `dunglas/frankenphp:builder` ships Go 1.27+
+>    (`docker run --rm --entrypoint sh dunglas/frankenphp:builder -c 'go version'`).
+> 2. Check `api/frankenphp/Caddyfile`'s mercure directives against Mercure 1.0 —
+>    `transport`, `publisher_jwt`, `subscriber_jwt`, `anonymous`,
+>    `subscriptions`, `cors_origins`. A major bump can rename or drop these.
+> 3. Unpin, **or pin to a tested `v1.x`** so a future Mercure major cannot break
+>    builds unattended again.
+
+> The explanatory comment sits *inside* the `RUN` line continuation. That is
+> safe — BuildKit strips comment lines within a continued instruction, even
+> tab-indented ones. Verified with a probe build; this Dockerfile
+>
+> ```dockerfile
+> RUN echo \
+> 	a \
+> 	# a comment line with a tab indent
+> 	b \
+> 	c
+> ```
+>
+> executes as `RUN echo a b c`, printing `a b c`.
+
+### `bin/devops/k8s.sh` — per-track sizing
+
+New `PWA_*` knobs mirroring the existing `AUTOSCALE_*` naming
+(`PWA_REPLICA_COUNT`, `PWA_AUTOSCALE`, `PWA_AUTOSCALE_MIN`/`_MAX`,
+`PWA_AUTOSCALE_CPU_PERCENT`/`_MEMORY_PERCENT`, `PWA_CPU_LIMIT`/`_REQUEST`,
+`PWA_MEMORY_LIMIT`/`_REQUEST`).
+
+Review apps and staging must **not** inherit production's pod floor — there are
+many of them at once and they exist to be correct, not fast. `deploy` switches
+on its `track` argument (`stable`/`canary` → min 2 / max 6; everything else →
+min 1 / max 2). An explicit env var always wins; the defaults only fill a gap.
+Verified by generating `values.tmp.yaml` for all four tracks.
+
+### Page HTML caching — landed 2026-09-21
+
+Unblocked the same day by the module and bundle updates below, so the two items
+#69 left open here are now done:
+
+- **`app/server/plugins/nitroCacheControlPlugins.ts` — deleted.** The module now
+  owns response `Cache-Control` through its own Nitro `beforeResponse` hook, so
+  the app-side plugin is superseded, not merely dead. It never fired anyway
+  (`event.headers` is the *request* headers in h3), and "fixing" it would have
+  put an unpurgeable `max-age=7200` in browser caches, where stale HTML
+  referencing a previous build's `/_nuxt` hashes 404s and leaves a blank page
+  for two hours per visitor.
+- **`@use_cache` widened** with a second branch for page HTML. See below.
+
+### ⚠ The CEL expression has no comment syntax, and `frankenphp adapt` will not tell you
+
+Caddy treats everything between the backticks of `@use_cache expression` as an
+opaque string and hands it to CEL. **CEL has no `#` comments.** A `#` line in
+there is a parse error that `frankenphp adapt` reports as **clean**, because
+adapt only checks Caddyfile syntax. It surfaces at runtime as a **crash-looping
+php container** (`token recognition error at: '#'`). Hit while writing this;
+all commentary now lives in Caddyfile `#` comments *above* the block, and there
+is a warning in the file saying so.
+
+`adapt` is necessary but not sufficient — always follow it with
+`docker compose up -d --force-recreate php` and check the container reaches
+`healthy`.
+
+### What the two-tier purge actually does — verified end to end
+
+**The template sets no page-cache config at all.** From edge
+`0.0.0-29833462.0f360ce` (module `930295c`/`f915f27`), `pageCache` defaults to
+`enabled: true` and `sharedMaxAge: 3600`. The template briefly carried
+`pageCache: { enabled: true }` while the installed edge still defaulted to off, and
+removed it on that bump, so `app/nuxt.config.ts` is back to its pre-#69 state.
+**Policy (Daniel, 2026-09-21): do not restate or override module or bundle
+defaults in the template.** Verified after removing the flag: `/form` is still
+`stored` and still carries `cwa-html`. The module tags each cacheable render with
+`Surrogate-Key: cwa-html, <every resource IRI it rendered from>`; the bundle
+purges those keys on write. Measured on a running stack:
+
+| Action | `/form` | `/blog-articles` |
+|---|---|---|
+| warm both | `hit` | `hit` |
+| `PATCH` the Form component (only on `/form`) | **`uri-miss; stored`** | `hit` |
+| `POST` a `SiteConfigParameter` | **`uri-miss; stored`** | **`uri-miss; stored`** |
+
+So a component write drops exactly the pages that rendered it, and a
+site-config write drops every page at once through the constant `cwa-html` tag.
+That constant is a **cross-repo interface contract** — `RENDERED_HTML_SURROGATE_KEY`
+in the module, `HttpCachePurger::RENDERED_HTML_TAG` in the bundle. A mismatch
+fails silently by matching nothing. The bundle's
+`http_cache.purge_rendered_html_classes` already defaults to
+`[SiteConfigParameter]`, so this template needs no API-side config.
+
+Exclusions verified individually — `/login`, `/password-reset`, `/user-area`,
+`/_cwa/healthcheck` and `/.well-known/mercure` all return **no `cache-status`
+header at all**, meaning the matcher never handed them to Souin, and `/form`
+with `Cookie: api_component=abc123` is likewise not cached.
+
+> The Mercure exclusion is the one that is not optional. It is SSE: a cached SSE
+> response never completes, connections pile up behind it, and it looks exactly
+> like the site falling over.
+
+### ⚠ Two things to know before trusting this in dev
+
+**1. A 404 from any API call makes the whole page uncacheable — the home page is
+currently affected.** `CwaFetch`'s `onResponse` accumulates cache directives from
+**every** response, including errors. An anonymous SSR render fetches component
+IRIs advertised by the resource manifest; a component with `published_at IS NULL`
+404s, and that 404 carries Symfony's default `Cache-Control: no-cache, private`.
+`readResponseCacheDirectives` sees `private`, sets `storable: false`, and
+`buildPageCacheHeaders` returns `{unstorable: true}` — so the page goes out
+`private, no-store` and is never stored.
+
+Confirmed on this fixture data: `/` fetches `html_contents/e7a42038…` and
+`images/3520e0ba…`, both `published_at = NULL`, both 404, and `/` is never
+cached — while `/form`, `/blog-articles` and the rest cache normally. **Do not
+read an uncached `/` as the feature being broken.** Raised module-side; a 404 on
+a draft component is the normal anonymous path, not evidence of private content.
+
+**2. Dev pages go out `s-maxage=60`; prod pages get the module's one-hour backstop.** `buildPageCacheHeaders` takes `min(pageCache.sharedMaxAge, lowest s-maxage/Expires across the render's API responses)`. The API's `shared_max_age` is **60 in dev** (`config/packages/api_platform.yaml`) and **31557600, a year, in prod** (`config/packages/prod/api_platform.yaml`, confirmed with `APP_ENV=prod debug:config api_platform defaults.cache_headers`). So in prod the module's `sharedMaxAge` (3600 from edge `0f360ce`) is what binds, and the dev value is deliberately short and fine. **An earlier revision of this section, measured only on the dev stack, called the 60 "the real dial" for prod and said it needed deleting. That was wrong; nothing needs changing.** Measure caching claims against `APP_ENV=prod` config, not just the dev stack.
+
+The short dev TTL does **mask purge bugs in testing**: a page will look correctly invalidated within a minute even if nothing purged it. Measure purges immediately before and after the write, as in the table above.
+
+The one limitation that still matters in prod is named in
+[api-components-bundle#227](https://github.com/components-web-app/api-components-bundle/issues/227):
+a *scheduled* transition only invalidates a page if the scheduled resource was in
+the set that rendered it. Cascade invalidation through a nav happens to be covered
+in practice, but by accident rather than by design.
+
+**3. A cold dev render can exceed Souin's 10s backend timeout.** The first
+request to a page after a restart returned `504 / cache-status: Souin;
+fwd=bypass; detail=DEADLINE-EXCEEDED`. It recovered on retry here, but this is
+the same backend-timeout surface as the readiness-probe incident (#62), now
+extended to page HTML. Worth remembering if a first hit 504s in dev.
+
+## ✅ Dependency update — module + bundle, 2026-09-21
+
+`@cwa/nuxt-edge` `0.0.0-29738617.f442ed3` → `0.0.0-29833297.27a2184` →
+`0.0.0-29833462.0f360ce` → `0.0.0-29833650.80c32cb` (admin "purge page cache" button in site settings, verified against the bundle's `POST /_/rendered_html/purge`: admin 204 and pages purged, anonymous 401; admin edits now send only changed fields) → **`0.0.0-29833659.4f1d4bb`** (session-end cache purge, #293; the npm package listing lagged the publish by several minutes, but the exact version resolved; earlier, the second bump, same day, brings page caching on by
+default, the one-hour page backstop, and the route-binding fix #292; the lockfile
+still holds one `vue@3.5.43`, and `pnpm run build` passes), and
+`components-web-app/api-components-bundle` `dev-main c629748` → `20aabaf` → `6f86229` → `3cd5034` → **`d6c4213`** (#248: `make:rename-component` wired; `lint:container` now passes).
+The second bump brought in the `purge-rendered-html` command (#247). The third
+brought in api-components-bundle#245/#246: `RouteGenerator` now throws
+`UnroutedParentException` for a page whose parent has no route, and
+`CwaFixtureBuilder` throws from `flush()` for a non-template child with no
+`route:` under an `isTemplate: true` page that has no `route:` either. **The
+template's fixtures are unaffected.** Its only template page
+(`nested-topic-template`) has no children; the chapter pages nest under the
+*page data* `topic-1`, which is routed. **Verified by loading the whole scaffold
+into a throwaway database** on `3cd5034`: exit 0, and `/topic-1` →
+`/topic-1/chapter-one` plus both chapters are present. Neither bump changed the
+schema.
+
+> A local dev DB can differ from a fresh load without that being a regression.
+> This one had blog articles 1–10, but `BlogScaffoldPart` creates exactly three
+> (`$i < 3`, unchanged since `44ef21c`). Compare against a fresh load in a
+> throwaway database, **never** by running `doctrine:fixtures:load` against the
+> dev DB, which purges it.
+Carried along by the composer resolve: **api-platform/core 4.3.17 → 4.4.0**,
+**doctrine/orm 3.6.7 → 3.7.1**, **doctrine/collections 2.6.0 → 3.1.0**,
+doctrine/doctrine-bundle 3.2.4 → 3.3.2.
+
+**One migration generated and applied** — `Version20260921141436`, adding
+`_acb_route.live_at` for the bundle's route-level scheduled publication
+(api-components-bundle#224). `migrations:diff` is clean afterwards.
+
+### ⚠ The update split `vue` in two, and `pnpm install` alone does not fix it
+
+After `pnpm install` the lockfile held **`vue@3.5.40` and `vue@3.5.43`** where it
+had held exactly one copy before — `nuxt@4.4.8` itself stayed on 3.5.40 while the
+app and `@cwa/nuxt` moved to 3.5.43. That is the failure mode documented under
+*Dependency pins* above: it breaks `vue-tsc` with a structural `Ref<HTMLElement>`
+error, and it breaks the **production image at runtime**, because every copy
+collapses onto the single Nitro output path and one wins.
+
+**`pnpm dedupe` fixed it cleanly** — one `vue@3.5.43`, and **typescript stayed at
+`6.0.3`**. Prefer it to `pnpm up --latest`, which resolves the split too but
+rewrites the typescript pin to 7.x and needs a manual revert.
+
+Always check after any dependency change:
+
+```sh
+grep -nE '^  vue@3\.5\.[0-9]+:' app/pnpm-lock.yaml   # must print exactly one line
+grep -nE '^  typescript@' app/pnpm-lock.yaml         # must be 6.0.3 only
+```
+
+`pnpm dedupe` also moved `@nuxtjs/sitemap` 8.2.2 → 8.5.1, within its `^8.2.2`
+range. `pnpm run build` passes with `typescript.typeCheck: true`, so `vue-tsc`
+is covered.
+
+### Already-applied template change this confirms
+
+`HtmlContent.vue` and `AltHtmlContent.vue` pass a second argument to
+`useHtmlContent(htmlContainer, htmlContent)`. That edit predates this session and
+was uncommitted; it type-checks and builds against this module version, so it is
+correct for the new signature, not a stray.
+
+## ✅ Media CDN URL via `GCLOUD_PUBLIC_URL` — issue [#68](https://github.com/components-web-app/components-web-app/issues/68) (2026-09-21)
+
+`api/config/services.php` used to hardcode `https://cdn.cwa.rocks/` twice — the
+GCS adapter's `public_url` and `FlysystemCacheResolver`'s `$rootUrl` — so every
+project had to edit it, and any project that forgot served media from *this
+template's* CDN. Both now read one parameter:
+
+```php
+->set('env(GCLOUD_PUBLIC_URL)', '')
+->set('app.gcloud_bucket_public_url', 'https://storage.googleapis.com/%env(GCLOUD_BUCKET)%/')
+->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%')
+```
+
+**The fallback is the bucket's own public URL, not `cdn.cwa.rocks`.** A project
+that never sets the variable gets URLs that actually resolve, never somebody
+else's domain. Symfony's `default:` processor treats an **empty** value as
+missing, so the `""` the chart passes by default falls back correctly.
+
+Wired the same way as `GCLOUD_BUCKET`: `api/.env`, `php.gcloud.publicUrl` in
+`helm/cwa/values.yaml` → `gcloud-public-url` in the configmap → the php
+container env, and `bin/devops/k8s.sh`. The template's own deploy has
+**`GCLOUD_PUBLIC_URL=https://cdn.cwa.rocks/`** set as a GitLab project CI/CD
+variable (scope `*`, unprotected, unmasked — matching `GCLOUD_BUCKET`; it is a
+public URL, not a secret), so its behaviour is unchanged.
+
+**Verified at runtime, in prod, from the real kernel** — not by reading config:
+
+| `GCLOUD_PUBLIC_URL` | resolved `app.media_public_url` |
+|---|---|
+| unset | `https://storage.googleapis.com/my-bucket/` |
+| `""` | `https://storage.googleapis.com/my-bucket/` |
+| `https://cdn.cwa.rocks/` | `https://cdn.cwa.rocks/` |
+
+Cases 2 and 3 reused the container compiled in case 1, which proves the value is
+resolved from the environment **at runtime rather than baked in at compile
+time**. That is the property that matters: CI builds the image once and k8s
+supplies the env. The compiled `api_components.filesystem.gcloud` definition
+carries `public_url` as an env placeholder in its constructor arguments — the
+bundle's `FlysystemCompilerPass` copies the tag's `config` into
+`setArguments()`, which is why `%env()%` works inside a tag attribute here at all.
+
+### The `_preview` prefix never did anything — removed, not parameterised
+
+The adapter tag also carried `'prefix' => '_preview'`. **It was dead config.**
+That `config` array becomes League Flysystem's `Filesystem` config, which reads
+`public_url` (`Filesystem.php:242`) and never reads `prefix`. The GCS adapter
+takes its prefix **only** from its constructor (`GoogleCloudStorageAdapter`
+`__construct(string $prefix = '')` → `PathPrefixer`), and
+`App\Flysystem\GoogleCloudStorageFactory` never passes one. So objects have
+always been written to the **bucket root**.
+
+#68 suggested parameterising the prefix too. Doing that would have created a
+variable that silently does nothing, so the key was dropped instead — a
+provably zero-behaviour change. A project that genuinely wants a bucket path
+prefix must pass it to the adapter constructor in `GoogleCloudStorageFactory`,
+and should expect every existing media URL to move when it does.
+
+### GitHub Actions never received any of the media variables
+
+GitLab exports CI/CD variables to jobs automatically; **GitHub Actions does
+not** — each must be mapped in the job's `env:`. `GCLOUD_JSON` and
+`GCLOUD_BUCKET` were never mapped in `ci.yml` or `production.yml`, so every
+GitHub-driven deploy has fallen back to the `no-gcloud-bucket` placeholder. All
+three are now mapped in the review, staging and production deploy jobs. They
+have to travel together: the new URL fallback is derived from the bucket.
+
+New GitHub settings to document: `secrets.GCLOUD_JSON`, `vars.GCLOUD_BUCKET`,
+`vars.GCLOUD_PUBLIC_URL` — all optional, all safely defaulted.
+
+## ✅ Fixed — `make:rename-component` crashed on every run (bundle #248, `d6c4213`)
+
+Found while linting the container for #68, and **unrelated to it**:
+`bin/console lint:container` fails in both dev and prod on
+`silverback.api_components.maker.make_rename_component`, and the command itself
+dies with `Too few arguments to function MakeRenameComponent::__construct(), 0
+passed ... exactly 2 expected`.
+
+`services_maker.php` registers it with no `->args()` and no autowiring, but its
+constructor needs `IriConverterInterface` and `ManagerRegistry`. The sibling
+makers get away with the same registration because their constructors take
+nothing. **Pre-existing** — reproduced with the original `services.php`, and the
+command was added in bundle `f48eec0` (2026-06-26), long before the previous
+lock ref. **Fixed in bundle `d6c4213` (#248)**, which wires both arguments by interface. Verified in this app's real container: `lint:container` passes, and the command runs. It can now serve as a CI gate. It does not affect the running app (the service is only built when
+that command runs), but it does mean `lint:container` cannot be used as a CI
+gate until it is fixed bundle-side.
+
+## ✅ Purge cached page HTML when the front end deploys — issue #71 (2026-09-21)
+
+Enabling `cwa.pageCache` (#69) created a new deploy-time hazard. Cached page HTML
+references the `/_nuxt/*` bundle hashes of the build that rendered it. After a
+front-end deploy the new pods serve only the new hashes, so a cached page from the
+old build loads scripts and stylesheets that now **404**. The visitor gets an
+unstyled page that never hydrates, and it lasts until that cache entry expires.
+**In prod that is up to an hour** (the module's `sharedMaxAge` of 3600 binds,
+because prod's API `shared_max_age` is a year), plus any `stale-while-revalidate`,
+which defaults to 0. In dev it is 60s, which is why it is easy to miss locally.
+**This window exists on every front-end deploy until the pipeline purge below is
+in place.**
+
+**The API side's answer is
+[api-components-bundle#247](https://github.com/components-web-app/api-components-bundle/pull/247)**
+(closes #243). It adds a console command,
+`silverback:api-components:purge-rendered-html`, which purges exactly `cwa-html`
+and nothing else. It also adds `POST /_/rendered_html/purge` (`ROLE_ADMIN`, for an
+admin button). The deploy path is the command, run with `kubectl exec` in the php
+pod, the same way `load_fixtures()` runs its command. That needs no new credential,
+because the pipeline already has exec access. On an app with no purger configured,
+the command prints a message and **still exits 0**, so it cannot fail a deploy.
+The PR records three rejected alternatives: a helm `post-upgrade` Job (Kubernetes-only),
+a PWA `postStart` hook (it fires on every HPA scale-up and would drop the whole HTML
+cache under load), and an API-pod startup hook (it never fires on a front-end-only
+deploy).
+
+**Implemented and verified (#71).** api-components-bundle#247 merged as `6f86229`,
+and the bundle is updated `20aabaf` → `6f86229` (`migrations:diff` clean).
+`purge_rendered_html [track]` in `bin/devops/k8s.sh` runs straight after `deploy`
+in all eight deploy steps (GitLab review/staging/production/canary, and the same
+four in GitHub `ci.yml`/`production.yml`), before `load_fixtures`. It finds each
+deployment by its **exact** name label (`cwa` is the API, `cwa-pwa` the PWA; label
+selectors never prefix-match), runs `rollout status` on the **PWA** then the
+**API**, and `kubectl exec`s the command in the API pod. If either deployment is
+missing it exits 1 rather than skipping.
+
+Verified on the running stack. `/form` and `/blog-articles` go `hit` → **miss**
+after one run, and `/_api/docs.jsonld` stays **`hit`**, because it is not tagged
+`cwa-html`. The pipeline function itself was checked against a stub `kubectl`
+for ordering, the stable/canary release names and the failure path.
+
+**Shipped in one commit (`dd04960`): `api/composer.lock` at `d6c4213` together with
+the `k8s.sh`/CI calls.** Against an older lock the command does not exist and every
+deploy would fail, so **never revert or cherry-pick one without the other.**
+
+**Why the purge is needed even though every deploy restarts the API pod:**
+`k8s.sh` sets `podAnnotations.timestamp`, so every `helm upgrade` recreates both
+pods and drops the in-memory store. While the PWA is rolling, though, old PWA pods
+can render old-build HTML into the **new** API pod's empty cache. Waiting for the
+PWA rollout before purging closes that. (#70/#71 originally reasoned that "the API
+and PWA deploy separately" here. They don't; the correction is posted on #71.)
+
+`kubectl exec deploy/...` reaches one pod, which is complete only because the API
+is capped at one replica. Souin's store is per pod, so raising the cap means
+looping over every API pod.
+
+Until then, every front-end deploy leaves the one-hour window described above.
+
+## ✅ Small template fixes — 2026-09-21
+
+These were found by a docs audit on 2026-08-12 and never filed, because the audit
+wrongly believed `gh` could not reach this repo. It can: issues live on GitHub, and
+GitLab only mirrors the code.
+
+- **`create-cwa` pointed users at a non-existent `/admin`.** It appeared in both the
+  generated README's URL table and the CLI's closing output. There is no `/admin`
+  route: the layer provides `/login`, and the admin screens live under `/_cwa`.
+  Both now say `https://localhost/login`. Because this is in
+  `packages/create-cwa/src/`, **the CLI is bumped to `0.1.1`** and needs a release
+  (tag `create-cwa/v0.1.1`, see *Publishing* below) to reach users.
+- **`publish-create-cwa.yml` leaked into generated projects.** It is this repo's
+  release workflow: it publishes `create-cwa` to npm via OIDC on a
+  `create-cwa/v*` tag. `packages/` was always excluded, but `.github/` was only
+  dropped for the GitLab and "none" CI choices, so every GitHub Actions project
+  inherited a workflow with nothing to build and an `id-token: write` grant. It is
+  now in `alwaysExclude` in `cwa-manifest.json`. The CLI fetches the manifest from
+  `main` at runtime, so **this takes effect for new installs as soon as `main` is
+  pushed**, with no CLI release needed.
+- **A dead `access_control` rule was removed from `security.yaml`:**
+  `{ path: ^/_api/password/(reset|update), roles: PUBLIC_ACCESS, methods: [POST] }`.
+  In both dev and prod, the only route under `/_api/password/` is
+  `GET /_api/password/reset/request/{username}`, which a POST-only rule can never
+  match. Password reset and update actually go through form submissions,
+  `^/_api/component/forms/(.*)/submit`, which keeps its own public rule. **Take
+  care if you ever add a POST route under `/_api/password/`:** the catch-all
+  `^/` rule below requires `IS_AUTHENTICATED_FULLY` for every write, so the new
+  route will be auth-only unless you add an explicit public rule for it.
+
+- **Dead `xkey.glue: ' '` removed from `api_platform.yaml` (#72).** It looked as if it
+  clashed with the `', '` separator used by Souin and the module, but it was
+  never read. API Platform passes `invalidation.xkey.glue` only to
+  `VarnishXKeyPurger`. `SouinPurger`, which is the purger wired here, has the
+  separator hard-coded (`SEPARATOR = ', '`). Verified live: responses use `', '`,
+  and every purge path still works after the removal. If a separator question
+  comes up again, check which purger class actually receives the parameter
+  (`http_cache_purger.php`) before assuming a mismatch.
+
+Also found and **not** actioned: the migration-race finding from the same audit is
+now resolved by default by the php `maxReplicas: 1` cap (#69).
+
+## ⚠ Splitting one file's changes across commits non-interactively (learnt 2026-09-21)
+
+`git add -p` is unavailable here, so today's work was split into commits per
+issue with `git diff -U0` and `git apply --cached --unidiff-zero`, keeping only
+chosen hunks. **With zero context, `git apply` places each hunk by the line
+numbers in its header.** Keep the full diff's numbers after skipping a hunk, and
+every later insertion lands shifted by the skipped hunk's size. The first
+attempt moved comments in `values.yaml` 4 lines down, into the middle of the
+`autoscaling:` block, and made a staged `ci.yml` invalid. `helm lint` still
+passed, because comments do not change YAML, so lint cannot catch this.
+
+Two rules if you do this again:
+- **Recompute each chosen hunk's new-side start** from only the chosen hunks
+  before it: `c = a + offset`, `+1` for a pure insertion, `-1` for a pure
+  deletion, where `offset` sums `(new_count - old_count)` of the chosen hunks.
+- **Verify after staging** that the file's remaining unstaged `-U0` diff is
+  *exactly* the hunks you left out. A misplaced hunk shows up as an extra move
+  in that diff, so the check fails loudly instead of committing mangled text.
+
 ## ✅ Completed migration — cwa-nuxt-module #252: File API rename (Image → File)
 
 Done (module edge `0.0.0-29725175.a5bb3b4`). All three files migrated and the app builds clean:
@@ -334,7 +846,7 @@ not in the template.
 > - `@vite-pwa/nuxt` moved from `dependencies` → **`devDependencies`** (it's a build-time Nuxt module).
 > - Manifest (name/short_name/theme_color/icons) was already correct — **kept**.
 >
-> **Status of the two follow-ups (2026-08-14):** the §4 update-prompt UI is **built** — `app/app/components/PwaUpdatePrompt.client.vue`, mounted from a new `app/app/app.vue`. The §6 sign-out/401 cache purge is **still open, as [#63](https://github.com/components-web-app/components-web-app/issues/63)**, and the reason it was previously parked (a belief that it needs `injectManifest`) turned out to be wrong — see §6.
+> **Status of the two follow-ups:** both are done. The §4 update UX was built as a notice on 2026-08-14 and **replaced on 2026-09-21 by a silent update on the next navigation** (#73, see §4); the notice component and `app/app/app.vue` are gone. The §6 cache purge when a session ends is **done by the module** (cwa-nuxt-module#293), and the template needs no config for it (see §6).
 
 **Fits the CLI feature system:** add a `pwa` choice to the `features` multiselect in `cwa-manifest.json` and gate the `pwa: {}` block in `app/nuxt.config.ts` with `// @cwa-if:pwa`, matching the existing `navigation`/`image`/`forms` pattern. `@vite-pwa/nuxt` goes in `app/package.json` **devDependencies** (as in the module playground), never a runtime dep.
 
@@ -387,30 +899,38 @@ runtimeCaching: [
 
 **3. IndexedDB is a complementary data tier, not a replacement.** The SW now gives app-shell + public-API offline. Page-side IndexedDB persistence of module #257's `routeCache` (already `markRaw`, route-keyed, bounded, serialisable) is still worth having for **auth-aware** data the SW must not hold — the page can read `$cwa.auth.signedIn` / the `cwa_auth` cookie, so it persists only when appropriate. Not either/or. Cross-ref module #259.
 
-**4. Update UX — `registerType: 'prompt'`, not `autoUpdate`. ✅ built 2026-08-14.** CWA admins edit inline, so an auto-updating SW can swap assets mid-edit. Prompt **requires UI**, which is `app/app/components/PwaUpdatePrompt.client.vue`: `const $pwa = usePWA()` → `$pwa?.needRefresh` → `$pwa.updateServiceWorker(true)`, gated on `$cwa.admin.isEditing`.
+**4. Update UX — `registerType: 'prompt'`, applied silently on the next navigation (#73, 2026-09-21).** CWA admins edit inline, so an auto-updating service worker could swap assets mid-edit; with `prompt`, a new worker installs and **waits**. On 2026-08-14 a notice component (`PwaUpdatePrompt.client.vue`, mounted from an `app/app/app.vue` written only for it) asked visitors to reload. **Daniel decided on 2026-09-21 to drop the notice.** `app/app/plugins/pwa-update.client.ts` now applies a waiting worker silently on the next change of path, still held while `$cwa.admin.isEditing`. The component and `app.vue` were both deleted. With no `app.vue`, Nuxt falls back to its built-in default, which is what that file reproduced apart from the notice. Verified: `/`, `/form` and `/login` (which has no CWA layout) all render.
 
-Three API details that are each easy to get wrong, all verified against the installed packages:
-- It is **`usePWA()`** — `usedPWAState`/`usePWAState` do not exist. `$pwa` is optional and client-only.
-- Because it returns `UnwrapNestedRefs` (the plugin provides a `reactive({…})`), **`needRefresh` is a plain boolean, not a ref** — no `.value`.
-- **`$cwa.admin.isEditing` is also not a ref.** `runtime/admin/admin.d.ts` declares `get isEditing(): boolean` — a getter over reactive store state, so reading it inside a `computed` tracks it correctly, but `.value` is wrong. `admin` itself is non-optional on `$cwa` (`runtime/cwa.d.ts`), so no `?.` is needed in a component. (The module's own route middleware writes `$cwa.admin?.isEditing`, but that is `nuxtApp.$cwa` in middleware context — do not copy it into a component.)
+**Why `afterEach`, not srnte's `beforeEach` + `location.assign` (`67e787b`).** In prompt mode `updateServiceWorker()` **ignores its argument**. It only posts `SKIP_WAITING`, and `@vite-pwa/nuxt` registers without `onNeedReload`, so workbox-window's `controlling` listener then calls `window.location.reload()` itself (`vite-plugin-pwa/dist/client/build/register.js`). Started from `beforeEach`, that reload races the `location.assign(to)` navigation and can cancel it, leaving the visitor on the page they were leaving. By `afterEach` the URL is already the destination, so the plugin's own reload lands in the right place. The cost is one extra full load, straight after the navigation. Only a change of **path** counts, so an in-page anchor or a query change never triggers a reload.
 
-The gate **holds** the prompt rather than discarding it: `needRefresh` stays true, so it reappears by itself the moment edit mode is switched off.
+API details that are each easy to get wrong, all verified against the installed packages:
+- The composable is **`usePWA()`** — `usedPWAState`/`usePWAState` do not exist. `$pwa` is client-only, and undefined until the worker registers.
+- The plugin provides a `reactive({…})`, so **`needRefresh` is a plain boolean, not a ref** — no `.value`.
+- **`$cwa.admin.isEditing` is also not a ref.** It is a getter over reactive store state (`runtime/admin/admin.d.ts`).
+- **Inside `defineNuxtPlugin`, `nuxtApp.$pwa` and `nuxtApp.$cwa` are typed `unknown`**, which fails `vue-tsc`. Type them through the composables: `nuxtApp.$pwa as ReturnType<typeof usePWA> | undefined`, `nuxtApp.$cwa as ReturnType<typeof useCwa>`. Read them lazily inside the router callback, not at plugin setup, so plugin order does not matter.
 
-**Why there is now an `app/app/app.vue`.** Neither this app nor the `@cwa/nuxt` layer had one, so Nuxt was falling back to its internal default. The new file replicates that default verbatim and adds `<PwaUpdatePrompt />` as a sibling **outside** `<NuxtLayout>` — outside so the fixed-position notice is never nested in a transitioned/transformed ancestor, and at app level so it also covers pages that bypass the CWA layouts (e.g. `/login`, which sets `cwa: { disabled: true }`). Mounting it in `cwa/layouts/primary.vue` + `secondary.vue` instead would duplicate it and still miss `/login`. If you edit `app.vue`, keep `<NuxtRouteAnnouncer />` and the `<NuxtLayout>` wrapper.
+**⚠ `clientsClaim: true` is required (#73).** The reload that finishes an update fires only when the new worker takes **control** of the page. When the new worker activates, a page the old worker controlled is handed over automatically, but an **uncontrolled** page (the first load that registered the worker, or a Shift-reload) is never claimed without `clientsClaim`, so nothing happens. With the old notice this meant Reload spun forever (found on srnte's production after `075610d`). It is safe with `prompt` because it runs on activation, and activation still waits for `SKIP_WAITING`. Verified in the build: `sw.js` calls `clientsClaim()`, and `self.skipWaiting()` appears only inside the `SKIP_WAITING` message handler.
 
-**5. Mercure offline — do not promise "revalidate on reconnect".** The module attaches **only `onmessage`** to its EventSource; there is no `onerror`, no reconnect handler and no `online`/`offline` listener. So it never error-spams, but it also never revalidates — recovery relies solely on the browser's native EventSource reconnect replaying via the `Last-Event-ID` header, which only backfills if the Mercure hub runs an event store. Otherwise events missed while offline are **lost silently and the store stays stale**. Raised module-side as [cwa-nuxt-module#286](https://github.com/components-web-app/cwa-nuxt-module/issues/286) (2026-08-14); it is a prerequisite for a real offline story. Confirmed still current in `src/runtime/api/mercure.ts:85-86`.
+**5. Mercure offline — ✅ revalidates on reconnect since cwa-nuxt-module#286.** This section used to say the module attached only `onmessage` and never revalidated. **That is no longer true** — verified against the installed edge `0.0.0-29833297.27a2184`, `runtime/api/mercure.js`:
+- `onerror` → `handleConnectionLost()` marks `mercureStore.connected = false` and logs a warning.
+- `onopen` after a loss → `handleConnectionOpen()` re-fetches **every id in `resourcesStore.current.currentIds`** and saves them. It waits for `requestsInProgress` to clear first.
+- The browser's `online` event also triggers the same revalidation if the store is still disconnected.
 
-**6. Purge the SW caches on sign-out and on 401 (the offline-window closer) — [#63](https://github.com/components-web-app/components-web-app/issues/63), not yet done.** NetworkFirst keeps the cache off the critical path online, but a cache populated by an admin can outlive their session on a shared device. On `signOut` and on any 401 from the API, delete the `cwa-api` cache.
+Because it re-fetches, recovery **no longer depends on the hub running an event store** or on `Last-Event-ID` replay.
 
-> **⚠ This does NOT need a custom service worker. An earlier revision of this file said it did — that it required `postMessage` + a `message` listener in the SW, and therefore a switch from `generateSW` to `injectManifest`. That was wrong, and it is the reason the work was parked as "too costly".** Verified against the installed packages (`workbox-core@7.4.1`, `workbox-strategies@7.4.1`, `vite-plugin-pwa@1.3.0`):
-> - **`caches` is exposed on `WindowOrWorkerGlobalScope`, not just the SW** — an ordinary page can `await caches.delete('cwa-api')` for its own origin, with no message passing and no SW code.
-> - **The cache name is literal.** `Strategy` does `this.cacheName = cacheNames.getRuntimeName(options.cacheName)`, and `getRuntimeName` is `(userCacheName) => userCacheName || _createCacheName(…)` — a supplied name is returned **verbatim**, with no `workbox-` prefix or scope suffix. So the bucket really is `cwa-api`.
->
-> Page-side is also the *better* design, for the reason already given: a SW-held auth flag fails **open** on SW restart (the worker loses the flag and keeps serving), whereas the page always knows the true auth state. Never maintain a hand-written SW for this.
+**It re-fetches but does not apply.** Each result goes through `saveResource({ isNew: true })`: an unchanged resource is discarded (`isCwaResourceSame`), a changed one is **staged** in `resources.new`, which sets `hasNewResources`. The only thing that reads that is `OutdatedContentNotice` ("The content on this page is outdated") inside the **admin header**, which `CwaRootLayout` renders only when `$cwa.auth.isAdmin`. So after a reconnect **admins are prompted; anonymous visitors see nothing and keep the stale content** until they navigate or reload. Do not describe this as "the page updates itself".
 
-Minor known wrinkle: `ExpirationPlugin` timestamps live in an IndexedDB database named `workbox-expiration`, which a page-side `caches.delete()` leaves behind. Those rows are keyed to URLs no longer in the cache and are rewritten when an entry is re-cached — cosmetic, not a leak.
+Two further limits: it revalidates only resources **currently on screen** — other pages in the route cache (#257) are not refreshed until fetched again — and the visitor-facing silence above may be a deliberate "don't swap content under a reader" choice or a gap. Unconfirmed; ask module-side before documenting it as either.
 
-Until #63 lands, **`maxAgeSeconds` is the only thing bounding that window**, which is why it was shortened from 24h to **4h** (2026-08-14). It is a mitigation, not a fix; the dial trades offline reach for exposure time.
+**6. Purge the SW caches when a session ends — ✅ done by the module, and the template needs no config** (cwa-nuxt-module#293, edge `0.0.0-29833659.4f1d4bb`; #63 closed in favour of it). When `@vite-pwa/nuxt` is installed and not disabled, the module adds a client plugin with `cwa.auth.clearCachesOnSessionEnd` **defaulting to `['cwa-api']`**, which is this template's runtime cache name (`module.mjs`, `resolveSessionEndCaches`). Verified in the build: the client bundle carries `clearCachesOnSessionEnd:["cwa-api"]`. **Rename the cache in `nuxt.config.ts` and the option has to follow**; otherwise leave it unset, per the no-restating-defaults policy.
+
+What the module does, checked in `runtime/api/auth.js` and `session-caches.js`:
+- **It only fires when a session actually ended.** `clearSession()` captures `authCookie === '1'` *before* resetting it. An anonymous visitor's first `/me` 401 also goes through `clearSession()`, so an unconditional purge there would wipe the offline cache on every anonymous visit.
+- **It fires on any 401 while signed in**, via `cwaFetch.onUnauthorised`, not only at the next `/me` check. A session that ends during server rendering is carried to the client through `authStore.sessionEnded`.
+- **It checks only `'caches' in globalThis`, never whether a service worker is running.** `serviceWorker.controller` is `null` on a first load or a Shift-reload even when the cache exists.
+- It deletes from the page with `caches.delete()`. No service-worker code, `postMessage` or `injectManifest` is involved. That is possible because `caches` is exposed on `WindowOrWorkerGlobalScope` and Workbox uses a supplied `cacheName` verbatim.
+
+The actual deletion was **not** exercised in a browser here; the module's unit tests (`session-caches.spec.ts`, `auth.spec.ts`) cover it. Leftover: `ExpirationPlugin`'s IndexedDB (`workbox-expiration`) keeps rows keyed to deleted URLs. That is cosmetic, and they are rewritten when an entry is cached again. `maxAgeSeconds` (4h) stays as a backstop, not the fix.
 
 **API relationship (done):** the `Cache-Control: private, no-store` marker this config depends on is emitted by `api-components-bundle` #200 (merged). Note the API deliberately does **not** send `Vary: Cookie` — it would collapse the static cache-hit rate (cookie cardinality is high and cookies churn), and moving the token to a JS-readable header to `Vary` on instead would trade httpOnly security for cacheability. Marking authenticated responses `no-store` sidesteps `Vary` entirely: the unsafe responses simply aren't stored, so there's no variant to partition.
 
