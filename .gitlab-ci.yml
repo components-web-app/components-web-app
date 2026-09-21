@@ -143,6 +143,7 @@ review:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy review
+    - purge_rendered_html review
     - persist_environment_url
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -196,6 +197,7 @@ staging:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy staging
+    - purge_rendered_html staging
   environment:
     name: production
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
@@ -246,6 +248,7 @@ production:
     - ensure_namespace
     - create_docker_pull_secret
     - deploy
+    - purge_rendered_html
     - delete canary
     - delete staging
     - persist_environment_url
@@ -382,6 +385,7 @@ canary:
     - apply_kube_context
     - create_docker_pull_secret
     - deploy canary
+    - purge_rendered_html canary
   environment:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN

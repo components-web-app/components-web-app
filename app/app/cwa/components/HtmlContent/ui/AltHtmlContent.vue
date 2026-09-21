@@ -39,7 +39,7 @@ const resource = getResource()
 const htmlContainer = ref<null | HTMLElement>(null)
 
 const htmlContent = computed<string>(() => resource.value?.data?.html)
-useHtmlContent(htmlContainer)
+useHtmlContent(htmlContainer, htmlContent)
 
 // This deals with the HTML editor
 const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(iriRef)

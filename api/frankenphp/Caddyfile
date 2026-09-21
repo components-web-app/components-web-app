@@ -85,20 +85,63 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
-    # The api_component clause exists so an authenticated response is never cached:
-    # skip the cache only when that cookie carries an actual value.
+    # Two things are cached here: API responses under /_api, and the page HTML
+    # rendered by the Nuxt upstream. Both are purge-driven - API Platform's
+    # SouinPurger sends the affected IRIs to CACHE_URL on every write, and the
+    # module tags each rendered page with the IRIs it rendered from (plus the
+    # constant `cwa-html` key), so the existing purge invalidates pages too.
+    #
+    # The api_component clause exists so an authenticated response is never
+    # cached: skip the cache only when that cookie carries an actual value.
     # Do not compare the cookie placeholder against an empty string. An absent
     # cookie does not resolve to empty (unlike a missing header, which does), so
     # that form matches only when the cookie is present AND empty. A logged-out
     # browser sends it empty, so it looks like it works, while any client sending
     # no cookie at all, such as SSR or curl, silently misses the cache entirely.
+    #
+    # The exclusions on the HTML branch are the whole safety story, so read this
+    # before adding a path to it:
+    #
+    #   /.well-known/   Mercure is SSE. A cached SSE response never completes, so
+    #                   connections pile up behind it and it looks exactly like
+    #                   the site falling over. This one is not optional.
+    #   /_nuxt/         Already immutable and hashed. Large bundles would evict an
+    #                   in-memory store for nothing.
+    #   /uploads/       Served by php via @api_handle, not the renderer.
+    #   /bundles/       As above.
+    #   /_cwa/          Health check and module internals.
+    #   the rest        Auth-varying pages. They render per-user content or
+    #                   redirect, so a shared cache entry is wrong even anonymous.
+    #
+    # NOTE: everything between the backticks is CEL, not Caddyfile. It has no
+    # comment syntax - a `#` line in there is a parse error that `frankenphp
+    # adapt` will NOT catch, because Caddy treats the backtick string as opaque.
+    # It surfaces only at runtime, as a crash-looping container. Keep commentary
+    # out here, above the block.
     @use_cache expression `
         (
             method('GET') &&
-            {path}.startsWith("/_api") &&
-            !{path}.startsWith("/_api/logout") &&
-            !{path}.startsWith("/_api/me") &&
-            {file.ext} != "pdf" &&
+            (
+                (
+                    {path}.startsWith("/_api") &&
+                    !{path}.startsWith("/_api/logout") &&
+                    !{path}.startsWith("/_api/me") &&
+                    {file.ext} != "pdf"
+                ) ||
+                (
+                    !{path}.startsWith("/_api") &&
+                    !{path}.startsWith("/.well-known/") &&
+                    !{path}.startsWith("/_nuxt/") &&
+                    !{path}.startsWith("/uploads/") &&
+                    !{path}.startsWith("/bundles/") &&
+                    !{path}.startsWith("/_cwa/") &&
+                    !{path}.startsWith("/user-area") &&
+                    !{path}.startsWith("/login") &&
+                    !{path}.startsWith("/password-reset") &&
+                    !{path}.startsWith("/verify-email") &&
+                    !{path}.startsWith("/confirm-new-email")
+                )
+            ) &&
             !{http.request.header.Cookie}.matches("api_component=[^;]+") &&
             {http.request.header.Authorization} == ""
         ) &&

@@ -38,7 +38,7 @@ defineExpose(exposeMeta)
 
 const htmlContainer = ref<null | HTMLElement>(null)
 const htmlContent = computed<string>(() => resource.value?.data?.html)
-useHtmlContent(htmlContainer)
+useHtmlContent(htmlContainer, htmlContent)
 
 const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(toRef(props, 'iri'))
 

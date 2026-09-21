@@ -82,6 +82,7 @@ jobs:
           apply_kube_context
           create_docker_pull_secret
           deploy canary
+          purge_rendered_html canary
       - name: Deploy production
         if: inputs.action == 'production'
         run: |
@@ -94,6 +95,7 @@ jobs:
           ensure_namespace
           create_docker_pull_secret
           deploy
+          purge_rendered_html
           load_fixtures
           delete canary
           delete staging

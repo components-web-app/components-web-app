@@ -415,6 +415,52 @@ load_fixtures() {
     -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load --no-interaction
 }
 
+# Drops every cached rendered page (the `cwa-html` surrogate key) once a deploy
+# has finished. A new front-end build changes the /_nuxt asset hashes on every page
+# without changing any API resource, so nothing else purges the HTML; a cached page
+# from the old build would load scripts and styles that now 404.
+#
+# Order matters. Wait for the PWA rollout first: until the old PWA pods are gone
+# they can still render old-build HTML into the cache, including into a freshly
+# restarted API pod's empty store. Then wait for the API so the exec does not land
+# on a pod that is terminating.
+#
+# The two deployments are selected by their exact name labels - `cwa` is the API,
+# `cwa-pwa` is the front end (label selectors never prefix-match).
+#
+# `kubectl exec deploy/...` reaches one pod. That is complete only because the API
+# is capped at one replica: Souin's store is per pod, so raising that cap means
+# running this against every API pod.
+purge_rendered_html() {
+  local track="${1-stable}"
+  local release_name="$RELEASE"
+  if [[ "$track" != "stable" ]]; then
+    release_name="$release_name-$track"
+  fi
+
+  local api_deploy pwa_deploy
+  api_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
+    -o name | head -1)
+  pwa_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa-pwa,app.kubernetes.io/instance=$release_name" \
+    -o name | head -1)
+
+  if [[ -z "$api_deploy" || -z "$pwa_deploy" ]]; then
+    echo "Could not find both deployments for release '$release_name' (api: '${api_deploy}', pwa: '${pwa_deploy}') - rendered HTML NOT purged"
+    return 1
+  fi
+
+  echo "Waiting for the PWA rollout, so no old-build pod can refill the cache..."
+  kubectl rollout status "$pwa_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
+  echo "Waiting for the API rollout..."
+  kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
+
+  echo "Purging rendered HTML..."
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+    -- php bin/console silverback:api-components:purge-rendered-html
+}
+
 function delete() {
 	track="${1-stable}"
 	name="$RELEASE"
