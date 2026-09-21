@@ -120,9 +120,10 @@ export default defineNuxtConfig({
   },
   pwa: {
     // 'prompt', not 'autoUpdate': CWA admins edit inline, and an auto-updating SW
-    // can swap assets mid-edit. A waiting worker is applied by the user through
-    // app/components/PwaUpdatePrompt.client.vue, which wires usePWA() to a notice
-    // and holds it back while $cwa.admin.isEditing is true.
+    // can swap assets mid-edit. With 'prompt' a new worker waits, and
+    // app/plugins/pwa-update.client.ts applies it silently on the next page
+    // navigation, holding it back while $cwa.admin.isEditing is true. There is
+    // no notice for visitors to act on (#73).
     registerType: 'prompt',
     manifest: {
       name: 'CWA',
@@ -153,6 +154,14 @@ export default defineNuxtConfig({
       // remove it. (In dev the plugin coalesces null -> '/', but devOptions is
       // disabled below so the dev SW never runs.)
       navigateFallback: null,
+      // Required for the update prompt to finish. Applying an update posts
+      // SKIP_WAITING, and the page reloads only when the new worker takes
+      // control. A page the old worker controlled is handed over automatically,
+      // but a page with no controller (the first load that registered the worker,
+      // or a Shift-reload) is never claimed without this, so Reload spun forever.
+      // Safe with registerType 'prompt': clientsClaim runs on activation, and
+      // activation still waits for the user (#73).
+      clientsClaim: true,
       cleanupOutdatedCaches: true,
       sourcemap: true,
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2,webp,jpg,jpeg}'],
@@ -179,10 +188,14 @@ export default defineNuxtConfig({
               },
             }],
             // 4 hours, deliberately short. The no-store gate above is what keeps
-            // authenticated data out of this cache; this bounds the one window it
-            // cannot close — a cache populated while signed in outliving the session
-            // on a shared device. Until the sign-out/401 purge lands (issue #63) this
-            // is the only thing limiting that window, at the cost of offline reach.
+            // authenticated data out of this cache. The one window it cannot close,
+            // a cache filled while signed in outliving the session on a shared
+            // device, is closed by @cwa/nuxt: when a session ends (sign-out, or a
+            // 401 while signed in) it deletes this cache, because
+            // cwa.auth.clearCachesOnSessionEnd defaults to ['cwa-api'] whenever
+            // @vite-pwa/nuxt is installed (cwa-nuxt-module#293). Rename this cache
+            // and that option has to follow. The short expiry is now only a
+            // backstop for that purge.
             expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 4 },
           },
         },
