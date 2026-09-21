@@ -96,10 +96,22 @@ jobs:
           create_docker_pull_secret
           deploy
           purge_rendered_html
-          load_fixtures
           delete canary
           delete staging
           persist_environment_url
+      # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
+      # previously part of the deploy step and ran on every deploy, emptying the
+      # database first (#74). load_fixtures now appends, and on a database that
+      # already has content the scaffold stops on a duplicate route without
+      # writing anything, so failure is allowed here as on GitLab.
+      - name: Load fixtures
+        if: inputs.action == 'production' && vars.ENABLE_DATABASE_FIXTURES == 'true'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          load_fixtures
       - uses: actions/upload-artifact@v4
         if: inputs.action == 'production'
         with:
