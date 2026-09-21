@@ -4,6 +4,16 @@
 
     admin :2019
 
+    # Run the cache INSIDE encode, not outside it. Souin registers `cache`
+    # before `rewrite`, which puts it ahead of `encode` in the handler chain,
+    # so it used to store the already-compressed body - and, because `encode`
+    # adds `Vary: Accept-Encoding`, it honoured that and kept one entry per
+    # distinct Accept-Encoding string (every browser sends a different one).
+    # Inside encode, Souin stores the identity body once and never sees that
+    # Vary; encode then compresses each response, hit or miss, for the client
+    # that asked. Issue #79.
+    order cache after encode
+
     cache {
         mode strict
 
@@ -15,9 +25,11 @@
 			{$CADDY_CACHE_CDN_CONFIG:strategy hard}
 		}
 
+		# {http.vars.cwa_cache_accept} is the request's Accept header for /_api only, and
+		# empty for everything else - see the `vars` in the site block (#79).
 		key {
 		    hide
-			template "{http.request.method}-{http.request.host}-{http.request.uri.path}-{http.request.uri.query}-{http.request.header.accept}-{http.request.cookie.api_component}-{http.request.header.Authorization}"
+			template "{http.request.method}-{http.request.host}-{http.request.uri.path}-{http.request.uri.query}-{http.vars.cwa_cache_accept}-{http.request.cookie.api_component}-{http.request.header.Authorization}"
 		}
 
 		# default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
@@ -41,6 +53,26 @@
 	}
 
 	root * /app/public
+
+	# Accept goes into the cache key for the API only (issue #79); the key
+	# template above reads it as {http.vars.cwa_cache_accept}.
+	#
+	# Page HTML is the same whatever Accept says, and every browser sends a
+	# different one, so keying pages on it stored a copy of each page per
+	# browser. The API genuinely negotiates on Accept (JSON-LD / JSON / HTML
+	# docs) and must stay split on it. Souin's Vary handling is NOT enough on
+	# its own there: API Platform's HTML docs response (Swagger UI, on /_api
+	# and /_api/docs) omits `Vary: Accept`, so once cached it matches every
+	# Accept and is served to JSON-LD clients. Measured - do not "simplify"
+	# this into dropping Accept from the key for everything.
+	#
+	# Souin's own per-path `cache_keys` cannot do this: in v1.7.9 a global key
+	# `template` short-circuits before the per-path overrides are consulted.
+	# Nor can `map`: its outputs are stored literally, not expanded. `vars`
+	# does expand them, and runs before `cache` in the handler order, so the
+	# value is set by the time Souin builds the key.
+	@cache_accept path /_api*
+	vars @cache_accept cwa_cache_accept {http.request.header.accept}
 
 	encode {
 		zstd
