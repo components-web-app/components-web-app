@@ -668,6 +668,7 @@ These were found by a docs audit on 2026-08-12 and never filed, because the audi
 wrongly believed `gh` could not reach this repo. It can: issues live on GitHub, and
 GitLab only mirrors the code.
 
+- **`create-cwa`'s instructions were wrong in four ways (#76).** The fixes: `/admin` → `/login`; no host `pnpm dev`, because the `app` container's dev image already runs `pnpm install; pnpm dev` with `app/` and `app/node_modules` bind-mounted, and a host server would never be reached through `https://localhost`; the cert path `api/frankenphp/caddy/certs/` (which does not exist) → `docker compose cp php:/data/caddy/pki/authorities/local/root.crt …` (verified: it yields the Caddy Local Authority root); and `engines.node` `>=18` → `>=22.13.0` (Nuxt needs `^22.12 || ^24.11 || >=26`, pnpm 11 `>=22.13`). Its fixture command now uses `--append`. The host `pnpm install` prompt defaults to **No**, as editor-types-only. Still `0.1.1`, unreleased.
 - **`create-cwa` pointed users at a non-existent `/admin`.** It appeared in both the
   generated README's URL table and the CLI's closing output. There is no `/admin`
   route: the layer provides `/login`, and the admin screens live under `/_cwa`.
@@ -1005,6 +1006,44 @@ Images are pushed to GHCR (`ghcr.io/<repo>`). `install_dependencies` (Alpine/`ap
 
 ---
 
+## ✅ Fixed — fixture loading could wipe a live database (#74, 2026-09-21)
+
+**Severity: high for any project deploying with GitHub Actions.** Two faults
+combined:
+- `load_fixtures` in `bin/devops/k8s.sh` ran `doctrine:fixtures:load
+  --no-interaction` **without `--append`**. That empties every table before
+  loading. The section below claimed this path "must leave existing content
+  alone"; the code never did.
+- The GitHub workflows called `load_fixtures` **inside the deploy step, on every
+  deploy**, with no `ENABLE_DATABASE_FIXTURES` check. That covered review and
+  staging in `ci.yml` and **production** in `production.yml`. GitLab always gated
+  its fixture jobs behind the variable and made them manual, but triggering one
+  on a live site would still have wiped it.
+
+Fixed:
+- `load_fixtures` now passes `--append`.
+- GitHub loads fixtures only in a separate **Load fixtures** step with
+  `if: vars.ENABLE_DATABASE_FIXTURES == 'true'` (plus `inputs.action ==
+  'production'` in production) and `continue-on-error: true`, matching GitLab's
+  `allow_failure`.
+- **Remaining difference:** GitLab's job is manual. GitHub has no manual step in
+  a push-triggered workflow, so the GitHub step runs after each deploy while the
+  variable is set. Set it only for a new environment's first deploy.
+
+**Proven in a throwaway database, not just reasoned:**
+- **The old command deletes real content.** A marker row, standing in for
+  content an editor made, is **gone** after the old command and **kept** after
+  `--append`.
+- **On a seeded database, `--append` writes nothing.** The scaffold stops on the
+  first page route that already exists (exit 7). Routes, pages, components,
+  positions and users are **all unchanged**, because the failed load rolled
+  back. `UsersFixture` is idempotent (`overwrite: true`).
+
+**Downstream:** srnte's GitHub `ci.yml` has the same unconditional review and
+staging calls, and its `k8s.sh` has no `--append`. srnte deploys through GitLab,
+so its production is not exposed, but it needs the same fix. No other local
+downstream repo carries these GitHub workflows.
+
 ## ✅ Removed — the `LOAD_FIXTURES` hook in `app/nuxt.config.ts`
 
 **Removed 2026-08-13.** Do not reintroduce a build-time fixtures hook.
@@ -1023,7 +1062,7 @@ first admin user.
 
 Loading fixtures locally is
 `docker compose exec php bin/console doctrine:fixtures:load --append` — no
-build-time configuration needed. The `resolve`/`execSync` imports went with it.
+build-time configuration needed. The pipeline's `load_fixtures` also appends (#74). The `resolve`/`execSync` imports went with it.
 
 Found in smoking-in-england-cwa (2026-08-12), which inherited the same block from
 this template and removed it there first.
