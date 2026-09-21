@@ -86,8 +86,11 @@ pwa:
       memory: 1Gi
     requests:
       cpu: 250m
-      # Generous on purpose: an OOMKill mid-render is worse than being slow.
-      memory: 256Mi
+      # What the scheduler reserves, not a ceiling: the container is OOMKilled
+      # only at the 1Gi limit above. An idle SSR pod measures about 70-80Mi
+      # and about 125Mi under normal load, so reserving more just holds node
+      # memory nobody uses.
+      memory: 160Mi
   # Used when pwa.autoscaling.enabled is false.
   replicaCount: 1
   autoscaling:
@@ -97,7 +100,13 @@ pwa:
     # Lower than the API's 90%. SSR is CPU-bound per render, so by the time a
     # pod is at 90% the render queue has already formed and latency has gone.
     targetCPUUtilizationPercentage: 70
-    targetMemoryUtilizationPercentage: 80
+    # No memory target. SSR is CPU-bound, so another pod does not relieve
+    # memory: each one holds its own copy of the same caches. Node also rarely
+    # hands memory back after GC, and an HPA scales down only when every metric
+    # is under target, so a memory target could add pods under normal load and
+    # then keep them. Set a percentage here (or PWA_AUTOSCALE_MEMORY_PERCENT in
+    # CI) to turn it back on.
+    targetMemoryUtilizationPercentage: ~
     behavior:
       scaleUp:
         # A traffic spike arrives well inside a minute; the default 5-minute

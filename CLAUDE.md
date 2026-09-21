@@ -384,6 +384,34 @@ on its `track` argument (`stable`/`canary` → min 2 / max 6; everything else �
 min 1 / max 2). An explicit env var always wins; the defaults only fill a gap.
 Verified by generating `values.tmp.yaml` for all four tracks.
 
+**Memory requests trimmed (2026-09-21).** Measured on production just after a
+deploy: the API used 192Mi of its 350Mi request, and SSR about 70-80Mi of its
+256Mi. srnte reports SSR at about 125Mi under normal load.
+- **SSR request 256Mi → 160Mi**, and **no memory target on the SSR HPA** (`~` in
+  `values.yaml`, `PWA_AUTOSCALE_MEMORY_PERCENT` defaults to `~`). SSR is
+  CPU-bound, and another pod doesn't relieve memory: each holds its own copy of
+  the caches. Node rarely returns memory after GC, and an HPA scales down only
+  when *every* metric is under target, so the 80% memory target would have added
+  pods under normal load at 160Mi (80% is 128Mi) and then kept them. Set the
+  variable to re-enable it.
+- **API request left at 350Mi.** srnte's suggestion of 512Mi → 384Mi was for its
+  own values; the template was already below that.
+- **Staging and review apps request less.** CPU is 100m for both tiers, memory
+  128Mi for SSR and 256Mi for the API, via `PWA_CPU_REQUEST`/`PWA_MEMORY_REQUEST`
+  and the new `PHP_CPU_REQUEST`/`PHP_MEMORY_REQUEST`. Staging keeps a full copy
+  running from each push to main until the next production deploy deletes it.
+  **Limits are identical on every track**, so the OOM ceiling doesn't change.
+  Requests only decide what the scheduler reserves.
+
+The old comment "generous on purpose: an OOMKill mid-render is worse than being
+slow" was on the SSR memory *request*, which has no effect on OOMKills; the
+limit (1Gi) does.
+
+Rendering the chart locally needs a scratch copy with `helm dependency update`
+(the checked-in `Chart.lock` is out of sync with `Chart.yaml`), plus the secret
+values `deploy` passes with `--set` (JWT, passphrase, mailer DSN, Mercure keys).
+
+
 ### Page HTML caching — landed 2026-09-21
 
 Unblocked the same day by the module and bundle updates below, so the two items

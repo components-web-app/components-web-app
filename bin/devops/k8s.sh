@@ -248,15 +248,27 @@ deploy() {
 
   # Per-track sizing. Review apps and staging exist to be correct, not fast, and
   # there are many of them at once, so they must not inherit production's pod
-  # floor. Anything set explicitly in CI still wins - these only fill the gap.
+  # floor or its reservations. Staging in particular keeps a full copy running
+  # from each push to main until the next production deploy deletes it.
+  # Requests are what the scheduler reserves; the limits, and so the OOM
+  # ceilings, are the same on every track. Anything set explicitly in CI still
+  # wins - these only fill the gap.
   case "$track" in
     stable|canary)
       PWA_AUTOSCALE_MIN_DEFAULT="2"
       PWA_AUTOSCALE_MAX_DEFAULT="6"
+      PWA_CPU_REQUEST_DEFAULT="250m"
+      PWA_MEMORY_REQUEST_DEFAULT="160Mi"
+      PHP_CPU_REQUEST_DEFAULT="200m"
+      PHP_MEMORY_REQUEST_DEFAULT="350Mi"
       ;;
     *)
       PWA_AUTOSCALE_MIN_DEFAULT="1"
       PWA_AUTOSCALE_MAX_DEFAULT="2"
+      PWA_CPU_REQUEST_DEFAULT="100m"
+      PWA_MEMORY_REQUEST_DEFAULT="128Mi"
+      PHP_CPU_REQUEST_DEFAULT="100m"
+      PHP_MEMORY_REQUEST_DEFAULT="256Mi"
       ;;
   esac
 
@@ -279,14 +291,14 @@ pwa:
     minReplicas: ${PWA_AUTOSCALE_MIN:-$PWA_AUTOSCALE_MIN_DEFAULT}
     maxReplicas: ${PWA_AUTOSCALE_MAX:-$PWA_AUTOSCALE_MAX_DEFAULT}
     targetCPUUtilizationPercentage: ${PWA_AUTOSCALE_CPU_PERCENT:-"70"}
-    targetMemoryUtilizationPercentage: ${PWA_AUTOSCALE_MEMORY_PERCENT:-"80"}
+    targetMemoryUtilizationPercentage: ${PWA_AUTOSCALE_MEMORY_PERCENT:-"~"}
   resources:
     limits:
       cpu: ${PWA_CPU_LIMIT:-"1000m"}
       memory: ${PWA_MEMORY_LIMIT:-"1Gi"}
     requests:
-      cpu: ${PWA_CPU_REQUEST:-"250m"}
-      memory: ${PWA_MEMORY_REQUEST:-"256Mi"}
+      cpu: ${PWA_CPU_REQUEST:-$PWA_CPU_REQUEST_DEFAULT}
+      memory: ${PWA_MEMORY_REQUEST:-$PWA_MEMORY_REQUEST_DEFAULT}
 php:
   image:
     repository: ${PHP_REPOSITORY}
@@ -298,6 +310,10 @@ php:
     email: ${ADMIN_EMAIL:-"hello@cwa.rocks"}
   gcloud:
     jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
+  resources:
+    requests:
+      cpu: ${PHP_CPU_REQUEST:-$PHP_CPU_REQUEST_DEFAULT}
+      memory: ${PHP_MEMORY_REQUEST:-$PHP_MEMORY_REQUEST_DEFAULT}
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
     publicUrl: "${GCLOUD_PUBLIC_URL:-}"
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
