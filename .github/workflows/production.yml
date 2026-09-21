@@ -85,15 +85,18 @@ jobs:
           create_docker_pull_secret
           deploy canary
           purge_rendered_html canary
-          # Refill the page cache the purge just emptied, and report each page's
-          # status and time to first byte (#80). warm_cache exits non-zero on any
-          # non-200, prints a CACHE WARM FAILED banner and raises an ::error
-          # annotation on the run summary, but it deliberately does NOT fail this
-          # step. By now the release is live: failing here would mark a good
-          # deploy red and skip the steps after it (fixtures, and production's
-          # canary/staging cleanup and environment URL). This matches the
-          # continue-on-error on Load fixtures (#74).
-          warm_cache || echo "Cache warm reported failures (listed above). The deploy itself succeeded, so the job continues."
+      # Refill the page cache the purge emptied (#80). Its own step with
+      # continue-on-error: a page that does not return 200 marks this step failed,
+      # and warm_cache adds an ::error annotation, without failing the job, because
+      # the release is already live. It runs after the fixtures step, so a new
+      # environment is warmed once its content exists.
+      - name: Warm the page cache
+        if: inputs.action == 'canary'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          warm_cache
       - name: Deploy production
         if: inputs.action == 'production'
         run: |
@@ -108,7 +111,6 @@ jobs:
           deploy
           purge_rendered_html
           # Non-fatal by design; see the comment in the canary step above (#80).
-          warm_cache || echo "Cache warm reported failures (listed above). The deploy itself succeeded, so the job continues."
           delete canary
           delete staging
           persist_environment_url
@@ -125,6 +127,18 @@ jobs:
           source ./bin/devops/k8s.sh
           apply_kube_context
           load_fixtures
+      # Refill the page cache the purge emptied (#80). Its own step with
+      # continue-on-error: a page that does not return 200 marks this step failed,
+      # and warm_cache adds an ::error annotation, without failing the job, because
+      # the release is already live. It runs after the fixtures step, so a new
+      # environment is warmed once its content exists.
+      - name: Warm the page cache
+        if: inputs.action == 'production'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          warm_cache
       - uses: actions/upload-artifact@v4
         if: inputs.action == 'production'
         with:
