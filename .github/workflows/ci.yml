@@ -194,6 +194,8 @@ jobs:
       GCLOUD_JSON: ${{ secrets.GCLOUD_JSON }}
       GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
       GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
+      # Optional; warm_cache defaults to 3 concurrent page requests.
+      WARM_CACHE_CONCURRENCY: ${{ vars.WARM_CACHE_CONCURRENCY }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
@@ -219,6 +221,15 @@ jobs:
           create_docker_pull_secret
           deploy review
           purge_rendered_html review
+          # Refill the page cache the purge just emptied, and report each page's
+          # status and time to first byte (#80). warm_cache exits non-zero on any
+          # non-200, prints a CACHE WARM FAILED banner and raises an ::error
+          # annotation on the run summary, but it deliberately does NOT fail this
+          # step. By now the release is live: failing here would mark a good
+          # deploy red and skip the steps after it (fixtures, and production's
+          # canary/staging cleanup and environment URL). This matches the
+          # continue-on-error on Load fixtures (#74).
+          warm_cache || echo "Cache warm reported failures (listed above). The deploy itself succeeded, so the job continues."
       # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
       # previously part of the deploy step and ran on every deploy, emptying the
       # database first (#74). load_fixtures now appends, and on a database that
@@ -282,6 +293,8 @@ jobs:
       GCLOUD_JSON: ${{ secrets.GCLOUD_JSON }}
       GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
       GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
+      # Optional; warm_cache defaults to 3 concurrent page requests.
+      WARM_CACHE_CONCURRENCY: ${{ vars.WARM_CACHE_CONCURRENCY }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
@@ -307,6 +320,15 @@ jobs:
           create_docker_pull_secret
           deploy staging
           purge_rendered_html staging
+          # Refill the page cache the purge just emptied, and report each page's
+          # status and time to first byte (#80). warm_cache exits non-zero on any
+          # non-200, prints a CACHE WARM FAILED banner and raises an ::error
+          # annotation on the run summary, but it deliberately does NOT fail this
+          # step. By now the release is live: failing here would mark a good
+          # deploy red and skip the steps after it (fixtures, and production's
+          # canary/staging cleanup and environment URL). This matches the
+          # continue-on-error on Load fixtures (#74).
+          warm_cache || echo "Cache warm reported failures (listed above). The deploy itself succeeded, so the job continues."
       # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
       # previously part of the deploy step and ran on every deploy, emptying the
       # database first (#74). load_fixtures now appends, and on a database that

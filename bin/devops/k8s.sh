@@ -467,6 +467,145 @@ purge_rendered_html() {
     -- php bin/console silverback:api-components:purge-rendered-html
 }
 
+# Refills the page cache that purge_rendered_html has just emptied (#80). Without
+# this, the first visitor to every page after a deploy waits for an SSR render,
+# and that post-deploy burst is the one realistic spike of uncached renders.
+# It also replaces the old sitespeed `performance` job as the per-deploy speed
+# check: every page's status and time to first byte (TTFB) is printed.
+#
+#   warm_cache [base_url]    base_url defaults to CI_ENVIRONMENT_URL
+#
+# Returns non-zero if the sitemap cannot be read, lists no pages, or any page
+# answers anything other than 200. The deploy steps decide what to do with that;
+# see the comment where it is called in .gitlab-ci.yml.
+#
+# How it works, and why:
+# - It reads /sitemap.xml, following redirects (@nuxtjs/sitemap redirects it to
+#   /sitemap_index.xml). A <sitemapindex> is followed one level into its child
+#   sitemaps; a plain <urlset> is used as it is.
+# - The XML is parsed with grep/sed only, pulling out each <loc>. jq and xmllint
+#   are not on the CI images (GitLab's Alpine image, GitHub's ubuntu-latest),
+#   and a sitemap is flat enough that <loc>...</loc> is all we need. <image:loc>
+#   and xhtml:link alternates do not match. Only &amp; is decoded.
+# - Every <loc> has its origin replaced with base_url. Souin keys on the Host, so
+#   the cache is only filled for the host visitors use, and the sitemap's own
+#   origin is not trustworthy for that (in dev it says http://localhost:3000).
+# - Page requests are anonymous: curl sends no cookies unless told to, and no
+#   Authorization is set. A request carrying an `api_component` cookie or an
+#   Authorization header bypasses the shared cache, so it would warm nothing.
+# - Redirects are NOT followed for pages. A sitemap should list final URLs, so a
+#   3xx is reported as a failure like any other non-200.
+# - Concurrency is modest (WARM_CACHE_CONCURRENCY, default 3). The point is to
+#   spare the SSR pods a burst, not to create one.
+# - Each page is stored once whatever the browser's Accept or Accept-Encoding
+#   (#79), so one warm request per page fills the cache for every visitor.
+# - WARM_CACHE_INSECURE=true skips TLS verification. It exists for testing
+#   against the local stack's self-signed certificate; never set it in CI.
+# - The public URL reaches whichever API pod the ingress picks. That is the whole
+#   store while the API is capped at one replica (see purge_rendered_html). For
+#   canary, it is whichever of the stable and canary pods answers.
+#
+# Portability: GitLab sources this file into busybox ash before `bash` exists, so
+# no arrays, `wait -n` or process substitution. Parallelism is `xargs -0 -P`,
+# which busybox supports.
+warm_cache() {
+  local base="${1:-$CI_ENVIRONMENT_URL}"
+  local concurrency="${WARM_CACHE_CONCURRENCY:-3}"
+  local tls_opt=""
+  if [[ "$WARM_CACHE_INSECURE" == "true" ]]; then
+    tls_opt="--insecure"
+  fi
+
+  if [[ -z "$base" ]]; then
+    echo "!!!! CACHE WARM FAILED: no base URL (set CI_ENVIRONMENT_URL) !!!!"
+    return 1
+  fi
+  case "$base" in
+    http://*|https://*) ;;
+    *) base="https://$base" ;;
+  esac
+  base="${base%/}"
+
+  local tmp
+  tmp=$(mktemp -d)
+
+  # Prints the <loc> values of the XML on stdin, one per line, rewritten to $base.
+  _warm_cache_locs() {
+    tr '\r\n\t' '   ' \
+      | grep -o '<loc>[^<]*</loc>' \
+      | sed -E -e 's#</?loc>##g' -e 's#^ +##' -e 's# +$##' -e 's#&amp;#\&#g' \
+               -e "s#^https?://[^/]+#${base}#"
+  }
+
+  echo "Reading the sitemap from ${base}/sitemap.xml..."
+  if ! curl -fsSL $tls_opt --max-redirs 5 --max-time 60 --retry 2 --retry-connrefused \
+      -o "$tmp/root.xml" "${base}/sitemap.xml"; then
+    echo "!!!! CACHE WARM FAILED: could not fetch ${base}/sitemap.xml !!!!"
+    rm -rf "$tmp"
+    return 1
+  fi
+
+  : > "$tmp/urls.txt"
+  if grep -q '<sitemapindex' "$tmp/root.xml"; then
+    local child
+    for child in $(_warm_cache_locs < "$tmp/root.xml"); do
+      echo "  child sitemap: ${child}"
+      if ! curl -fsSL $tls_opt --max-redirs 5 --max-time 60 --retry 2 --retry-connrefused \
+          -o "$tmp/child.xml" "$child"; then
+        echo "!!!! CACHE WARM FAILED: could not fetch child sitemap ${child} !!!!"
+        rm -rf "$tmp"
+        return 1
+      fi
+      _warm_cache_locs < "$tmp/child.xml" >> "$tmp/urls.txt"
+    done
+  else
+    _warm_cache_locs < "$tmp/root.xml" >> "$tmp/urls.txt"
+  fi
+  # De-duplicate, keeping sitemap order.
+  awk 'NF && !seen[$0]++' "$tmp/urls.txt" > "$tmp/pages.txt"
+
+  local total
+  total=$(wc -l < "$tmp/pages.txt" | tr -d ' ')
+  if [[ "$total" -eq 0 ]]; then
+    echo "!!!! CACHE WARM FAILED: the sitemap lists no pages !!!!"
+    rm -rf "$tmp"
+    return 1
+  fi
+
+  echo "Warming ${total} pages, ${concurrency} at a time (status, time to first byte, URL):"
+  local started finished
+  started=$(date +%s)
+  # --retry covers a brief 502/503 while the ingress settles; a page that fails
+  # every attempt is still reported with its final status. 000 means no response.
+  tr '\n' '\0' < "$tmp/pages.txt" \
+    | xargs -0 -n 1 -P "$concurrency" \
+        curl -s $tls_opt -o /dev/null --max-time 60 --retry 2 --retry-delay 2 --retry-connrefused \
+          -H 'Accept: text/html' \
+          -w '%{http_code} %{time_starttransfer}s %{url_effective}\n' \
+    | tee "$tmp/results.txt" \
+    | sed 's#^#  #'
+  finished=$(date +%s)
+
+  local ok failed
+  ok=$(grep -c '^200 ' "$tmp/results.txt")
+  failed=$(( total - ok ))
+  echo "Warmed ${ok} of ${total} pages in $(( finished - started ))s. Slowest:"
+  sort -k2 -rn "$tmp/results.txt" | head -3 | sed 's#^#  #'
+
+  if [[ "$failed" -ne 0 ]]; then
+    echo ""
+    echo "!!!! CACHE WARM FAILED: ${failed} of ${total} pages did not return 200 !!!!"
+    grep -v '^200 ' "$tmp/results.txt" | sed 's#^#  #'
+    # Shown on the workflow run's summary page, even though the job passes.
+    if [[ "$GITHUB_ACTIONS" == "true" ]]; then
+      echo "::error title=Cache warm failed::${failed} of ${total} sitemap pages did not return 200 - see the deploy step log"
+    fi
+    rm -rf "$tmp"
+    return 1
+  fi
+  rm -rf "$tmp"
+}
+
 function delete() {
 	track="${1-stable}"
 	name="$RELEASE"

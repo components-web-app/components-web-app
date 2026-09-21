@@ -237,16 +237,6 @@ export default defineNuxtConfig({
       comments: true,
     },
   },
-  sitemap: {
-    debug: true,
-    sitemaps: {
-      'test-static': {
-        sources: [
-          '/api/sitemap-urls',
-        ]
-      }
-    }
-  },
   site: {
     url: import.meta.dev ? 'https://localhost' : undefined,
   }
