@@ -206,7 +206,7 @@ async function generateReadme(tempDir: string, answers: Answers): Promise<void> 
 Sample content is bundled. Load it after the API container is healthy:
 
 \`\`\`bash
-docker compose exec php bin/console doctrine:fixtures:load
+docker compose exec php bin/console doctrine:fixtures:load --append
 \`\`\`
 `
     : ''
@@ -222,17 +222,17 @@ ${featureList}
 ## Getting started
 
 \`\`\`bash
-# 1. Start the stack
-#    composer install, database wait, and migrations all run automatically
+# Start the stack. The php container runs composer install, waits for the
+# database and migrates; the app container installs the Nuxt dependencies and
+# runs the dev server. There is nothing to start by hand.
 docker compose up -d
 
-# 2. Install Nuxt app dependencies (run locally, not inside Docker)
-cd app
-pnpm install
-
-# 3. Start the dev server
-pnpm dev
+# Follow the Nuxt dev server
+docker compose logs -f app
 \`\`\`
+
+\`app/\` is mounted into the app container, so its \`node_modules\` is shared. Run
+\`pnpm install\` in \`app/\` yourself only if your editor needs the types locally.
 
 | URL | Description |
 |---|---|
@@ -240,7 +240,9 @@ pnpm dev
 | https://localhost/_api | API (JSON-LD / HAL) |
 | https://localhost/login | Sign in to the CWA admin |
 
-> **SSL:** The dev stack uses self-signed certs. Accept the browser warning or trust the CA at \`api/frankenphp/caddy/certs/\`.
+> **SSL:** Caddy issues local certificates from its own CA. Accept the browser warning, or trust the CA once:
+> \`docker compose cp php:/data/caddy/pki/authorities/local/root.crt caddy-local-root.crt\`,
+> then add \`caddy-local-root.crt\` to your system or browser trust store.
 
 ${fixturesSection}
 ${ciSection}## Learn more
@@ -321,7 +323,8 @@ async function main(): Promise<void> {
       '  • waits for PostgreSQL to be ready',
       '  • runs database migrations',
       '',
-      'You only need to run pnpm install and pnpm dev locally.',
+      'The app container installs the Nuxt dependencies and runs the dev server,',
+      'so there is nothing to start by hand.',
       answers.fixtures
         ? '\nFixtures are NOT loaded automatically — you will be reminded below.'
         : '',
@@ -342,7 +345,7 @@ async function main(): Promise<void> {
       log.step('Running: docker compose up -d')
       const ok = run('docker', ['compose', 'up', '-d'], targetDir)
       if (!ok) {
-        log.warn('docker compose up -d failed. Start it manually before running pnpm dev.')
+        log.warn('docker compose up -d failed. Run it manually from the project directory.')
       }
     }
   } else {
@@ -354,8 +357,8 @@ async function main(): Promise<void> {
   if (hasPnpm) {
     const installDeps = checkCancel(
       await confirm({
-        message: 'Install Nuxt app dependencies now? (pnpm install in app/)',
-        initialValue: true,
+        message: 'Also install app/ dependencies on this machine, for editor type support? (the app container installs them either way)',
+        initialValue: false,
       })
     ) as boolean
 
@@ -371,8 +374,8 @@ async function main(): Promise<void> {
   }
 
   const outroLines = [
-    `Start the dev server:`,
-    `  cd ${answers.projectName}/app && pnpm dev`,
+    `The dev server runs in the app container. Follow it with:`,
+    `  cd ${answers.projectName} && docker compose logs -f app`,
     '',
     'Then visit:',
     '  https://localhost        — app',
@@ -383,7 +386,7 @@ async function main(): Promise<void> {
   if (answers.fixtures) {
     outroLines.push('')
     outroLines.push('Load sample content (once the API container is healthy):')
-    outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load')
+    outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load --append')
   }
 
   outro(outroLines.join('\n'))
