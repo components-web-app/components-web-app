@@ -510,6 +510,19 @@ grep -nE '^  typescript@' app/pnpm-lock.yaml         # must be 6.0.3 only
 range. `pnpm run build` passes with `typescript.typeCheck: true`, so `vue-tsc`
 is covered.
 
+### ⚠ A host `pnpm install` crashes the running dev container until it is restarted
+
+`app/` **and** `app/node_modules` are bind-mounted into the `app` container
+(`compose.override.yaml`), whose dev image runs `pnpm install; pnpm dev`. Running
+`pnpm install` (a dependency bump, say) on the **host** rewrites that shared
+`node_modules` underneath the container's running dev server. It then crash-loops
+with `Cannot find module 'typescript'`, a missing `@nuxt/cli/dist/dev/index.mjs` and
+`Cannot resolve module "@nuxt/kit"`, and Caddy returns 502/503 for every page. **The
+fix is `docker compose restart app`**, which reinstalls inside the container. Seen
+twice on 2026-09-21. After any host-side install, restart `app`, then count errors only
+since the container's start time (`docker inspect -f '{{.State.StartedAt}}'`), because
+a wider log window picks up the pre-restart crash and reads as a failure.
+
 ### Already-applied template change this confirms
 
 `HtmlContent.vue` and `AltHtmlContent.vue` pass a second argument to
@@ -661,6 +674,98 @@ is capped at one replica. Souin's store is per pod, so raising the cap means
 looping over every API pod.
 
 Until then, every front-end deploy leaves the one-hour window described above.
+
+## ✅ Warm the page cache from the sitemap after each deploy — issue #80 (2026-09-21)
+
+`warm_cache [base_url]` in `bin/devops/k8s.sh` runs straight after
+`purge_rendered_html` in all eight deploy steps (same places as #71). It reads
+`/sitemap.xml` (following the redirect to `/sitemap_index.xml`, and one level of
+child sitemaps), rewrites each `<loc>`'s origin to `CI_ENVIRONMENT_URL` (Souin keys
+on Host; in dev the sitemap says `http://localhost:3000`), and requests every page
+**anonymously** with `Accept: text/html`, 3 at a time (`WARM_CACHE_CONCURRENCY`).
+It prints each page's status and TTFB and a `CACHE WARM FAILED` banner, plus a
+GitHub `::error` annotation, if any page is not 200. Pages' redirects are not
+followed, so a 3xx in the sitemap counts as a failure. XML is parsed with
+`grep`/`sed` because the CI images have no `jq`/`xmllint`; it runs under busybox
+ash (GitLab sources k8s.sh before `bash` exists), which was verified in `alpine`.
+`WARM_CACHE_INSECURE=true` is for testing against the local self-signed stack only.
+
+**It never fails the deploy job** (`warm_cache || echo …` at every call site). The
+release is already live by then: failing would mark a good deploy red, skip what
+follows (production's canary/staging deletes and `environment_url.txt`, GitHub's
+fixtures step) and make `retry: 1` redeploy. `warm_cache` itself still exits 1.
+
+It replaced the `performance` job: `bin/devops/performance.sh`, `.gitlab-urls.txt`,
+`.github/workflows/performance.yml` and `PERFORMANCE_DISABLED` are gone.
+
+The template's leftover `test-static` sitemap (`sitemap.sitemaps['test-static']` in
+`app/nuxt.config.ts` plus `app/server/api/sitemap-urls.ts`, from `ac7327a`,
+"simulate same sitemap config as CK") listed `/does-not-exist-just-a-test`, which
+would have failed every warm. Removed, with `sitemap.debug: true`. The module's
+own `cwa` sitemap (`@cwa/nuxt` `moduleDependencies` defaults) is unaffected.
+
+Since #79, each page is stored once whatever the browser sends, so one warm request
+per page fills the cache for every visitor.
+
+**The warm step exposed a real module bug:** under concurrent SSR, one request's 404
+status can land on a different request's response. It's
+[cwa-nuxt-module#313](https://github.com/components-web-app/cwa-nuxt-module/issues/313),
+reproduced 8/8 on `nuxt dev` and 3/8 on a production build, and correct when requests
+are sequential. The warm only requests sitemap pages, which are all 200, so it cannot
+trigger this itself. Any stray 404 rendered alongside real pages can, though, and
+behind Souin the wrongly-404'd page is cacheable. The warm's non-200 check is what
+exposes it after a deploy.
+
+## ✅ Page cache stored once per page, not per browser — #79 (2026-09-21)
+
+Souin was keeping a separate copy of each page per browser, so one browser's cached
+page was a miss for the next. That multiplied SSR renders and made warming (#80)
+fill only one variant. There were two causes, both in `api/frankenphp/Caddyfile`:
+
+1. **`{http.request.header.accept}` was in the cache key**, and each browser sends a
+   different `Accept` for the same HTML.
+2. **`Vary: Accept-Encoding` from Caddy's `encode`.** Nuxt and php send no `Vary`.
+   Souin orders `cache` before `rewrite`, so it sat **outside** `encode`, stored the
+   already-compressed body, and honoured `encode`'s `Vary`, which gave one entry per
+   `Accept-Encoding` string.
+
+The fix has two parts:
+
+- **`order cache after encode`.** The cache now stores the uncompressed body once, and
+  `encode` compresses per client on the way out.
+- **`Accept` stays in the key for the API only**, via
+  `@cache_accept path /_api*` + `vars @cache_accept cwa_cache_accept {http.request.header.accept}`,
+  and `{http.vars.cwa_cache_accept}` in the key template (the full `{http.vars.*}` form:
+  the `{vars.*}` shorthand is not expanded in the global block).
+
+**⚠ Do not "simplify" this by dropping `Accept` from the key and relying on `Vary:
+Accept`.** API Platform's HTML docs response (Swagger UI, on `/_api` and `/_api/docs`)
+sends **no** `Vary: Accept`. The worker tried it: after warming with `text/html`,
+`application/ld+json` and `application/json` requests were **hits serving HTML**. The
+API is split by its key, not by `Vary`. Two approaches that do **not** work:
+
+- Souin's per-path `cache_keys`: in Souin v1.7.9, `computeKey()` returns early when a
+  global `template` is set.
+- Caddy's `map`: its output was stored as the literal placeholder text.
+
+**Verified on the local stack**, with a fresh query string for each experiment:
+- A page warmed with Chrome's headers is a hit for Safari's `Accept`, for any
+  `Accept-Encoding`, and for none. Each client gets its own correct encoding, and the
+  decoded body is identical.
+- Exactly one stored key per page, with no `{-VARY-}` suffix.
+- The API returns HTML / JSON-LD / JSON each with its own `content-type` **on cache
+  hits**. That was re-checked independently before committing.
+- The cookie, `Authorization`, Mercure, `/_cwa/healthcheck`, `/login` and `/_api/me`
+  exclusions all hold, and both purge paths still drop pages.
+
+**Costs, and what's left:**
+- Compression now runs on every response, hits included.
+- Uncompressed responses no longer carry `Vary: Accept-Encoding`, because `encode` only
+  adds it when it compresses. A CDN in front could store the uncompressed variant and
+  serve it to everyone. That's safe, but less efficient.
+- The API is still split per exact `Accept` string, as before.
+- Not tested: a production build, HEAD requests, and a real CDN.
+
 
 ## ✅ Small template fixes — 2026-09-21
 
@@ -1039,7 +1144,6 @@ Four workflow files have been added to `.github/workflows/`, each calling the sa
 | `ci.yml` | Push to any branch | Build API + app images, PHPUnit, Behat, deploy review (non-main) or staging (main) |
 | `production.yml` | Manual (`workflow_dispatch`) | Canary or full production deploy via action dropdown |
 | `cleanup.yml` | PR closed | Tears down the review environment |
-| `performance.yml` | Manual (`workflow_dispatch`) | Sitespeed performance test against any URL |
 
 Images are pushed to GHCR (`ghcr.io/<repo>`). `install_dependencies` (Alpine/`apk`) is skipped in favour of `azure/setup-kubectl` and `azure/setup-helm` actions. All other `bin/devops/k8s.sh` functions are called directly.
 
@@ -1047,7 +1151,7 @@ Images are pushed to GHCR (`ghcr.io/<repo>`). `install_dependencies` (Alpine/`ap
 
 **Required variables (`vars.`):** `KUBE_INGRESS_BASE_DOMAIN`, `RELEASE_PRODUCTION`, `CORS_ALLOW_ORIGIN`, `TRUSTED_HOSTS`, `ADMIN_USERNAME`, `ADMIN_EMAIL`
 
-**Optional flags (`vars.`):** `CI_DISABLED` (set to `"true"` in this repo on GitHub to prevent mirrored pushes triggering the app pipeline), `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `PERFORMANCE_DISABLED`, `ENABLE_DATABASE_FIXTURES`, `KUBERNETES_VERSION`, `HELM_VERSION`
+**Optional flags (`vars.`):** `CI_DISABLED` (set to `"true"` in this repo on GitHub to prevent mirrored pushes triggering the app pipeline), `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `ENABLE_DATABASE_FIXTURES`, `WARM_CACHE_CONCURRENCY`, `KUBERNETES_VERSION`, `HELM_VERSION`
 
 **GitHub issue:** [#55](https://github.com/components-web-app/components-web-app/issues/55)
 
