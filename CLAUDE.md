@@ -97,6 +97,33 @@ Verified — `frankenphp adapt` clean, and: anon → **cached**; `api_component=
 - **`--watch` (dev target, `api/Dockerfile:96`) logs `unable to load latest config` on a partial read** while a file is being written, then loads fine. Those errors are usually noise. **Never read `/config/...` from the admin API to judge a change** — it races the reload and will lie. Use `frankenphp adapt` for syntax, and `docker compose restart php` before measuring.
 - The Souin API is on the **admin port 2019**, not 443: `curl http://localhost:2019/souin-api/souin` lists stored keys (`[]` = nothing cached). See `api/.env:30` `CACHE_URL`.
 
+### 8. SSR and browsers did not share API cache entries — FIXED (2026-09-21)
+
+SSR calls the API on an internal hostname (`php.local` here, the in-cluster
+service name on k8s since #69), and `@internal` in `handle @api_handle` rewrites
+that Host to `BROWSER_SERVER_NAME` before php runs, so the response is identical
+to a browser's. But `cache` runs **before** that rewrite and the key used the raw
+`{http.request.host}`, so every SSR-fetched resource was stored under the
+internal name. A visitor's first client-side fetch of the same resource missed
+and reached php, however well the cache was warmed. Measured: the same resource
+was a hit on Host `php.local` and a miss on `localhost`.
+
+**Fix** (`api/frankenphp/Caddyfile`): the key reads `{http.vars.cwa_cache_host}`,
+set by two complementary `vars` matchers. For `/_api*`, `/uploads/*` and
+`/bundles/*` on a dotless or `.local` host it is `BROWSER_SERVER_NAME`; otherwise
+it is the request's own Host. Verified: after one SSR render every stored key uses
+`localhost`, and the browser's **first** request for a resource is a hit. Page HTML
+is still keyed on its own host, and `api_component=<value>` still bypasses.
+
+`Origin` (in the API's `Vary`) and `Accept` do not split the cache in practice:
+the module sends the same `Accept` from SSR and the browser, and same-origin
+browser GETs send no `Origin`.
+
+**Still open, module-side:** the module appends the **whole page query** to every
+API fetch, so `?utm_source=…` (or any query) duplicates every API entry for that
+render, and a valueless `?k` becomes `k=null`.
+[cwa-nuxt-module#318](https://github.com/components-web-app/cwa-nuxt-module/issues/318).
+
 ### 7. Single-file bind mounts served a truncated Caddyfile — FIXED (issue #57, 2026-07-17)
 
 **Symptom:** edit the Caddyfile, and Caddy reports `unexpected EOF` / `unexpected token` on a file that is **perfectly valid on disk**. Intermittent-looking, and it sends you hunting for a syntax error that does not exist.
