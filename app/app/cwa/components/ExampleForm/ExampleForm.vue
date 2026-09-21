@@ -7,15 +7,8 @@
       Example Form
     </h2>
 
-    <!-- Form-level success / error feedback -->
-    <UAlert
-      v-if="form.success.value"
-      color="success"
-      icon="i-lucide-circle-check"
-      title="Submitted!"
-      description="Your form was submitted successfully."
-    />
-    <template v-else-if="form.formErrors.value.length || form.unregisteredFieldErrors.value.length">
+    <!-- Form-level error feedback (success is shown beside the submit button, below) -->
+    <template v-if="!form.success.value && (form.formErrors.value.length || form.unregisteredFieldErrors.value.length)">
       <UAlert
         v-if="form.formErrors.value.length"
         color="error"
@@ -242,6 +235,16 @@
         Add Entry
       </UButton>
     </div>
+
+    <!-- Beside the button, not at the top of the form: the form is taller than the -->
+    <!-- viewport, so an alert up there is off-screen when the user clicks Submit.  -->
+    <UAlert
+      v-if="form.success.value"
+      color="success"
+      icon="i-lucide-circle-check"
+      title="Submitted!"
+      description="Your form was submitted successfully."
+    />
 
     <UButton
       type="submit"
