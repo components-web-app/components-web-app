@@ -20,8 +20,16 @@ data:
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | quote }}
   caddy-global-options: {{ .Values.php.caddy.globalConfig | quote }}
-  api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s" (include "cwa.fullname" .)) | quote }}
-  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s" (include "cwa.fullname" .)) | quote }}
+  # The API lives under /_api (see @api_handle in api/frankenphp/Caddyfile), so
+  # the prefix belongs in the default - without it the default is unusable and
+  # every caller has to override it. api-url is server-side and points at the
+  # in-cluster service, like mercure-url above: sending SSR through the public
+  # hostname instead makes each render hairpin pod -> load balancer -> ingress
+  # -> Caddy over TLS for every API call it makes. The Caddyfile's @internal
+  # matcher rewrites Host to BROWSER_SERVER_NAME on these, so generated IRIs
+  # still come back with the public hostname.
+  api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s/_api" (include "cwa.fullname" .)) | quote }}
+  api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s/_api" (include "cwa.fullname" .)) | quote }}
   mailer-email: {{ .Values.php.mailer.email | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}

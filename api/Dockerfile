@@ -17,8 +17,13 @@ RUN CGO_ENABLED=1 \
     --output /usr/local/bin/frankenphp \
 	--with github.com/dunglas/frankenphp/caddy \
 	--with github.com/dunglas/caddy-cbrotli \
-	--with github.com/dunglas/mercure/caddy \
-	--with github.com/dunglas/mercure/caddy \
+	# Pinned: mercure/caddy v1.0.0 declares `go 1.27`, but dunglas/frankenphp:builder
+	# (v1.12.7) ships Go 1.26.8 with GOTOOLCHAIN=local, so the toolchain will not
+	# self-upgrade and the build dies with `module requires go >= 1.27`. v0.24.2 is
+	# the last release declaring go 1.26. Of the eight plugins below it is the only
+	# one above 1.26, so nothing else needs a pin. Unpin once the builder ships a
+	# Go 1.27 toolchain (expected in frankenphp v1.12.8).
+	--with github.com/dunglas/mercure/caddy@v0.24.2 \
 	--with github.com/dunglas/vulcain/caddy \
 	--with github.com/darkweak/souin/plugins/caddy \
 	--with github.com/darkweak/storages/otter/caddy \

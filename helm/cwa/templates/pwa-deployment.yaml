@@ -5,8 +5,8 @@ metadata:
   labels:
     {{- include "cwa.labelsPWA" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
+  {{- if not .Values.pwa.autoscaling.enabled }}
+  replicas: {{ .Values.pwa.replicaCount }}
   {{- end }}
   strategy:
    type: RollingUpdate

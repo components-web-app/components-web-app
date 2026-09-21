@@ -246,6 +246,20 @@ deploy() {
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
   CURRENT_DATE=$(date)
 
+  # Per-track sizing. Review apps and staging exist to be correct, not fast, and
+  # there are many of them at once, so they must not inherit production's pod
+  # floor. Anything set explicitly in CI still wins - these only fill the gap.
+  case "$track" in
+    stable|canary)
+      PWA_AUTOSCALE_MIN_DEFAULT="2"
+      PWA_AUTOSCALE_MAX_DEFAULT="6"
+      ;;
+    *)
+      PWA_AUTOSCALE_MIN_DEFAULT="1"
+      PWA_AUTOSCALE_MAX_DEFAULT="2"
+      ;;
+  esac
+
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
   - name: ${GITLAB_PULL_SECRET_NAME:-"~"}
@@ -254,8 +268,25 @@ pwa:
     repository: ${APP_REPOSITORY}
     tag: ${TAG}
     pullPolicy: Always
-  apiUrl: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
+  # Left null so the chart's in-cluster default applies. Setting it to the public
+  # URL sends every server-side render out to the load balancer and back in over
+  # TLS for each API call it makes. Only the browser needs the public URL.
+  apiUrl: ~
   apiUrlBrowser: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
+  replicaCount: ${PWA_REPLICA_COUNT:-"1"}
+  autoscaling:
+    enabled: ${PWA_AUTOSCALE:-"true"}
+    minReplicas: ${PWA_AUTOSCALE_MIN:-$PWA_AUTOSCALE_MIN_DEFAULT}
+    maxReplicas: ${PWA_AUTOSCALE_MAX:-$PWA_AUTOSCALE_MAX_DEFAULT}
+    targetCPUUtilizationPercentage: ${PWA_AUTOSCALE_CPU_PERCENT:-"70"}
+    targetMemoryUtilizationPercentage: ${PWA_AUTOSCALE_MEMORY_PERCENT:-"80"}
+  resources:
+    limits:
+      cpu: ${PWA_CPU_LIMIT:-"1000m"}
+      memory: ${PWA_MEMORY_LIMIT:-"1Gi"}
+    requests:
+      cpu: ${PWA_CPU_REQUEST:-"250m"}
+      memory: ${PWA_MEMORY_REQUEST:-"256Mi"}
 php:
   image:
     repository: ${PHP_REPOSITORY}
@@ -335,10 +366,14 @@ podAnnotations:
   timestamp: "${CURRENT_DATE}"
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
+# API (php) tier only - the PWA has its own block above. The default max is 1
+# because Souin's cache store and Mercure's bolt transport are both pod-local,
+# so a second pod would serve and purge a cache the first pod never sees. See
+# the autoscaling comment in helm/cwa/values.yaml.
 autoscaling:
   enabled: ${AUTOSCALE:-"true"}
   minReplicas: ${AUTOSCALE_MIN:-"1"}
-  maxReplicas: ${AUTOSCALE_MAX:-"3"}
+  maxReplicas: ${AUTOSCALE_MAX:-"1"}
   targetCPUUtilizationPercentage: ${AUTOSCALE_CPU_PERCENT:-"90"}
   targetMemoryUtilizationPercentage: ${AUTOSCALE_MEMORY_PERCENT:-"90"}
 EOF

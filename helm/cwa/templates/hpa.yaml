@@ -9,7 +9,11 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "cwa.fullname" . }}-api
+    # Must match the name in deployment.yaml exactly, which is the bare
+    # fullname with no suffix. A `-api` suffix here silently produces
+    # `FailedGetScale - deployments.apps "<name>-api" not found`, retried
+    # every few seconds for the life of the release.
+    name: {{ include "cwa.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

@@ -1,0 +1,36 @@
+{{- if .Values.pwa.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "cwa.fullname" . }}-pwa
+  labels:
+    {{- include "cwa.labelsPWA" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "cwa.fullname" . }}-pwa
+  minReplicas: {{ .Values.pwa.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.pwa.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.pwa.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.pwa.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.pwa.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.pwa.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+  {{- with .Values.pwa.autoscaling.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
