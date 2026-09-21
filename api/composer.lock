@@ -364,12 +364,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "b753b92a914bf013911e442cb17010584b68839a"
+                "reference": "5978fe8ccb58950f21d6f2398736ca57be6d8e30"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/b753b92a914bf013911e442cb17010584b68839a",
-                "reference": "b753b92a914bf013911e442cb17010584b68839a",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/5978fe8ccb58950f21d6f2398736ca57be6d8e30",
+                "reference": "5978fe8ccb58950f21d6f2398736ca57be6d8e30",
                 "shasum": ""
             },
             "require": {
@@ -403,6 +403,8 @@
                 "symfony/form": "^7.4 || ^8.0",
                 "symfony/framework-bundle": "^7.4 || ^8.0",
                 "symfony/mailer": "^7.4 || ^8.0",
+                "symfony/mercure": "^0.7.1 || ^0.8",
+                "symfony/mercure-bundle": "^0.4.3 || ^0.5",
                 "symfony/property-access": "^7.4 || ^8.0",
                 "symfony/property-info": "^7.4 || ^8.0",
                 "symfony/security-bundle": "^7.4 || ^8.0",
@@ -453,8 +455,6 @@
                 "symfony/dotenv": "^7.4 || ^8.0",
                 "symfony/http-client": "^7.4 || ^8.0",
                 "symfony/maker-bundle": "^1.0",
-                "symfony/mercure": "^0.6.2",
-                "symfony/mercure-bundle": "^0.3.5",
                 "symfony/messenger": "^7.4 || ^8.0",
                 "symfony/monolog-bundle": "^3.8",
                 "symfony/phpunit-bridge": "^7.4 || ^8.0",
@@ -497,7 +497,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2026-09-21T21:59:58+00:00"
+            "time": "2026-09-21T22:47:48+00:00"
         },
         {
             "name": "composer/semver",
@@ -6495,16 +6495,16 @@
         },
         {
             "name": "symfony/http-client",
-            "version": "v8.1.1",
+            "version": "v8.1.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "d41e9778eed03c64b095532c6d414e92e3c520d9"
+                "reference": "099aae7d3619bffb5e68b33dbbadf6649c6d49c5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/d41e9778eed03c64b095532c6d414e92e3c520d9",
-                "reference": "d41e9778eed03c64b095532c6d414e92e3c520d9",
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/099aae7d3619bffb5e68b33dbbadf6649c6d49c5",
+                "reference": "099aae7d3619bffb5e68b33dbbadf6649c6d49c5",
                 "shasum": ""
             },
             "require": {
@@ -6527,7 +6527,7 @@
             "require-dev": {
                 "amphp/http-client": "^5.3.2",
                 "amphp/http-tunnel": "^2.0",
-                "guzzlehttp/guzzle": "^7.10",
+                "guzzlehttp/guzzle": "^7.10|^8.0",
                 "nyholm/psr7": "^1.0",
                 "php-http/httplug": "^1.0|^2.0",
                 "psr/http-client": "^1.0",
@@ -6568,7 +6568,7 @@
                 "http"
             ],
             "support": {
-                "source": "https://github.com/symfony/http-client/tree/v8.1.1"
+                "source": "https://github.com/symfony/http-client/tree/v8.1.7"
             },
             "funding": [
                 {
@@ -6588,7 +6588,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-16T12:55:20+00:00"
+            "time": "2026-09-08T13:39:13+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
@@ -7030,16 +7030,16 @@
         },
         {
             "name": "symfony/mercure-bundle",
-            "version": "v0.4.2",
+            "version": "v0.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/mercure-bundle.git",
-                "reference": "eae8bf5a75b4e1203bd9aa4181c7950a4df4b3e3"
+                "reference": "90e269c68fa10088e0affb02a3708ffce3e35f4e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/mercure-bundle/zipball/eae8bf5a75b4e1203bd9aa4181c7950a4df4b3e3",
-                "reference": "eae8bf5a75b4e1203bd9aa4181c7950a4df4b3e3",
+                "url": "https://api.github.com/repos/symfony/mercure-bundle/zipball/90e269c68fa10088e0affb02a3708ffce3e35f4e",
+                "reference": "90e269c68fa10088e0affb02a3708ffce3e35f4e",
                 "shasum": ""
             },
             "require": {
@@ -7048,7 +7048,7 @@
                 "symfony/config": "^6.4|^7.3|^8.0",
                 "symfony/dependency-injection": "^6.4|^7.3|^8.0",
                 "symfony/http-kernel": "^6.4|^7.3|^8.0",
-                "symfony/mercure": "*",
+                "symfony/mercure": "^0.6.1|^0.7",
                 "symfony/web-link": "^6.4|^7.3|^8.0"
             },
             "require-dev": {
@@ -7063,7 +7063,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.3.x-dev"
+                    "dev-main": "0.4.x-dev"
                 }
             },
             "autoload": {
@@ -7095,7 +7095,7 @@
             ],
             "support": {
                 "issues": "https://github.com/symfony/mercure-bundle/issues",
-                "source": "https://github.com/symfony/mercure-bundle/tree/v0.4.2"
+                "source": "https://github.com/symfony/mercure-bundle/tree/v0.4.3"
             },
             "funding": [
                 {
@@ -7107,7 +7107,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-25T12:51:49+00:00"
+            "time": "2026-08-11T10:28:59+00:00"
         },
         {
             "name": "symfony/mime",
