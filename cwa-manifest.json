@@ -7,7 +7,8 @@
     "packages/",
     "cwa-manifest.json",
     "blackfire-io_secondary_horizontal_transparent.png",
-    ".github/FUNDING.yml"
+    ".github/FUNDING.yml",
+    ".github/workflows/publish-create-cwa.yml"
   ],
   "questions": [
     {

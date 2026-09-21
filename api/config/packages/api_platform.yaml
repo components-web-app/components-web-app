@@ -30,6 +30,3 @@ api_platform:
       max_age: 0
       shared_max_age: 60
       vary: ['Content-Type', 'Authorization']
-      invalidation:
-        xkey:
-          glue: ' '

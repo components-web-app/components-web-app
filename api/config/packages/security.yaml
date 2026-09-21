@@ -39,7 +39,6 @@ security:
       switch_user: true
   access_control:
     - { path: ^/_api/token/refresh, roles: PUBLIC_ACCESS }
-    - { path: ^/_api/password/(reset|update), roles: PUBLIC_ACCESS, methods: [POST] }
     # The 2 options below prevents anonymous users from making changes to your API resources while allowing form submissions
     - { path: ^/_api/component/forms/(.*)/submit, roles: PUBLIC_ACCESS, methods: [POST, PATCH] }
     - { path: ^/, roles: IS_AUTHENTICATED_FULLY, methods: [POST, PUT, PATCH, DELETE] }

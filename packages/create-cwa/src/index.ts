@@ -238,7 +238,7 @@ pnpm dev
 |---|---|
 | https://localhost | Nuxt app |
 | https://localhost/_api | API (JSON-LD / HAL) |
-| https://localhost/admin | CWA admin panel |
+| https://localhost/login | Sign in to the CWA admin |
 
 > **SSL:** The dev stack uses self-signed certs. Accept the browser warning or trust the CA at \`api/frankenphp/caddy/certs/\`.
 
@@ -377,7 +377,7 @@ async function main(): Promise<void> {
     'Then visit:',
     '  https://localhost        — app',
     '  https://localhost/_api   — API',
-    '  https://localhost/admin  — admin panel',
+    '  https://localhost/login  — sign in to the admin',
   ]
 
   if (answers.fixtures) {
