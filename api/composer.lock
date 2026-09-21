@@ -364,12 +364,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "d6c4213c6b792251706937ec879a10a96f298c8e"
+                "reference": "1ae433f473b12b2e9c48f30c8f8ee2320dabccd8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/d6c4213c6b792251706937ec879a10a96f298c8e",
-                "reference": "d6c4213c6b792251706937ec879a10a96f298c8e",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/1ae433f473b12b2e9c48f30c8f8ee2320dabccd8",
+                "reference": "1ae433f473b12b2e9c48f30c8f8ee2320dabccd8",
                 "shasum": ""
             },
             "require": {
@@ -497,7 +497,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2026-09-21T17:25:15+00:00"
+            "time": "2026-09-21T21:50:42+00:00"
         },
         {
             "name": "composer/semver",
