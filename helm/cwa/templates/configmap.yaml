@@ -32,5 +32,6 @@ data:
   api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s/_api" (include "cwa.fullname" .)) | quote }}
   mailer-email: {{ .Values.php.mailer.email | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
+  gcloud-public-url: {{ .Values.php.gcloud.publicUrl | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
   cache-url: "http://localhost:2019/souin-api/souin"

@@ -209,6 +209,11 @@ spec:
                 configMapKeyRef:
                   name: {{ $fullName }}
                   key: gcloud-bucket
+            - name: GCLOUD_PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: gcloud-public-url
             - name: ADMIN_USERNAME
               valueFrom:
                 secretKeyRef:

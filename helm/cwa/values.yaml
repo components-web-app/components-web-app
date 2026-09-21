@@ -10,6 +10,10 @@ php:
   gcloud:
     jsonKey: "my-dummy-very-long-json-key-placeholder-value"
     bucket: "no-gcloud-bucket"
+    # Public base URL for uploaded media, e.g. https://cdn.example.com/ (trailing
+    # slash required). Empty falls back to https://storage.googleapis.com/<bucket>/
+    # in api/config/services.php, so an unset value still yields working URLs.
+    publicUrl: ""
   image:
     repository: "chart-example.local/cwa/php"
     pullPolicy: IfNotPresent

@@ -299,6 +299,7 @@ php:
   gcloud:
     jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
+    publicUrl: "${GCLOUD_PUBLIC_URL:-}"
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${RESET_DATABASE:-false}"

@@ -188,6 +188,12 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+      # Media storage. Without these three a GitHub deploy falls back to the
+      # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
+      # automatically; GitHub Actions does not, so each one must be mapped here.
+      GCLOUD_JSON: ${{ secrets.GCLOUD_JSON }}
+      GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
+      GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
@@ -257,6 +263,12 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+      # Media storage. Without these three a GitHub deploy falls back to the
+      # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
+      # automatically; GitHub Actions does not, so each one must be mapped here.
+      GCLOUD_JSON: ${{ secrets.GCLOUD_JSON }}
+      GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
+      GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-kubectl@v4
