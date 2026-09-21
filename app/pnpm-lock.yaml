@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@0.0.0-29833659.4f1d4bb
-        version: '@cwa/nuxt-edge@0.0.0-29833659.4f1d4bb(4fdcb193284130e62190516a16faaf9a)'
+        specifier: npm:@cwa/nuxt-edge@0.0.0-29833694.0536f7c
+        version: '@cwa/nuxt-edge@0.0.0-29833694.0536f7c(4fdcb193284130e62190516a16faaf9a)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.43(typescript@6.0.3))
@@ -696,8 +696,8 @@ packages:
   '@colordx/core@5.5.0':
     resolution: {integrity: sha512-3PxTH8itZzltK0U9jTwVVnjLXvnDYuq3m+QXsHkENxWiPRh4WaoLcs1SQjqgZ55kS+QyirpH5BVwzP2gMVG6EQ==}
 
-  '@cwa/nuxt-edge@0.0.0-29833659.4f1d4bb':
-    resolution: {integrity: sha512-N37U3HnQNbagKqlfPEsvge3SBWZMIuCArgpCUMqk/x7dC9to5+zpvBKOMNyjfqtdMvc81hcHZ625Ehfim9z2Sw==}
+  '@cwa/nuxt-edge@0.0.0-29833694.0536f7c':
+    resolution: {integrity: sha512-kqWZ58GnfINW2PJy2pzR3YEixDR8rYt6Q0dDtsS9KXYuOrt3cMPnbhBJB9+bomjBJfwOOsuBiRQR7G3pVqAXUA==}
     engines: {pnpm: '>=11.5.3'}
     hasBin: true
 
@@ -7927,7 +7927,7 @@ snapshots:
 
   '@colordx/core@5.5.0': {}
 
-  '@cwa/nuxt-edge@0.0.0-29833659.4f1d4bb(4fdcb193284130e62190516a16faaf9a)':
+  '@cwa/nuxt-edge@0.0.0-29833694.0536f7c(4fdcb193284130e62190516a16faaf9a)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.1(magic-string@1.4.1)(magicast@0.5.5)(oxc-parser@0.133.0)(unplugin@3.3.0(esbuild@0.28.1)(rollup@4.62.2)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.49.0)(yaml@2.9.0)))
       '@nuxtjs/robots': 6.2.3(641358f86e8fbc7e0d55ebc060b93731)
