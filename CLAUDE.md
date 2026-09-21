@@ -690,10 +690,22 @@ followed, so a 3xx in the sitemap counts as a failure. XML is parsed with
 ash (GitLab sources k8s.sh before `bash` exists), which was verified in `alpine`.
 `WARM_CACHE_INSECURE=true` is for testing against the local self-signed stack only.
 
-**It never fails the deploy job** (`warm_cache || echo …` at every call site). The
-release is already live by then: failing would mark a good deploy red, skip what
-follows (production's canary/staging deletes and `environment_url.txt`, GitHub's
-fixtures step) and make `retry: 1` redeploy. `warm_cache` itself still exits 1.
+**It runs as its own job or step, never inside the deploy job** (Daniel's choice,
+2026-09-21). `warm_cache` exits 1 on any non-200. The release is already live by then,
+so that must not fail the deploy: that would mark a good deploy red, skip what follows
+(production's canary/staging deletes and `environment_url.txt`), and make the deploy
+job's `retry: 1` **redeploy the whole release**.
+- **GitLab:** `warm cache review|staging|canary|production` each `needs` their deploy
+  job, copy its `only`/`except` exactly, and set `allow_failure: true`. A failure shows
+  the pipeline as orange "passed with warnings", with the failed pages in the job log.
+  They use `environment: action: verify`, so they attach to the environment without
+  recording a deployment. The URL is passed explicitly. `alpine` has no `curl`, so each
+  runs `apk add curl` first. The first version called `warm_cache || echo` inside the
+  deploy script, where a failure was visible only in the log.
+- **GitHub:** a separate "Warm the page cache" step with `continue-on-error: true`,
+  plus warm_cache's `::error` annotation. It runs **after** the fixtures step (after
+  the deploy step for canary, which has no fixtures step), so a new environment is
+  warmed once its content exists.
 
 It replaced the `performance` job: `bin/devops/performance.sh`, `.gitlab-urls.txt`,
 `.github/workflows/performance.yml` and `PERFORMANCE_DISABLED` are gone.
@@ -868,10 +880,29 @@ template, and the PDB's selector exactly equals the SSR pods' labels
 whose selector matches nothing protects nothing and raises no error**, so check
 this whenever labels change.
 
-**Left alone:** readiness `initialDelaySeconds: 30`. Shortening it would reduce
-any unavoidable outage (upgrades), but it has to be checked against #62 first:
-a probe that times out partway through a request can leave Souin stuck on that
-key for good. If you shorten it, keep `timeoutSeconds: 5`.
+**Readiness delay: shortened after measuring against #62 (2026-09-21).** It was
+first left at 30s pending a check. Then the staging API pod was rolling-restarted
+twice (surge, so no outage) and its timeline read from pod status and Caddy's
+access log:
+
+| | sample 1 | sample 2 |
+|---|---|---|
+| Caddy serving | +6.5s | +5.9s |
+| first request on the cold worker | 0.139s (the probe) | **0.162s**, fired the instant Caddy started |
+| Ready | +30s | +39s (first probe only sent then, and it passed) |
+
+The pod could serve from about +6s but stayed out of service until +30–39s: **24–33s
+of avoidable downtime per eviction or node upgrade** of the single API pod. #62's
+failure needs the first probe to exceed its timeout, but even a completely cold first
+request took 0.16s, about 30x under 5s. So:
+- readiness `initialDelaySeconds` 30 → **5**;
+- `startupProbe.periodSeconds` 10 → **5** and `failureThreshold` 30 → **60**: the same
+  300s boot budget, polled twice as often;
+- `timeoutSeconds: 5` is **unchanged**. That, not the delay, is the #62 protection.
+
+A bigger production database lengthens migrations and `ANALYZE`, but those run
+*before* Caddy listens, where the startup probe covers them. They don't slow the first
+request. srnte needs the same change. The darkweak/souin#849 root cause is still open.
 
 **Open:** if the `cost-optimized` compute class places pods on Spot VMs,
 preemptions are *involuntary*, and neither the annotation nor the PDB applies.

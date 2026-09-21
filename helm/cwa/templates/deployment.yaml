@@ -249,12 +249,15 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "/bin/sleep 1; kill -QUIT 1"]
-          # startup can take time so start with this probe instead of liveness
+          # Startup covers the whole boot (database wait, migrations, ANALYZE)
+          # before Caddy listens: 60 x 5s = the same 300s budget as before, but
+          # polled twice as often so readiness can start within ~5s of Caddy
+          # coming up. Readiness and liveness only run once this has passed.
           startupProbe:
             tcpSocket:
               port: http
-            failureThreshold: 30
-            periodSeconds: 10
+            failureThreshold: 60
+            periodSeconds: 5
           # is the container live and does not need restarting
           livenessProbe:
             tcpSocket:
@@ -269,7 +272,12 @@ spec:
               httpHeaders:
               - name: Accept
                 value: application/ld+json,application/json
-            initialDelaySeconds: 30
+            # 5s, not 30s. The startup probe already holds readiness back until
+            # Caddy listens, so a long delay here only kept a ready pod out of
+            # service: measured on staging, Caddy served at +6s but the pod went
+            # Ready at +30-39s. That is 24-33s of avoidable downtime every time the
+            # single API pod is evicted or its node is upgraded.
+            initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
             # Unset, this defaults to 1s, and a probe that gives up mid-flight is
@@ -280,10 +288,11 @@ spec:
             # holding a WaitGroup nobody releases, so every later request for the
             # same key - which means every subsequent probe - blocks until the 10s
             # backend timeout and 504s. The pod then never becomes ready and never
-            # recovers. The container spends its first seconds on migrations, so
-            # by the time Caddy serves, the 30s delay above has passed and the
-            # first probe lands on a cold worker: exactly the race this needs
-            # slack for. See components-web-app#62 for the incident that found it
+            # recovers. The first probe lands on a cold worker: exactly the race
+            # this needs slack for. Measured on staging, the very first request
+            # to this path, made the instant Caddy started, took 0.16s, so 5s
+            # leaves about 30x headroom. Keep this at 5 whatever the delay above.
+            # See components-web-app#62 for the incident that found it
             # (a production pod stuck 0/1 for three hours after a node upgrade)
             # and darkweak/souin#849, where a fix is pending for the underlying
             # defect - a stalled call should not cost the key.
