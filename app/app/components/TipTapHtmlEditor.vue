@@ -118,6 +118,9 @@ const editor = useEditor({
     // JSON
     // this.$emit('update:modelValue', this.editor.getJSON())
   },
+  // Anything the model changed while the editor had focus was held back (see
+  // syncFromModel), so apply it now that nobody is typing.
+  onBlur: () => syncFromModel(),
   editable: !props.disabled,
 })
 
@@ -152,13 +155,25 @@ function showLinkManager() {
     .run()
 }
 
-// match the editor value to the modelValue prop
-watch(value, (newValue) => {
-  if (!editor.value) {
+// Match the editor to the modelValue prop - but never while someone is typing.
+//
+// setContent replaces the whole document, which puts the caret at the end. While
+// the editor has focus it is the source of truth: everything the model holds came
+// from this editor, so a value that differs is an older one on its way back (the
+// resource model briefly falls back to the stored value, for example while a first
+// edit creates a draft under a new IRI). Replacing the document with it moved the
+// caret to the end mid-sentence and dropped what had been typed since. The change
+// is applied on blur instead.
+//
+// emitUpdate: false, because TipTap v3's setContent fires onUpdate by default,
+// which sent the value straight back out through the model as another save.
+function syncFromModel() {
+  if (!editor.value || editor.value.isFocused) {
     return
   }
+  const newValue = value.value
   // HTML
-  const isSame = editor.value.getHTML() === newValue
+  const isSame = editor.value.isEmpty ? !newValue : editor.value.getHTML() === newValue
 
   // JSON
   // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
@@ -166,8 +181,9 @@ watch(value, (newValue) => {
     return
   }
 
-  editor.value.commands.setContent(newValue || null, {})
-})
+  editor.value.commands.setContent(newValue || null, { emitUpdate: false })
+}
+watch(value, syncFromModel)
 
 // Toggle disabled prop and focus when enabled
 const disabledRef = toRef(props, 'disabled')
