@@ -10,9 +10,11 @@ COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
 # Souin v1.7.9 deletes purged surrogate keys with an unanchored regex, so purging
 # one tag also drops the index entry of every tag containing it, and those cached
-# responses can never be purged again (#84, darkweak/souin#867). Build from a
-# patched copy of v1.7.9. Remove this, the patch and the replace below once a
-# Souin release includes the fix; bin/test/souin-purge-isolation.sh must pass.
+# responses can never be purged again. Build from a patched copy of v1.7.9.
+# Remove this, the patch and the replace below once a Souin release includes the
+# fix; bin/test/souin-purge-isolation.sh must pass.
+# https://github.com/components-web-app/components-web-app/issues/84
+# https://github.com/darkweak/souin/issues/867 (fix: https://github.com/darkweak/souin/pull/868)
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
 RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
 	cp -r "$SOUIN_DIR" /tmp/souin && \
