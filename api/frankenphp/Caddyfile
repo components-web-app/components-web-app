@@ -224,6 +224,11 @@
     handle @api_handle {
         # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
         request_header @internal host {$BROWSER_SERVER_NAME}
+        # SSR reaches php over plain HTTP (the in-cluster service on k8s), so without
+        # this php builds http:// absolute URLs, including the docs Link header, and
+        # the browser blocks them as mixed content (#83). Needs TRUSTED_PROXIES to
+        # cover the caller's network.
+        request_header @internal X-Forwarded-Proto https
 
         php_server
     }
