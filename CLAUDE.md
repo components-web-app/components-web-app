@@ -490,18 +490,21 @@ IRIs advertised by the resource manifest; a component with `published_at IS NULL
 Confirmed on this fixture data: `/` fetches `html_contents/e7a42038…` and
 `images/3520e0ba…`, both `published_at = NULL`, both 404, and `/` is never
 cached — while `/form`, `/blog-articles` and the rest cache normally. **Do not
-read an uncached `/` as the feature being broken.** Raised module-side; a 404 on
-a draft component is the normal anonymous path, not evidence of private content.
+read an uncached `/` as the feature being broken.** Re-checked 2026-09-22: `e7a42038`
+is a draft of the published `f9b9f1f6`, and `3520e0ba` was never published. Raised
+as [cwa-nuxt-module#324](https://github.com/components-web-app/cwa-nuxt-module/issues/324):
+a 404 on a draft component is the normal anonymous path, not evidence of private
+content. The 404'd IRI stays in the page's `Surrogate-Key`, so publishing it would
+still purge the page once it is cacheable.
 
-**2. Dev pages go out `s-maxage=60`; prod pages get the module's one-hour backstop.** `buildPageCacheHeaders` takes `min(pageCache.sharedMaxAge, lowest s-maxage/Expires across the render's API responses)`. The API's `shared_max_age` is **60 in dev** (`config/packages/api_platform.yaml`) and **31557600, a year, in prod** (`config/packages/prod/api_platform.yaml`, confirmed with `APP_ENV=prod debug:config api_platform defaults.cache_headers`). So in prod the module's `sharedMaxAge` (3600 from edge `0f360ce`) is what binds, and the dev value is deliberately short and fine. **An earlier revision of this section, measured only on the dev stack, called the 60 "the real dial" for prod and said it needed deleting. That was wrong; nothing needs changing.** Measure caching claims against `APP_ENV=prod` config, not just the dev stack.
+**2. Dev pages go out `s-maxage=60`; prod pages get the module's one-hour backstop.** `buildPageCacheHeaders` takes `min(pageCache.sharedMaxAge, lowest s-maxage/Expires across the render's API responses)`. The API's `shared_max_age` is **60 in dev** (`config/packages/api_platform.yaml`) and **31557600, a year, in prod** (`config/packages/prod/api_platform.yaml`, confirmed with `APP_ENV=prod debug:config api_platform defaults.cache_headers`). So in prod the module's `sharedMaxAge` (3600 from edge `0f360ce`) is what binds, and the dev value is deliberately short and fine. **Daniel (2026-09-22): pages can follow the API's year-long TTL**, because invalidation is purge-driven. Proposed as the module default in [cwa-nuxt-module#325](https://github.com/components-web-app/cwa-nuxt-module/issues/325), not as a template override (policy above). **`staleWhileRevalidate` stays 0**, which was a deliberate decision. **An earlier revision of this section, measured only on the dev stack, called the 60 "the real dial" for prod and said it needed deleting. That was wrong; nothing needs changing.** Measure caching claims against `APP_ENV=prod` config, not just the dev stack.
 
 The short dev TTL does **mask purge bugs in testing**: a page will look correctly invalidated within a minute even if nothing purged it. Measure purges immediately before and after the write, as in the table above.
 
-The one limitation that still matters in prod is named in
-[api-components-bundle#227](https://github.com/components-web-app/api-components-bundle/issues/227):
-a *scheduled* transition only invalidates a page if the scheduled resource was in
-the set that rendered it. Cascade invalidation through a nav happens to be covered
-in practice, but by accident rather than by design.
+The scheduled-transition gap
+([api-components-bundle#227](https://github.com/components-web-app/api-components-bundle/issues/227),
+where a scheduled change only invalidated pages that had rendered that resource) is
+**fixed** (closed 2026-09-21). It was the main reason for the one-hour backstop.
 
 **3. A cold dev render can exceed Souin's 10s backend timeout.** The first
 request to a page after a restart returned `504 / cache-status: Souin;
@@ -847,6 +850,34 @@ API is split by its key, not by `Vary`. Two approaches that do **not** work:
 - The API is still split per exact `Accept` string, as before.
 - Not tested: a production build, HEAD requests, and a real CDN.
 
+
+## ✅ Tracking parameters no longer split the cache (2026-09-22)
+
+The query string is in the Souin key, so every `?utm_source=…`, `gclid`, `fbclid` or
+`srsltid` value used to render and store its own copy of a page. The API was split too,
+because the module passes the page query on to collection fetches
+(`fetcher.ts`, #318). Ad clicks and shared links were therefore always misses.
+
+A `uri query { -utm_source … }` block in `api/frankenphp/Caddyfile` now drops a fixed
+list of tracking parameters. `uri` runs before `cache`, so the key, Nuxt and php all see
+the stripped query. It applies to every path, `/_api` included. Analytics scripts are
+unaffected because they read the browser's address bar. Nuxt's collection plugin only
+reacts to query *changes*, so a browser URL that differs from the SSR query does not
+cause a refetch on hydration.
+
+Verified on the dev stack:
+- `/form?k=1&utm_source=…&utm_campaign=…` and `/form?utm_medium=…&k=1&fbclid=…&gclid=…&srsltid=…`
+  are **hits** on the `/form?k=1` entry, and `/form?k=2&utm_source=x` is still a separate
+  entry.
+- `/blog-articles?utm_source=a` then `?utm_source=b&fbclid=zz` gives a miss, then a hit.
+- `/_api/_/routes//form?k=1&utm_source=x&gclid=y` is a hit on the entry without them.
+- In a render of `/blog-articles?z=1&utm_source=leak`, the collection fetch was
+  `…/collections/…?z=1` and the HTML contains no `leak`, so Nuxt never saw it.
+
+Caddy's access log still records the **original** URI, so don't read a `utm_` in php's
+log as the strip failing. A project that needs one of these parameters server-side
+must remove it from the list. To add a parameter, add a `-name` line (there are no
+wildcards).
 
 ## ✅ Souin purge orphaned other resources' cache entries — patched build (#84, 2026-09-22)
 

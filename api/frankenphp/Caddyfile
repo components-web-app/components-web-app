@@ -102,6 +102,46 @@
 	vars @cache_host_internal cwa_cache_host {$BROWSER_SERVER_NAME}
 	vars @cache_host_request cwa_cache_host {http.request.host}
 
+	# Drop ad and campaign tracking parameters before the cache sees the request,
+	# so ?utm_source=... is served the page's normal entry instead of rendering and
+	# storing a copy for every value. The query is in the cache key, and a shared
+	# link or an ad click would otherwise always miss. They are dropped for /_api
+	# too, because the module passes the page query on to collection fetches.
+	#
+	# Only the server loses them. Analytics scripts read them from the browser's
+	# address bar, which still has them. Neither Nuxt nor php uses them, so a
+	# project that does need one server-side must remove it from this list.
+	# `uri` runs before `cache` in the handler order, and the key's
+	# {http.request.uri.query} reads the rewritten query.
+	uri query {
+		-utm_source
+		-utm_medium
+		-utm_campaign
+		-utm_term
+		-utm_content
+		-utm_id
+		-utm_source_platform
+		-utm_creative_format
+		-utm_marketing_tactic
+		-gclid
+		-gclsrc
+		-gbraid
+		-wbraid
+		-dclid
+		-srsltid
+		-_gl
+		-_ga
+		-fbclid
+		-msclkid
+		-twclid
+		-ttclid
+		-li_fat_id
+		-igshid
+		-yclid
+		-mc_cid
+		-mc_eid
+	}
+
 	encode {
 		zstd
 		br
