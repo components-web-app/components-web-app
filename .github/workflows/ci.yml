@@ -104,6 +104,8 @@ jobs:
         with:
           name: phpunit-results
           path: api/build/logs/phpunit/junit.xml
+      - name: Check Souin purges only their own tags (#84)
+        run: sh bin/test/souin-purge-isolation.sh
 
   behat-tests:
     name: Behat Tests

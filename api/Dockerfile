@@ -8,6 +8,17 @@ FROM dunglas/frankenphp:builder AS builder
 # Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
+# Souin v1.7.9 deletes purged surrogate keys with an unanchored regex, so purging
+# one tag also drops the index entry of every tag containing it, and those cached
+# responses can never be purged again (#84, darkweak/souin#867). Build from a
+# patched copy of v1.7.9. Remove this, the patch and the replace below once a
+# Souin release includes the fix; bin/test/souin-purge-isolation.sh must pass.
+COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
+RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
+	cp -r "$SOUIN_DIR" /tmp/souin && \
+	chmod -R u+w /tmp/souin && \
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-purge-fix.patch
+
 RUN CGO_ENABLED=1 \
     XCADDY_SETCAP=1 \
     XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
@@ -26,6 +37,7 @@ RUN CGO_ENABLED=1 \
 	--with github.com/dunglas/mercure/caddy@v0.24.2 \
 	--with github.com/dunglas/vulcain/caddy \
 	--with github.com/darkweak/souin/plugins/caddy \
+	--with github.com/darkweak/souin=/tmp/souin \
 	--with github.com/darkweak/storages/otter/caddy \
 	--with github.com/darkweak/storages/badger/caddy \
 	--with github.com/darkweak/storages/nuts/caddy

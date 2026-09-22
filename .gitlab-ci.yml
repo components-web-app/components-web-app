@@ -73,6 +73,7 @@ unit tests:
   stage: test
   script:
     - run_test_phpunit
+    - sh bin/test/souin-purge-isolation.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml

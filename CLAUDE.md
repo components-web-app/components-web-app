@@ -848,6 +848,47 @@ API is split by its key, not by `Vary`. Two approaches that do **not** work:
 - Not tested: a production build, HEAD requests, and a real CDN.
 
 
+## ✅ Souin purge orphaned other resources' cache entries — patched build (#84, 2026-09-22)
+
+**Bug (Souin v1.7.9, the latest release; reported upstream as
+[darkweak/souin#867](https://github.com/darkweak/souin/issues/867)):** after a
+surrogate-key purge, Souin deleted the purged tags' index entries with an
+**unanchored regex**. Purging a tag therefore also deleted the index entry of every
+tag that *contains* it. The responses stayed cached with nothing pointing at them,
+so no later purge could reach them, and they were served for the full prod
+`s-maxage` of a year. API Platform always purges the collection IRI next to the
+item, so **every write to one component group or position orphaned all the others**.
+Routes are also hit, where one path contains another (`/2026` ⊂ `/2026/2026-programme`).
+It was seen on srnte: a published accordion tab never reached anonymous visitors, and 60% of
+production's API entries were orphaned. The API bundle and module send correct purges.
+
+**Fix, carried in this template until upstream releases one:**
+- `api/frankenphp/souin/v1.7.9-purge-fix.patch` makes both purge clean-up paths delete
+  **exact** keys (production code only, `pkg/api/souin.go`). The same change, with Go
+  tests, is ready as the upstream PR for #867.
+- `api/Dockerfile`'s builder stage downloads Souin v1.7.9's source, applies the patch
+  and builds with `--with github.com/darkweak/souin=/tmp/souin`. **Remove the
+  patch, the `COPY`/`RUN` and the replace together** once a Souin release has the fix.
+- `bin/test/souin-purge-isolation.sh` runs the image's own `frankenphp` on a throwaway
+  Caddyfile (a cache in front of a stub that tags each response with its path, so no
+  php or database) and runs in the unit-tests job on GitLab and GitHub.
+
+**Verified locally:** the script fails all three checks on the unpatched binary and
+passes on the patched one. On the full stack, purging group B plus the collection keeps
+group A indexed, and purging A then drops it (both `Accept` variants). The
+`purge-rendered-html` command still drops pages and leaves `/_api/docs.jsonld` cached.
+
+**Each site, after its first deploy with the patched image:** entries orphaned before
+it stay unpurgeable, so flush the cache once:
+`kubectl exec -n <ns> deploy/<release> -- curl -s -X PURGE http://localhost:2019/souin-api/souin/flush`.
+A deploy already restarts the API pod, and its in-memory `otter` store is emptied with
+it, so the flush is only needed if the pod was not recreated.
+
+**Downstream sites:** copy the patch file, the Dockerfile block, the `--with` line, the
+script and both CI steps. Check that the site builds the same Souin version
+(`frankenphp build-info | grep souin` should show v1.7.9). If it doesn't, the patch will
+fail to apply, which fails the build loudly.
+
 ## ✅ Small template fixes — 2026-09-21
 
 These were found by a docs audit on 2026-08-12 and never filed, because the audit
