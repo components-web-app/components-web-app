@@ -162,7 +162,7 @@
         "behatch/contexts": "dev-master",
         "friends-of-behat/mink-extension": "^2.7",
         "friends-of-behat/symfony-extension": "^2.4",
-        "phpunit/phpunit": "^9.5",
+        "phpunit/phpunit": "^13",
         "roave/security-advisories": "dev-latest",
         "symfony/browser-kit": "^8.1",
         "symfony/css-selector": "^8.1",
