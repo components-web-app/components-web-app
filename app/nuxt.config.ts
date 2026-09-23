@@ -1,11 +1,10 @@
-import { realpathSync } from 'node:fs'
 import tailwindcss from '@tailwindcss/vite'
-import type { NuxtPage } from 'nuxt/schema'
 
 // Chunks only admins need: the TipTap editor and the /_cwa admin pages. Visitors never
-// load them, so they are kept out of the prefetch hints (below) and out of the service
-// worker's precache (`pwa.workbox.manifestTransforms`), which would otherwise fetch every
-// one of them in the background after a visitor's first page load. Chunk files are named
+// load them, so they are kept out of the service worker's precache
+// (`pwa.workbox.manifestTransforms`), which would otherwise fetch every one of them in
+// the background after a visitor's first page load. The editor is also kept out of the
+// prefetch hints (below). The admin pages' hints are cwa-nuxt-module#329, fixed there. Chunk files are named
 // by hash, so `globIgnores` can't select them; the build manifest maps them to sources.
 const isEditorSource = (id: string) => id.endsWith('components/TipTapHtmlEditor.vue')
 const isAdminOnlySource = (id: string) => isEditorSource(id) || id.includes('/pages/_cwa/')
@@ -146,35 +145,6 @@ export default defineNuxtConfig({
     // @cwa-end:image
     '@vite-pwa/nuxt',
     'nuxt-svgo',
-    // TEMPORARY workaround for cwa-nuxt-module#329. Remove once the module fixes it.
-    // The layer is extended through a pnpm symlink, so its pages' `file` is the
-    // symlink path while Vite's manifest keys use the realpath. Nuxt's filter that
-    // keeps page chunks out of the entry's prefetch hints compares the two and never
-    // matches, so every page sent ~80 prefetch hints for the /_cwa admin and auth
-    // pages. Realpathing the files lets that filter work (80 -> 23 hints on `/`).
-    // Production builds only: the filter does not run in dev, and dev keeps the
-    // symlink paths its watcher expects.
-    (_options, nuxt) => {
-      if (nuxt.options.dev) {
-        return
-      }
-      const realpathPages = (pages: NuxtPage[]) => {
-        for (const page of pages) {
-          if (page.file) {
-            try {
-              page.file = realpathSync(page.file)
-            }
-            catch {
-              // A virtual or missing file: leave it as it is.
-            }
-          }
-          if (page.children) {
-            realpathPages(page.children)
-          }
-        }
-      }
-      nuxt.hook('pages:extend', realpathPages)
-    },
     // HtmlContent loads the TipTap editor only when an admin starts editing
     // (cwa-nuxt-module#332). Nuxt would still send a prefetch hint for that chunk
     // (about 400 KB of TipTap and ProseMirror) on every page with body text, so

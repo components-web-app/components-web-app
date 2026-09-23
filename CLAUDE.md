@@ -883,9 +883,14 @@ These are the template's own fixes:
     It saves the redraw whenever the stored HTML serialises the way the browser does.
     TipTap's output always does. Hand-written or API-written HTML may be re-assigned once
     on mount, which is no worse than `v-html`.
-- **Prefetch workaround for #329 (production only).** A `pages:extend` hook realpaths
-  `page.file`. The layer's pages come through a pnpm symlink, so Nuxt's filter that keeps
-  page chunks out of the prefetch hints never matched. Remove it when #329 is fixed.
+- **The prefetch hints for `/_cwa` and auth pages are the module's to fix (#329), not the
+  template's.** The layer's pages come through a pnpm symlink, so Nuxt's filter that keeps
+  page chunks out of the prefetch hints never matches, and every public page sends about 80
+  hints. A `pages:extend` realpath hook fixes it (80 → 23). Daniel decided on 2026-09-23 that
+  the hook belongs in the module, because every site has the bug. The template briefly
+  carried it and it was removed before release. It's proposed on #329 with the
+  measurements. **Don't re-add it here.** Until the module ships it, the template still
+  sends those hints.
 - **The service worker no longer precaches admin-only chunks.**
   - The same `build:manifest` hook collects the files reachable only from the editor or
     `/pages/_cwa/`: anything shared with a visitor-reachable chunk stays.
@@ -897,7 +902,7 @@ Measured on a local production build:
 | | Before | After |
 |---|---|---|
 | Modulepreload on `/` and blog articles | 1,083 KB (365 KB gz) | 659 KB (231 KB gz) |
-| Prefetch hints | 80 files (243 KB) | 23 files (56 KB) |
+| Prefetch hints | 80 files (243 KB) | 23 files (56 KB) with the #329 hook, which is now left to the module; about 80 again without it |
 | Second LCP entry (the redraw) | 7 of 8 loads | 0 of 8 |
 | Lighthouse mobile LCP on `/` | 9.3–12.1s | 7.1–7.2s |
 | Requests | 119 | 60 |
