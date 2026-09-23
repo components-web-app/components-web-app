@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { useQueryBoundModel } from '#cwa/composables/cwa-query-bound-model'
 
-const { model: searchModel } = useQueryBoundModel(['title'], {
+const { model: searchModel } = useQueryBoundModel(['search'], {
   delay: 250,
 })
 </script>
