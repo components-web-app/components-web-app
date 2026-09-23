@@ -1,4 +1,10 @@
 worker {
 	file ./public/index.php
+	# A fixed pool. By default FrankenPHP starts 2 threads per CPU it can see, and the php
+	# pod deliberately has no CPU limit, so the pool followed the node's size (4 on a
+	# 2-vCPU node, 16 on an 8-vCPU one), and so did the pod's worst-case memory. At
+	# memory_limit 512M, 4 workers stay inside the 1Gi pod limit in practice: see the
+	# comment on php.resources in helm/cwa/values.yaml.
+	num {$FRANKENPHP_WORKER_NUM:4}
 	env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
 }

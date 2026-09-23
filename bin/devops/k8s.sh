@@ -448,6 +448,8 @@ php:
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
     publicUrl: "${GCLOUD_PUBLIC_URL:-}"
   resources:
+    limits:
+      memory: ${PHP_MEMORY_LIMIT:-"1Gi"}
     requests:
       cpu: ${PHP_CPU_REQUEST:-$PHP_CPU_REQUEST_DEFAULT}
       memory: ${PHP_MEMORY_REQUEST:-$PHP_MEMORY_REQUEST_DEFAULT}

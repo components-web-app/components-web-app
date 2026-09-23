@@ -1256,6 +1256,46 @@ Two rules if you do this again:
   *exactly* the hunks you left out. A misplaced hunk shows up as an extra move
   in that diff, so the check fails loudly instead of committing mangled text.
 
+## ✅ API memory sized for 20 MB photo uploads (2026-09-23)
+
+Brought over from srnte, which needed PHP `memory_limit = 512M` for 20 MB photos. The
+template was at 256M, and uploads were capped at 5 MB in three places.
+- **Upload limits:** `upload_max_filesize = 20M` and `post_max_size = 21M` (in `10-app.ini`),
+  and `Image::$file` `Assert\File(maxSize: '20M')`. PHP's M is MiB and Symfony's is decimal,
+  so a file that passes validation always fits. The ingress already allows 30m.
+- **`memory_limit = 512M`.** It's a per-request ceiling, not a reservation: ordinary API
+  requests still use 20–50 MB.
+- **A fixed worker pool** of `num {$FRANKENPHP_WORKER_NUM:4}` in `worker.Caddyfile`.
+  - FrankenPHP defaults to 2 threads per visible CPU, and the php pod has no CPU limit, so
+    the pool, and with it the worst-case memory, used to follow the node's size.
+  - Verified at runtime with 1 CPU: FrankenPHP starts 4 worker threads plus 1 regular
+    thread, raising its total itself, and serves normally.
+- **Pod memory limit 1Gi**, with the request left at **350Mi** (Daniel, 2026-09-23). The
+  scheduler and the cluster autoscaler count only the request. `PHP_MEMORY_LIMIT`
+  overrides the limit in `k8s.sh`. The budget: about 190Mi baseline, plus one upload at
+  512M, plus 3 ordinary requests at about 50Mi, comes to about 850Mi. The accepted risk is
+  that a node short of memory during a big upload evicts this pod first, because it's the
+  furthest over its request.
+  - **If a cluster forces limits to equal requests** (GKE Autopilot does), the 1Gi would be
+    reserved in full. Lower `PHP_MEMORY_LIMIT` there.
+
+**Measured GD memory to build the `thumbnail` filter.** The bundle does this synchronously in
+the upload request (`UploadableFileManager.php:162`). Memory scales with pixels, not file
+size, at about 11.7 MB per megapixel:
+
+| Photo | Peak |
+|---|---|
+| 12 MP | 140 MB |
+| 24 MP | 280 MB |
+| 48 MP | **563 MB, over 512M** |
+
+So 512M handles up to about 43 MP. A 48 MP photo from a recent phone, often under 20 MB,
+still fails with a 500. The options, not yet chosen:
+- `Assert\Image(maxPixels: …)` on `Image::$file`, for a clean 422 instead of a 500;
+- resizing in the browser before upload, in the module;
+- generating thumbnails outside the upload request, in the bundle;
+- libvips instead of GD, which streams large images in a fraction of the memory.
+
 ## ✅ Node scale-down took the site down — eviction protection (#78, 2026-09-21)
 
 Found on srnte in production: a 503 from nginx-ingress with no deploy running.
