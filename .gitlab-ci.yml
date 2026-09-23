@@ -359,14 +359,17 @@ warm cache production:
     - apk add --no-cache curl >/dev/null
     - warm_cache "https://$KUBE_INGRESS_BASE_DOMAIN"
 
-# Lighthouse CI audit after the cache warm (#87). Off on every track unless
-# PERFORMANCE_AUDIT_REVIEW / _STAGING / _CANARY / _PRODUCTION is "true". Each needs
-# its deploy job and, when it exists, the warm job for the same track, so pages come
-# from the cache. allow_failure: a missed budget shows as "passed with warnings" and
-# never fails a live deploy. The HTML reports are kept as artifacts, and
-# browser-performance.json feeds GitLab's merge request comparison (a paid GitLab
-# feature; on Free the artifact is simply kept). See performance_audit in
-# bin/devops/k8s.sh for the variables that tune it.
+# Lighthouse CI audit (#87): a MANUAL job after each deploy, never automatic. It is
+# on by default for review, staging and production (set PERFORMANCE_AUDIT_REVIEW /
+# _STAGING / _PRODUCTION to "false" to remove the job), and opt-in for canary
+# (PERFORMANCE_AUDIT_CANARY="true"), because canary shares production's hostname
+# and would measure whichever pod answers. It needs its deploy job and, when it
+# exists, the warm job for the same track, so pages come from the cache.
+# allow_failure: a missed budget shows as "passed with warnings" and never fails a
+# live deploy, and an unrun manual job never blocks the pipeline. The HTML reports
+# are kept as artifacts, and browser-performance.json feeds GitLab's merge request
+# comparison (a paid GitLab feature; on Free the artifact is simply kept). See
+# performance_audit in bin/devops/k8s.sh for the variables that tune it.
 performance audit review:
   stage: review
   image: $PERFORMANCE_AUDIT_IMAGE
@@ -380,7 +383,8 @@ performance audit review:
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $PERFORMANCE_AUDIT_REVIEW == "true"'
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $PERFORMANCE_AUDIT_REVIEW != "false"'
+      when: manual
   script:
     - performance_audit "https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
@@ -403,7 +407,8 @@ performance audit staging:
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $STAGING_ENABLED == "true" && $PERFORMANCE_AUDIT_STAGING == "true"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $STAGING_ENABLED == "true" && $PERFORMANCE_AUDIT_STAGING != "false"'
+      when: manual
   script:
     - performance_audit "https://staging.$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
@@ -427,6 +432,7 @@ performance audit canary:
     action: verify
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $CANARY_ENABLED == "true" && $PERFORMANCE_AUDIT_CANARY == "true"'
+      when: manual
   script:
     - performance_audit "https://$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
@@ -449,7 +455,8 @@ performance audit production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $PRODUCTION_API_DISABLED != "true" && $PERFORMANCE_AUDIT_PRODUCTION == "true"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $PRODUCTION_API_DISABLED != "true" && $PERFORMANCE_AUDIT_PRODUCTION != "false"'
+      when: manual
   script:
     - performance_audit "https://$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:

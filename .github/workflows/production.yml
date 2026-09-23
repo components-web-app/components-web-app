@@ -100,25 +100,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           warm_cache
-      # Lighthouse CI audit after the warm (#87). Off unless PERFORMANCE_AUDIT_CANARY
-      # is "true". continue-on-error: a missed budget marks this step failed and adds a
-      # warning, without failing a deploy that is already live. The table goes to the
-      # step summary and the full reports to an artifact.
-      - name: Performance audit
-        if: inputs.action == 'canary' && vars.PERFORMANCE_AUDIT_CANARY == 'true'
-        continue-on-error: true
-        run: |
-          source ./bin/devops/setup.sh
-          source ./bin/devops/k8s.sh
-          performance_audit
-      - name: Upload the performance report
-        if: always() && inputs.action == 'canary' && vars.PERFORMANCE_AUDIT_CANARY == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-report-canary
-          path: performance-report/
-          if-no-files-found: ignore
-          retention-days: 30
       - name: Deploy production
         if: inputs.action == 'production'
         run: |
@@ -164,25 +145,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           warm_cache
-      # Lighthouse CI audit after the warm (#87). Off unless PERFORMANCE_AUDIT_PRODUCTION
-      # is "true". continue-on-error: a missed budget marks this step failed and adds a
-      # warning, without failing a deploy that is already live. The table goes to the
-      # step summary and the full reports to an artifact.
-      - name: Performance audit
-        if: inputs.action == 'production' && vars.PERFORMANCE_AUDIT_PRODUCTION == 'true'
-        continue-on-error: true
-        run: |
-          source ./bin/devops/setup.sh
-          source ./bin/devops/k8s.sh
-          performance_audit
-      - name: Upload the performance report
-        if: always() && inputs.action == 'production' && vars.PERFORMANCE_AUDIT_PRODUCTION == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-report-production
-          path: performance-report/
-          if-no-files-found: ignore
-          retention-days: 30
       - uses: actions/upload-artifact@v4
         if: inputs.action == 'production'
         with:

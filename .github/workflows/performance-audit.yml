@@ -1,0 +1,94 @@
+name: Performance audit
+
+# Lighthouse CI audit of a deployed environment (#87), run by hand from the Actions
+# tab. GitHub has no manual steps inside a push-triggered workflow, so this is the
+# equivalent of GitLab's manual `performance audit <track>` jobs. Available by
+# default; set the repository variable PERFORMANCE_AUDIT_PRODUCTION /
+# _STAGING / _REVIEW to "false" to stop that environment being audited.
+#
+# For a review app, run the workflow from the branch the review app was deployed
+# from: its URL is built from the branch name, as in ci.yml.
+#
+# A missed budget fails this run, which is only ever the audit, never a deploy.
+# The table is in the run summary and the full reports are in the artifact. See
+# performance_audit in bin/devops/k8s.sh for the variables that tune it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to audit'
+        required: true
+        type: choice
+        default: production
+        options:
+          - production
+          - staging
+          - review
+      form_factors:
+        description: 'Form factors'
+        required: true
+        type: choice
+        default: mobile
+        options:
+          - mobile
+          - desktop
+          - mobile,desktop
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  audit:
+    name: Audit ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    if: |
+      vars.CI_DISABLED != 'true' && (
+        (inputs.environment == 'production' && vars.PERFORMANCE_AUDIT_PRODUCTION != 'false') ||
+        (inputs.environment == 'staging' && vars.PERFORMANCE_AUDIT_STAGING != 'false') ||
+        (inputs.environment == 'review' && vars.PERFORMANCE_AUDIT_REVIEW != 'false')
+      )
+    env:
+      KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+      PERFORMANCE_AUDIT_FORM_FACTORS: ${{ inputs.form_factors }}
+      PERFORMANCE_AUDIT_URLS: ${{ vars.PERFORMANCE_AUDIT_URLS }}
+      PERFORMANCE_AUDIT_MAX_PAGES: ${{ vars.PERFORMANCE_AUDIT_MAX_PAGES }}
+      PERFORMANCE_AUDIT_RUNS: ${{ vars.PERFORMANCE_AUDIT_RUNS }}
+      PERFORMANCE_AUDIT_CONFIG: ${{ vars.PERFORMANCE_AUDIT_CONFIG }}
+      PERFORMANCE_AUDIT_LHCI_VERSION: ${{ vars.PERFORMANCE_AUDIT_LHCI_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Work out the environment URL
+        id: url
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          case "$ENVIRONMENT" in
+            production) url="https://${KUBE_INGRESS_BASE_DOMAIN}" ;;
+            staging) url="https://staging.${KUBE_INGRESS_BASE_DOMAIN}" ;;
+            review)
+              # Same slug as the setup job in ci.yml.
+              slug=$(echo "$REF_NAME" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
+              url="https://${slug}-review.${KUBE_INGRESS_BASE_DOMAIN}"
+              ;;
+          esac
+          echo "Auditing ${url}"
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+      - name: Performance audit
+        env:
+          AUDIT_URL: ${{ steps.url.outputs.url }}
+        # Unset repository variables arrive as empty strings, which performance_audit
+        # treats as unset, so its defaults apply.
+        run: |
+          source ./bin/devops/k8s.sh
+          performance_audit "$AUDIT_URL"
+      - name: Upload the performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-${{ inputs.environment }}
+          path: performance-report/
+          if-no-files-found: ignore
+          retention-days: 30

@@ -809,10 +809,22 @@ warm. The pages are cached by then, so it measures what visitors get. `warm_cach
 only reports time to first byte; this adds LCP, CLS, TBT, FCP, Speed Index and page
 weight.
 
-- **Off on every track.** Set `PERFORMANCE_AUDIT_REVIEW`, `_STAGING`, `_CANARY` or
-  `_PRODUCTION` to `"true"` to turn it on. Defaults agreed with Daniel on 2026-09-23:
-  mobile only, canary off, no query parameter on audit requests (a plain anonymous
-  request is exactly what should hit the cache), and no `create-cwa` prompt.
+- **A manual job, on by default (Daniel, 2026-09-23).** It never runs by itself: someone
+  starts it after a deploy. An unrun manual job costs nothing and never blocks a pipeline.
+  - GitLab: `performance audit review|staging|production` are `when: manual` jobs.
+    Setting `PERFORMANCE_AUDIT_REVIEW`, `_STAGING` or `_PRODUCTION` to `"false"` removes
+    one. `performance audit canary` stays opt-in (`PERFORMANCE_AUDIT_CANARY="true"`),
+    because canary shares production's hostname and would measure whichever pod answers.
+  - GitHub has no manual steps inside a push-triggered workflow, so there is a separate
+    `workflow_dispatch` workflow, `.github/workflows/performance-audit.yml`, with an
+    environment choice (production, staging or review) and a form-factor choice. A
+    review app is audited by running it from that branch; the URL uses `ci.yml`'s slug.
+    `vars.PERFORMANCE_AUDIT_<ENV>="false"` disables an environment. A missed budget
+    fails that run, which is only ever the audit.
+  - The first version ran automatically when opted in. That was changed the same day.
+  - Other defaults agreed with Daniel on 2026-09-23: mobile only, no query parameter on
+    audit requests (a plain anonymous request is exactly what should hit the cache), and
+    no `create-cwa` prompt.
 - **Pages:** `PERFORMANCE_AUDIT_URLS` (paths or URLs, comma or space separated), or
   otherwise the first `PERFORMANCE_AUDIT_MAX_PAGES` (default 5) pages in the sitemap.
   The sitemap reading was moved out of `warm_cache` into `sitemap_pages`, which both
@@ -824,9 +836,9 @@ weight.
   2.5s, CLS ≤ 0.1 and TBT ≤ 200ms (Lighthouse's "good" thresholds), all `error`, plus
   page weight ≤ 1.6MB as a `warn`. A missed `error` budget fails the job.
   - GitLab: `allow_failure: true`, so it shows as "passed with warnings".
-  - GitHub: `continue-on-error`, plus a `::warning`.
+  - GitHub: the manual audit run fails, with a `::warning`.
 
-  A missed budget never fails a live deploy.
+  A missed budget never fails a deploy.
 - **Output** goes to `performance-report/`:
   - Lighthouse's HTML and JSON for each page and form factor;
   - the assertion results;
@@ -840,9 +852,8 @@ weight.
   `patrickhulce/lhci-client` image dates from 2025 and has an old Chrome. Each job
   `needs` its deploy job, plus its warm job with `optional: true`, so it runs after the
   warm whenever warming is on. `glab ci lint` passes.
-- **GitHub:** a "Performance audit" step and an "Upload the performance report" step
-  follow each "Warm the page cache" step. `ubuntu-latest` has Node and Chrome.
-  actionlint passes.
+- **GitHub:** see the manual workflow above. `ubuntu-latest` has Node and Chrome, and
+  the repository's `PERFORMANCE_AUDIT_*` variables are passed through. actionlint passes.
 - Chrome runs with `--headless=new --no-sandbox --disable-dev-shm-usage`, because CI
   containers run as root with a small `/dev/shm`. `PERFORMANCE_AUDIT_INSECURE=true` is
   for the local stack only.
