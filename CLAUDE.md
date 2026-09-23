@@ -1664,6 +1664,15 @@ Four workflow files have been added to `.github/workflows/`, each calling the sa
 
 Images are pushed to GHCR (`ghcr.io/<repo>`). `install_dependencies` (Alpine/`apk`) is skipped in favour of `azure/setup-kubectl` and `azure/setup-helm` actions. All other `bin/devops/k8s.sh` functions are called directly.
 
+**`production` and `canary` wait for the builds and tests (GitLab issue #1, 2026-09-23).** They
+used to need only `staging` (optional). With `STAGING_ENABLED=false` that became
+`needs: []`, so the manual deploy was clickable before the images were built, deployed the
+previous `:main` image, and ignored failing tests. Found on cymru-kitchens-cwa, where staging
+is off because it would migrate the live database. They now also need `build api`,
+`build app`, `unit tests` and `behat tests`, all `optional` because BUILD_DISABLED and
+TEST_DISABLED can remove them. **GitLab has its own issue tracker for this repo**
+(`glab issue list -R silverback-web-apps/cwa/components-web-app`), alongside GitHub's.
+
 **Required secrets:** `KUBECONFIG`, `KUBE_CONTEXT`, `KUBE_NAMESPACE_PRODUCTION`, `JWT_PASSPHRASE`, `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, `MERCURE_JWT_SECRET`, `DATABASE_URL`, `ADMIN_PASSWORD`
 
 **Required variables (`vars.`):** `KUBE_INGRESS_BASE_DOMAIN`, `RELEASE_PRODUCTION`, `CORS_ALLOW_ORIGIN`, `TRUSTED_HOSTS`, `ADMIN_USERNAME`, `ADMIN_EMAIL`

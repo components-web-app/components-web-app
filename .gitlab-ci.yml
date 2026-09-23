@@ -273,7 +273,20 @@ production:
   when: manual
   retry: 1
   allow_failure: false
+  # Wait for the builds and tests as well as staging. With STAGING_ENABLED=false the
+  # staging job is absent, and a needs list of only `staging` became `needs: []`: the
+  # manual deploy was clickable at once, deployed the previous :main image, and a
+  # failing test no longer blocked it (GitLab issue #1, found on cymru-kitchens-cwa).
+  # All optional, because BUILD_DISABLED / TEST_DISABLED can remove these jobs.
   needs:
+    - job: 'build api'
+      optional: true
+    - job: 'build app'
+      optional: true
+    - job: 'unit tests'
+      optional: true
+    - job: 'behat tests'
+      optional: true
     - job: 'staging'
       optional: true
   only:
@@ -571,7 +584,20 @@ canary:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
+  # Wait for the builds and tests as well as staging. With STAGING_ENABLED=false the
+  # staging job is absent, and a needs list of only `staging` became `needs: []`: the
+  # manual deploy was clickable at once, deployed the previous :main image, and a
+  # failing test no longer blocked it (GitLab issue #1, found on cymru-kitchens-cwa).
+  # All optional, because BUILD_DISABLED / TEST_DISABLED can remove these jobs.
   needs:
+    - job: 'build api'
+      optional: true
+    - job: 'build app'
+      optional: true
+    - job: 'unit tests'
+      optional: true
+    - job: 'behat tests'
+      optional: true
     - job: 'staging'
       optional: true
   only:
