@@ -1071,6 +1071,19 @@ GitLab only mirrors the code.
   comes up again, check which purger class actually receives the parameter
   (`http_cache_purger.php`) before assuming a mismatch.
 
+- **GitLab created a merge request pipeline that always failed (#88, 2026-09-23).**
+  `workflow:rules` ended in a catch-all `when: always`, so each push to a branch with an
+  open MR also created an MR pipeline. Every job is filtered to branches except `unit
+  tests`, which had only an `except:`, so that pipeline held it alone. With no `build
+  api` in it (`needs` is `optional`), it pulled `php:<branch-slug>` before any build had
+  pushed it, and failed. "Pipelines must succeed" then blocked the MR (hbcp-2026 !1,
+  !2). The fix: `workflow` now has `merge_request_event → when: never`, and `unit tests`
+  has `only: branches`. The second part also covers pushed tags other than
+  `create-cwa/*`, which the same gap affected. Every `rules:` job's positive condition
+  already needs `$CI_COMMIT_BRANCH`. `glab ci lint`, with and without `--dry-run --ref
+  main`, passes. **Don't switch to MR pipelines casually:** every `only:`/`except:` job
+  would need converting to `rules:`, and review apps and image tags are keyed by branch.
+
 Also found and **not** actioned: the migration-race finding from the same audit is
 now resolved by default by the php `maxReplicas: 1` cap (#69).
 

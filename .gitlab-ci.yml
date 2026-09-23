@@ -4,6 +4,11 @@ workflow:
   rules:
     - if: $CI_COMMIT_TAG =~ /^create-cwa\//
       when: never
+    # No merge request pipelines: the branch pipeline already runs everything, and the
+    # MR shows its result. Every job is filtered to branches, so an MR pipeline would
+    # hold nothing useful, and "Pipelines must succeed" would judge the MR by it (#88).
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
     - when: always
 
 variables:
@@ -83,6 +88,10 @@ unit tests:
   needs:
     - job: build api
       optional: true
+  # Like every other job. Without it, a pipeline with no build (a merge request or a
+  # tag) holds this job alone, and it fails pulling an image that was never pushed (#88).
+  only:
+    - branches
   except:
     variables:
       - $TEST_DISABLED == "true"
