@@ -1,7 +1,8 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useCwaResourceModel, useCwa } from '#imports'
-import TipTapHtmlEditor from '~/components/TipTapHtmlEditor.vue'
+// Type only: a value import would pull the editor into every page in dev.
+import type TipTapHtmlEditor from '~/components/TipTapHtmlEditor.vue'
 
 export const useCustomHtmlComponent = (iriRef: Ref<string>) => {
   const $cwa = useCwa()

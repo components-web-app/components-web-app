@@ -13,17 +13,21 @@
       v-else
       ref="htmlContainer"
       :class="proseClasses"
-      v-html="htmlContent"
+      v-cwa-html="htmlContent"
     />
   </article>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue'
+import { computed, defineAsyncComponent, ref, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaComponent, useHtmlContent } from '#imports'
-import TipTapHtmlEditor from '~/components/TipTapHtmlEditor.vue'
 import { useCustomHtmlComponent } from '~/composables/useCustomHtmlComponent'
+import { vCwaHtml } from '~/directives/cwa-html'
+
+// Loaded only when an admin starts editing, so TipTap and ProseMirror (about 135 KB
+// gzipped) are not preloaded for every visitor (cwa-nuxt-module#332).
+const TipTapHtmlEditor = defineAsyncComponent(() => import('~/components/TipTapHtmlEditor.vue'))
 
 const props = defineProps<IriProp>()
 const { resource, exposeMeta, $cwa } = useCwaComponent(props, undefined, {

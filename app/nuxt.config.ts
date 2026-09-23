@@ -1,4 +1,45 @@
+import { realpathSync } from 'node:fs'
 import tailwindcss from '@tailwindcss/vite'
+import type { NuxtPage } from 'nuxt/schema'
+
+// Chunks only admins need: the TipTap editor and the /_cwa admin pages. Visitors never
+// load them, so they are kept out of the prefetch hints (below) and out of the service
+// worker's precache (`pwa.workbox.manifestTransforms`), which would otherwise fetch every
+// one of them in the background after a visitor's first page load. Chunk files are named
+// by hash, so `globIgnores` can't select them; the build manifest maps them to sources.
+const isEditorSource = (id: string) => id.endsWith('components/TipTapHtmlEditor.vue')
+const isAdminOnlySource = (id: string) => isEditorSource(id) || id.includes('/pages/_cwa/')
+const adminOnlyFiles = new Set<string>()
+const basename = (path: string) => path.split('/').pop() ?? path
+type ManifestChunk = { file: string, isEntry?: boolean, isDynamicEntry?: boolean, imports?: string[], css?: string[] }
+const collectAdminOnlyFiles = (manifest: Record<string, ManifestChunk>) => {
+  const reach = (roots: string[]) => {
+    const seen = new Set<string>()
+    const files = new Set<string>()
+    const visit = (id: string) => {
+      const chunk = manifest[id]
+      if (!chunk || seen.has(id)) {
+        return
+      }
+      seen.add(id)
+      // Basenames: the manifest's paths and the precache URLs have different prefixes.
+      files.add(basename(chunk.file))
+      chunk.css?.forEach(file => files.add(basename(file)))
+      chunk.imports?.forEach(visit)
+    }
+    roots.forEach(visit)
+    return files
+  }
+  const roots = Object.keys(manifest).filter(id => manifest[id]?.isEntry || manifest[id]?.isDynamicEntry)
+  // A file shared with anything a visitor can load stays precached.
+  const shared = reach(roots.filter(id => !isAdminOnlySource(id)))
+  adminOnlyFiles.clear()
+  for (const file of reach(roots.filter(isAdminOnlySource))) {
+    if (!shared.has(file)) {
+      adminOnlyFiles.add(file)
+    }
+  }
+}
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-06-18',
@@ -104,7 +145,49 @@ export default defineNuxtConfig({
     '@nuxt/image',
     // @cwa-end:image
     '@vite-pwa/nuxt',
-    'nuxt-svgo'
+    'nuxt-svgo',
+    // TEMPORARY workaround for cwa-nuxt-module#329. Remove once the module fixes it.
+    // The layer is extended through a pnpm symlink, so its pages' `file` is the
+    // symlink path while Vite's manifest keys use the realpath. Nuxt's filter that
+    // keeps page chunks out of the entry's prefetch hints compares the two and never
+    // matches, so every page sent ~80 prefetch hints for the /_cwa admin and auth
+    // pages. Realpathing the files lets that filter work (80 -> 23 hints on `/`).
+    // Production builds only: the filter does not run in dev, and dev keeps the
+    // symlink paths its watcher expects.
+    (_options, nuxt) => {
+      if (nuxt.options.dev) {
+        return
+      }
+      const realpathPages = (pages: NuxtPage[]) => {
+        for (const page of pages) {
+          if (page.file) {
+            try {
+              page.file = realpathSync(page.file)
+            }
+            catch {
+              // A virtual or missing file: leave it as it is.
+            }
+          }
+          if (page.children) {
+            realpathPages(page.children)
+          }
+        }
+      }
+      nuxt.hook('pages:extend', realpathPages)
+    },
+    // HtmlContent loads the TipTap editor only when an admin starts editing
+    // (cwa-nuxt-module#332). Nuxt would still send a prefetch hint for that chunk
+    // (about 400 KB of TipTap and ProseMirror) on every page with body text, so
+    // visitors would download it anyway. Leaving it out of `dynamicImports` drops
+    // only the hint: the editor still loads on demand when it is first shown.
+    (_options, nuxt) => {
+      nuxt.hook('build:manifest', (manifest) => {
+        collectAdminOnlyFiles(manifest)
+        for (const chunk of Object.values(manifest)) {
+          chunk.dynamicImports = chunk.dynamicImports?.filter(id => !isEditorSource(id))
+        }
+      })
+    },
   ],
   runtimeConfig: {
     public: {
@@ -163,6 +246,13 @@ export default defineNuxtConfig({
       // activation still waits for the user (#73).
       clientsClaim: true,
       cleanupOutdatedCaches: true,
+      // Leaves the admin-only chunks collected in `build:manifest` out of the precache.
+      manifestTransforms: [
+        async (entries) => ({
+          manifest: entries.filter(entry => !adminOnlyFiles.has(basename(entry.url))),
+          warnings: []
+        })
+      ],
       sourcemap: true,
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2,webp,jpg,jpeg}'],
       runtimeCaching: [

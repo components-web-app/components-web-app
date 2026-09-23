@@ -821,6 +821,69 @@ trigger this itself. Any stray 404 rendered alongside real pages can, though, an
 behind Souin the wrongly-404'd page is cacheable. The warm's non-200 check is what
 exposes it after a deploy.
 
+## ✅ Front-end performance: lazy editor, hydration-safe HTML, fewer hints (2026-09-23)
+
+Found by a Lighthouse audit of `preview.cwa.rocks` (#87): simulated mobile LCP was
+9–12s on pages with body text. The module issues it raised are cwa-nuxt-module#329–#334.
+These are the template's own fixes:
+- **The TipTap editor loads only when an admin edits (#332).**
+  - `HtmlContent.vue` and `AltHtmlContent.vue` use `defineAsyncComponent`.
+  - A `build:manifest` hook in `nuxt.config.ts` removes the editor from every chunk's
+    `dynamicImports`. Without that, it becomes a 402 KB prefetch hint on every page.
+  - `useCustomHtmlComponent.ts` imports it with `import type`. A value import kept it in
+    every dev page.
+- **Body text renders through `v-cwa-html` (`app/app/directives/cwa-html.ts`) instead of
+  `v-html` (#333).**
+  - Since Vue 3.5.39, hydration re-assigns `innerHTML` for every `v-html`, even when it's
+    identical. That recreated the LCP paragraph after hydration.
+  - The directive uses `beforeMount`/`beforeUpdate`, **not** `mounted`/`updated`. A
+    post-flush hook can run after `useHtmlContent`'s post watch and overwrite the links it
+    converted.
+  - Swap it for the module's binding when #333 ships one.
+- **Prefetch workaround for #329 (production only).** A `pages:extend` hook realpaths
+  `page.file`. The layer's pages come through a pnpm symlink, so Nuxt's filter that keeps
+  page chunks out of the prefetch hints never matched. Remove it when #329 is fixed.
+- **The service worker no longer precaches admin-only chunks.**
+  - The same `build:manifest` hook collects the files reachable only from the editor or
+    `/pages/_cwa/`: anything shared with a visitor-reachable chunk stays.
+  - `pwa.workbox.manifestTransforms` removes those files from the precache list.
+  - `globIgnores` can't do this, because chunk files are named by hash.
+
+Measured on a local production build:
+
+| | Before | After |
+|---|---|---|
+| Modulepreload on `/` and blog articles | 1,083 KB (365 KB gz) | 659 KB (231 KB gz) |
+| Prefetch hints | 80 files (243 KB) | 23 files (56 KB) |
+| Second LCP entry (the redraw) | 7 of 8 loads | 0 of 8 |
+| Lighthouse mobile LCP on `/` | 9.3–12.1s | 7.1–7.2s |
+| Requests | 119 | 60 |
+| Service-worker precache | 140 entries (2,069 KiB) | 117 entries (1,594 KiB), editor chunk excluded |
+
+Checked in a browser against a production build:
+- Anonymous visitors never load the editor, their prose links still navigate within the
+  app, and routing is unchanged, `/_cwa` included.
+- As an admin, clicking Edit fetches the editor on demand, and typing sends the `PATCH`.
+
+Still open:
+- The update path of `beforeUpdate`, where content changes while the component stays
+  mounted, wasn't exercised in a browser.
+- A pre-existing CLS of about 0.16 on blog articles, where something above the body text
+  collapses.
+- An admin-only hydration mismatch in the module's `ComponentPlaceholder`.
+
+**⚠ Editing `nuxt.config.ts` while the dev `app` container runs can leave it broken.** Nuxt
+logs `nuxt.config.ts updated. Restarting Nuxt...`, and then the client dies with `Private
+field '#particles' must be declared`: a layer `BackgroundParticles.vue` style URL is served
+as JS. `docker compose restart app` fixes it, as it does after a host `pnpm install`.
+
+**Testing admin against a throwaway production build needs HTTPS on `localhost`** (a
+Caddy `tls internal` proxy on `https://localhost:<port>`, for example). The API's cookie is
+`SameSite=Lax`, and `http://localhost:<port>` counts as cross-site to `https://localhost`.
+Bypass the service worker when checking lazy loading, or the precache hides the requests.
+The host's `node_modules` holds the container's Linux binaries, so build a scratch copy in
+the `app-app` image: `pnpm install --frozen-lockfile && pnpm run build`.
+
 ## ✅ Opt-in Lighthouse CI audit after the cache warm — #87 (2026-09-23)
 
 `performance_audit [base_url]` in `bin/devops/k8s.sh` runs `@lhci/cli` (pinned
