@@ -1289,12 +1289,22 @@ size, at about 11.7 MB per megapixel:
 | 24 MP | 280 MB |
 | 48 MP | **563 MB, over 512M** |
 
-So 512M handles up to about 43 MP. A 48 MP photo from a recent phone, often under 20 MB,
-still fails with a 500. The options, not yet chosen:
-- `Assert\Image(maxPixels: …)` on `Image::$file`, for a clean 422 instead of a 500;
-- resizing in the browser before upload, in the module;
-- generating thumbnails outside the upload request, in the bundle;
-- libvips instead of GD, which streams large images in a fraction of the memory.
+So 512M handles up to about 43 MP. Photos above that used to fail with a 500, so
+**`Image::$file` now rejects anything over 40 MP (about 470 MB) with a 422** and a message
+asking the uploader to resize it: `Assert\Image(maxPixels: 40_000_000)`, wrapped in
+`Assert\When` so SVG is exempt. Verified with a standalone validator on the entity's
+attributes:
+- a 48 MP JPEG is rejected with the message, and 40 MP and 12 MP JPEGs and a PNG pass;
+- an **SVG passes**: without the `When`, `Assert\Image` rejects SVG, which has no pixel
+  dimensions to detect;
+- **a PDF is now rejected** ("This file is not a valid image"). The `Image` component used
+  to accept any file.
+
+The longer-term fixes live elsewhere:
+- **cwa-nuxt-module#335**: downscale large photos in the browser before upload. The
+  template's limit is the safety net for direct API uploads.
+- The bundle could generate the thumbnails outside the upload request.
+- libvips instead of GD streams large images in a fraction of the memory.
 
 ## ✅ Node scale-down took the site down — eviction protection (#78, 2026-09-21)
 
