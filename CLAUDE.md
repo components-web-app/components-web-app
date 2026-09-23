@@ -568,6 +568,39 @@ Measured on 4.5 from rendered anonymous HTML:
 
 **Dev noise:** devtools beta logs `NDT_DEP_0003 extendServerRpc is deprecated`. It's harmless.
 
+**⚠ Fixed 2026-09-23 (#95, reported by hbcp): on 4.5 the dev server never hydrated.** The
+client died with `SyntaxError: Identifier '__unhead_devtoolsPlugin' has already been
+declared` in `nuxt/dist/head/runtime/plugins/unhead.client.js`. Every page stayed static SSR
+HTML, and **Sign In** did a native submit to `/login#`. Production builds were unaffected,
+because the plugin is `apply: 'serve'`, so CI stayed green.
+- **Why it appeared with 4.5:** the bump moved unhead from 2 to 3. nuxt-seo-utils 8.5.1
+  (`treeShakeUseSeoMeta`, on by default) skips unhead's Vite plugin on unhead 2, and
+  registers it on unhead 3, because Nuxt itself only does so with `compatibilityVersion >= 5`.
+- **The bug is in `@unhead/bundler` 3.4.1** (the latest). Its DevTools plugin calls
+  `ctx.addRuntimePlugin(...)` in `configResolved` (`dist/chunks/vite.mjs`), and
+  `addRuntimePlugin` just pushes onto an array (`dist/shared/bundler.*.mjs`). Without
+  `experimental.viteEnvironmentApi`, Nuxt's dev server runs **two** `vite.createServer`
+  calls, client and SSR, over the same plugin instances. So `configResolved` runs twice on
+  one context. The served file had `__unhead_validate` imported once (registered at
+  construction) and `__unhead_devtoolsPlugin` twice.
+- **Fix:** `unhead: { vite: { devtools: false } }` in `app/nuxt.config.ts`. nuxt-seo-utils
+  merges `nuxt.options.unhead.vite` into its `Unhead()` call. It turns off only unhead's own
+  panel in Vite DevTools. Nuxt DevTools and the `useSeoMeta` transform stay. **The production
+  output is unchanged:** a before/after build gave the same 172 client files, byte for byte,
+  and differed only in build IDs, timestamps and the order of entries in `styles.mjs`. Remove
+  it once an unhead release de-duplicates the registration.
+- **Rejected:** `devtools.enabled: false` loses Nuxt DevTools. `treeShakeUseSeoMeta: false`
+  drops the production transform. `compatibilityVersion: 5` or `viteEnvironmentApi` would
+  avoid the double `configResolved`, but they change the whole build.
+
+**To catch a dev-only hydration break,** load a page in a real browser after any bump that
+touches Nuxt, Vite or unhead. A 200 from `curl` proves nothing. Check that
+`document.querySelector('#__nuxt').__vue_app__` exists and that there is no `pageerror`.
+Wait with `networkidle2`, not `networkidle0`: once the app hydrates, the Mercure stream
+keeps a connection open, and `networkidle0` never settles. In dev, the console also shows a
+refused `wss://localhost:9777/__ws` (the devtools socket, which isn't exposed through Caddy)
+and a 401 from the anonymous `/me`. Both are expected.
+
 **Duplicates that predate this change:** `nuxt` still pulls its own `@nuxt/devtools` 3.x alongside our beta (the beta is the one loaded), plus `@nuxt/kit@3.21.8` and `@nuxt/ui`'s own `@tiptap/*@3.26.1` extensions.
 
 **Lighthouse CI scores are bimodal on shared runners (investigated 2026-09-23).** The same page on the same deploy

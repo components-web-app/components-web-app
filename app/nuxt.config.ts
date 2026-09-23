@@ -136,6 +136,20 @@ export default defineNuxtConfig({
   devtools: {
     enabled: true
   },
+  // Dev-only workaround for #95, a bug in @unhead/bundler 3.4.1. nuxt-seo-utils
+  // registers unhead's Vite plugin, and its DevTools part adds a runtime import in
+  // `configResolved` with no de-duplication. Nuxt's dev server calls that twice
+  // (separate client and SSR Vite servers sharing one plugin instance), so
+  // `unhead.client.js` declares `__unhead_devtoolsPlugin` twice and the app
+  // never hydrates. This turns off
+  // only unhead's own DevTools panel; Nuxt DevTools, the useSeoMeta transform and
+  // the production build are unchanged (the plugin is `apply: 'serve'`). Remove
+  // once an unhead release de-duplicates the registration.
+  unhead: {
+    vite: {
+      devtools: false
+    }
+  },
   extends: [
     // By package name, not a path into node_modules: Node resolves it through the real
     // path, so pnpm's symlink doesn't defeat Nuxt's page-prefetch filter (nuxt/nuxt#36401,
