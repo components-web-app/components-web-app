@@ -23,7 +23,6 @@ import { computed, defineAsyncComponent, ref, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaComponent, useHtmlContent } from '#imports'
 import { useCustomHtmlComponent } from '~/composables/useCustomHtmlComponent'
-import { vCwaHtml } from '~/directives/cwa-html'
 
 // Loaded only when an admin starts editing, so TipTap and ProseMirror (about 135 KB
 // gzipped) are not preloaded for every visitor (cwa-nuxt-module#332).
@@ -42,7 +41,8 @@ defineExpose(exposeMeta)
 
 const htmlContainer = ref<null | HTMLElement>(null)
 const htmlContent = computed<string>(() => resource.value?.data?.html)
-useHtmlContent(htmlContainer, htmlContent)
+// The module's hydration-safe `v-html` (cwa-nuxt-module#333), used as `v-cwa-html`.
+const { vCwaHtml } = useHtmlContent(htmlContainer, htmlContent)
 
 const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(toRef(props, 'iri'))
 

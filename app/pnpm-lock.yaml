@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: npm:@cwa/nuxt-edge@0.0.0-29836164.636e924
-        version: '@cwa/nuxt-edge@0.0.0-29836164.636e924(4fdcb193284130e62190516a16faaf9a)'
+        specifier: npm:@cwa/nuxt-edge@0.0.0-29836337.fbe401d
+        version: '@cwa/nuxt-edge@0.0.0-29836337.fbe401d(4fdcb193284130e62190516a16faaf9a)'
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.43(typescript@6.0.3))
@@ -696,8 +696,8 @@ packages:
   '@colordx/core@5.5.0':
     resolution: {integrity: sha512-3PxTH8itZzltK0U9jTwVVnjLXvnDYuq3m+QXsHkENxWiPRh4WaoLcs1SQjqgZ55kS+QyirpH5BVwzP2gMVG6EQ==}
 
-  '@cwa/nuxt-edge@0.0.0-29836164.636e924':
-    resolution: {integrity: sha512-M9QYI9ftPBQ3omGU/RUi6OJMA5QmynZ6XDbgQ5nOWZSnDvczv2pJ/LzmAr77hQYRLiuFOfiDMmETaORGmhjpvg==}
+  '@cwa/nuxt-edge@0.0.0-29836337.fbe401d':
+    resolution: {integrity: sha512-vYdToThjsYRXx7P1/dzgMXO2XhU9QWGPLuXxSKfWTIFa039Z5v5JO+4Am9qS2OuSFQ62ikvH4hxdf8uKq5VEDw==}
     engines: {pnpm: '>=11.5.3'}
     hasBin: true
 
@@ -5179,10 +5179,6 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
-  luxon@3.7.2:
-    resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
-    engines: {node: '>=12'}
-
   magic-regexp@0.10.0:
     resolution: {integrity: sha512-Uly1Bu4lO1hwHUW0CQeSWuRtzCMNO00CmXtS8N6fyvB3B979GOEEeAkiTUDsmbYLAbvpUS/Kt5c4ibosAzVyVg==}
 
@@ -7927,7 +7923,7 @@ snapshots:
 
   '@colordx/core@5.5.0': {}
 
-  '@cwa/nuxt-edge@0.0.0-29836164.636e924(4fdcb193284130e62190516a16faaf9a)':
+  '@cwa/nuxt-edge@0.0.0-29836337.fbe401d(4fdcb193284130e62190516a16faaf9a)':
     dependencies:
       '@nuxtjs/color-mode': 4.0.1(magic-string@1.4.1)(magicast@0.5.5)(oxc-parser@0.133.0)(unplugin@3.3.0(esbuild@0.28.1)(rollup@4.62.2)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.49.0)(yaml@2.9.0)))
       '@nuxtjs/robots': 6.2.3(641358f86e8fbc7e0d55ebc060b93731)
@@ -7945,7 +7941,6 @@ snapshots:
       fast-xml-parser: 5.11.1
       jwt-decode: 4.0.0
       lodash-es: 4.18.1
-      luxon: 3.7.2
       mitt: 3.0.1
       pinia: 4.0.3(@vue/devtools-api@8.1.5)(typescript@6.0.3)(vue@3.5.43(typescript@6.0.3))
       set-cookie-parser: 3.1.2
@@ -12722,8 +12717,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  luxon@3.7.2: {}
 
   magic-regexp@0.10.0:
     dependencies:
