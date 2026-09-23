@@ -579,7 +579,13 @@ slow run flips the median. That is why `/blog-articles` "dropped" from 94 to 65.
 - **A/B builds moved the score by at most about 0.03:** `<UApp>`, `<VitePwaManifest>` and today's dependency updates.
 - **`<UApp>` costs about 49 KB gzipped of entry JS** (reka-ui's config, tooltip, toast and overlay providers). The template doesn't use toasts, tooltips or overlays yet. It makes hydration slightly later but has no effect on paint. Kept on purpose, for sites that will use them.
 
-Don't chase CI's simulated numbers. Proposed: real (`devtools`) throttling and 5 runs in `bin/devops/lighthouserc.json`.
+Don't chase CI's simulated numbers. **Changed the same day:**
+- **The audit defaults to real throttling** (`PERFORMANCE_AUDIT_THROTTLING=devtools`; `simulate` is still available).
+- **5 runs per page and at most 3 pages** (`PERFORMANCE_AUDIT_RUNS`, `PERFORMANCE_AUDIT_MAX_PAGES`), so it's still 15 loads.
+- **Pages aren't audited in parallel on purpose:** concurrent Lighthouse runs share the runner's CPU and network, which skews every metric.
+- **An aligned text table in the job log**, with ✓/✗/⚠ against each budget, read from `lighthouserc.json` so the marks match `lhci assert`. `summary.md` holds the Markdown for GitHub.
+- **Found while doing it:** any `--collect.settings.*` flag on the command line **replaces** `lighthouserc.json`'s whole `collect.settings` block. So the file's `onlyCategories: ["performance"]` never applied, and every audit since #87 ran all four categories. All collect settings are now passed on the command line, and the file holds only the budgets.
+- Verified against `preview.cwa.rocks`: `/blog-articles` scored 97 with an LCP of 2.04s (devtools throttling, performance only), matching the investigation's real-throttling measurement. The summary script also reads downloaded CI artifacts: it falls back to the report file's name when the manifest's absolute `/builds/…` path doesn't exist.
 
 - **TypeScript stays at 6.0.3.** `vue-tsc` 3.3.11 still resolves `typescript/lib/tsc`, so it
   can't drive TS 7 (its only TS 7 path is a `@typescript/typescript6` alias).

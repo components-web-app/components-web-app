@@ -790,14 +790,16 @@ sitemap_pages() {
 #
 # Pages: PERFORMANCE_AUDIT_URLS if set (comma or space separated; a path such as
 # /form is joined to base_url), otherwise the first PERFORMANCE_AUDIT_MAX_PAGES
-# (default 5) pages of the sitemap, read the same way as warm_cache.
+# (default 3) pages of the sitemap, read the same way as warm_cache.
 #
 # - Runs after the warm, so pages come from the cache: the audit measures what
 #   visitors get, not a cold SSR render. Lighthouse loads each page anonymously,
 #   and sends no query string, so it neither bypasses nor splits the cache.
 # - PERFORMANCE_AUDIT_FORM_FACTORS: "mobile" (default, Lighthouse's throttled
 #   mobile profile), "desktop", or "mobile,desktop".
-# - PERFORMANCE_AUDIT_RUNS (default 3) runs per page; budgets use the median run.
+# - PERFORMANCE_AUDIT_THROTTLING: "devtools" (default, real throttling) or "simulate".
+# - PERFORMANCE_AUDIT_RUNS (default 5) runs per page; budgets use the median run, so one
+#   slow run on a shared CI runner can't flip the result.
 # - Budgets are in bin/devops/lighthouserc.json, or PERFORMANCE_AUDIT_CONFIG.
 #   A missed budget returns 1. The CI jobs allow that to fail, so it shows as a
 #   warning and never fails a deploy that is already live.
@@ -812,13 +814,17 @@ sitemap_pages() {
 #   the local stack only.
 performance_audit() {
   local base="${1:-$CI_ENVIRONMENT_URL}"
-  local max="${PERFORMANCE_AUDIT_MAX_PAGES:-5}"
-  local runs="${PERFORMANCE_AUDIT_RUNS:-3}"
+  local max="${PERFORMANCE_AUDIT_MAX_PAGES:-3}"
+  local runs="${PERFORMANCE_AUDIT_RUNS:-5}"
   local form_factors="${PERFORMANCE_AUDIT_FORM_FACTORS:-mobile}"
   local config="${PERFORMANCE_AUDIT_CONFIG:-bin/devops/lighthouserc.json}"
   local out="${PERFORMANCE_AUDIT_OUTPUT:-performance-report}"
   local lhci="npx --yes @lhci/cli@${PERFORMANCE_AUDIT_LHCI_VERSION:-0.15.1}"
   local chrome_flags="--headless=new --no-sandbox --disable-dev-shm-usage"
+  # devtools (real) throttling by default: Lighthouse's simulated throttling gave
+  # bimodal scores on shared CI runners (0.60-0.96 for the same page and deploy), while
+  # real throttled loads matched what devices see. "simulate" is still available.
+  local throttling="${PERFORMANCE_AUDIT_THROTTLING:-devtools}"
   local tls_opt="" status=0 ff preset page tmp
 
   if [ "${PERFORMANCE_AUDIT_INSECURE:-}" = "true" ]; then
@@ -882,8 +888,15 @@ performance_audit() {
 
     echo "--- ${ff}"
     rm -rf .lighthouseci
+    # All collect settings go on the command line: any --collect.settings.* option
+    # REPLACES the config file's whole `settings` block rather than merging with it,
+    # so settings in lighthouserc.json were silently ignored. The file keeps only
+    # the budgets (`assert`), which are read separately.
     if ! $lhci collect --config="$config" --collect.numberOfRuns="$runs" \
-        --collect.settings.chromeFlags="$chrome_flags" $preset "$@"; then
+        --collect.settings.chromeFlags="$chrome_flags" \
+        --collect.settings.onlyCategories=performance \
+        --collect.settings.throttlingMethod="$throttling" \
+        $preset "$@"; then
       echo "!!!! PERFORMANCE AUDIT FAILED: Lighthouse could not collect the ${ff} results !!!!"
       status=1
       continue
@@ -896,8 +909,8 @@ performance_audit() {
   done
   rm -rf "$tmp" .lighthouseci
 
-  node bin/devops/lighthouse-summary.mjs "$out" > "$out/summary.md" || status=1
-  cat "$out/summary.md"
+  # Prints an aligned table for the job log and writes summary.md (Markdown) for GitHub.
+  node bin/devops/lighthouse-summary.mjs "$out" "$config" || status=1
   if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     cat "$out/summary.md" >> "$GITHUB_STEP_SUMMARY"
   fi
