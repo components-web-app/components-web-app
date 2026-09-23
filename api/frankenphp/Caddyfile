@@ -113,7 +113,19 @@
 	# project that does need one server-side must remove it from this list.
 	# `uri` runs before `cache` in the handler order, and the key's
 	# {http.request.uri.query} reads the rewritten query.
-	uri query {
+	#
+	# Only when a listed parameter is present, and never for /_nuxt/*. Caddy's
+	# `uri query` re-encodes the whole query whenever it runs, even with nothing to
+	# remove, and turns a valueless key `k` into `k=`. That broke `nuxt dev`: Vite's
+	# `?vue&type=style&index=0&lang.css` arrived as `?vue=&...&lang.css=`, so Vite
+	# no longer saw a CSS request and served every SFC style block as raw CSS labelled
+	# text/javascript, and the client app never mounted. The expression's list must
+	# match the parameters below; keep it on one line (CEL has no comments).
+	@tracking_query {
+		not path /_nuxt/*
+		expression `{http.request.uri.query}.matches("(^|&)(utm_source|utm_medium|utm_campaign|utm_term|utm_content|utm_id|utm_source_platform|utm_creative_format|utm_marketing_tactic|gclid|gclsrc|gbraid|wbraid|dclid|srsltid|_gl|_ga|fbclid|msclkid|twclid|ttclid|li_fat_id|igshid|yclid|mc_cid|mc_eid)(=|&|$)")`
+	}
+	uri @tracking_query query {
 		-utm_source
 		-utm_medium
 		-utm_campaign

@@ -1082,6 +1082,24 @@ Verified on the dev stack:
 - In a render of `/blog-articles?z=1&utm_source=leak`, the collection fetch was
   `…/collections/…?z=1` and the HTML contains no `leak`, so Nuxt never saw it.
 
+**⚠ Fixed 2026-09-23: the strip broke `nuxt dev` for a day.** As first written, `uri query`
+ran on every request, and Caddy re-encodes the whole query whenever it runs, even with
+nothing to remove, turning a valueless key `k` into `k=`. Vite's
+`?vue&type=style&index=0&lang.css` reached Vite as `?vue=&…&lang.css=`, so Vite no longer
+treated it as CSS and served every SFC style block as raw CSS labelled
+`text/javascript`. In the browser that meant `Unexpected token '.'` and
+`Private field '#particles'`, and the client app, admin UI included, never mounted.
+Production builds were unaffected, because they never request those URLs. Now:
+- `uri @tracking_query query {…}` runs only when the query contains a listed parameter.
+- It never runs for `/_nuxt/*`.
+- **Keep the expression's parameter list identical to the `-param` lines.**
+
+Found by bisecting: the Nuxt dev server answered correctly when requested directly and
+wrongly through Caddy, and the rewritten query reproduced it without Caddy. **If `nuxt
+dev` ever serves style blocks as raw CSS, compare Caddy with a direct request to Nuxt
+before suspecting the app.** A query with both a tracking parameter and a valueless key is
+still re-encoded (`k=`). That's harmless for pages.
+
 Caddy's access log still records the **original** URI, so don't read a `utm_` in php's
 log as the strip failing. A project that needs one of these parameters server-side
 must remove it from the list. To add a parameter, add a `-name` line (there are no
