@@ -222,6 +222,121 @@ generate_alias_tls_yaml() {
   printf "%s" "$alias_yaml"
 }
 
+# Picks the TLS secret for the stable ingress, and makes sure it already holds a valid
+# certificate for every hostname before helm points the ingress at it (#86).
+#
+# Changing the host list (adding an alias, retiring a preview hostname) used to change the
+# certificate behind the live site in place. cert-manager then replaces the secret's contents
+# with a temporary self-signed certificate while the new order runs: minutes at best, and up
+# to an hour of back-off if a challenge fails. With HSTS, that is a hard outage for every
+# hostname on the ingress, the live one included.
+#
+# So a changed host list gets a new secret, named from a hash of the list. Its Certificate
+# is created and waited on here, while the ingress still serves the old one, and the switch
+# is from one valid certificate to another. If it cannot be issued (DNS not pointing at the
+# cluster yet, say) the deploy stops before helm runs and the live site is untouched.
+#
+# When the list is unchanged, the secret the ingress already uses is kept, so existing sites
+# are not reissued. Stable track only: the other tracks serve one hostname that never changes
+# for the life of their release.
+#
+# Sets TLS_SECRET_NAME, and TLS_PREVIOUS_SECRET_NAME for cleanup_tls_certificates.
+ensure_tls_certificate() {
+  local track="${1-stable}" release_name="$2" base="$3"
+  local names current current_names hash new
+
+  TLS_SECRET_NAME="$base"
+  TLS_PREVIOUS_SECRET_NAME=""
+  if [ "$track" != "stable" ] || [ "${INGRESS_ENABLED:-false}" != "true" ] || [ -z "${CLUSTER_ISSUER:-}" ]; then
+    return 0
+  fi
+  if ! kubectl auth can-i create certificates.cert-manager.io -n "$KUBE_NAMESPACE" >/dev/null 2>&1; then
+    echo "⚠️ TLS: cannot create cert-manager Certificates in '$KUBE_NAMESPACE', so a change of hostnames is not protected. Using '$base'."
+    return 0
+  fi
+
+  names=$( { echo "$DOMAIN"; generate_alias_tls_yaml "$track" | sed 's/^ *- *//'; } \
+    | tr 'A-Z' 'a-z' | sed '/^$/d' | sort -u )
+
+  current=$(kubectl get ingress -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
+    -o jsonpath='{.items[0].spec.tls[0].secretName}' 2>/dev/null || true)
+  if [ -z "$current" ]; then
+    # First deploy of this release: nothing is live yet, so cert-manager's ingress-shim
+    # issues the certificate from the ingress, as it always has.
+    echo "TLS: no live ingress yet, using '$base'"
+    return 0
+  fi
+
+  current_names=$(kubectl get certificate "$current" -n "$KUBE_NAMESPACE" \
+    -o jsonpath='{range .spec.dnsNames[*]}{@}{"\n"}{end}' 2>/dev/null \
+    | tr 'A-Z' 'a-z' | sed '/^$/d' | sort -u)
+  if [ "$current_names" = "$names" ]; then
+    TLS_SECRET_NAME="$current"
+    echo "TLS: hostnames unchanged, keeping '$current'"
+    return 0
+  fi
+
+  hash=$(printf '%s\n' "$names" | sha256sum | cut -c1-8)
+  if [ -z "$hash" ]; then
+    echo "❌ TLS: could not hash the hostname list (is sha256sum installed?)"
+    return 1
+  fi
+  new="$base-$hash"
+  echo "TLS: hostnames are changing, so the new certificate is issued before the ingress moves to it"
+  echo "  live '$current':"; printf '%s\n' "${current_names:-(no Certificate found)}" | sed 's/^/    /'
+  echo "  new  '$new':";     printf '%s\n' "$names" | sed 's/^/    /'
+
+  kubectl apply -n "$KUBE_NAMESPACE" -f - <<EOF || return 1
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: $new
+  labels:
+    app.kubernetes.io/instance: $release_name
+    cwa.rocks/tls-rotation: "true"
+spec:
+  secretName: $new
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: $CLUSTER_ISSUER
+  dnsNames:
+$(printf '%s\n' "$names" | sed 's/^/    - /')
+EOF
+
+  if ! kubectl wait -n "$KUBE_NAMESPACE" --for=condition=Ready "certificate/$new" \
+      --timeout="${TLS_CERTIFICATE_TIMEOUT:-600s}"; then
+    echo "❌ TLS CERTIFICATE NOT READY: '$new' was not issued, so the deploy stopped before changing anything."
+    echo "   The live site still serves '$current'. Check every hostname above resolves to this cluster, then re-run."
+    kubectl describe certificate "$new" -n "$KUBE_NAMESPACE" | sed -n '/^Status:/,$p' || true
+    kubectl get challenges -n "$KUBE_NAMESPACE" 2>/dev/null || true
+    [ -n "${GITHUB_ACTIONS:-}" ] && echo "::error::TLS certificate '$new' was not issued; nothing was deployed."
+    return 1
+  fi
+
+  TLS_SECRET_NAME="$new"
+  TLS_PREVIOUS_SECRET_NAME="$current"
+}
+
+# Deletes the certificates ensure_tls_certificate created for this release, except the one
+# now in use and the one it replaced. The previous one is kept so a rollback lands on a
+# valid certificate. Only runs after a successful helm upgrade.
+cleanup_tls_certificates() {
+  local release_name="$1" keep_current="$2" keep_previous="$3" cert
+
+  for cert in $(kubectl get certificate -n "$KUBE_NAMESPACE" \
+      -l "cwa.rocks/tls-rotation=true,app.kubernetes.io/instance=$release_name" \
+      -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do
+    if [ "$cert" = "$keep_current" ] || [ "$cert" = "$keep_previous" ]; then
+      continue
+    fi
+    echo "TLS: removing superseded certificate '$cert'"
+    kubectl delete certificate "$cert" -n "$KUBE_NAMESPACE" --ignore-not-found || true
+    kubectl delete secret "$cert" -n "$KUBE_NAMESPACE" --ignore-not-found || true
+  done
+}
+
 deploy() {
 	local track="${1-stable}"
 	name="$RELEASE"
@@ -235,6 +350,8 @@ deploy() {
   if [[ -n "$HELM_UNINSTALL" ]]; then
   	delete ${track}
   fi
+
+  ensure_tls_certificate "$track" "$name" "${LETSENCRYPT_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
   DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
@@ -364,7 +481,7 @@ ingress:
         - path: '/'
           pathType: ImplementationSpecific
   tls:
-    - secretName: ${LETSENCRYPT_SECRET_NAME_SCOPED}-api
+    - secretName: ${TLS_SECRET_NAME}
       hosts:
         - ${DOMAIN:-"~"}
 $(generate_alias_tls_yaml "$track")
@@ -404,7 +521,11 @@ EOF
     --set php.caddy.globalConfig="${CADDY_GLOBAL_CONFIG}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
-  	-f values.tmp.yaml
+  	-f values.tmp.yaml || return 1
+
+  if [ -n "$TLS_PREVIOUS_SECRET_NAME" ]; then
+    cleanup_tls_certificates "$name" "$TLS_SECRET_NAME" "$TLS_PREVIOUS_SECRET_NAME"
+  fi
 }
 
 persist_environment_url() {

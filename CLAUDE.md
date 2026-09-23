@@ -921,6 +921,50 @@ script and both CI steps. Check that the site builds the same Souin version
 (`frankenphp build-info | grep souin` should show v1.7.9). If it doesn't, the patch will
 fail to apply, which fails the build loudly.
 
+## ✅ A hostname change issues its certificate before the ingress moves (#86, 2026-09-23)
+
+**The problem (srnte launch, 2026-09):** the stable ingress's TLS secret covers `DOMAIN`
+plus every `KUBE_INGRESS_ALIAS_DOMAINS` entry. Changing that list in place, whether by
+adding an alias or retiring the preview hostname, makes cert-manager put a **temporary
+self-signed certificate** in the live secret while the new order runs. That took about 4
+minutes on srnte. If a challenge fails, cert-manager backs off for up to an hour. With
+HSTS it is a hard outage for every hostname, the live one included. Let's Encrypt also
+allows only 5 certificates per identical name set per week.
+
+**Now `ensure_tls_certificate` in `bin/devops/k8s.sh` runs in `deploy` before helm**
+(stable track, `INGRESS_ENABLED=true`, `CLUSTER_ISSUER` set):
+- It compares the new host list with the `dnsNames` of the Certificate behind the live
+  ingress's secret. **If they match, which is almost every deploy, it keeps that secret.**
+  Existing sites are not reissued, including ones on a hand-rotated `LETSENCRYPT_SECRET_NAME`.
+- **If they differ,** it applies a Certificate named `<LETSENCRYPT_SECRET_NAME>-stable-api-<sha256 of the list, 8 chars>`
+  and `kubectl wait`s for `Ready` (`TLS_CERTIFICATE_TIMEOUT`, default `600s`). Only then does
+  helm point the ingress at it, so the switch is from one valid certificate to another.
+- **If it isn't issued** (DNS not yet pointing at the cluster, say), the deploy fails
+  **before helm runs**. The live ingress and secret are untouched, and the log names the
+  hostnames to check.
+- After a successful rotation, `cleanup_tls_certificates` deletes this release's older
+  rotated Certificates and their secrets (label `cwa.rocks/tls-rotation=true`). It keeps the
+  new one and the one it replaced, so a rollback lands on a valid certificate.
+- If the CI account can't create `certificates.cert-manager.io`, it warns and falls back to
+  the old behaviour rather than failing.
+- First deploy of a release (no ingress yet): the old behaviour. ingress-shim issues from
+  the ingress, and nothing is live to protect.
+
+This relies on cert-manager's ingress-shim leaving a Certificate it doesn't own alone when
+the ingress names its secret. srnte observed this on v1.9.1. HTTP-01 for a *new* hostname
+still needs its DNS pointing at the cluster, but the solver uses its own temporary ingress,
+so the hostname doesn't need to be on the site's ingress first.
+
+Verified only against a stub `kubectl`/`helm`, under busybox ash (`alpine`) and bash:
+unchanged list, reordered or differently-cased list, a change, a timeout (helm not run), no
+RBAC, a non-stable track, and cleanup keeping current and previous. **Not yet exercised on a
+real cluster.** Watch the first production deploy that changes a hostname.
+
+**Decided against — a redirect ingress for retired hostnames.** #86 proposed a second
+ingress 301-ing the old preview host. Daniel (2026-09-23): take the preview hostname
+offline instead, by removing it from `KUBE_INGRESS_ALIAS_DOMAINS` and deploying. The rotation
+above makes that safe. A site that really needs the redirect can take the snippet from #86.
+
 ## ✅ Small template fixes — 2026-09-21
 
 These were found by a docs audit on 2026-08-12 and never filed, because the audit
