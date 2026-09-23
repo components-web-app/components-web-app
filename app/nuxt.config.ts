@@ -136,7 +136,10 @@ export default defineNuxtConfig({
     enabled: true
   },
   extends: [
-    './node_modules/@cwa/nuxt/dist/layer'
+    // By package name, not a path into node_modules: Node resolves it through the real
+    // path, so pnpm's symlink doesn't defeat Nuxt's page-prefetch filter (nuxt/nuxt#36401,
+    // #92). Needs a @cwa/nuxt build with the `./layer` export (6c33a6e or later).
+    '@cwa/nuxt/layer'
   ],
   modules: [
     '@nuxt/ui',
