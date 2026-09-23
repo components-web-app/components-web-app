@@ -1,11 +1,12 @@
 import tailwindcss from '@tailwindcss/vite'
 
-// Chunks only admins need: the TipTap editor and the /_cwa admin pages. Visitors never
-// load them, so they are kept out of the service worker's precache
-// (`pwa.workbox.manifestTransforms`), which would otherwise fetch every one of them in
-// the background after a visitor's first page load. The editor is also kept out of the
-// prefetch hints (below). The admin pages' hints are cwa-nuxt-module#329, fixed there. Chunk files are named
-// by hash, so `globIgnores` can't select them; the build manifest maps them to sources.
+// Chunks only admins need: the TipTap editor and the /_cwa admin pages. `isAdminOnlySource`
+// is for the service worker's precache only (`pwa.workbox.manifestTransforms`), which would
+// otherwise fetch them all in the background after a visitor's first page load. The module
+// already keeps admin chunks out of the prefetch hints (cwa-nuxt-module#329, #336), but it
+// ships no service worker, so this precache rule stays here. The editor is template code,
+// so its prefetch filter (below) stays too. Chunk files are named by hash, so `globIgnores`
+// can't select them; the build manifest maps them to sources.
 const isEditorSource = (id: string) => id.endsWith('components/TipTapHtmlEditor.vue')
 const isAdminOnlySource = (id: string) => isEditorSource(id) || id.includes('/pages/_cwa/')
 const adminOnlyFiles = new Set<string>()

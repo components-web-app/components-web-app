@@ -549,19 +549,37 @@ Checks:
 - A browser check passed: anonymous pages are clean, and the admin editor works with
   Underline.
 
-**Held, all three tied together:**
-- **`nuxt` at 4.4.8.** Nuxt 4.5 brings Vite 8 (Rolldown) and unhead 3. On it, the module's
-  `CwaRootLayout` becomes its own chunk, and its admin-only dynamic imports (the admin
-  `Header`, `ResourceManager`, `cwa-form-input`, `RoutesTab`, `PageResourceAdminModal`)
-  become prefetch hints for anonymous visitors: `/` goes from 34 files and 157 KB to
-  **60 files and 383 KB** of prefetch, and modulepreload from 25 to 39. It's the same class
-  as cwa-nuxt-module#329, so the fix is module-side. Raise it there before moving.
-- **`@nuxt/ui` at 4.10.** 4.11 needs `@unhead/vue ^3` and `@nuxt/kit ^4.5.2`, and on Nuxt 4.4
-  it puts unhead 2 and 3 side by side.
-- **`@nuxt/devtools` at 4.0.0-alpha.7.** beta.1 needs `vite ^8.1.5`.
+**Nuxt 4.5 is now in (2026-09-23, unblocked by module `63b28a4`, cwa-nuxt-module#336):** `nuxt` 4.5.2,
+`@nuxt/ui` 4.11.2 and `@nuxt/devtools` 4.0.0-beta.1. They bring Vite 8.3 (Rolldown) and unhead 3.4. The lockfile holds one
+`vue@3.5.43`, only `typescript@6.0.3`, one `vite@8.3.0` and one `@unhead/vue@3.4.1`. No template code changes were
+needed. They had been held because under Rolldown the module's `CwaRootLayout` became a
+prefetch root, and its admin-only lazy chunks were hinted to every visitor (34 → 60 prefetch
+on `/`). The module now strips admin edges from non-admin chunks.
 
-On Nuxt 4.5 the precomputed manifest moves to
-`.output/server/chunks/virtual/precomputed.mjs`, so update any prefetch check that reads it.
+Measured on 4.5 from rendered anonymous HTML:
+- **Prefetch:** `/` has 22 files (142 KB), `/login` 23 and `/blog-articles` 23.
+- **No admin chunks are hinted**, apart from the two tiny route middlewares and `ConfirmDialog`.
+- **The TipTap editor is in no hint.**
+- **Modulepreload doubles** (24 → 48 on `/`), because Rolldown splits into more, smaller chunks. That's only about 30 KB more in total.
+- **`sw.js`:** 156 entries / 1,628 KiB, with the editor and every `/_cwa` chunk still excluded.
+- **The precomputed manifest has moved** to `.output/server/chunks/virtual/precomputed.mjs`.
+
+**Simulated Lighthouse** comes out about 0.7s worse on FCP locally, because of the extra requests. Real devices don't notice: the first-paint investigation (below) showed first paint happens as soon as the CSS arrives, before any JS runs.
+
+**Dev noise:** devtools beta logs `NDT_DEP_0003 extendServerRpc is deprecated`. It's harmless.
+
+**Duplicates that predate this change:** `nuxt` still pulls its own `@nuxt/devtools` 3.x alongside our beta (the beta is the one loaded), plus `@nuxt/kit@3.21.8` and `@nuxt/ui`'s own `@tiptap/*@3.26.1` extensions.
+
+**Lighthouse CI scores are bimodal on shared runners (investigated 2026-09-23).** The same page on the same deploy
+scored anywhere from 0.60 to 0.96. In the slow runs, the CI browser paints late while its main thread is idle,
+and Lighthouse's simulator then counts hydration, `/me` and Mercure toward FCP and LCP. With 3 runs per page, one
+slow run flips the median. That is why `/blog-articles` "dropped" from 94 to 65.
+- From a Mac with the same Lighthouse, the same deploy scores 0.96–0.98 (LCP about 2.0s).
+- **Real throttled first paint equals LCP:** about 0.56s on a mid-range profile (2× CPU, fast 4G), and about 2.0s on Lighthouse's own low-end profile.
+- **A/B builds moved the score by at most about 0.03:** `<UApp>`, `<VitePwaManifest>` and today's dependency updates.
+- **`<UApp>` costs about 49 KB gzipped of entry JS** (reka-ui's config, tooltip, toast and overlay providers). The template doesn't use toasts, tooltips or overlays yet. It makes hydration slightly later but has no effect on paint. Kept on purpose, for sites that will use them.
+
+Don't chase CI's simulated numbers. Proposed: real (`devtools`) throttling and 5 runs in `bin/devops/lighthouserc.json`.
 
 - **TypeScript stays at 6.0.3.** `vue-tsc` 3.3.11 still resolves `typescript/lib/tsc`, so it
   can't drive TS 7 (its only TS 7 path is a `@typescript/typescript6` alias).
