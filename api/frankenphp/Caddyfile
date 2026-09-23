@@ -237,7 +237,8 @@
                     !{path}.startsWith("/_cwa/") &&
                     !{path}.startsWith("/user-area") &&
                     !{path}.startsWith("/login") &&
-                    !{path}.startsWith("/password-reset") &&
+                    !{path}.startsWith("/forgot-password") &&
+                    !{path}.startsWith("/reset-password") &&
                     !{path}.startsWith("/verify-email") &&
                     !{path}.startsWith("/confirm-new-email")
                 )

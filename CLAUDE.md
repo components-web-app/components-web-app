@@ -472,6 +472,17 @@ Exclusions verified individually — `/login`, `/password-reset`, `/user-area`,
 header at all**, meaning the matcher never handed them to Souin, and `/form`
 with `Cookie: api_component=abc123` is likewise not cached.
 
+**Fixed 2026-09-23 (spotted from CK):** that list said `/password-reset`, which
+isn't a page. The 404 was simply never cached. The module's real pages,
+`/forgot-password` and `/reset-password/<username>/<token>` (the bundle emails that
+second path, see `silverback_api_components.yaml`), **were being stored** in the
+page cache, including one entry per reset token. They are excluded now. Verified
+with fresh URLs: neither returns a `cache-status` header, and `/login` and `/form`
+behave as before. `/verify-email` and `/confirm-new-email` stay excluded: the bundle
+emails links to them with tokens in the path, even though the module ships no pages
+for them yet (they 404 here). **When the module adds or renames an auth page, check
+this matcher;** the module's pages are under `@cwa/nuxt`'s `dist/runtime/templates/pages/`.
+
 > The Mercure exclusion is the one that is not optional. It is SSE: a cached SSE
 > response never completes, connections pile up behind it, and it looks exactly
 > like the site falling over.
