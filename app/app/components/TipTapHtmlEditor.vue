@@ -9,19 +9,38 @@
       :update-delay="0"
       @contextmenu.stop
     >
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 1 }])">
+      <BubbleMenuButton
+        v-if="show('h1')"
+        v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 1 }])"
+      >
         H1
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 2 }])">
+      <BubbleMenuButton
+        v-if="show('h2')"
+        v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 2 }])"
+      >
         H2
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleBold', 'bold')">
+      <BubbleMenuButton
+        v-if="show('bold')"
+        v-bind="buttonBubbleMenuProps('toggleBold', 'bold')"
+      >
         Bold
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleItalic', 'italic')">
+      <BubbleMenuButton
+        v-if="show('italic')"
+        v-bind="buttonBubbleMenuProps('toggleItalic', 'italic')"
+      >
         Italic
       </BubbleMenuButton>
+      <BubbleMenuButton
+        v-if="show('underline')"
+        v-bind="buttonBubbleMenuProps('toggleUnderline', 'underline')"
+      >
+        Underline
+      </BubbleMenuButton>
       <button
+        v-if="show('link')"
         class="px-1.5 py-1 content-center items-center"
         :class="[editor.isActive('link') ? 'bg-black text-white' : null]"
         @click="showLinkManager"
@@ -31,6 +50,7 @@
     </bubble-menu>
 
     <floating-menu
+      v-if="show('h1') || show('h2') || show('bulletList')"
       class="floating-menu bg-stone-200 text-stone-700 rounded overflow-hidden"
       style="z-index: 760"
       :append-to="appendToBody"
@@ -39,13 +59,22 @@
       :update-delay="0"
       @contextmenu.stop
     >
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 1 }])">
+      <BubbleMenuButton
+        v-if="show('h1')"
+        v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 1 }])"
+      >
         H1
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 2 }])">
+      <BubbleMenuButton
+        v-if="show('h2')"
+        v-bind="buttonBubbleMenuProps('toggleHeading', 'heading', [{ level: 2 }])"
+      >
         H2
       </BubbleMenuButton>
-      <BubbleMenuButton v-bind="buttonBubbleMenuProps('toggleBulletList', 'bulletList')">
+      <BubbleMenuButton
+        v-if="show('bulletList')"
+        v-bind="buttonBubbleMenuProps('toggleBulletList', 'bulletList')"
+      >
         Bullet List
       </BubbleMenuButton>
     </floating-menu>
@@ -66,11 +95,23 @@ import { computed, toRef, watch } from 'vue'
 import type { Editor, ChainedCommands } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
 
+// The formatting buttons the menus can offer. Hiding a button only removes it from
+// the menus: the extension stays registered (Underline comes with StarterKit, Link
+// is registered below), so pasted content and keyboard shortcuts can still apply
+// that style.
+type EditorStyle = 'h1' | 'h2' | 'bold' | 'italic' | 'underline' | 'link' | 'bulletList'
+
 const props = defineProps<{
   modelValue: string | null | undefined
   disabled?: boolean
   editorClasses?: string
+  // Every button shows by default. Set a style to `false` to hide its button, for
+  // example `:config="{ h1: false, bulletList: false }"`. The floating menu (shown
+  // on an empty line) is hidden when h1, h2 and bulletList are all hidden.
+  config?: Partial<Record<EditorStyle, boolean>>
 }>()
+
+const show = (style: EditorStyle) => props.config?.[style] !== false
 
 const emit = defineEmits(['update:modelValue'])
 

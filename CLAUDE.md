@@ -932,6 +932,42 @@ Bypass the service worker when checking lazy loading, or the precache hides the 
 The host's `node_modules` holds the container's Linux binaries, so build a scratch copy in
 the `app-app` image: `pnpm install --frozen-lockfile && pnpm run build`.
 
+## ✅ TipTap editor: per-use button config and Underline — #66 (2026-09-23)
+
+Ported from srnte into `app/app/components/TipTapHtmlEditor.vue`:
+- **`config` prop:** `:config="{ h1: false, underline: false }"` hides menu buttons.
+  - Every button shows unless its style is set to `false`.
+  - The keys are a typed union, `h1`, `h2`, `bold`, `italic`, `underline`, `link` and
+    `bulletList`, so a typo fails `vue-tsc`, even through the `defineAsyncComponent` import.
+  - The floating menu hides when `h1`, `h2` and `bulletList` are all off.
+  - Hiding a button doesn't unregister its extension, so pasting and keyboard shortcuts
+    (Ctrl+U) still apply the style.
+- **An Underline button.** StarterKit 3.x already registers Underline, so no package was
+  added.
+
+**Deliberately not ported from srnte:**
+- Plain `StarterKit`. The template keeps `StarterKit.configure({ link: false })` plus its
+  explicitly configured Link; plain StarterKit would register Link twice.
+- `:tippy-options`, a TipTap v2 prop that v3 ignores.
+
+The #82 focus/`emitUpdate` logic is unchanged. `HtmlContent.vue`/`AltHtmlContent.vue` pass no
+`config`, so they behave exactly as before.
+
+Verified in a browser against a production build:
+- Anonymous pages never load the editor chunk.
+- Admins load it on Edit.
+- The bubble menu shows H1, H2, Bold, Italic, Underline and Link.
+- Underline produces `<u>` in the (blocked) `PATCH`.
+- The floating menu appears on an empty line.
+- Two temporary configs hid exactly the right buttons.
+
+**Browser-testing a production build without touching the dev stack:**
+- Run the scratch build's `.output/server/index.mjs` in a container on
+  `components-web-app_default` with `--link components-web-app-php-1:php.local`, the dev
+  `NUXT_PUBLIC_CWA_API_URL*` env, and a spare host port.
+- Log in with `curl POST /_api/login` and set the `api_component` cookie with
+  `SameSite=None`. A form login from an http origin loses the Secure cookie.
+
 ## ✅ Opt-in Lighthouse CI audit after the cache warm — #87 (2026-09-23)
 
 `performance_audit [base_url]` in `bin/devops/k8s.sh` runs `@lhci/cli` (pinned
