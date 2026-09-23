@@ -947,6 +947,14 @@ allows only 5 certificates per identical name set per week.
   new one and the one it replaced, so a rollback lands on a valid certificate.
 - If the CI account can't create `certificates.cert-manager.io`, it warns and falls back to
   the old behaviour rather than failing.
+- **The live ingress is read by name** (`cwa_fullname`, which mirrors the chart's
+  `cwa.fullname`; checked against `helm template`). It is not read with a label selector,
+  because a site can carry other ingresses with the same chart labels. srnte has a
+  redirect ingress for its retired host, and comparing against that certificate would
+  rotate on every deploy and reach Let's Encrypt's weekly limit within five deploys.
+  It is not read by host either: at a launch `DOMAIN` itself changes, and no ingress
+  serves the new one yet. That would take the first-deploy path and reissue the live
+  certificate in place, which is the outage this exists to prevent.
 - First deploy of a release (no ingress yet): the old behaviour. ingress-shim issues from
   the ingress, and nothing is live to protect.
 
@@ -957,7 +965,8 @@ so the hostname doesn't need to be on the site's ingress first.
 
 Verified only against a stub `kubectl`/`helm`, under busybox ash (`alpine`) and bash:
 unchanged list, reordered or differently-cased list, a change, a timeout (helm not run), no
-RBAC, a non-stable track, and cleanup keeping current and previous. **Not yet exercised on a
+RBAC, a non-stable track, a redirect ingress beside the main one, a launch-time `DOMAIN`
+change, and cleanup keeping current and previous. **Not yet exercised on a
 real cluster.** Watch the first production deploy that changes a hostname.
 
 **Decided against — a redirect ingress for retired hostnames.** #86 proposed a second

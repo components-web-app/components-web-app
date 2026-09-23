@@ -222,6 +222,19 @@ generate_alias_tls_yaml() {
   printf "%s" "$alias_yaml"
 }
 
+# The chart's `cwa.fullname` for a release, which names its main ingress: the release name
+# alone if it already contains the chart name, otherwise `<release>-cwa`, cut to 63
+# characters with any trailing '-' dropped. k8s.sh never sets fullnameOverride or
+# nameOverride, so those branches of the helper don't apply.
+cwa_fullname() {
+  local full
+  case "$1" in
+    *cwa*) full="$1" ;;
+    *) full="$1-cwa" ;;
+  esac
+  printf '%s' "$full" | cut -c1-63 | sed 's/-*$//'
+}
+
 # Picks the TLS secret for the stable ingress, and makes sure it already holds a valid
 # certificate for every hostname before helm points the ingress at it (#86).
 #
@@ -258,9 +271,14 @@ ensure_tls_certificate() {
   names=$( { echo "$DOMAIN"; generate_alias_tls_yaml "$track" | sed 's/^ *- *//'; } \
     | tr 'A-Z' 'a-z' | sed '/^$/d' | sort -u )
 
-  current=$(kubectl get ingress -n "$KUBE_NAMESPACE" \
-    -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
-    -o jsonpath='{.items[0].spec.tls[0].secretName}' 2>/dev/null || true)
+  # Read the chart's own ingress by name, not the first one a label selector returns. A
+  # site can carry other ingresses with the same chart labels, such as a redirect ingress
+  # for a retired hostname (srnte has one). Comparing against its certificate would never
+  # match, so every deploy would issue a new certificate and soon hit Let's Encrypt's limit
+  # of 5 identical name sets a week. Not by host either: at a launch DOMAIN itself changes,
+  # and no ingress serves the new one yet.
+  current=$(kubectl get ingress "$(cwa_fullname "$release_name")" -n "$KUBE_NAMESPACE" \
+    -o jsonpath='{.spec.tls[0].secretName}' 2>/dev/null || true)
   if [ -z "$current" ]; then
     # First deploy of this release: nothing is live yet, so cert-manager's ingress-shim
     # issues the certificate from the ingress, as it always has.
