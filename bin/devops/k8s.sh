@@ -684,40 +684,10 @@ warm_cache() {
   local tmp
   tmp=$(mktemp -d)
 
-  # Prints the <loc> values of the XML on stdin, one per line, rewritten to $base.
-  _warm_cache_locs() {
-    tr '\r\n\t' '   ' \
-      | grep -o '<loc>[^<]*</loc>' \
-      | sed -E -e 's#</?loc>##g' -e 's#^ +##' -e 's# +$##' -e 's#&amp;#\&#g' \
-               -e "s#^https?://[^/]+#${base}#"
-  }
-
-  echo "Reading the sitemap from ${base}/sitemap.xml..."
-  if ! curl -fsSL $tls_opt --max-redirs 5 --max-time 60 --retry 2 --retry-connrefused \
-      -o "$tmp/root.xml" "${base}/sitemap.xml"; then
-    echo "!!!! CACHE WARM FAILED: could not fetch ${base}/sitemap.xml !!!!"
+  if ! sitemap_pages "$base" "$tmp/pages.txt" "$tls_opt" "CACHE WARM"; then
     rm -rf "$tmp"
     return 1
   fi
-
-  : > "$tmp/urls.txt"
-  if grep -q '<sitemapindex' "$tmp/root.xml"; then
-    local child
-    for child in $(_warm_cache_locs < "$tmp/root.xml"); do
-      echo "  child sitemap: ${child}"
-      if ! curl -fsSL $tls_opt --max-redirs 5 --max-time 60 --retry 2 --retry-connrefused \
-          -o "$tmp/child.xml" "$child"; then
-        echo "!!!! CACHE WARM FAILED: could not fetch child sitemap ${child} !!!!"
-        rm -rf "$tmp"
-        return 1
-      fi
-      _warm_cache_locs < "$tmp/child.xml" >> "$tmp/urls.txt"
-    done
-  else
-    _warm_cache_locs < "$tmp/root.xml" >> "$tmp/urls.txt"
-  fi
-  # De-duplicate, keeping sitemap order.
-  awk 'NF && !seen[$0]++' "$tmp/urls.txt" > "$tmp/pages.txt"
 
   local total
   total=$(wc -l < "$tmp/pages.txt" | tr -d ' ')
@@ -759,6 +729,183 @@ warm_cache() {
     return 1
   fi
   rm -rf "$tmp"
+}
+
+# Writes the page URLs a site's sitemap lists to <out>, one per line, de-duplicated
+# and in sitemap order, with each URL's origin replaced by <base_url>. Shared by
+# warm_cache and performance_audit; see warm_cache's comment for how the sitemap is
+# read and why the origin is replaced. <label> prefixes the failure banner.
+#
+#   sitemap_pages <base_url> <out> <curl_tls_opt> <label>
+sitemap_pages() {
+  local base="$1" out="$2" tls_opt="$3" label="$4"
+  local tmp child
+  tmp=$(mktemp -d)
+
+  # Prints the <loc> values of the XML on stdin, one per line, rewritten to $base.
+  _sitemap_locs() {
+    tr '\r\n\t' '   ' \
+      | grep -o '<loc>[^<]*</loc>' \
+      | sed -E -e 's#</?loc>##g' -e 's#^ +##' -e 's# +$##' -e 's#&amp;#\&#g' \
+               -e "s#^https?://[^/]+#${base}#"
+  }
+
+  echo "Reading the sitemap from ${base}/sitemap.xml..."
+  if ! curl -fsSL $tls_opt --max-redirs 5 --max-time 60 --retry 2 --retry-connrefused \
+      -o "$tmp/root.xml" "${base}/sitemap.xml"; then
+    echo "!!!! ${label} FAILED: could not fetch ${base}/sitemap.xml !!!!"
+    rm -rf "$tmp"
+    return 1
+  fi
+
+  : > "$tmp/urls.txt"
+  if grep -q '<sitemapindex' "$tmp/root.xml"; then
+    for child in $(_sitemap_locs < "$tmp/root.xml"); do
+      echo "  child sitemap: ${child}"
+      if ! curl -fsSL $tls_opt --max-redirs 5 --max-time 60 --retry 2 --retry-connrefused \
+          -o "$tmp/child.xml" "$child"; then
+        echo "!!!! ${label} FAILED: could not fetch child sitemap ${child} !!!!"
+        rm -rf "$tmp"
+        return 1
+      fi
+      _sitemap_locs < "$tmp/child.xml" >> "$tmp/urls.txt"
+    done
+  else
+    _sitemap_locs < "$tmp/root.xml" >> "$tmp/urls.txt"
+  fi
+  # De-duplicate, keeping sitemap order.
+  awk 'NF && !seen[$0]++' "$tmp/urls.txt" > "$out"
+  rm -rf "$tmp"
+}
+
+# Audits a few pages with Lighthouse CI after a deploy and its cache warm (#87), so a
+# regression in what a visitor experiences (LCP, CLS, TBT, page weight) shows up in
+# CI. warm_cache's timings only say how quickly the server answered.
+#
+#   performance_audit [base_url]    base_url defaults to CI_ENVIRONMENT_URL
+#
+# Pages: PERFORMANCE_AUDIT_URLS if set (comma or space separated; a path such as
+# /form is joined to base_url), otherwise the first PERFORMANCE_AUDIT_MAX_PAGES
+# (default 5) pages of the sitemap, read the same way as warm_cache.
+#
+# - Runs after the warm, so pages come from the cache: the audit measures what
+#   visitors get, not a cold SSR render. Lighthouse loads each page anonymously,
+#   and sends no query string, so it neither bypasses nor splits the cache.
+# - PERFORMANCE_AUDIT_FORM_FACTORS: "mobile" (default, Lighthouse's throttled
+#   mobile profile), "desktop", or "mobile,desktop".
+# - PERFORMANCE_AUDIT_RUNS (default 3) runs per page; budgets use the median run.
+# - Budgets are in bin/devops/lighthouserc.json, or PERFORMANCE_AUDIT_CONFIG.
+#   A missed budget returns 1. The CI jobs allow that to fail, so it shows as a
+#   warning and never fails a deploy that is already live.
+# - Writes the reports to PERFORMANCE_AUDIT_OUTPUT (default performance-report/):
+#   Lighthouse's HTML and JSON per page and form factor, assertion results, a
+#   Markdown summary (also added to the GitHub step summary) and
+#   browser-performance.json in GitLab's browser_performance report format.
+# - Needs node, npx and Chrome: GitHub's ubuntu-latest has them, and the GitLab
+#   jobs use PERFORMANCE_AUDIT_IMAGE. @lhci/cli is pinned by
+#   PERFORMANCE_AUDIT_LHCI_VERSION.
+# - PERFORMANCE_AUDIT_INSECURE=true skips TLS verification, for testing against
+#   the local stack only.
+performance_audit() {
+  local base="${1:-$CI_ENVIRONMENT_URL}"
+  local max="${PERFORMANCE_AUDIT_MAX_PAGES:-5}"
+  local runs="${PERFORMANCE_AUDIT_RUNS:-3}"
+  local form_factors="${PERFORMANCE_AUDIT_FORM_FACTORS:-mobile}"
+  local config="${PERFORMANCE_AUDIT_CONFIG:-bin/devops/lighthouserc.json}"
+  local out="${PERFORMANCE_AUDIT_OUTPUT:-performance-report}"
+  local lhci="npx --yes @lhci/cli@${PERFORMANCE_AUDIT_LHCI_VERSION:-0.15.1}"
+  local chrome_flags="--headless=new --no-sandbox --disable-dev-shm-usage"
+  local tls_opt="" status=0 ff preset page tmp
+
+  if [ "${PERFORMANCE_AUDIT_INSECURE:-}" = "true" ]; then
+    tls_opt="--insecure"
+    chrome_flags="$chrome_flags --ignore-certificate-errors"
+  fi
+  if [ -z "$base" ]; then
+    echo "!!!! PERFORMANCE AUDIT FAILED: no base URL (set CI_ENVIRONMENT_URL) !!!!"
+    return 1
+  fi
+  case "$base" in
+    http://*|https://*) ;;
+    *) base="https://$base" ;;
+  esac
+  base="${base%/}"
+
+  tmp=$(mktemp -d)
+  if [ -n "${PERFORMANCE_AUDIT_URLS:-}" ]; then
+    for page in $(echo "$PERFORMANCE_AUDIT_URLS" | tr ',' ' '); do
+      case "$page" in
+        http://*|https://*) echo "$page" ;;
+        /*) echo "${base}${page}" ;;
+        *) echo "${base}/${page}" ;;
+      esac
+    done > "$tmp/pages.txt"
+  else
+    if ! sitemap_pages "$base" "$tmp/all.txt" "$tls_opt" "PERFORMANCE AUDIT"; then
+      rm -rf "$tmp"
+      return 1
+    fi
+    head -n "$max" "$tmp/all.txt" > "$tmp/pages.txt"
+  fi
+  if [ ! -s "$tmp/pages.txt" ]; then
+    echo "!!!! PERFORMANCE AUDIT FAILED: no pages to audit !!!!"
+    rm -rf "$tmp"
+    return 1
+  fi
+
+  echo "Auditing $(wc -l < "$tmp/pages.txt" | tr -d ' ') pages (${form_factors}, ${runs} runs each):"
+  sed 's#^#  #' "$tmp/pages.txt"
+
+  rm -rf "$out"
+  mkdir -p "$out"
+  for ff in $(echo "$form_factors" | tr ',' ' '); do
+    case "$ff" in
+      mobile) preset="" ;;
+      desktop) preset="--collect.settings.preset=desktop" ;;
+      *)
+        echo "!!!! PERFORMANCE AUDIT: unknown form factor '$ff' (use mobile or desktop) !!!!"
+        status=1
+        continue
+        ;;
+    esac
+
+    # One --collect.url per page. Positional parameters are the only list that
+    # works in busybox ash, and this function has finished with its own.
+    set --
+    while read -r page; do
+      set -- "$@" "--collect.url=$page"
+    done < "$tmp/pages.txt"
+
+    echo "--- ${ff}"
+    rm -rf .lighthouseci
+    if ! $lhci collect --config="$config" --collect.numberOfRuns="$runs" \
+        --collect.settings.chromeFlags="$chrome_flags" $preset "$@"; then
+      echo "!!!! PERFORMANCE AUDIT FAILED: Lighthouse could not collect the ${ff} results !!!!"
+      status=1
+      continue
+    fi
+    if ! $lhci assert --config="$config" > "$out/${ff}-assertions.txt" 2>&1; then
+      status=1
+    fi
+    cat "$out/${ff}-assertions.txt"
+    $lhci upload --target=filesystem --outputDir="$out/${ff}" || status=1
+  done
+  rm -rf "$tmp" .lighthouseci
+
+  node bin/devops/lighthouse-summary.mjs "$out" > "$out/summary.md" || status=1
+  cat "$out/summary.md"
+  if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+    cat "$out/summary.md" >> "$GITHUB_STEP_SUMMARY"
+  fi
+
+  if [ "$status" -ne 0 ]; then
+    echo ""
+    echo "!!!! PERFORMANCE AUDIT: a budget was missed or a page could not be audited - see above !!!!"
+    if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
+      echo "::warning title=Performance audit::A Lighthouse budget was missed or a page could not be audited - see the step summary"
+    fi
+    return 1
+  fi
 }
 
 function delete() {

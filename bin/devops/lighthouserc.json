@@ -1,0 +1,18 @@
+{
+  "ci": {
+    "collect": {
+      "settings": {
+        "onlyCategories": ["performance"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.8, "aggregationMethod": "median-run" }],
+        "largest-contentful-paint": ["error", { "maxNumericValue": 2500, "aggregationMethod": "median-run" }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1, "aggregationMethod": "median-run" }],
+        "total-blocking-time": ["error", { "maxNumericValue": 200, "aggregationMethod": "median-run" }],
+        "total-byte-weight": ["warn", { "maxNumericValue": 1600000, "aggregationMethod": "median-run" }]
+      }
+    }
+  }
+}

@@ -251,6 +251,25 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           warm_cache
+      # Lighthouse CI audit after the warm (#87). Off unless PERFORMANCE_AUDIT_REVIEW
+      # is "true". continue-on-error: a missed budget marks this step failed and adds a
+      # warning, without failing a deploy that is already live. The table goes to the
+      # step summary and the full reports to an artifact.
+      - name: Performance audit
+        if: vars.PERFORMANCE_AUDIT_REVIEW == 'true'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          performance_audit
+      - name: Upload the performance report
+        if: always() && vars.PERFORMANCE_AUDIT_REVIEW == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-review
+          path: performance-report/
+          if-no-files-found: ignore
+          retention-days: 30
 
   staging:
     name: Deploy Staging
@@ -356,3 +375,22 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           warm_cache
+      # Lighthouse CI audit after the warm (#87). Off unless PERFORMANCE_AUDIT_STAGING
+      # is "true". continue-on-error: a missed budget marks this step failed and adds a
+      # warning, without failing a deploy that is already live. The table goes to the
+      # step summary and the full reports to an artifact.
+      - name: Performance audit
+        if: vars.PERFORMANCE_AUDIT_STAGING == 'true'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          performance_audit
+      - name: Upload the performance report
+        if: always() && vars.PERFORMANCE_AUDIT_STAGING == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-staging
+          path: performance-report/
+          if-no-files-found: ignore
+          retention-days: 30

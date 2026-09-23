@@ -801,6 +801,63 @@ trigger this itself. Any stray 404 rendered alongside real pages can, though, an
 behind Souin the wrongly-404'd page is cacheable. The warm's non-200 check is what
 exposes it after a deploy.
 
+## ✅ Opt-in Lighthouse CI audit after the cache warm — #87 (2026-09-23)
+
+`performance_audit [base_url]` in `bin/devops/k8s.sh` runs `@lhci/cli` (pinned
+`0.15.1`, still the latest release) against a few pages after each deploy's cache
+warm. The pages are cached by then, so it measures what visitors get. `warm_cache`
+only reports time to first byte; this adds LCP, CLS, TBT, FCP, Speed Index and page
+weight.
+
+- **Off on every track.** Set `PERFORMANCE_AUDIT_REVIEW`, `_STAGING`, `_CANARY` or
+  `_PRODUCTION` to `"true"` to turn it on. Defaults agreed with Daniel on 2026-09-23:
+  mobile only, canary off, no query parameter on audit requests (a plain anonymous
+  request is exactly what should hit the cache), and no `create-cwa` prompt.
+- **Pages:** `PERFORMANCE_AUDIT_URLS` (paths or URLs, comma or space separated), or
+  otherwise the first `PERFORMANCE_AUDIT_MAX_PAGES` (default 5) pages in the sitemap.
+  The sitemap reading was moved out of `warm_cache` into `sitemap_pages`, which both
+  functions share.
+- **Tuning:** `PERFORMANCE_AUDIT_FORM_FACTORS` (`mobile`, `desktop` or
+  `mobile,desktop`), `PERFORMANCE_AUDIT_RUNS` (default 3; budgets use the median run),
+  `PERFORMANCE_AUDIT_CONFIG` and `PERFORMANCE_AUDIT_LHCI_VERSION`.
+- **Budgets** are in `bin/devops/lighthouserc.json`: performance score ≥ 0.8, LCP ≤
+  2.5s, CLS ≤ 0.1 and TBT ≤ 200ms (Lighthouse's "good" thresholds), all `error`, plus
+  page weight ≤ 1.6MB as a `warn`. A missed `error` budget fails the job.
+  - GitLab: `allow_failure: true`, so it shows as "passed with warnings".
+  - GitHub: `continue-on-error`, plus a `::warning`.
+
+  A missed budget never fails a live deploy.
+- **Output** goes to `performance-report/`:
+  - Lighthouse's HTML and JSON for each page and form factor;
+  - the assertion results;
+  - `summary.md`, a table built by `bin/devops/lighthouse-summary.mjs`, which is also
+    printed and added to the GitHub step summary;
+  - `browser-performance.json` in GitLab's `browser_performance` report format. The
+    merge request comparison it feeds is a paid GitLab feature; on Free the artifact
+    is simply kept.
+- **GitLab:** the `performance audit <track>` jobs run in `$PERFORMANCE_AUDIT_IMAGE`,
+  a pinned `cypress/browsers` image with Node 24 and Chrome 153. LHCI's own
+  `patrickhulce/lhci-client` image dates from 2025 and has an old Chrome. Each job
+  `needs` its deploy job, plus its warm job with `optional: true`, so it runs after the
+  warm whenever warming is on. `glab ci lint` passes.
+- **GitHub:** a "Performance audit" step and an "Upload the performance report" step
+  follow each "Warm the page cache" step. `ubuntu-latest` has Node and Chrome.
+  actionlint passes.
+- Chrome runs with `--headless=new --no-sandbox --disable-dev-shm-usage`, because CI
+  containers run as root with a small `/dev/shm`. `PERFORMANCE_AUDIT_INSECURE=true` is
+  for the local stack only.
+
+**Verified:** a real run against the local stack with host Chrome (2 pages, mobile and
+desktop) produced the reports, the table and a well-formed `browser-performance.json`,
+and returned 1 on the missed budgets. `warm_cache` still warms all 15 pages after the
+refactor. The script parses and sources in busybox ash. A stubbed `npx` confirmed the
+URL list handling and the unknown form factor error. **Not run** in the
+`cypress/browsers` image or on a real CI runner.
+
+**Don't judge the budgets on the dev stack.** It serves Vite's unbundled dev build,
+about 4 MiB per page, so mobile LCP there was 7–24s. Only a production build gives
+meaningful numbers.
+
 ## ✅ Page cache stored once per page, not per browser — #79 (2026-09-21)
 
 Souin was keeping a separate copy of each page per browser, so one browser's cached
