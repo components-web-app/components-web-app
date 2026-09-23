@@ -968,6 +968,34 @@ Verified in a browser against a production build:
 - Log in with `curl POST /_api/login` and set the `api_component` cookie with
   `SameSite=None`. A form login from an http origin loses the Secure cookie.
 
+## ✅ k6 load-test harness — #93 (2026-09-23)
+
+`bin/load-test/launch.js` and its `README.md`, ported from srnte and made generic, so clients
+can stress test their sites. **A manual tool, deliberately not in CI.**
+- **Pages:** `BASE_URL` is required. Pages come from the sitemap, read the way `sitemap_pages`
+  does; `PAGES` overrides them and `MAX_PAGES` caps them.
+- **One visitor:** a page, its `/_nuxt` assets, a pause, then a client-side navigation
+  through the module's real fetch paths (`/_api/_/routes/{path}` and
+  `/_api/_/resource_manifest/{path}`).
+- **Modes:** `smoke`, `capacity` (stepped arrival rate), `surge` (`PEOPLE`, **default 100**,
+  over 60s, held 3m) and `soak`.
+- **Report:** time to first byte for pages, API calls and assets separately, plus counts of
+  `Cache-Status` hits and misses, so a run says whether it measured the cache or the servers.
+- **`CACHE=warm|cold|mixed`.** Cold adds `k6cb=`. **Never make that a stripped tracking
+  parameter** (`utm_*`, `gclid`, …), or every "cold" request becomes a cache hit.
+  `COLD_API=true` also bypasses the cache for the API calls.
+- **The guard:** any host that isn't local needs `CONFIRM=yes`. It's checked at startup,
+  before any request is sent.
+- **`Accept-Encoding: gzip` is pinned**, because k6 can't decode brotli and reports it like a
+  server error.
+- **Run it from a VM, not a laptop.** Laptops time out around 300 users.
+- **After a cold run against a real site, flush Souin:**
+  `curl -X PURGE localhost:2019/souin-api/souin/flush` in the API pod.
+- **Warm runs on the dev stack can show misses**, because dev pages expire after 60s.
+  (`/` caches normally since module #324.)
+- Verified only with small smoke, capacity and cold runs against the local stack. Full-size
+  runs and remote targets were not tested.
+
 ## ✅ Opt-in Lighthouse CI audit after the cache warm — #87 (2026-09-23)
 
 `performance_audit [base_url]` in `bin/devops/k8s.sh` runs `@lhci/cli` (pinned
