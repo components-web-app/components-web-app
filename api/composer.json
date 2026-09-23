@@ -150,7 +150,7 @@
         "symfony/dotenv": "^8.1",
         "symfony/flex": "^2.0",
         "symfony/framework-bundle": "^8.1",
-        "symfony/mercure-bundle": "^v0.4.1",
+        "symfony/mercure-bundle": "^0.5",
         "symfony/monolog-bundle": "^v4.0.2",
         "symfony/runtime": "^8.1",
         "symfony/yaml": "^8.1"
