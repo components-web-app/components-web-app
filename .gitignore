@@ -4,3 +4,6 @@
 /docker-compose.override.yaml
 /docker-compose.override.yml
 .DS_Store
+
+# Downloaded by `helm dependency build/update`; the pin lives in Chart.lock.
+/helm/cwa/charts/

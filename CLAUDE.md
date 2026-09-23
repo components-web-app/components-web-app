@@ -407,9 +407,17 @@ The old comment "generous on purpose: an OOMKill mid-render is worse than being
 slow" was on the SSR memory *request*, which has no effect on OOMKills; the
 limit (1Gi) does.
 
-Rendering the chart locally needs a scratch copy with `helm dependency update`
-(the checked-in `Chart.lock` is out of sync with `Chart.yaml`), plus the secret
-values `deploy` passes with `--set` (JWT, passphrase, mailer DSN, Mercure keys).
+Rendering the chart locally needs a scratch copy with `helm dependency build` (it
+downloads the postgresql chart into `helm/cwa/charts/`, which is gitignored), plus the
+secret values `deploy` passes with `--set` (JWT, passphrase, mailer DSN, Mercure keys).
+
+**`Chart.lock` was regenerated on 2026-09-23.** It had been out of sync since March 2023:
+it pinned postgresql `12.1.15` from `https://charts.bitnami.com`, while `Chart.yaml` asks
+for `~14.3.1` from `oci://registry-1.docker.io/bitnamicharts`, so `helm dependency build`
+failed. CI never noticed, because `helm_init` runs `helm dependency update` first, which
+rewrites the lock. It now pins **14.3.3**, the version CI was already resolving, so deploys
+are unchanged. **After editing `dependencies:` in `Chart.yaml`, regenerate and commit the
+lock** (`helm dependency update helm/cwa`, then commit only `Chart.lock`).
 
 
 ### Page HTML caching — landed 2026-09-21
