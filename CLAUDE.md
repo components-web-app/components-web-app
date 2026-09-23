@@ -532,6 +532,44 @@ fwd=bypass; detail=DEADLINE-EXCEEDED`. It recovered on retry here, but this is
 the same backend-timeout surface as the readiness-probe incident (#62), now
 extended to page HTML. Worth remembering if a first hit 504s in dev.
 
+## ✅ Front-end dependency update (2026-09-23)
+
+Updated: `@nuxt/image` 2.1, TipTap 3.28 → 3.31.3 (and `y-tiptap` 3.0.9), `vue-tsc` 3.3.11,
+`@types/node` 26.6, **`satori` 0.33.5** (the peer for nuxt-og-image 6.8; the OG image renders
+the same) and **`@vite-pwa/assets-generator` 2**. The only breaking change is ESM-only; the
+template uses it only through the `generate-assets` CLI, which works. There's a harmless peer
+warning against `vite-plugin-pwa`'s `^1.0.0`. `@types/luxon` is removed: nothing uses luxon,
+and the module uses dayjs.
+
+Checks:
+- The lockfile holds one `vue@3.5.43`, only `typescript@6.0.3` and one Vite (7.3.6).
+- The build passes with 0 vue-tsc errors, and a planted error fails it.
+- Entry prefetch is still 24, the editor stays out of the hints, and `sw.js` still excludes
+  its chunk.
+- A browser check passed: anonymous pages are clean, and the admin editor works with
+  Underline.
+
+**Held, all three tied together:**
+- **`nuxt` at 4.4.8.** Nuxt 4.5 brings Vite 8 (Rolldown) and unhead 3. On it, the module's
+  `CwaRootLayout` becomes its own chunk, and its admin-only dynamic imports (the admin
+  `Header`, `ResourceManager`, `cwa-form-input`, `RoutesTab`, `PageResourceAdminModal`)
+  become prefetch hints for anonymous visitors: `/` goes from 34 files and 157 KB to
+  **60 files and 383 KB** of prefetch, and modulepreload from 25 to 39. It's the same class
+  as cwa-nuxt-module#329, so the fix is module-side. Raise it there before moving.
+- **`@nuxt/ui` at 4.10.** 4.11 needs `@unhead/vue ^3` and `@nuxt/kit ^4.5.2`, and on Nuxt 4.4
+  it puts unhead 2 and 3 side by side.
+- **`@nuxt/devtools` at 4.0.0-alpha.7.** beta.1 needs `vite ^8.1.5`.
+
+On Nuxt 4.5 the precomputed manifest moves to
+`.output/server/chunks/virtual/precomputed.mjs`, so update any prefetch check that reads it.
+
+- **TypeScript stays at 6.0.3.** `vue-tsc` 3.3.11 still resolves `typescript/lib/tsc`, so it
+  can't drive TS 7 (its only TS 7 path is a `@typescript/typescript6` alias).
+- **A host `pnpm up` fails with `ERR_PNPM_UNEXPECTED_STORE`,** because the host `node_modules`
+  comes from the container's store. Use `pnpm up/remove/dedupe --lockfile-only`, then
+  `docker compose restart app`. That also avoids the "host install crashes the dev
+  container" problem.
+
 ## ✅ Dependency update — module + bundle, 2026-09-21
 
 `@cwa/nuxt-edge` `0.0.0-29738617.f442ed3` → `0.0.0-29833297.27a2184` →
