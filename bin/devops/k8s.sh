@@ -562,7 +562,7 @@ load_fixtures() {
   local deploy
   deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
     -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
-    -o name | head -1)
+    -o name | sed -n 1p)
 
   echo "Waiting for PHP deployment to be ready..."
   kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
@@ -604,10 +604,10 @@ purge_rendered_html() {
   local api_deploy pwa_deploy
   api_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
     -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
-    -o name | head -1)
+    -o name | sed -n 1p)
   pwa_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
     -l "app.kubernetes.io/name=cwa-pwa,app.kubernetes.io/instance=$release_name" \
-    -o name | head -1)
+    -o name | sed -n 1p)
 
   if [[ -z "$api_deploy" || -z "$pwa_deploy" ]]; then
     echo "Could not find both deployments for release '$release_name' (api: '${api_deploy}', pwa: '${pwa_deploy}') - rendered HTML NOT purged"
@@ -717,7 +717,9 @@ warm_cache() {
   ok=$(grep -c '^200 ' "$tmp/results.txt")
   failed=$(( total - ok ))
   echo "Warmed ${ok} of ${total} pages in $(( finished - started ))s. Slowest:"
-  sort -k2 -rn "$tmp/results.txt" | head -3 | sed 's#^#  #'
+  # sed, not head: head exits after three lines, and under GitLab's pipefail the
+  # SIGPIPE that sort then takes fails a warm that succeeded (exit 141, GitLab #2).
+  sort -k2 -rn "$tmp/results.txt" | sed -n '1,3s#^#  #p'
 
   if [[ "$failed" -ne 0 ]]; then
     echo ""
