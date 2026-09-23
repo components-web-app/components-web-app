@@ -386,6 +386,8 @@ performance audit review:
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $PERFORMANCE_AUDIT_REVIEW != "false"'
       when: manual
   script:
+    # cypress/browsers has no curl, which sitemap_pages needs.
+    - command -v curl >/dev/null || (apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates >/dev/null)
     - performance_audit "https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
     when: always
@@ -410,6 +412,8 @@ performance audit staging:
     - if: '$CI_COMMIT_BRANCH == "main" && $STAGING_ENABLED == "true" && $PERFORMANCE_AUDIT_STAGING != "false"'
       when: manual
   script:
+    # cypress/browsers has no curl, which sitemap_pages needs.
+    - command -v curl >/dev/null || (apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates >/dev/null)
     - performance_audit "https://staging.$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
     when: always
@@ -434,6 +438,8 @@ performance audit canary:
     - if: '$CI_COMMIT_BRANCH == "main" && $CANARY_ENABLED == "true" && $PERFORMANCE_AUDIT_CANARY == "true"'
       when: manual
   script:
+    # cypress/browsers has no curl, which sitemap_pages needs.
+    - command -v curl >/dev/null || (apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates >/dev/null)
     - performance_audit "https://$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
     when: always
@@ -458,6 +464,8 @@ performance audit production:
     - if: '$CI_COMMIT_BRANCH == "main" && $PRODUCTION_API_DISABLED != "true" && $PERFORMANCE_AUDIT_PRODUCTION != "false"'
       when: manual
   script:
+    # cypress/browsers has no curl, which sitemap_pages needs.
+    - command -v curl >/dev/null || (apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates >/dev/null)
     - performance_audit "https://$KUBE_INGRESS_BASE_DOMAIN"
   artifacts:
     when: always

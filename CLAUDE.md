@@ -862,8 +862,16 @@ weight.
 desktop) produced the reports, the table and a well-formed `browser-performance.json`,
 and returned 1 on the missed budgets. `warm_cache` still warms all 15 pages after the
 refactor. The script parses and sources in busybox ash. A stubbed `npx` confirmed the
-URL list handling and the unknown form factor error. **Not run** in the
-`cypress/browsers` image or on a real CI runner.
+URL list handling and the unknown form factor error.
+
+**`cypress/browsers` has no `curl`** (found on the first real GitLab run: `curl:
+command not found` from `sitemap_pages`). Each audit job now installs it with `apt-get`
+when it's missing. Verified by running the job's steps in the pinned image itself: the
+`before_script`, the install, then `performance_audit`. The container shared the php
+container's network, so `https://localhost` reached the local Caddy. It read the sitemap,
+audited 2 pages and wrote every report. **When testing in a container, mount the repo
+writable:** with a read-only mount, `lhci collect` crashes writing `.lighthouseci/`,
+which looks like a Lighthouse failure. Not yet run on a real GitHub runner.
 
 **Don't judge the budgets on the dev stack.** It serves Vite's unbundled dev build,
 about 4 MiB per page, so mobile LCP there was 7–24s. Only a production build gives
