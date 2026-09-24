@@ -2,7 +2,13 @@
 {
 	{$CADDY_GLOBAL_CONFIG}
 
-    admin :2019
+    # Loopback only: the admin API can replace this whole config and flush the
+    # cache, so nothing outside the container may reach it. Every consumer runs
+    # in-container (CACHE_URL purges, the HEALTHCHECK, kubectl exec). Caddy also
+    # rejects any Host not listed here; php.local keeps older CACHE_URLs working.
+    admin localhost:2019 {
+        origins localhost:2019 127.0.0.1:2019 [::1]:2019 php.local:2019
+    }
 
     # Run the cache INSIDE encode, not outside it. Souin registers `cache`
     # before `rewrite`, which puts it ahead of `encode` in the handler chain,

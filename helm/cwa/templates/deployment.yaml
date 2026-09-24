@@ -242,9 +242,6 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-            - name: admin
-              containerPort: 2019
-              protocol: TCP
           lifecycle:
             preStop:
               exec:

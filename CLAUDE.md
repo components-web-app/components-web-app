@@ -95,7 +95,7 @@ Verified — `frankenphp adapt` clean, and: anon → **cached**; `api_component=
 - **`unexpected EOF` / `unexpected token` errors after an edit were [#57](https://github.com/components-web-app/components-web-app/issues/57) — FIXED 2026-07-17, see the section below.** If you ever see this again, the single-file mount has come back: check `wc -c < api/frankenphp/Caddyfile` against `docker compose exec php sh -c 'wc -c < /app/frankenphp/Caddyfile'`. A size mismatch means truncation, not a typo. It does not self-heal and `restart` is not enough — `docker compose up -d --force-recreate php`.
 - **Quote characters in comments are fine.** An earlier revision of this file claimed Caddy's lexer mis-parses `"` inside a `#` comment — **that was wrong**, and was really the truncation above. Verified: a comment containing quotes added via an in-place write adapts cleanly.
 - **`--watch` (dev target, `api/Dockerfile:96`) logs `unable to load latest config` on a partial read** while a file is being written, then loads fine. Those errors are usually noise. **Never read `/config/...` from the admin API to judge a change** — it races the reload and will lie. Use `frankenphp adapt` for syntax, and `docker compose restart php` before measuring.
-- The Souin API is on the **admin port 2019**, not 443: `curl http://localhost:2019/souin-api/souin` lists stored keys (`[]` = nothing cached). See `api/.env:30` `CACHE_URL`.
+- The Souin API is on the **admin port 2019**, not 443, and only inside the php container (see *Caddy's admin API is loopback-only* below): `docker compose exec php curl -s http://localhost:2019/souin-api/souin` lists stored keys (`[]` = nothing cached). See `CACHE_URL` in `api/.env`.
 
 ### 8. SSR and browsers did not share API cache entries — FIXED (2026-09-21)
 
@@ -170,6 +170,40 @@ docker compose exec php curl -s -o /dev/null -w "%{http_code}\n" \
 Fired from `Fetcher.fetchResource` in production SSR logs; traced to `useRequestHeaders(["cookie"])` being called inside an ofetch `onRequest` interceptor, which ofetch invokes **asynchronously**, after Nuxt's async context is gone.
 
 **Resolved in srnte through dependency updates — do not re-apply anything for this.** No mitigation is present in this template's `nuxt.config.ts` (there is no `experimental: { asyncContext: true }` here) and none is needed. Kept only so the old advice isn't actioned again.
+
+## ✅ Caddy's admin API is loopback-only (2026-09-24)
+
+`compose.yaml` published port 2019 on every host interface, and the Caddyfile said
+`admin :2019`, so it listened on every container interface too. The admin API can
+replace Caddy's whole config and flush or purge the Souin cache (`/souin-api/souin`).
+On a developer machine that was open to the LAN; on a public single-server deploy
+from `compose.prod.yaml` (#96) it would have been open to anyone. A prod override
+cannot drop a merged port without `ports: !reset`, so the fix had to be in the base.
+
+Every consumer runs inside the php container, so now:
+- **Caddyfile: `admin localhost:2019`** with an `origins` list. The listener is
+  `127.0.0.1:2019` only, so other containers and other pods get *connection refused*.
+- **No 2019 publish in `compose.yaml`.** Docker forwards a published port to the
+  container's network IP, not its loopback, so publishing it would reach nothing now.
+  From the host, use `docker compose exec php curl …`.
+- **`CACHE_URL` in `api/.env` is `http://localhost:2019/…`**, matching helm's
+  `cache-url`. Caddy's admin **rejects any Host not in `origins` with 403**, even on
+  loopback (measured: `php.local:2019` → 403 with the default origins). `php.local`
+  stays in the list only so an existing `.env.local` with the old URL keeps purging.
+- **Helm: the `admin` containerPort is removed.** No Service or probe used it; it
+  was informational, but with the listener on `:2019` the pod IP served the admin API
+  to anything in the cluster.
+
+Unchanged and still working: the Dockerfile `HEALTHCHECK` (`localhost:2019/metrics`),
+the `kubectl exec … curl localhost:2019/…flush` commands, and
+`bin/test/souin-purge-isolation.sh` (its own throwaway admin on `localhost:12019`).
+
+Verified on the dev stack after `--force-recreate php`: healthy; admin log shows
+`address: localhost:2019`; `/proc/net/tcp` has only `127.0.0.1:2019`; the host has no
+2019 listener; `app` → `php:2019` is refused; `purge-rendered-html` exits 0 and
+turns `/form` from `hit` to `uri-miss` with `CACHE_URL` on both `php.local` and
+`localhost`; the isolation test passes. `compose -f compose.yaml -f compose.prod.yaml
+config` publishes only 80/443. `helm lint` passes.
 
 ## ⚠ Kubernetes probes — a 1s readiness timeout can brick a pod for good (fixed 2026-08-14)
 
