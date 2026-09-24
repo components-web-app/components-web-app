@@ -32,3 +32,14 @@ vendor/
 .env.local
 .env.local.php
 .env.test
+# Local secrets and data that are gitignored, so a clean CI checkout never has them,
+# but a build from a developer's machine would copy them into the image. Production
+# passes the JWT keys as env (JWT_SECRET_KEY/JWT_PUBLIC_KEY, see the helm deployment)
+# and keeps uploads in the media storage, never in the image.
+config/jwt/*.pem
+config/database/*.pem
+config/secrets/*/*.decrypt.private.php
+public/uploads/
+.phpunit.cache/
+.phpunit.result.cache
+phpunit.xml
