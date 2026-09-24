@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "67f0c16de4eea7e84e362328579a45dc",
+    "content-hash": "1cf59979d81d18d9141b0a5d129efa96",
     "packages": [
         {
             "name": "api-platform/core",
@@ -361,16 +361,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "dev-main",
+            "version": "2.0.0-alpha.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "01c28f4a6b0ec1d0bac442153b86ce46ed74d674"
+                "reference": "f356b598b6881da7c3a335960c62a81151668438"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/01c28f4a6b0ec1d0bac442153b86ce46ed74d674",
-                "reference": "01c28f4a6b0ec1d0bac442153b86ce46ed74d674",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/f356b598b6881da7c3a335960c62a81151668438",
+                "reference": "f356b598b6881da7c3a335960c62a81151668438",
                 "shasum": ""
             },
             "require": {
@@ -466,7 +466,6 @@
                 "ext-pdo_pgsql": "To use PostgreSQL 12 or above",
                 "ext-pdo_sqlite": "To use SQLite 3.8.3 or above"
             },
-            "default-branch": true,
             "type": "symfony-bundle",
             "extra": {
                 "symfony": {
@@ -498,9 +497,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.3"
             },
-            "time": "2026-09-24T11:16:47+00:00"
+            "time": "2026-09-24T11:38:37+00:00"
         },
         {
             "name": "composer/semver",
@@ -11969,12 +11968,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "ad6ba750d65226d4b70890f1cb1055c316d0f57c"
+                "reference": "2fd3139c169689cc42710d8b1228ccf7c84b274d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/ad6ba750d65226d4b70890f1cb1055c316d0f57c",
-                "reference": "ad6ba750d65226d4b70890f1cb1055c316d0f57c",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/2fd3139c169689cc42710d8b1228ccf7c84b274d",
+                "reference": "2fd3139c169689cc42710d8b1228ccf7c84b274d",
                 "shasum": ""
             },
             "conflict": {
@@ -12812,7 +12811,7 @@
                 "subhh/libconnect": "<7.0.8|>=8,<8.1",
                 "sukohi/surpass": "<1",
                 "sulu/form-bundle": ">=2,<2.5.3",
-                "sulu/sulu": "<=2.6.24|>=3,<3.0.8",
+                "sulu/sulu": "<2.6.25|>=3,<3.0.8",
                 "sumocoders/framework-user-bundle": "<1.4",
                 "superbig/craft-audit": "<3.0.2",
                 "svewap/a21glossary": "<=0.4.10",
@@ -12959,7 +12958,7 @@
                 "uvdesk/core-framework": "<=1.1.1",
                 "vanilla/safecurl": "<0.9.2",
                 "verbb/comments": "<1.5.5",
-                "verbb/formie": "<3.1.28",
+                "verbb/formie": "<3.1.31",
                 "verbb/image-resizer": "<2.0.9",
                 "verbb/knock-knock": "<1.2.8",
                 "verot/class.upload.php": "<=2.1.6",
@@ -13108,7 +13107,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-23T15:19:01+00:00"
+            "time": "2026-09-23T19:28:27+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -14672,16 +14671,16 @@
         },
         {
             "name": "symfony/translation",
-            "version": "v8.1.1",
+            "version": "v8.1.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation.git",
-                "reference": "342b4218630dc2cf284cedcb2080c80b13404014"
+                "reference": "d9e1caba0d6b6f9a26710af8a2f88d37f001215a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation/zipball/342b4218630dc2cf284cedcb2080c80b13404014",
-                "reference": "342b4218630dc2cf284cedcb2080c80b13404014",
+                "url": "https://api.github.com/repos/symfony/translation/zipball/d9e1caba0d6b6f9a26710af8a2f88d37f001215a",
+                "reference": "d9e1caba0d6b6f9a26710af8a2f88d37f001215a",
                 "shasum": ""
             },
             "require": {
@@ -14741,7 +14740,7 @@
             "description": "Provides tools to internationalize your application",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/translation/tree/v8.1.1"
+                "source": "https://github.com/symfony/translation/tree/v8.1.5"
             },
             "funding": [
                 {
@@ -14761,7 +14760,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-06T11:11:44+00:00"
+            "time": "2026-08-21T17:47:34+00:00"
         },
         {
             "name": "symfony/web-profiler-bundle",
@@ -14903,7 +14902,7 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "behatch/contexts": 20,
-        "components-web-app/api-components-bundle": 20,
+        "components-web-app/api-components-bundle": 15,
         "roave/security-advisories": 20
     },
     "prefer-stable": true,
