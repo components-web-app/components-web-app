@@ -205,6 +205,14 @@ turns `/form` from `hit` to `uri-miss` with `CACHE_URL` on both `php.local` and
 `localhost`; the isolation test passes. `compose -f compose.yaml -f compose.prod.yaml
 config` publishes only 80/443. `helm lint` passes.
 
+## ✅ #96 Phase 0: secrets and keys (2026-09-24)
+
+Hygiene for the single-server deploy in #96, which also helps every new project:
+- **`api/.dockerignore`** keeps gitignored local files out of the API image: `config/jwt/*.pem`, `config/database/*.pem`, Symfony's `*.decrypt.private.php`, `public/uploads/` and local PHPUnit files. A clean CI checkout never had them, but an image built on a developer's machine did. Verified: a `frankenphp_prod` build has an empty `config/jwt` and no `public/uploads`.
+- **The dev entrypoint generates JWT keys** with `lexik:jwt:generate-keypair --skip-if-exists`, only when `APP_ENV` isn't `prod`. A fresh checkout used to have no keys, so login failed. Existing keys are left alone. Verified: it generates both files into an empty path, a rerun is a no-op, `lexik:jwt:check-config` passes, and admin login returns 204 after recreating php. **The prod image never generates keys:** production passes the key contents as env.
+- **`compose.prod.yaml` requires every secret** with `${VAR:?…}`: `APP_SECRET`, `CADDY_MERCURE_JWT_SECRET` (all three Mercure uses), `POSTGRES_PASSWORD` (both the database and `DATABASE_URL`), and `JWT_SECRET_KEY`/`JWT_PUBLIC_KEY`/`JWT_PASSPHRASE` as key contents. Before, it silently inherited `compose.yaml`'s public defaults (`!ChangeThisMercureHubJWTSecretKey!`, `!ChangeMe!`), and passed no JWT keys at all. Verified: `config` without them fails naming `APP_SECRET`; with them, none of the defaults remain. **The dev defaults in `compose.yaml` stay on purpose:** they only ever apply on localhost.
+- **Caddy's admin API is loopback-only:** see the section above.
+
 ## ⚠ Kubernetes probes — a 1s readiness timeout can brick a pod for good (fixed 2026-08-14)
 
 **Applied here 2026-08-14** — `timeoutSeconds: 5` on the php `readinessProbe`
