@@ -9,6 +9,11 @@ silverback_api_components:
         database_user_provider: database
     user:
         class_name: App\Entity\User
+        email_links:
+            # A single-host site needs only this: see app.email_link_default_origin
+            # in services.php. Add allowed_origins only if emails must link to more
+            # than one front end.
+            default_origin: '%app.email_link_default_origin%'
         email_verification:
             default_value: false
             verify_on_register: true

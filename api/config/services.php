@@ -31,6 +31,12 @@ return static function (ContainerConfigurator $configurator) {
         ->set('env(GCLOUD_PUBLIC_URL)', '')
         ->set('app.gcloud_bucket_public_url', 'https://storage.googleapis.com/%env(GCLOUD_BUCKET)%/')
         ->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%')
+        // Links in user emails (password reset, verification) point here. The bundle
+        // refuses those emails unless an origin is configured, and never trusts the
+        // request's Origin or Host for it. Defaults to the site's public host.
+        ->set('env(EMAIL_LINK_DEFAULT_ORIGIN)', '')
+        ->set('app.browser_origin', 'https://%env(BROWSER_SERVER_NAME)%')
+        ->set('app.email_link_default_origin', '%env(default:app.browser_origin:EMAIL_LINK_DEFAULT_ORIGIN)%')
         ->set('env(ADMIN_USERNAME)', null)
         ->set('env(ADMIN_PASSWORD)', null)
         ->set('env(ADMIN_EMAIL)', null)

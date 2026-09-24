@@ -1978,6 +1978,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             repeat_ttl_seconds?: int|Param, // Default: 86400
  *             request_timeout_seconds?: int|Param, // Default: 3600
  *         },
+ *         email_links?: array{
+ *             allowed_origins?: list<scalar|Param|null>,
+ *             default_origin?: scalar|Param|null, // Default: null
+ *         },
  *         emails?: array{
  *             welcome?: bool|array{
  *                 enabled?: bool|Param, // Default: true
