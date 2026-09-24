@@ -176,14 +176,6 @@ export default defineNuxtConfig({
       })
     },
   ],
-  runtimeConfig: {
-    public: {
-      cwa: {
-        apiUrl: '',
-        apiUrlBrowser: ''
-      }
-    }
-  },
   typescript: {
     typeCheck: true,
     strict: false

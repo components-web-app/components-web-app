@@ -48,7 +48,7 @@ spec:
           image: "{{ .Values.pwa.image.repository }}:{{ .Values.pwa.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.pwa.image.pullPolicy }}
           env:
-            - name: NUXT_PUBLIC_CWA_API_URL
+            - name: NUXT_CWA_API_URL
               valueFrom:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
