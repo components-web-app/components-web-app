@@ -1574,6 +1574,17 @@ Done (module edge `0.0.0-29725175.a5bb3b4`). All three files migrated and the ap
 
 Renames for reference: `withImage`→`withFile`, `useCwaImage`→`useCwaFile`, `useCwaImageResource`→`useCwaFileField`, `ImageOpsType`→`FileOpsType`. `fileOps` = `{ fileProp?, imagineFilterName?, imageRef? }`.
 
+## Releasing the template
+
+**First release: `v2.0.0-alpha.1` (2026-09-24, on `85fd3e5`).** It shares the bundle's major, `2.x`, but keeps its own alpha count. It was built against bundle `2.0.0-alpha.3` and module edge `0.0.0-29837288.9a15df5`, because the module has no tagged release yet.
+
+To release:
+1. Update everything and run the usual checks.
+2. `git tag -a vX.Y.Z-alpha.N -m "…" <sha>`, then `git push origin vX.Y.Z-alpha.N`. Push only to `origin`.
+3. When the tag has mirrored (`gh api repos/components-web-app/components-web-app/git/ref/tags/<tag>`), run `gh release create <tag> --verify-tag --prerelease`. `--verify-tag` stops `gh` from creating the tag on GitHub itself, which would fight the mirror.
+
+A plain version tag starts no deploy. Every GitLab job is limited to branches or `main`, and no GitHub workflow runs on tags other than `create-cwa/v*`. **`create-cwa` still downloads `main`, not a tag**, so a release doesn't change what new installs get.
+
 ## Publishing `create-cwa` to npm
 
 The CLI lives in `packages/create-cwa/`. It is published manually via a git tag — there is no automatic nightly publishing.
