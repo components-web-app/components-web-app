@@ -140,7 +140,7 @@
     ],
     "require": {
         "php": ">=8.5",
-        "components-web-app/api-components-bundle": "dev-main",
+        "components-web-app/api-components-bundle": "2.x-dev",
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "league/flysystem": "^3.0",

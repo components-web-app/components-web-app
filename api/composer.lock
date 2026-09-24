@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0a59bef44c3f2137e9522a164277f4da",
+    "content-hash": "67f0c16de4eea7e84e362328579a45dc",
     "packages": [
         {
             "name": "api-platform/core",
@@ -365,12 +365,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "f50c92476a0de41d9509c9e746973b192951f8ae"
+                "reference": "01c28f4a6b0ec1d0bac442153b86ce46ed74d674"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/f50c92476a0de41d9509c9e746973b192951f8ae",
-                "reference": "f50c92476a0de41d9509c9e746973b192951f8ae",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/01c28f4a6b0ec1d0bac442153b86ce46ed74d674",
+                "reference": "01c28f4a6b0ec1d0bac442153b86ce46ed74d674",
                 "shasum": ""
             },
             "require": {
@@ -473,6 +473,9 @@
                     "require": "^7.4 || ^8.1",
                     "root-dir": "tests/Functional/app",
                     "allow-contrib": false
+                },
+                "branch-alias": {
+                    "dev-main": "2.x-dev"
                 }
             },
             "autoload": {
@@ -497,7 +500,7 @@
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
                 "source": "https://github.com/components-web-app/api-components-bundle/tree/main"
             },
-            "time": "2026-09-24T08:14:04+00:00"
+            "time": "2026-09-24T11:16:47+00:00"
         },
         {
             "name": "composer/semver",
