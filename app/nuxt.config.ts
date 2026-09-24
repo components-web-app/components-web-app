@@ -45,7 +45,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-06-18',
   app: {
     head: {
-      charset: 'utf-8',
       htmlAttrs: {
         lang: 'en-GB',
         class: 'bg-black'
