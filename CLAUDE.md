@@ -1391,9 +1391,9 @@ GitLab only mirrors the code.
   `create-cwa/v*` tag. `packages/` was always excluded, but `.github/` was only
   dropped for the GitLab and "none" CI choices, so every GitHub Actions project
   inherited a workflow with nothing to build and an `id-token: write` grant. It is
-  now in `alwaysExclude` in `cwa-manifest.json`. The CLI fetches the manifest from
-  `main` at runtime, so **this takes effect for new installs as soon as `main` is
-  pushed**, with no CLI release needed.
+  now in `alwaysExclude` in `cwa-manifest.json`. The CLI then fetched the manifest from
+  `main` at runtime, so this took effect as soon as `main` was pushed. Since
+  `create-cwa` 2.0.0-alpha.1 it reads the manifest from its release tag instead.
 - **A dead `access_control` rule was removed from `security.yaml`:**
   `{ path: ^/_api/password/(reset|update), roles: PUBLIC_ACCESS, methods: [POST] }`.
   In both dev and prod, the only route under `/_api/password/` is
@@ -1576,14 +1576,15 @@ Renames for reference: `withImage`→`withFile`, `useCwaImage`→`useCwaFile`, `
 
 ## Releasing the template
 
-**First release: `v2.0.0-alpha.1` (2026-09-24, on `85fd3e5`).** It shares the bundle's major, `2.x`, but keeps its own alpha count. It was built against bundle `2.0.0-alpha.3` and module edge `0.0.0-29837288.9a15df5`, because the module has no tagged release yet.
+**First release: `v2.0.0-alpha.1` (2026-09-24, on `85fd3e5`).** It shares the bundle's major, `2.x`, but keeps its own alpha count. **`create-cwa` shares the template's version**: `create-cwa` X downloads the template, manifest included, from tag `vX`. So every template release is also a `create-cwa` release with the same version (see below). `create-cwa@2.0.0-alpha.1` was tagged on a later commit than the template's `v2.0.0-alpha.1`, because the CLI change came after it. From the next release, tag both on the same commit. It was built against bundle `2.0.0-alpha.3` and module edge `0.0.0-29837288.9a15df5`, because the module has no tagged release yet.
 
 To release:
 1. Update everything and run the usual checks.
-2. `git tag -a vX.Y.Z-alpha.N -m "…" <sha>`, then `git push origin vX.Y.Z-alpha.N`. Push only to `origin`.
-3. When the tag has mirrored (`gh api repos/components-web-app/components-web-app/git/ref/tags/<tag>`), run `gh release create <tag> --verify-tag --prerelease`. `--verify-tag` stops `gh` from creating the tag on GitHub itself, which would fight the mirror.
+2. Set `packages/create-cwa/package.json`'s version to the same `X.Y.Z-alpha.N`, then commit and push.
+3. On that commit, `git tag -a vX.Y.Z-alpha.N -m "…"` and `git tag create-cwa/vX.Y.Z-alpha.N`, then push both tags to `origin`, and only there. **Push the template tag first, or at the same time.** A CLI published before its template tag exists fails for every user with "No CWA template found".
+4. When the tag has mirrored (`gh api repos/components-web-app/components-web-app/git/ref/tags/<tag>`), run `gh release create <tag> --verify-tag --prerelease`. `--verify-tag` stops `gh` from creating the tag on GitHub itself, which would fight the mirror.
 
-A plain version tag starts no deploy. Every GitLab job is limited to branches or `main`, and no GitHub workflow runs on tags other than `create-cwa/v*`. **`create-cwa` still downloads `main`, not a tag**, so a release doesn't change what new installs get.
+A plain version tag starts no deploy. Every GitLab job is limited to branches or `main`, and no GitHub workflow runs on tags other than `create-cwa/v*`. A release does change what new installs get, through the matching `create-cwa`. `pnpm create cwa my-app -- --ref main` (or `--ref <any tag or branch>`) gets another version of the template. Installs from `create-cwa` 0.x still read the manifest's `branch` (`main`), so leave that field in `cwa-manifest.json`.
 
 ## Publishing `create-cwa` to npm
 
@@ -1593,7 +1594,7 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag 
 
 **To release a new version:**
 
-1. Bump the version in `packages/create-cwa/package.json` (stays on `0.x.x` until CWA v1)
+1. Set the version in `packages/create-cwa/package.json` to the template release it installs (see *Releasing the template* above; `0.1.1` was the last 0.x). The workflow publishes it as `latest`, because every release is still an alpha.
 2. Commit and push: `git commit -m "Bump create-cwa to x.y.z" && git push origin`
 3. Tag and push: `git tag create-cwa/vx.y.z && git push origin --tags`
 4. GitLab mirrors the tag to GitHub → GitHub Actions workflow triggers → publishes to npm via OIDC
@@ -1611,7 +1612,7 @@ Do NOT add `--provenance` here — provenance requires a GitHub Actions runner a
 **When to bump the version:**
 - Changes to `packages/create-cwa/src/` (CLI logic, prompts, post-creation flow)
 - Changes to `cwa-manifest.json` that affect what the CLI does (new features, new excludes, new questions)
-- Template file changes do NOT need a version bump — the CLI always fetches `main` at runtime, so users get the latest template without a CLI release
+- **Every template release.** Since `2.0.0-alpha.1` the CLI downloads the template tag matching its own version, not `main`, so template changes reach new installs only through a release. A CLI-only fix has to wait for the next release, or go out as a template release too.
 
 ## Docs
 
@@ -1795,9 +1796,9 @@ The actual deletion was **not** exercised in a browser here; the module's unit t
 
 `packages/create-cwa/` — published to npm as `create-cwa` (`npx create-cwa my-project`).
 
-Prompts: project name, CI/CD (GitHub Actions / GitLab CI / none), feature multiselect, include fixtures. Fetches `main` via `giget`, removes unselected feature files, strips `@cwa-if:feature` blocks from `nuxt.config.ts`, generates a README, then offers to run `docker compose up -d` and `pnpm install` interactively.
+Prompts: project name, CI/CD (GitHub Actions / GitLab CI / none), feature multiselect, include fixtures. Downloads the template tag matching its own version (`v<version>`, or `--ref <ref>`) via `giget`, removes unselected feature files, strips `@cwa-if:feature` blocks from `nuxt.config.ts`, generates a README, then offers to run `docker compose up -d` and `pnpm install` interactively.
 
-`cwa-manifest.json` at the repo root is the contract between the CLI and the template. Template file changes (entities, components, fixture parts) take effect immediately for new installs without a CLI release. Only changes to CLI logic or the manifest itself need a version bump — see **Publishing `create-cwa` to npm** above.
+`cwa-manifest.json` at the repo root is the contract between the CLI and the template. The manifest is read from the same tag as the files, so the two always match. Template changes reach new installs only in a release — see **Releasing the template** above.
 
 Two install paths are documented in the repo README:
 - `npx create-cwa` — tailored, picks features, clean output

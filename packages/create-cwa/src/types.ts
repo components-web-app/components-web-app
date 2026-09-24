@@ -26,6 +26,8 @@ export interface ManifestCi {
 export interface Manifest {
   version: string
   repo: string
+  // Read only by create-cwa 0.x, which downloads this branch. Newer versions download
+  // the tag matching their own version, or --ref.
   branch: string
   alwaysExclude: string[]
   questions: ManifestQuestion[]

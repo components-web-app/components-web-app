@@ -15,25 +15,54 @@ import { downloadTemplate } from 'giget'
 import fse from 'fs-extra'
 import fg from 'fast-glob'
 import { readFile, writeFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { randomBytes } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import type { Manifest, Answers } from './types.js'
 
-const MANIFEST_URL =
-  'https://raw.githubusercontent.com/components-web-app/components-web-app/main/cwa-manifest.json'
+const REPO = 'components-web-app/components-web-app'
 
-async function fetchManifest(): Promise<Manifest> {
+// The CLI and the template share a version: create-cwa X downloads the template at
+// tag vX, so an install is reproducible. `--ref <branch|tag>` overrides it, for
+// example `--ref main` for the latest unreleased template.
+const CLI_VERSION: string = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+).version
+
+function parseArgs(argv: string[]): { projectName?: string; ref: string } {
+  const args = argv.slice(2)
+  let ref = `v${CLI_VERSION}`
+  const positional: string[] = []
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]
+    if (arg === '--ref' && args[i + 1]) ref = args[++i]
+    else if (arg.startsWith('--ref=')) ref = arg.slice('--ref='.length)
+    else positional.push(arg)
+  }
+  return { projectName: positional[0], ref }
+}
+
+async function fetchManifest(ref: string): Promise<Manifest> {
+  let res: Response
   try {
-    const res = await fetch(MANIFEST_URL)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    return (await res.json()) as Manifest
+    res = await fetch(`https://raw.githubusercontent.com/${REPO}/${ref}/cwa-manifest.json`)
   } catch {
     throw new Error(
       'Could not fetch the CWA manifest. Check your internet connection and try again.'
     )
+  }
+  if (res.status === 404) {
+    throw new Error(`No CWA template found at "${ref}". Check the --ref value.`)
+  }
+  if (!res.ok) {
+    throw new Error(`Could not fetch the CWA manifest (HTTP ${res.status}). Try again shortly.`)
+  }
+  try {
+    return (await res.json()) as Manifest
+  } catch {
+    throw new Error(`The CWA manifest at "${ref}" is not valid JSON.`)
   }
 }
 
@@ -57,9 +86,7 @@ function run(cmd: string, args: string[], cwd: string): boolean {
   return result.status === 0
 }
 
-async function askQuestions(manifest: Manifest, argv: string[]): Promise<Answers> {
-  const targetArg = argv[2]
-
+async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Answers> {
   const projectName = checkCancel(
     await text({
       message: 'Project name?',
@@ -118,11 +145,11 @@ async function askQuestions(manifest: Manifest, argv: string[]): Promise<Answers
   return { projectName: projectName.trim(), ci, features: [...resolved], fixtures }
 }
 
-async function downloadRepo(manifest: Manifest, tempDir: string): Promise<void> {
+async function downloadRepo(manifest: Manifest, ref: string, tempDir: string): Promise<void> {
   const s = spinner()
-  s.start('Downloading template...')
+  s.start(`Downloading template (${ref})...`)
   try {
-    await downloadTemplate(`github:${manifest.repo}#${manifest.branch}`, {
+    await downloadTemplate(`github:${manifest.repo}#${ref}`, {
       dir: tempDir,
       force: true,
     })
@@ -268,22 +295,23 @@ async function moveToTarget(tempDir: string, targetDir: string): Promise<void> {
 async function main(): Promise<void> {
   intro('create-cwa — Components Web App scaffolder')
 
+  const args = parseArgs(process.argv)
   const s = spinner()
   s.start('Fetching manifest...')
   let manifest: Manifest
   try {
-    manifest = await fetchManifest()
+    manifest = await fetchManifest(args.ref)
     s.stop('Manifest loaded.')
   } catch (err) {
     s.stop((err as Error).message)
     process.exit(1)
   }
 
-  const answers = await askQuestions(manifest, process.argv)
+  const answers = await askQuestions(manifest, args.projectName)
   const targetDir = resolve(process.cwd(), answers.projectName)
   const tempDir = join(tmpdir(), `cwa-${randomBytes(6).toString('hex')}`)
 
-  await downloadRepo(manifest, tempDir)
+  await downloadRepo(manifest, args.ref, tempDir)
 
   const s2 = spinner()
   s2.start('Configuring project...')

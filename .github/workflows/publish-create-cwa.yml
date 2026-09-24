@@ -34,5 +34,8 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      # Every CWA release is still a prerelease (2.0.0-alpha.N). npm won't publish one
+      # without an explicit dist-tag, and `pnpm create cwa` must get it, so it goes
+      # out as `latest`. Revisit once there are stable releases to keep `latest` for.
       - name: Publish
-        run: pnpm publish --provenance --access public --no-git-checks
+        run: pnpm publish --provenance --access public --no-git-checks --tag latest
