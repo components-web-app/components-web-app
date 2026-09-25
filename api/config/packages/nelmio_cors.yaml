@@ -5,7 +5,9 @@ nelmio_cors:
         allow_origin: ['%env(CORS_ALLOW_ORIGIN)%']
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
         allow_headers: ['Content-Type', 'Authorization', 'Preload', 'Fields', 'Path']
-        expose_headers: ['Link']
+        # Retry-After: throttled email requests return 429 with it, and the module
+        # counts down from it. Only matters when the API is on another origin.
+        expose_headers: ['Link', 'Retry-After']
         max_age: 3600
     paths:
         '^/': null

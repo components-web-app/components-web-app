@@ -330,6 +330,7 @@ warm cache review:
     # WARM_CACHE_REVIEW is "true".
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $WARM_CACHE_REVIEW == "true"'
   script:
+    - skip_unless_review_deployed
     - apk add --no-cache curl >/dev/null
     - warm_cache "https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN"
 
@@ -409,6 +410,7 @@ performance audit review:
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $PERFORMANCE_AUDIT_REVIEW != "false"'
       when: manual
   script:
+    - skip_unless_review_deployed
     # cypress/browsers has no curl, which sitemap_pages needs.
     - command -v curl >/dev/null || (apt-get update -qq && apt-get install -y -qq --no-install-recommends curl ca-certificates >/dev/null)
     - performance_audit "https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN"
@@ -500,6 +502,7 @@ performance audit production:
 load fixtures review:
   stage: review
   script:
+    - skip_unless_review_deployed
     - install_dependencies
     - apply_kube_context
     - set_namespace
@@ -538,6 +541,7 @@ load fixtures production:
 stop review:
   stage: cleanup
   script:
+    - skip_unless_review_deployed
     - install_dependencies
     - apply_kube_context
     - set_namespace

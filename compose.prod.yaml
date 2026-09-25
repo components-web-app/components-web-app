@@ -18,11 +18,28 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?set JWT_PUBLIC_KEY}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE}
+      # The public host, for IRIs generated during SSR and for links in user emails.
+      BROWSER_SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the site's domain}
+    networks:
+      default:
+        # The app container reaches php by this name. php.local:80 is in Caddy's
+        # SERVER_NAME, so plain HTTP to it isn't redirected to HTTPS.
+        aliases: [php.local]
 
   app:
     build:
       context: ./app
       target: prod
+    environment:
+      # SSR calls php over the compose network, without TLS (#98). Not http://php:
+      # that host isn't in SERVER_NAME, so Caddy redirects it with a 308.
+      NUXT_CWA_API_URL: http://php.local/_api
+      NUXT_PUBLIC_CWA_API_URL_BROWSER: https://${SERVER_NAME:?set SERVER_NAME to the site's domain}/_api
+      # The page-cache warm sends the public Host, so it must use HTTPS: Caddy's
+      # automatic HTTPS answers plain HTTP with a 308, and over TLS the TLS name
+      # comes from that Host, so the site's real certificate validates
+      # (cwa-nuxt-module#343).
+      NUXT_CWA_PAGE_CACHE_WARM_ORIGIN: https://php.local
 
   database:
     environment:

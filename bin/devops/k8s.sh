@@ -205,6 +205,17 @@ skip_review_without_namespace() {
 	esac
 }
 
+# The jobs that follow the review job (fixtures, warm, audit, stop) still run or
+# are offered after an orange review, because GitLab treats an allowed failure as
+# success for `needs` (#99). The review job uploads environment_url.txt only when
+# it deployed, so without it these stop the same way, saying why.
+skip_unless_review_deployed() {
+	if [ ! -f environment_url.txt ]; then
+		echo "The review job didn't deploy (this branch has no namespace), so there is no review environment to use."
+		exit "$REVIEW_NO_NAMESPACE_EXIT_CODE"
+	fi
+}
+
 ensure_namespace() {
 	set_namespace
 	echo "Ensuring namespace: $KUBE_NAMESPACE"
@@ -609,7 +620,8 @@ load_fixtures() {
   # - stable (production): only "force", so a project-wide "true" meant for review
   #   apps can never empty production.
   # Staging has no fixture job (Daniel, 2026-09-25): it runs under the production
-  # environment and shares production's database. Any other track appends.
+  # environment, so it gets production's DATABASE_URL whenever one is set, and a
+  # load there would write to production. Any other track appends.
   # Otherwise the load appends (#74): since bundle 2.0.0-alpha.5 the scaffold
   # creates only what's missing and keeps everything that exists.
   local append="--append"
