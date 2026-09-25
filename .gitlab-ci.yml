@@ -17,6 +17,8 @@ variables:
   STAGING_ENABLED: "true"
   CANARY_ENABLED: "true"
   ENABLE_DATABASE_FIXTURES: "false"
+  # "true" makes the manual fixture jobs empty the database before loading.
+  FIXTURES_PURGE: "false"
   # Node, npx and Chrome for the performance audit jobs (#87). Pinned so a Chrome
   # update can't move the numbers between pipelines unnoticed.
   PERFORMANCE_AUDIT_IMAGE: "cypress/browsers:node-24.21.0-chrome-153.0.8010.36-1-ff-156.0-edge-153.0.4234.32-1"

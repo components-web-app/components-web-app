@@ -1917,7 +1917,7 @@ TEST_DISABLED can remove them. **GitLab has its own issue tracker for this repo*
 
 **Required variables (`vars.`):** `KUBE_INGRESS_BASE_DOMAIN`, `RELEASE_PRODUCTION`, `CORS_ALLOW_ORIGIN`, `TRUSTED_HOSTS`, `ADMIN_USERNAME`, `ADMIN_EMAIL`
 
-**Optional flags (`vars.`):** `CI_DISABLED` (set to `"true"` in this repo on GitHub to prevent mirrored pushes triggering the app pipeline), `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `ENABLE_DATABASE_FIXTURES`, `WARM_CACHE_CONCURRENCY`, `KUBERNETES_VERSION`, `HELM_VERSION`
+**Optional flags (`vars.`):** `CI_DISABLED` (set to `"true"` in this repo on GitHub to prevent mirrored pushes triggering the app pipeline), `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `ENABLE_DATABASE_FIXTURES`, `FIXTURES_PURGE`, `WARM_CACHE_CONCURRENCY`, `KUBERNETES_VERSION`, `HELM_VERSION`
 
 **GitHub issue:** [#55](https://github.com/components-web-app/components-web-app/issues/55)
 
@@ -1955,6 +1955,16 @@ Fixed:
   first page route that already exists (exit 7). Routes, pages, components,
   positions and users are **all unchanged**, because the failed load rolled
   back. `UsersFixture` is idempotent (`overwrite: true`).
+
+**Purging is opt-in again (`FIXTURES_PURGE`).** Forcing `--append` also took
+away the purge-and-reload an early project relies on: once a scaffold has been
+loaded, a changed scaffold can never reach that database, because the second
+load stops on a duplicate. `FIXTURES_PURGE="true"` drops `--append`, so
+`load_fixtures` empties every table and reloads. It is read only by the fixture
+job, never by a deploy or pod start (unlike `RESET_DATABASE`, which the php
+entrypoint checks on every start). The default stays `--append`. On GitHub the
+fixture step runs after every deploy while `ENABLE_DATABASE_FIXTURES` is set, so
+with both set every deploy purges.
 
 **Downstream:** srnte's GitHub `ci.yml` has the same unconditional review and
 staging calls, and its `k8s.sh` has no `--append`. srnte deploys through GitLab,

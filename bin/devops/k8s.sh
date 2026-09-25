@@ -602,15 +602,20 @@ load_fixtures() {
   echo "Waiting for PHP deployment to be ready..."
   kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  # --append is what makes this safe to run against a real site. Without it,
-  # doctrine:fixtures:load empties every table before loading, so one run on a
-  # live environment wipes all its content (#74). Fixtures here exist to seed a
-  # new environment and its first admin: UsersFixture is idempotent, and on a
-  # database that already has content the scaffold stops on a duplicate route
-  # rather than deleting anything.
-  echo "Loading database fixtures (append - existing content is kept)..."
+  # FIXTURES_PURGE="true" empties every table before loading, for an early
+  # project whose database should be rebuilt from its fixtures on each run. Only
+  # this job reads it, so a deploy or pod restart can never purge. Otherwise the
+  # load appends (#74): existing content is kept, and on a database that already
+  # has content the scaffold stops on a duplicate and rolls back.
+  local append="--append"
+  if [ "${FIXTURES_PURGE:-false}" = "true" ]; then
+    append=""
+    echo "FIXTURES_PURGE=true: EMPTYING EVERY TABLE in $KUBE_NAMESPACE, then loading fixtures..."
+  else
+    echo "Loading database fixtures (append - existing content is kept)..."
+  fi
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
-    -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load --append --no-interaction
+    -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
 }
 
 # Drops every cached rendered page (the `cwa-html` surrogate key) once a deploy
