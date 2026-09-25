@@ -211,7 +211,25 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
+      # A review environment is optional: a branch has one only once its namespace
+      # exists (see skip_review_without_namespace in k8s.sh). GitHub has no "passed
+      # with warnings" state, so a branch without one gets a warning annotation and
+      # the deploy steps are skipped; any other kubectl error still fails (#4).
+      - name: Check for a review namespace
+        id: namespace
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          set_namespace
+          state=$(review_namespace_state)
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          if [ "$state" = missing ]; then
+            echo "::warning title=No review environment::No namespace '$KUBE_NAMESPACE', so this branch has no review environment. Create it, with its role bindings, if this branch needs one."
+          fi
+          [ "$state" != error ]
       - name: Deploy review environment
+        if: steps.namespace.outputs.state == 'present'
         run: |
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
@@ -229,7 +247,7 @@ jobs:
       # already has content the scaffold stops on a duplicate route without
       # writing anything, so failure is allowed here as on GitLab.
       - name: Load fixtures
-        if: vars.ENABLE_DATABASE_FIXTURES == 'true'
+        if: steps.namespace.outputs.state == 'present' && vars.ENABLE_DATABASE_FIXTURES == 'true'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh
@@ -245,7 +263,7 @@ jobs:
       # the release is already live. It runs after the fixtures step, so a new
       # environment is warmed once its content exists.
       - name: Warm the page cache
-        if: vars.WARM_CACHE_REVIEW == 'true'
+        if: steps.namespace.outputs.state == 'present' && vars.WARM_CACHE_REVIEW == 'true'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh

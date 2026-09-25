@@ -170,6 +170,41 @@ set_namespace() {
   fi
 }
 
+# A review environment is optional: a branch has one only once someone creates its
+# namespace, with its role bindings (ensure_namespace explains why CI can't). So a
+# review job for a branch without one ends with this exit code, which the GitLab
+# review job allows to fail: the pipeline shows orange ("passed with warnings")
+# instead of red, and any other failure is still red (#4). Keep it in sync with
+# `allow_failure: exit_codes` on the review job in .gitlab-ci.yml.
+REVIEW_NO_NAMESPACE_EXIT_CODE=3
+
+# Prints present, missing or error for $KUBE_NAMESPACE (call set_namespace first).
+# NotFound and Forbidden both mean nobody provisioned it for this project; anything
+# else (no cluster, a bad context) is a real error and must not look like a skip.
+review_namespace_state() {
+	ns_output=$(kubectl get namespace "$KUBE_NAMESPACE" 2>&1) && { echo present; return 0; }
+	case "$ns_output" in
+		*NotFound*|*Forbidden*|*forbidden*) echo missing ;;
+		*) echo "$ns_output" >&2; echo error ;;
+	esac
+}
+
+skip_review_without_namespace() {
+	set_namespace
+	case "$(review_namespace_state)" in
+		present) ;;
+		missing)
+			echo "No namespace '$KUBE_NAMESPACE', so this branch has no review environment to deploy to."
+			echo "Create it, with its role bindings, if this branch needs one."
+			exit "$REVIEW_NO_NAMESPACE_EXIT_CODE"
+			;;
+		*)
+			echo "Could not check for the namespace '$KUBE_NAMESPACE'."
+			return 1
+			;;
+	esac
+}
+
 ensure_namespace() {
 	set_namespace
 	echo "Ensuring namespace: $KUBE_NAMESPACE"

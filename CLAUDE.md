@@ -213,6 +213,18 @@ Hygiene for the single-server deploy in #96, which also helps every new project:
 - **`compose.prod.yaml` requires every secret** with `${VAR:?…}`: `APP_SECRET`, `CADDY_MERCURE_JWT_SECRET` (all three Mercure uses), `POSTGRES_PASSWORD` (both the database and `DATABASE_URL`), and `JWT_SECRET_KEY`/`JWT_PUBLIC_KEY`/`JWT_PASSPHRASE` as key contents. Before, it silently inherited `compose.yaml`'s public defaults (`!ChangeThisMercureHubJWTSecretKey!`, `!ChangeMe!`), and passed no JWT keys at all. Verified: `config` without them fails naming `APP_SECRET`; with them, none of the defaults remain. **The dev defaults in `compose.yaml` stay on purpose:** they only ever apply on localhost.
 - **Caddy's admin API is loopback-only:** see the section above.
 
+## ✅ A branch without a review namespace shows orange, not red (GitLab #4, 2026-09-25)
+
+`ensure_namespace` deliberately doesn't create namespaces (CI has no rights to create role bindings), so the review job used to fail red on every branch nobody had provisioned. A pipeline that's always red says nothing, and a real deploy failure looks the same.
+
+- **`skip_review_without_namespace`** (in `k8s.sh`) runs in the GitLab review job just before `ensure_namespace`. With no namespace, it exits **3** (`REVIEW_NO_NAMESPACE_EXIT_CODE`), and the job's `allow_failure: exit_codes: [3]` shows it as **orange** ("passed with warnings"). Any other failure is still red. Keep the two numbers in sync.
+- **Only `NotFound` and `Forbidden` count as "no namespace"** (`review_namespace_state`). Any other `kubectl` error, such as an unreachable cluster or a bad context, prints the error and fails red, so an outage never looks like a skip.
+- **Staging, canary and production keep plain `ensure_namespace`,** so a missing namespace there still fails hard. Those environments are never optional.
+- **GitHub has no orange state.** `ci.yml`'s review job adds a "Check for a review namespace" step: with no namespace it adds a `::warning::` annotation and skips the deploy, fixtures and warm steps. An error still fails the job.
+- Jobs that `need` the review job (the manual fixtures and audit jobs, `stop review`, and the opt-in review warm) still appear after an orange review, because GitLab treats an allowed failure as success for `needs`. Only the opt-in warm runs by itself, and it's allowed to fail too.
+
+Verified with a stub `kubectl` under busybox ash (`alpine`) for GitLab and under bash for GitHub: present continues to `ensure_namespace`; NotFound and Forbidden exit 3 (GitHub: warning, exit 0); a refused connection exits 1. `glab ci lint` and `actionlint` pass. Not yet seen on a real branch pipeline.
+
 ## ⚠ Kubernetes probes — a 1s readiness timeout can brick a pod for good (fixed 2026-08-14)
 
 **Applied here 2026-08-14** — `timeoutSeconds: 5` on the php `readinessProbe`
