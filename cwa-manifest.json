@@ -4,6 +4,7 @@
   "branch": "main",
   "alwaysExclude": [
     "CLAUDE.md",
+    "CHANGELOG.md",
     "packages/",
     "cwa-manifest.json",
     "blackfire-io_secondary_horizontal_transparent.png",
