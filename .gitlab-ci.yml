@@ -17,7 +17,9 @@ variables:
   STAGING_ENABLED: "true"
   CANARY_ENABLED: "true"
   ENABLE_DATABASE_FIXTURES: "false"
-  # "true" makes the manual fixture jobs empty the database before loading.
+  # Makes a manual fixture job empty the database before loading: "true" on review
+  # apps, "force" for production, never on staging (it shares production's
+  # database). See load_fixtures in bin/devops/k8s.sh.
   FIXTURES_PURGE: "false"
   # Node, npx and Chrome for the performance audit jobs (#87). Pinned so a Chrome
   # update can't move the numbers between pipelines unnoticed.

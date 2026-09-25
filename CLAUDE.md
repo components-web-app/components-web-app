@@ -1959,12 +1959,30 @@ Fixed:
 **Purging is opt-in again (`FIXTURES_PURGE`).** Forcing `--append` also took
 away the purge-and-reload an early project relies on: once a scaffold has been
 loaded, a changed scaffold can never reach that database, because the second
-load stops on a duplicate. `FIXTURES_PURGE="true"` drops `--append`, so
+load stops on a duplicate. `FIXTURES_PURGE` drops `--append`, so
 `load_fixtures` empties every table and reloads. It is read only by the fixture
 job, never by a deploy or pod start (unlike `RESET_DATABASE`, which the php
-entrypoint checks on every start). The default stays `--append`. On GitHub the
-fixture step runs after every deploy while `ENABLE_DATABASE_FIXTURES` is set, so
-with both set every deploy purges.
+entrypoint checks on every start). The default stays `--append`. **It depends on
+the track** (Daniel, 2026-09-25):
+- **review:** `"true"` (or `"force"`).
+- **production (stable):** only `"force"`. A project-wide `"true"` meant for review
+  apps prints a notice and appends.
+- **staging:** never, whatever the value. Staging's GitLab jobs run under
+  `environment: production` and get production's `DATABASE_URL`, so a staging
+  purge would empty **production**. The GitHub staging job isn't even given the
+  variable.
+
+On GitHub the fixture step runs after every deploy while `ENABLE_DATABASE_FIXTURES`
+is set, so with both set every review deploy purges (`"true"`), and every manual
+production run purges (`"force"`).
+
+**Every fixture load ends by flushing the whole HTTP cache**
+(`silverback:api-components:purge-http-cache`, bundle alpha.4). The load changes the
+database underneath whatever Souin cached since the deploy purged it, and a purge
+load deletes rows with plain SQL, so nothing purges the old content. Without the
+flush, production would serve it for up to a year. If the load itself fails (an
+append on a seeded database), `set -e` stops the job before the flush, which is
+fine, because nothing changed.
 
 **Downstream:** srnte's GitHub `ci.yml` has the same unconditional review and
 staging calls, and its `k8s.sh` has no `--append`. srnte deploys through GitLab,

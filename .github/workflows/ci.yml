@@ -245,9 +245,10 @@ jobs:
       # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
       # previously part of the deploy step and ran on every deploy, emptying the
       # database first (#74). load_fixtures appends unless FIXTURES_PURGE is
-      # "true", which empties the database first on every deploy while both are
-      # set. Appending to a database that already has content stops on a
-      # duplicate without writing anything, so failure is allowed as on GitLab.
+      # "true" (or "force"), which empties the review database first on every
+      # deploy while both are set. Appending to a database that already has
+      # content stops on a duplicate without writing anything, so failure is
+      # allowed as on GitLab. The load ends by flushing the HTTP cache.
       - name: Load fixtures
         if: steps.namespace.outputs.state == 'present' && vars.ENABLE_DATABASE_FIXTURES == 'true'
         continue-on-error: true
@@ -315,7 +316,6 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
-      FIXTURES_PURGE: ${{ vars.FIXTURES_PURGE }}
       # Media storage. Without these three a GitHub deploy falls back to the
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
       # automatically; GitHub Actions does not, so each one must be mapped here.
@@ -351,10 +351,11 @@ jobs:
           purge_rendered_html staging
       # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
       # previously part of the deploy step and ran on every deploy, emptying the
-      # database first (#74). load_fixtures appends unless FIXTURES_PURGE is
-      # "true", which empties the database first on every deploy while both are
-      # set. Appending to a database that already has content stops on a
-      # duplicate without writing anything, so failure is allowed as on GitLab.
+      # database first (#74). load_fixtures always appends on staging, whatever
+      # FIXTURES_PURGE says: staging can share production's database. Appending to
+      # a database that already has content stops on a duplicate without writing
+      # anything, so failure is allowed as on GitLab. The load ends by flushing
+      # the HTTP cache.
       - name: Load fixtures
         if: vars.ENABLE_DATABASE_FIXTURES == 'true'
         continue-on-error: true

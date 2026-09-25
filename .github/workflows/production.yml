@@ -121,9 +121,11 @@ jobs:
       # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
       # previously part of the deploy step and ran on every deploy, emptying the
       # database first (#74). load_fixtures appends unless FIXTURES_PURGE is
-      # "true", which empties the database first on every deploy while both are
-      # set. Appending to a database that already has content stops on a
-      # duplicate without writing anything, so failure is allowed as on GitLab.
+      # "force" ("true" is not enough for production), which empties the
+      # production database first on every production run while both are set.
+      # Appending to a database that already has content stops on a duplicate
+      # without writing anything, so failure is allowed as on GitLab. The load
+      # ends by flushing the HTTP cache.
       - name: Load fixtures
         if: inputs.action == 'production' && vars.ENABLE_DATABASE_FIXTURES == 'true'
         continue-on-error: true
