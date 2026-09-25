@@ -1967,10 +1967,10 @@ the track** (Daniel, 2026-09-25):
 - **review:** `"true"` (or `"force"`).
 - **production (stable):** only `"force"`. A project-wide `"true"` meant for review
   apps prints a notice and appends.
-- **staging:** never, whatever the value. Staging's GitLab jobs run under
-  `environment: production` and get production's `DATABASE_URL`, so a staging
-  purge would empty **production**. The GitHub staging job isn't even given the
-  variable.
+- **staging:** has **no fixture job at all**, on GitLab or GitHub (Daniel,
+  2026-09-25). Staging's GitLab jobs run under `environment: production` and get
+  production's `DATABASE_URL`, so a staging load would write to **production**.
+  Don't add one back.
 
 On GitHub the fixture step runs after every deploy while `ENABLE_DATABASE_FIXTURES`
 is set, so with both set every review deploy purges (`"true"`), and every manual

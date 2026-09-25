@@ -608,9 +608,8 @@ load_fixtures() {
   # - review: "true" (or "force").
   # - stable (production): only "force", so a project-wide "true" meant for review
   #   apps can never empty production.
-  # - staging, and any other track: never. Staging's jobs run under the production
-  #   environment and share its DATABASE_URL, so a staging purge would empty
-  #   production.
+  # Staging has no fixture job (Daniel, 2026-09-25): it runs under the production
+  # environment and shares production's database. Any other track appends.
   # Otherwise the load appends (#74): existing content is kept, and on a database
   # that already has content the scaffold stops on a duplicate and rolls back.
   local append="--append"
@@ -623,7 +622,7 @@ load_fixtures() {
       echo "FIXTURES_PURGE=true is ignored for production, which needs FIXTURES_PURGE=force. Appending instead."
       ;;
     *:true|*:force)
-      echo "FIXTURES_PURGE is ignored for the $track track, which shares production's database. Appending instead."
+      echo "FIXTURES_PURGE is only read for review apps and production. Appending instead."
       ;;
   esac
   [ -n "$append" ] && echo "Loading database fixtures (append - existing content is kept)..."
