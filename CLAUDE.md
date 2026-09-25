@@ -1632,11 +1632,18 @@ Renames for reference: `withImage`→`withFile`, `useCwaImage`→`useCwaFile`, `
 
 **First release: `v2.0.0-alpha.1` (2026-09-24, on `85fd3e5`).** It shares the bundle's major, `2.x`, but keeps its own alpha count. **`create-cwa` shares the template's version**: `create-cwa` X downloads the template, manifest included, from tag `vX`. So every template release is also a `create-cwa` release with the same version (see below). `create-cwa@2.0.0-alpha.1` was tagged on a later commit than the template's `v2.0.0-alpha.1`, because the CLI change came after it. From the next release, tag both on the same commit. It was built against bundle `2.0.0-alpha.3` and module edge `0.0.0-29837288.9a15df5`, because the module had no tagged release then. Since 2026-09-24 both are tagged: bundle `^2.0@alpha` and `@cwa/nuxt` `^2.0.0-alpha.1`.
 
+**`CHANGELOG.md` is a rule (Daniel, 2026-09-25).** It lives at the repo root, so it's on GitHub:
+- **Every change to `main` gets a line under `## Unreleased` before it's pushed.** One short line in the right group (Upgrade notes, Changed, Added, Fixed, Security, Removed), ending with a link to the commit on GitHub, or to the merged PR or MR that brought it. Put anything a downstream project must do by hand under *Upgrade notes*. Use the full SHA in the link.
+  - **A commit can't link to itself** (its SHA doesn't exist yet), so add its line in a small follow-up commit, `Changelog: <subject>`, before pushing. Several changes can share one changelog commit. Changelog-only commits get no line of their own.
+  - A merged MR or PR gets one line linking to it, not one per commit.
+- **A release** renames `## Unreleased` to `## [X.Y.Z-alpha.N](…/releases/tag/vX.Y.Z-alpha.N) - <date>`, and adds a fresh empty `## Unreleased` above it. **That section is the tag's message** (`git tag -a vX -F <section file>`) **and the GitHub release notes** (`gh release create … --notes-file <section file>`).
+- `create-cwa` projects don't get this file (`alwaysExclude` in `cwa-manifest.json`): it describes the template, not the new project.
+
 To release:
-1. Update everything and run the usual checks.
+1. Update everything and run the usual checks. Make sure `CHANGELOG.md`'s Unreleased section is complete, then turn it into the version's section.
 2. Set `packages/create-cwa/package.json`'s version to the same `X.Y.Z-alpha.N`, then commit and push.
-3. On that commit, `git tag -a vX.Y.Z-alpha.N -m "…"` and `git tag create-cwa/vX.Y.Z-alpha.N`, then push both tags to `origin`, and only there. **Push the template tag first, or at the same time.** A CLI published before its template tag exists fails for every user with "No CWA template found".
-4. When the tag has mirrored (`gh api repos/components-web-app/components-web-app/git/ref/tags/<tag>`), run `gh release create <tag> --verify-tag --prerelease`. `--verify-tag` stops `gh` from creating the tag on GitHub itself, which would fight the mirror.
+3. On that commit, `git tag -a vX.Y.Z-alpha.N -F <the version's CHANGELOG section>` and `git tag create-cwa/vX.Y.Z-alpha.N`, then push both tags to `origin`, and only there. **Push the template tag first, or at the same time.** A CLI published before its template tag exists fails for every user with "No CWA template found".
+4. When the tag has mirrored (`gh api repos/components-web-app/components-web-app/git/ref/tags/<tag>`), run `gh release create <tag> --verify-tag --prerelease --notes-file <the version's CHANGELOG section>`. `--verify-tag` stops `gh` from creating the tag on GitHub itself, which would fight the mirror.
 
 A plain version tag starts no deploy. Every GitLab job is limited to branches or `main`, and no GitHub workflow runs on tags other than `create-cwa/v*`. A release does change what new installs get, through the matching `create-cwa`. `pnpm create cwa my-app -- --ref main` (or `--ref <any tag or branch>`) gets another version of the template. Installs from `create-cwa` 0.x still read the manifest's `branch` (`main`), so leave that field in `cwa-manifest.json`.
 
