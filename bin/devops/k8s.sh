@@ -602,15 +602,42 @@ load_fixtures() {
   echo "Waiting for PHP deployment to be ready..."
   kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  # --append is what makes this safe to run against a real site. Without it,
-  # doctrine:fixtures:load empties every table before loading, so one run on a
-  # live environment wipes all its content (#74). Fixtures here exist to seed a
-  # new environment and its first admin: UsersFixture is idempotent, and on a
-  # database that already has content the scaffold stops on a duplicate route
-  # rather than deleting anything.
-  echo "Loading database fixtures (append - existing content is kept)..."
+  # FIXTURES_PURGE empties every table before loading, for an early project whose
+  # database should be rebuilt from its fixtures. Only this job reads it, so a
+  # deploy or pod restart can never purge, and it depends on the track:
+  # - review: "true" (or "force").
+  # - stable (production): only "force", so a project-wide "true" meant for review
+  #   apps can never empty production.
+  # Staging has no fixture job (Daniel, 2026-09-25): it runs under the production
+  # environment and shares production's database. Any other track appends.
+  # Otherwise the load appends (#74): existing content is kept, and on a database
+  # that already has content the scaffold stops on a duplicate and rolls back.
+  local append="--append"
+  case "$track:${FIXTURES_PURGE:-false}" in
+    review:true|review:force|stable:force)
+      append=""
+      echo "FIXTURES_PURGE=$FIXTURES_PURGE: EMPTYING EVERY TABLE in $KUBE_NAMESPACE, then loading fixtures..."
+      ;;
+    stable:true)
+      echo "FIXTURES_PURGE=true is ignored for production, which needs FIXTURES_PURGE=force. Appending instead."
+      ;;
+    *:true|*:force)
+      echo "FIXTURES_PURGE is only read for review apps and production. Appending instead."
+      ;;
+  esac
+  [ -n "$append" ] && echo "Loading database fixtures (append - existing content is kept)..."
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
-    -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load --append --no-interaction
+    -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
+
+  # The load changes the database underneath whatever Souin has cached since the
+  # deploy's purge, and a purge load deletes rows with plain SQL, so nothing purges
+  # the old content. In production it would be served for up to a year. So flush
+  # the whole HTTP cache, API responses and pages. `exec deploy/...` reaches one
+  # pod, which is enough while the API runs a single replica (see
+  # purge_rendered_html).
+  echo "Flushing the HTTP cache..."
+  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
+    -- php bin/console silverback:api-components:purge-http-cache
 }
 
 # Drops every cached rendered page (the `cwa-html` surrogate key) once a deploy
