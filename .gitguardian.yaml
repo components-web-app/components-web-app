@@ -1,0 +1,14 @@
+# GitGuardian: committed values that aren't secrets.
+#
+# Each match is exact, so a real value never matches one of these. Add only
+# placeholders that are committed on purpose, never a real value.
+version: 2
+secret:
+  ignored-matches:
+    # compose.prod.yaml: compose variables that make a secret required, so
+    # `docker compose` refuses to start without it. Flagged as a generic password
+    # in commit 1456c7c.
+    - name: compose.prod.yaml required JWT_PASSPHRASE
+      match: '${JWT_PASSPHRASE:?set JWT_PASSPHRASE}'
+    - name: compose.prod.yaml required POSTGRES_PASSWORD
+      match: '${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}'
