@@ -1960,6 +1960,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             verify_on_change?: bool|Param, // Default: false
  *             verify_on_register?: bool|Param, // Default: false
  *             deny_unverified_login?: bool|Param, // Default: false
+ *             repeat_ttl_seconds?: int|Param, // Default: 300
  *         },
  *         new_email_confirmation?: array{
  *             email?: array{
@@ -1968,6 +1969,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *                 subject?: scalar|Param|null, // Default: "Please confirm your new email address"
  *             },
  *             request_timeout_seconds?: int|Param, // Default: 86400
+ *             repeat_ttl_seconds?: int|Param, // Default: 300
  *         },
  *         password_reset?: array{
  *             email?: array{

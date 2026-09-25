@@ -123,9 +123,8 @@ jobs:
       # database first (#74). load_fixtures appends unless FIXTURES_PURGE is
       # "force" ("true" is not enough for production), which empties the
       # production database first on every production run while both are set.
-      # Appending to a database that already has content stops on a duplicate
-      # without writing anything, so failure is allowed as on GitLab. The load
-      # ends by flushing the HTTP cache.
+      # An append creates only what's missing (bundle 2.0.0-alpha.5). Failure is
+      # allowed, as on GitLab. The load ends by flushing the HTTP cache.
       - name: Load fixtures
         if: inputs.action == 'production' && vars.ENABLE_DATABASE_FIXTURES == 'true'
         continue-on-error: true

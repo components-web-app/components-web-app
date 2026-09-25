@@ -246,9 +246,9 @@ jobs:
       # previously part of the deploy step and ran on every deploy, emptying the
       # database first (#74). load_fixtures appends unless FIXTURES_PURGE is
       # "true" (or "force"), which empties the review database first on every
-      # deploy while both are set. Appending to a database that already has
-      # content stops on a duplicate without writing anything, so failure is
-      # allowed as on GitLab. The load ends by flushing the HTTP cache.
+      # deploy while both are set. An append creates only what's missing
+      # (bundle 2.0.0-alpha.5). Failure is allowed, as on GitLab. The load ends
+      # by flushing the HTTP cache.
       - name: Load fixtures
         if: steps.namespace.outputs.state == 'present' && vars.ENABLE_DATABASE_FIXTURES == 'true'
         continue-on-error: true

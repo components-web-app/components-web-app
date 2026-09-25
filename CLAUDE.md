@@ -53,7 +53,7 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag;
 
 ## Dependencies
 
-**Current:** `@cwa/nuxt` `^2.0.0-alpha.1` (a normal dependency, not an `npm:@cwa/nuxt-edge@…` alias), bundle `components-web-app/api-components-bundle` `^2.0@alpha` (resolves to the newest alpha tag, not `main`, via `minimum-stability: dev` + `prefer-stable`), Nuxt 4.5 (Vite 8/Rolldown, unhead 3), API Platform 5, PHPUnit 13, symfony/mercure 0.8, Flysystem 3 (tagged; Flysystem 4 isn't possible yet, liip/imagine-bundle allows only `^1|^2|^3`).
+**Current:** `@cwa/nuxt` `^2.0.0-alpha.2` (a normal dependency, not an `npm:@cwa/nuxt-edge@…` alias), bundle `components-web-app/api-components-bundle` `^2.0@alpha`, locked at 2.0.0-alpha.5 (resolves to the newest alpha tag, not `main`, via `minimum-stability: dev` + `prefer-stable`), Nuxt 4.5 (Vite 8/Rolldown, unhead 3), API Platform 5, PHPUnit 13, symfony/mercure 0.8, Flysystem 3 (tagged; Flysystem 4 isn't possible yet, liip/imagine-bundle allows only `^1|^2|^3`).
 
 **Updating the bundle:** `composer update components-web-app/api-components-bundle` inside the php container (`api/composer.json` doesn't require API Platform directly, so a plain `composer update` may move it a major). Then `bin/console doctrine:migrations:diff`, generate and commit any migration with the lock, `lint:container` in dev and prod, PHPUnit, `composer audit`, and check pages hydrate. **A `composer update` in the running dev container can cause a few minutes of 500s** while `vendor/` is rewritten; it recovers without a restart.
 
@@ -247,7 +247,7 @@ Changing the stable ingress's host list in place makes cert-manager put a self-s
 
 ## Fixtures and tests
 
-- **⚠ Fixtures append by default.** Without `--append`, `doctrine:fixtures:load` empties every table. Locally: `docker compose exec php bin/console doctrine:fixtures:load --append`. The pipeline's `load_fixtures` appends (#74). On a seeded database, `--append` writes nothing (the scaffold stops at the first existing route, exit 7, and rolls back). Idempotent appends are api-components-bundle#319.
+- **⚠ Fixtures append by default.** Without `--append`, `doctrine:fixtures:load` empties every table. Locally: `docker compose exec php bin/console doctrine:fixtures:load --append`. The pipeline's `load_fixtures` appends (#74). Since bundle 2.0.0-alpha.5 (#335), `--append` with a `CwaFixtureBuilder` scaffold is **idempotent**: it creates only what's missing, keeps everything that exists (a page's content is editors' once it exists), and prints a `created …` / `kept …; skipped …` summary. A second append on the template's scaffold exits 0 with identical rows and IDs. So a new page added to a scaffold reaches a seeded site without purging.
 - **`FIXTURES_PURGE` opts a fixture job into emptying the database first** (MR !11; only `load_fixtures` reads it, never a deploy or pod start, unlike `RESET_DATABASE`):
   - **review:** `"true"` (or `"force"`).
   - **production:** only `"force"`. A project-wide `"true"` meant for review apps prints a notice and appends.
@@ -316,6 +316,10 @@ The module ships no service worker; the template carries the reference config in
 - **Thumbnails are built synchronously in the upload request with GD, ~11.7 MB per megapixel**, so 512M handles ~43 MP. `Image::$file` rejects over **40 MP** with a 422 (`Assert\Image(maxPixels: 40_000_000)` inside `Assert\When`, so SVG is exempt; without the `When`, SVG is rejected). Non-images (e.g. PDF) are rejected. The module downscales in the browser by default (module #335: >2560px or >20 MP), so the limit is the safety net for direct API uploads.
 - **FrankenPHP worker pool is fixed** at `num {$FRANKENPHP_WORKER_NUM:4}` in `worker.Caddyfile` (the default follows node CPUs, and with it worst-case memory).
 - **php pod memory:** limit 1Gi (`PHP_MEMORY_LIMIT`), request 350Mi. If a cluster forces limits to equal requests (GKE Autopilot), lower `PHP_MEMORY_LIMIT`.
+
+## CORS: `Retry-After` must be exposed if the API is ever cross-origin (cwa-nuxt-module#353)
+
+Throttled email requests (api-components-bundle#331) return 429 with `Retry-After`, and the module's resend link counts down from it. Browsers only let cross-origin JavaScript read CORS-safelisted headers plus those in `Access-Control-Expose-Headers`; `nelmio_cors.yaml` exposes only `Link`. The template's browser calls go to same-origin `/_api`, so it works as is. An app that serves the API from another origin must add `Retry-After` to `expose_headers`, or the module reads no wait and says "shortly" with no countdown.
 
 ## Security and secrets
 

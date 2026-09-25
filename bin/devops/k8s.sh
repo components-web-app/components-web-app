@@ -610,8 +610,8 @@ load_fixtures() {
   #   apps can never empty production.
   # Staging has no fixture job (Daniel, 2026-09-25): it runs under the production
   # environment and shares production's database. Any other track appends.
-  # Otherwise the load appends (#74): existing content is kept, and on a database
-  # that already has content the scaffold stops on a duplicate and rolls back.
+  # Otherwise the load appends (#74): since bundle 2.0.0-alpha.5 the scaffold
+  # creates only what's missing and keeps everything that exists.
   local append="--append"
   case "$track:${FIXTURES_PURGE:-false}" in
     review:true|review:force|stable:force)
