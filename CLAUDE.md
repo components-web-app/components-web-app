@@ -53,7 +53,7 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag;
 
 ## Dependencies
 
-**Current:** `@cwa/nuxt` `^2.0.0-alpha.2` (a normal dependency, not an `npm:@cwa/nuxt-edge@…` alias), bundle `components-web-app/api-components-bundle` `^2.0@alpha`, locked at 2.0.0-alpha.5 (resolves to the newest alpha tag, not `main`, via `minimum-stability: dev` + `prefer-stable`), Nuxt 4.5 (Vite 8/Rolldown, unhead 3), API Platform 5, PHPUnit 13, symfony/mercure 0.8, Flysystem 3 (tagged; Flysystem 4 isn't possible yet, liip/imagine-bundle allows only `^1|^2|^3`).
+**Current:** `@cwa/nuxt` `^2.0.0-alpha.3` (a normal dependency, not an `npm:@cwa/nuxt-edge@…` alias), bundle `components-web-app/api-components-bundle` `^2.0@alpha`, locked at 2.0.0-alpha.6 (resolves to the newest alpha tag, not `main`, via `minimum-stability: dev` + `prefer-stable`), Nuxt 4.5 (Vite 8/Rolldown, unhead 3), API Platform 5, PHPUnit 13, symfony/mercure 0.8, Flysystem 3 (tagged; Flysystem 4 isn't possible yet, liip/imagine-bundle allows only `^1|^2|^3`).
 
 **Updating the bundle:** `composer update components-web-app/api-components-bundle` inside the php container (`api/composer.json` doesn't require API Platform directly, so a plain `composer update` may move it a major). Then `bin/console doctrine:migrations:diff`, generate and commit any migration with the lock, `lint:container` in dev and prod, PHPUnit, `composer audit`, and check pages hydrate. **A `composer update` in the running dev container can cause a few minutes of 500s** while `vendor/` is rewritten; it recovers without a restart.
 
@@ -268,6 +268,7 @@ Changing the stable ingress's host list in place makes cert-manager put a self-s
 
 ## API
 
+- **Orphaned resources (bundle 2.0.0-alpha.6, module 2.0.0-alpha.3).** The report is stored in `_acb_orphaned_resource_report` (migration `Version20260926075921`), shared between pods. `silverback:api-components:scan-orphaned` only scans (`clean-orphaned` is now an alias and deletes nothing); deleting is an admin action in `/_cwa/orphaned` through `POST /_/orphaned_resources/delete` (admin only, 401 anonymously; it expects `application/ld+json`). The scan emails `orphaned_resources.notify.recipients` when the result changes; no recipients means no email. Module alpha.3's delete needs a bundle with #353, so the two go together.
 - **QueryParameters (#89).** `User`, `BlogArticleData`, `NestedPageData` declare `parameters:` on `#[ApiResource]`: `search` = `FreeTextQueryFilter(new OrFilter(new PartialSearchFilter()))`, `order[:property]` = `SortFilter`. `CollectionSearch.vue` binds `search`.
   - Old per-field parameters (`?title=`) are **ignored, not refused**: a stale client silently gets everything.
   - Resource-level parameters also filter single-item requests (`/users/{id}?search=zzz` → 404).

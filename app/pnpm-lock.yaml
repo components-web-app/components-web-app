@@ -13,8 +13,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: ^2.0.0-alpha.2
-        version: 2.0.0-alpha.2(050ea82cb6efa5e50a8e5e67e181e3b3)
+        specifier: ^2.0.0-alpha.3
+        version: 2.0.0-alpha.3(050ea82cb6efa5e50a8e5e67e181e3b3)
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.43(typescript@6.0.3))
@@ -672,8 +672,8 @@ packages:
   '@colordx/core@5.8.0':
     resolution: {integrity: sha512-cG0QJAO6VkaRUlIb0zOzX9gfJgs1pjoOL9gZ/PK1kfvBs0GCkADu5oQh6gPxXgQnZ3gV575h+lQRC0NlMDTclA==}
 
-  '@cwa/nuxt@2.0.0-alpha.2':
-    resolution: {integrity: sha512-QblSxVbQIsk0yeLgleHJ9CMy4BT5vmAg/rK3aP04eOB396obh1Vl8egb4Ine8hBxrsTff5nSd7kxNmx/KGU/vw==}
+  '@cwa/nuxt@2.0.0-alpha.3':
+    resolution: {integrity: sha512-d6Mnamw9XcsQ5EIGRvAoqCmmg0EBF/Mcgctekla6QYELodyg5gklurV0REiriW2NrqtOzaxbcFKsGZ8PY8Z96A==}
     engines: {pnpm: '>=11.5.3'}
     hasBin: true
     peerDependencies:
@@ -7352,7 +7352,7 @@ snapshots:
 
   '@colordx/core@5.8.0': {}
 
-  '@cwa/nuxt@2.0.0-alpha.2(050ea82cb6efa5e50a8e5e67e181e3b3)':
+  '@cwa/nuxt@2.0.0-alpha.3(050ea82cb6efa5e50a8e5e67e181e3b3)':
     dependencies:
       '@headlessui/vue': 1.7.23(vue@3.5.43(typescript@6.0.3))
       '@internationalized/date': 3.12.4

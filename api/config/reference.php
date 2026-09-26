@@ -2008,6 +2008,13 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         scheduled_expiry_resource_classes?: list<scalar|Param|null>,
  *         purge_rendered_html_classes?: list<scalar|Param|null>,
  *     },
+ *     orphaned_resources?: array{
+ *         notify?: array{ // Emails sent by `silverback:api-components:scan-orphaned` when its result differs from the last stored report. No recipients means no emails.
+ *             recipients?: mixed, // Email addresses: a list, or one comma-separated string so that an environment variable can supply them. // Default: []
+ *             admin_page_path?: scalar|Param|null, // The front-end path of the admin page listing orphaned resources, linked from the email on the `user.email_links.default_origin`. // Default: "/_cwa/orphaned"
+ *             subject?: scalar|Param|null, // Default: "Orphaned resources changed on {{ website_name }}"
+ *         },
+ *     },
  * }
  * @psalm-type LiipImagineConfig = array{
  *     resolvers?: array<string, array{ // Default: []
