@@ -28,14 +28,23 @@ install_dependencies() {
 }
 
 generate_jwt_keys() {
-	# Generate random passphrase and keys for JWT signing if not set
-	if [[ -z ${JWT_PASSPHRASE} ]]; then
-  	echo "Generate JWT_PASSPHRASE..."
-		export JWT_PASSPHRASE="$(rand_str)"
+	# A key supplied without its passphrase can't be decrypted, and a random
+	# passphrase would never match it: login would fail at runtime with a
+	# decryption error. So that is a deploy error, not something to fill in.
+	if [ -n "${JWT_SECRET_KEY}" ] && [ -z "${JWT_PASSPHRASE}" ]; then
+		echo "!!!! JWT_SECRET_KEY is set but JWT_PASSPHRASE is empty. Set the passphrase the key was generated with. !!!!"
+		return 1
 	fi
 
-	if [[ -z ${JWT_SECRET_KEY} ]]; then
-  	echo "Generate JWT_SECRET_KEY..."
+	# Quoted POSIX tests throughout: a PEM key has spaces and newlines, and busybox
+	# ash splits an unquoted one inside [[ ]], silently making the test false.
+	if [ -z "${JWT_SECRET_KEY}" ]; then
+		# A new key pair, with a new passphrase unless one was given.
+		if [ -z "${JWT_PASSPHRASE}" ]; then
+			echo "Generate JWT_PASSPHRASE..."
+			export JWT_PASSPHRASE="$(rand_str)"
+		fi
+		echo "Generate JWT_SECRET_KEY..."
 		JWT_SECRET_KEY_FILE=/tmp/jwt_secret
 
 		openssl genpkey -pass pass:"${JWT_PASSPHRASE}" -aes256 -algorithm rsa -pkeyopt rsa_keygen_bits:4096 -out ${JWT_SECRET_KEY_FILE}
@@ -43,6 +52,16 @@ generate_jwt_keys() {
 		export JWT_PUBLIC_KEY=$(openssl pkey -in "$JWT_SECRET_KEY_FILE" -passin pass:"$JWT_PASSPHRASE" -pubout)
 
 		rm ${JWT_SECRET_KEY_FILE}
+	elif [ -z "${JWT_PUBLIC_KEY}" ]; then
+		# Lexik can derive the public key at runtime, but only by decrypting the
+		# private key on every verification. Deriving it here puts the real key in
+		# the chart, and fails the deploy if the passphrase doesn't match the key.
+		echo "Derive JWT_PUBLIC_KEY from JWT_SECRET_KEY..."
+		if ! JWT_PUBLIC_KEY=$(printf '%s\n' "$JWT_SECRET_KEY" | openssl pkey -passin pass:"$JWT_PASSPHRASE" -pubout 2>/dev/null) || [ -z "${JWT_PUBLIC_KEY}" ]; then
+			echo "!!!! Could not decrypt JWT_SECRET_KEY with JWT_PASSPHRASE. Check that they belong together. !!!!"
+			return 1
+		fi
+		export JWT_PUBLIC_KEY
 	fi
 
   # Generate random key & jwt for Mercure if not set
