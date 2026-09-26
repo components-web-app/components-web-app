@@ -190,6 +190,14 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+      # Mail and the nightly orphan scan (#102). GitHub passes only variables a job
+      # names. Without MAILER_DSN the chart uses the null transport (no email);
+      # without MAILER_EMAIL the orphan scan sends no alert.
+      MAILER_DSN: ${{ secrets.MAILER_DSN }}
+      MAILER_EMAIL: ${{ vars.MAILER_EMAIL }}
+      ORPHAN_SCAN: ${{ vars.ORPHAN_SCAN }}
+      ORPHAN_SCAN_SCHEDULE: ${{ vars.ORPHAN_SCAN_SCHEDULE }}
+      ORPHAN_SCAN_TIMEZONE: ${{ vars.ORPHAN_SCAN_TIMEZONE }}
       FIXTURES_PURGE: ${{ vars.FIXTURES_PURGE }}
       # Media storage. Without these three a GitHub deploy falls back to the
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
@@ -316,6 +324,14 @@ jobs:
       ADMIN_USERNAME: ${{ vars.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
       ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL }}
+      # Mail and the nightly orphan scan (#102). GitHub passes only variables a job
+      # names. Without MAILER_DSN the chart uses the null transport (no email);
+      # without MAILER_EMAIL the orphan scan sends no alert.
+      MAILER_DSN: ${{ secrets.MAILER_DSN }}
+      MAILER_EMAIL: ${{ vars.MAILER_EMAIL }}
+      ORPHAN_SCAN: ${{ vars.ORPHAN_SCAN }}
+      ORPHAN_SCAN_SCHEDULE: ${{ vars.ORPHAN_SCAN_SCHEDULE }}
+      ORPHAN_SCAN_TIMEZONE: ${{ vars.ORPHAN_SCAN_TIMEZONE }}
       # Media storage. Without these three a GitHub deploy falls back to the
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
       # automatically; GitHub Actions does not, so each one must be mapped here.

@@ -39,7 +39,8 @@ silverback_api_components:
       cookie:
         samesite: '%env(JWT_COOKIE_SAMESITE)%'
     # The daily scan (#101) emails the site's own address when the orphans change.
-    # An empty MAILER_EMAIL means no email.
+    # An empty or unset MAILER_EMAIL means no email. `string:` matters: `default::`
+    # alone gives null, which the notifier rejects (api-components-bundle#365).
     orphaned_resources:
         notify:
-            recipients: '%env(default::MAILER_EMAIL)%'
+            recipients: '%env(string:default::MAILER_EMAIL)%'

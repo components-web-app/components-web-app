@@ -85,7 +85,9 @@ Create the name of the service account to use
 
 {{/*
 The php container's environment, shared by the API deployment and the orphan
-scan CronJob so the two can never drift apart.
+scan CronJob so the two can never drift apart. RESET_DATABASE is deliberately not
+here: the entrypoint drops the schema when it is "true", so only the API
+deployment sets it. The CronJob must never get it (#103).
 */}}
 {{- define "cwa.phpEnv" -}}
 {{- $fullName := include "cwa.fullname" . -}}
@@ -281,6 +283,4 @@ scan CronJob so the two can never drift apart.
     configMapKeyRef:
       name: {{ $fullName }}
       key: cache-url
-- name: RESET_DATABASE
-  value: {{ .Values.php.resetDatabase | quote }}
 {{- end }}

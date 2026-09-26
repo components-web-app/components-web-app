@@ -46,6 +46,10 @@ spec:
           imagePullPolicy: {{ .Values.php.image.pullPolicy }}
           env:
             {{- include "cwa.phpEnv" . | nindent 12 }}
+            # Not in cwa.phpEnv: the entrypoint drops the schema when this is
+            # "true", and the orphan scan CronJob must never do that (#103).
+            - name: RESET_DATABASE
+              value: {{ .Values.php.resetDatabase | quote }}
           ports:
             - name: http
               containerPort: 80
