@@ -128,7 +128,7 @@ run_test_phpunit() {
 }
 
 run_test_behat() {
-	export TRUSTED_HOSTS='^localhost|caddy(\.local)?|example\.com$'
+	export TRUSTED_HOSTS='^(?:localhost|caddy(?:\.local)?|example\.com)$'
   echo "run_behat function"
   cd ./api || return
   mkdir -p build/logs/behat/
