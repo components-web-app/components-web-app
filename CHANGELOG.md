@@ -16,9 +16,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - A daily 03:00 orphaned-resource scan on production that emails `MAILER_EMAIL` when orphans change. ([c31d28f](https://github.com/components-web-app/components-web-app/commit/c31d28f929bd78ee5670a72c511aeb42e2415eb3), [#101](https://github.com/components-web-app/components-web-app/issues/101))
 
 ### Upgrade notes
+- A deploy with `JWT_SECRET_KEY` set but no `JWT_PASSPHRASE` now fails with a clear message, instead of getting a random passphrase that can't decrypt the key. ([85d3f43](https://github.com/components-web-app/components-web-app/commit/85d3f43e2ec75af0b19b9a18a56010c6dd16eaa8))
 - **Run the new migration** for bundle 2.0.0-alpha.6's orphaned-resource report table, and update `@cwa/nuxt` to 2.0.0-alpha.3 at the same time. `clean-orphaned` no longer deletes anything. ([8bab085](https://github.com/components-web-app/components-web-app/commit/8bab085d597f165d950772faa878160146520525))
 
 ### Changed
+- `generate_jwt_keys` derives `JWT_PUBLIC_KEY` from the secret key when it's empty. ([85d3f43](https://github.com/components-web-app/components-web-app/commit/85d3f43e2ec75af0b19b9a18a56010c6dd16eaa8))
 - `api-components-bundle` 2.0.0-alpha.6 and `@cwa/nuxt` 2.0.0-alpha.3: an orphaned-resources admin page with bulk delete, and a scan that can email admins when the result changes. ([8bab085](https://github.com/components-web-app/components-web-app/commit/8bab085d597f165d950772faa878160146520525))
 
 ### Security
