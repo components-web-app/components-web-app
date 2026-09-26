@@ -251,3 +251,19 @@ nodeSelector:
 tolerations: []
 
 affinity: {}
+
+# Daily orphaned-resource scan (#101, templates/orphan-scan-cronjob.yaml). Off by
+# default; bin/devops/k8s.sh turns it on for production only, because staging and
+# canary can share production's database and would send the same alert again.
+cronjobs:
+  orphanScan:
+    enabled: false
+    schedule: "0 3 * * *"
+    # CronJob timeZone needs Kubernetes 1.27+. Without it, 03:00 is UTC.
+    timeZone: "Europe/London"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi

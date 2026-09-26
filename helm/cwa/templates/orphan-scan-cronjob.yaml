@@ -1,0 +1,67 @@
+{{- if .Values.cronjobs.orphanScan.enabled }}
+# Daily orphaned-resource scan (#101). `scan-orphaned` only reports: it stores the
+# report the admin's /_cwa/orphaned page reads, and emails MAILER_EMAIL when the
+# orphans have changed since the last alert. Deleting stays an admin decision.
+# Its pods get their own name label so the API Service never selects them.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cwa.fullname" . }}-orphan-scan
+  labels:
+    helm.sh/chart: {{ include "cwa.chart" . }}
+    app.kubernetes.io/name: {{ include "cwa.name" . }}-orphan-scan
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  schedule: {{ .Values.cronjobs.orphanScan.schedule | quote }}
+  {{- with .Values.cronjobs.orphanScan.timeZone }}
+  timeZone: {{ . | quote }}
+  {{- end }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "cwa.name" . }}-orphan-scan
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: OnFailure
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "cwa.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}-orphan-scan
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.php.image.pullPolicy }}
+              # Through the image's entrypoint, like the API: it writes the
+              # database certificates and waits for the database. Its migrate is a
+              # no-op once the API has migrated.
+              args: ["bin/console", "silverback:api-components:scan-orphaned"]
+              env:
+                {{- include "cwa.phpEnv" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.cronjobs.orphanScan.resources | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

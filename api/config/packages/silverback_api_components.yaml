@@ -38,3 +38,8 @@ silverback_api_components:
     mercure:
       cookie:
         samesite: '%env(JWT_COOKIE_SAMESITE)%'
+    # The daily scan (#101) emails the site's own address when the orphans change.
+    # An empty MAILER_EMAIL means no email.
+    orphaned_resources:
+        notify:
+            recipients: '%env(default::MAILER_EMAIL)%'

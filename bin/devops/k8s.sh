@@ -453,6 +453,13 @@ deploy() {
       ;;
   esac
 
+  # The daily orphan scan runs on production only (#101): staging and canary can
+  # share production's database, so their scans would send the same alert again.
+  case "$track" in
+    stable) ORPHAN_SCAN_DEFAULT="true" ;;
+    *) ORPHAN_SCAN_DEFAULT="false" ;;
+  esac
+
   cat >values.tmp.yaml <<EOF
 imagePullSecrets:
   - name: ${GITLAB_PULL_SECRET_NAME:-"~"}
@@ -576,6 +583,11 @@ autoscaling:
   maxReplicas: ${AUTOSCALE_MAX:-"1"}
   targetCPUUtilizationPercentage: ${AUTOSCALE_CPU_PERCENT:-"90"}
   targetMemoryUtilizationPercentage: ${AUTOSCALE_MEMORY_PERCENT:-"90"}
+cronjobs:
+  orphanScan:
+    enabled: ${ORPHAN_SCAN:-$ORPHAN_SCAN_DEFAULT}
+    schedule: "${ORPHAN_SCAN_SCHEDULE:-0 3 * * *}"
+    timeZone: "${ORPHAN_SCAN_TIMEZONE:-Europe/London}"
 EOF
 
   helm upgrade --install \
