@@ -231,6 +231,12 @@
     #   the rest        Auth-varying pages. They render per-user content or
     #                   redirect, so a shared cache entry is wrong even anonymous.
     #
+    # The kubelet's probes of the site config are excluded too. They exist to ask
+    # whether php answers, which a cached copy can't tell them, and the liveness
+    # probe restarts the pod on that answer. The exclusion is limited to that one
+    # cheap path, so a client faking the kube-probe User-Agent can't turn it into a
+    # way to make every API request skip the cache.
+    #
     # NOTE: everything between the backticks is CEL, not Caddyfile. It has no
     # comment syntax - a `#` line in there is a parse error that `frankenphp
     # adapt` will NOT catch, because Caddy treats the backtick string as opaque.
@@ -262,7 +268,11 @@
                 )
             ) &&
             !{http.request.header.Cookie}.matches("api_component=[^;]+") &&
-            {http.request.header.Authorization} == ""
+            {http.request.header.Authorization} == "" &&
+            !(
+                {path} == "/_api/_/site_config_parameters.jsonld" &&
+                {http.request.header.User-Agent}.startsWith("kube-probe/")
+            )
         ) &&
         (
             !method('BAN', 'PURGE') ||

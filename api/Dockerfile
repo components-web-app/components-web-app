@@ -15,11 +15,22 @@ COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 # fix; bin/test/souin-purge-isolation.sh must pass.
 # https://github.com/components-web-app/components-web-app/issues/84
 # https://github.com/darkweak/souin/issues/867 (fix: https://github.com/darkweak/souin/pull/868)
+#
+# Souin coalesces upstream fetches with singleflight, and v1.7.9 keeps a key's
+# call open until php returns. A request that never returns therefore costs the
+# key for the life of the process: every later request for it waits out the
+# backend timeout and 504s. On the readiness probe's URL that leaves the pod
+# unready and never restarted (#62, and cymru-kitchens for 35h on 2026-09-30).
+# The patch is darkweak/souin#850 (issue #849): a timed-out request forgets the
+# key, so the next one starts a fresh call. Remove it with the replace below once
+# a Souin release includes it.
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
+COPY --link frankenphp/souin/v1.7.9-singleflight-fix.patch /tmp/souin-singleflight-fix.patch
 RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
 	cp -r "$SOUIN_DIR" /tmp/souin && \
 	chmod -R u+w /tmp/souin && \
-	patch -d /tmp/souin -p1 --forward < /tmp/souin-purge-fix.patch
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-purge-fix.patch && \
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-singleflight-fix.patch
 
 RUN CGO_ENABLED=1 \
     XCADDY_SETCAP=1 \

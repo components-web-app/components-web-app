@@ -91,7 +91,7 @@ Known harmless duplicates: `nuxt` pulls its own `@nuxt/devtools` 3.x beside the 
 ### Bundle changes that constrain the template
 
 - **`user.email_links.default_origin` must be set** (bundle alpha.4, #316), or password-reset and verification emails are refused with a 400. The template sets it as `%app.email_link_default_origin%` in `services.php`: `EMAIL_LINK_DEFAULT_ORIGIN` if set, otherwise `https://%env(BROWSER_SERVER_NAME)%`. A site whose emails must link to several front ends adds `allowed_origins` by hand (an array node, not one env var).
-- **`GET /_api/_/health`** returns `200 no-store, private` but still passes through Souin. Exclude it from `@use_cache` before pointing a readiness probe at it (see #62 below).
+- **`GET /_api/_/health`** returns `200 no-store, private` but still passes through Souin. Exclude it from `@use_cache` before pointing a probe at it (see *php probes* below).
 - **Mercure 0.8 changed `HubInterface`** (adds `getProtocolVersion()`, `getCookieName()`; `getUrl()` moved to `RemoteHubInterface`). `App\Mercure\SkipAwareMercureHub` implements `RemoteHubInterface` and forwards them. **Any other hub decorator needs the same, or `cache:clear` dies with a fatal error.**
 - **Filters are QueryParameters (#89), not `#[ApiFilter]`** (bundle removed `OrSearchFilter`). See *API*.
 - **`debug:config api_platform exception_to_status`** lists only the bundle's four entries even though API Platform's defaults are also kept. Test error mapping with a request, not the config dump.
@@ -147,7 +147,7 @@ The first request to a page after a restart can exceed Souin's 10s backend timeo
 ### ⚠ Patched Souin build (#84)
 
 Souin v1.7.9 deletes purged tags' index entries with an **unanchored regex**, so purging a tag orphans every tag that contains it (every write to one component group or position orphaned all the others; routes where one path contains another). Orphaned entries are then unpurgeable for the full prod `s-maxage` (a year). Upstream: darkweak/souin#867, fix PR #868.
-- `api/frankenphp/souin/v1.7.9-purge-fix.patch` + the builder-stage `COPY`/`RUN` in `api/Dockerfile` + `--with github.com/darkweak/souin=/tmp/souin`. **Remove all three together** once a Souin release has the fix.
+- `api/frankenphp/souin/v1.7.9-purge-fix.patch` (and `v1.7.9-singleflight-fix.patch`, see *php probes*) + the builder-stage `COPY`/`RUN` in `api/Dockerfile` + `--with github.com/darkweak/souin=/tmp/souin`. **Remove all three together** once a Souin release has the fix.
 - `bin/test/souin-purge-isolation.sh` (in the unit-tests job on GitLab and GitHub) fails on the unpatched binary. Run it locally without an image build: `docker compose exec -T php sh -s < bin/test/souin-purge-isolation.sh`.
 - A site upgrading to the patched image whose API pod wasn't recreated needs one full flush.
 - Downstream copies must build the same Souin version (`frankenphp build-info | grep souin`), or the patch fails loudly.
@@ -183,12 +183,15 @@ The module renders cacheable pages with `Surrogate-Key: cwa-html, <every resourc
   - **A PDB whose selector matches nothing protects nothing and raises no error.** The PDB selector must equal the SSR labels (`name=cwa-pwa`) and not match the API (`name=cwa`); recheck when labels change.
   - Open: Spot VM preemptions are involuntary; neither the annotation nor the PDB applies.
 
-### ⚠ php readiness probe: `timeoutSeconds: 5` (#62)
+### ⚠ php probes and the Souin singleflight wedge (#62, #104)
 
-The probe path `/_api/_/site_config_parameters.jsonld` goes through Souin. Souin coalesces upstream fetches through `singleflight` keyed on the cache key; a caller that disconnects mid-fetch leaves the entry stuck, so every later request on that key waits out the 10s backend timeout and 504s. With the default 1s timeout, the first probe on a cold worker was cancelled and **the pod stayed `0/1` for its whole life** (three hours in production). Deleting the pod is the only recovery.
-- Keep `timeoutSeconds: 5` whatever else changes. It is the protection, not the delay.
+Souin v1.7.9 coalesces upstream fetches through `singleflight` keyed on the cache key, and a call that never returns used to hold its key for the life of the process: every later request on that key waited out the 10s backend timeout and 504'd. On the probe path (`/_api/_/site_config_parameters.jsonld`) that left the pod `0/1` for good: three hours in production (#62), then 35h on cymru-kitchens on 2026-09-30 (#104, after an OOMKill restart). Probing from inside the pod shows it: the probe's exact key (`Host: <pod IP>:80`) 504s while `Host: localhost` answers in milliseconds. Three layers now stop it:
+- **`v1.7.9-singleflight-fix.patch`** (darkweak/souin#850, only its `pkg/middleware/middleware.go` hunks) is applied after the purge patch (see *Patched Souin build*): a request whose context ends `Forget`s the key, so a stall costs one timeout, not the key. It protects visitor keys too. Remove it once a Souin release includes #850.
+- **`@use_cache` skips the kubelet on the probe path only** (`User-Agent` starting `kube-probe/`). A cached copy can't say whether php answers. Keep it limited to that cheap path, so a faked UA can't make other requests skip the cache.
+- **Liveness is the same `httpGet` as readiness** (`periodSeconds: 10`, `failureThreshold: 6`, `timeoutSeconds: 5`), not `tcpSocket`, which passed as long as Caddy listened. A pod whose php stops answering restarts after about a minute; readiness takes it out of service after 30s. The startup probe holds liveness off during migrations. Trade-off: a database outage now restarts the php pod too.
+- Keep readiness `timeoutSeconds: 5` whatever else changes (the 1s default can lose a cold worker's first request).
 - Readiness `initialDelaySeconds: 5` (Caddy serves at ~+6s; 30s was 24–33s of avoidable downtime per eviction). Startup probe `periodSeconds: 5`, `failureThreshold: 60` (300s boot budget for migrations and `ANALYZE`).
-- Upstream: darkweak/souin#849 (fix pending).
+- Open (#104): the API container OOMKills about every 16h on cymru-kitchens (1Gi). Measure whether the `otter` store or the workers grow before choosing a fix.
 - The PWA's `/_cwa/healthcheck` probe has no Souin in front, so an unset timeout there can only flap. `/_cwa/healthcheck` doesn't call the API; `/_cwa/readiness` does (503 when php is down).
 
 ### Scaling and sizing (#69)

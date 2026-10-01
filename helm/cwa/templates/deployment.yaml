@@ -67,12 +67,24 @@ spec:
               port: http
             failureThreshold: 60
             periodSeconds: 5
-          # is the container live and does not need restarting
+          # Is php still answering? A TCP check only proved Caddy was listening, so
+          # a pod whose php had stopped answering stayed alive, unready and out of
+          # service until someone restarted it by hand (35h on cymru-kitchens,
+          # 2026-09-30). This is the readiness request, which the Caddyfile keeps
+          # out of the cache for the kubelet, so it reaches php every time. 6 x 10s
+          # is a minute of failures before a restart: long enough to ride out a
+          # burst that queues behind the 4 workers, while readiness has already
+          # taken the pod out of service after 30s.
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /_api/_/site_config_parameters.jsonld
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 5
+              httpHeaders:
+              - name: Accept
+                value: application/ld+json,application/json
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
           # is the container ready for traffic, everything is going and ready?
           readinessProbe:
             httpGet:
@@ -89,22 +101,21 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
-            # Unset, this defaults to 1s, and a probe that gives up mid-flight is
-            # not merely a failed probe here. This path is cached (it matches
-            # @use_cache in the Caddyfile), and Souin coalesces upstream fetches
-            # through singleflight keyed on the cache key; a caller that
-            # disconnects before the shared fetch returns leaves that entry
-            # holding a WaitGroup nobody releases, so every later request for the
-            # same key - which means every subsequent probe - blocks until the 10s
-            # backend timeout and 504s. The pod then never becomes ready and never
-            # recovers. The first probe lands on a cold worker: exactly the race
-            # this needs slack for. Measured on staging, the very first request
-            # to this path, made the instant Caddy started, took 0.16s, so 5s
-            # leaves about 30x headroom. Keep this at 5 whatever the delay above.
-            # See components-web-app#62 for the incident that found it
-            # (a production pod stuck 0/1 for three hours after a node upgrade)
-            # and darkweak/souin#849, where a fix is pending for the underlying
-            # defect - a stalled call should not cost the key.
+            # Unset, this defaults to 1s, which a cold worker's first request can
+            # exceed. Measured on staging, the very first request to this path,
+            # made the instant Caddy started, took 0.16s, so 5s leaves about 30x
+            # headroom.
+            #
+            # A probe that gave up mid-flight used to cost the pod for good. Souin
+            # coalesced the cached path's fetches through singleflight, and an
+            # abandoned call held the key, so every later probe waited out the 10s
+            # backend timeout and 504'd, and the TCP liveness check never noticed
+            # (#62, a pod stuck 0/1 for three hours; cymru-kitchens for 35h on
+            # 2026-09-30). Three things now stop that: the Caddyfile keeps the
+            # kubelet's requests to this path out of the cache, the Souin build
+            # carries the darkweak/souin#850 fix so a timed-out call releases its
+            # key, and the liveness probe above restarts a pod whose php has
+            # stopped answering.
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.php.resources | nindent 12 }}
