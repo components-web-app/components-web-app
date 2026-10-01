@@ -231,6 +231,16 @@
     #   the rest        Auth-varying pages. They render per-user content or
     #                   redirect, so a shared cache entry is wrong even anonymous.
     #
+    # The HTML branch also caches only paths with no file extension (pages) or
+    # `.xml` (the sitemap, which the module tags for purging). Everything else
+    # there is a static file from Nuxt's public/, and Souin buffers a cacheable
+    # response's whole body in memory before deciding anything, including
+    # whether it's too big to store (`max_cacheable_body_bytes` is checked after
+    # buffering). One download of a 187 MB brochure.pdf took the API container
+    # from ~550 MB past its 1Gi limit, every time (#105). Streamed past the cache,
+    # a static file costs nothing. `{file.ext}` includes the dot (".pdf"), so the
+    # API branch compares against ".pdf"; `"pdf"` never matched.
+    #
     # The kubelet's probes of the site config are excluded too. They exist to ask
     # whether php answers, which a cached copy can't tell them, and the liveness
     # probe restarts the pod on that answer. The exclusion is limited to that one
@@ -250,10 +260,11 @@
                     {path}.startsWith("/_api") &&
                     !{path}.startsWith("/_api/logout") &&
                     !{path}.startsWith("/_api/me") &&
-                    {file.ext} != "pdf"
+                    {file.ext} != ".pdf"
                 ) ||
                 (
                     !{path}.startsWith("/_api") &&
+                    ({file.ext} == "" || {file.ext} == ".xml") &&
                     !{path}.startsWith("/.well-known/") &&
                     !{path}.startsWith("/_nuxt/") &&
                     !{path}.startsWith("/uploads/") &&
