@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- The API's liveness probe now checks php over HTTP instead of TCP, so a pod whose php stops answering is restarted after about a minute. That includes a database outage. Rebuild the API image to pick up the patched Souin, and recreate the API pod. ([9b7bca6](https://github.com/components-web-app/components-web-app/commit/9b7bca608d019231a9458ea2406a3a4e4d881208), [#104](https://github.com/components-web-app/components-web-app/issues/104))
+
+### Fixed
+- One stalled request no longer leaves the API pod unready for good. Souin is patched (darkweak/souin#850) so a timed-out call releases its cache key, and the kubelet's probes skip the cache. ([9b7bca6](https://github.com/components-web-app/components-web-app/commit/9b7bca608d019231a9458ea2406a3a4e4d881208), [#104](https://github.com/components-web-app/components-web-app/issues/104))
+
 ## [2.0.0-alpha.3](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.3) - 2026-09-26
 
 Since [v2.0.0-alpha.2](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.2).
