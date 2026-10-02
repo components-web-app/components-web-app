@@ -19,8 +19,12 @@ jobs:
     steps:
       - name: Compute CI variables
         id: vars
+        # The branch name comes from whoever opened the PR, so it reaches the
+        # script through the environment, never interpolated into it.
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          REF_SLUG=$(echo "${{ github.head_ref }}" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
+          REF_SLUG=$(echo "$HEAD_REF" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
           echo "ref_slug=$REF_SLUG" >> "$GITHUB_OUTPUT"
           echo "env_slug=review-${REF_SLUG}" >> "$GITHUB_OUTPUT"
 
@@ -38,6 +42,10 @@ jobs:
       RELEASE: ${{ needs.setup.outputs.env_slug }}
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - uses: azure/setup-kubectl@v4
         with:
           version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}

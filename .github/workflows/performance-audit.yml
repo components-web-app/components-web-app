@@ -59,6 +59,10 @@ jobs:
       PERFORMANCE_AUDIT_LHCI_VERSION: ${{ vars.PERFORMANCE_AUDIT_LHCI_VERSION }}
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - name: Work out the environment URL
         id: url
         env:

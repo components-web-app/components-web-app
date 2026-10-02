@@ -70,6 +70,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - uses: azure/setup-kubectl@v4
         with:
           version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}

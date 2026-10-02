@@ -105,7 +105,7 @@
       "exclude": [".gitlab-ci.yml"]
     },
     "gitlab": {
-      "exclude": [".github/"]
+      "exclude": [".github/", "bin/devops/github-export-vars.sh"]
     },
     "none": {
       "exclude": [".github/", ".gitlab-ci.yml", "bin/devops/"]

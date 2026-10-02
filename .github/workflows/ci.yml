@@ -24,8 +24,12 @@ jobs:
     steps:
       - name: Compute CI variables
         id: vars
+        # A branch name reaches the script through the environment, never
+        # interpolated into it.
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          REF_SLUG=$(echo "${{ github.ref_name }}" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
+          REF_SLUG=$(echo "$REF_NAME" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
           echo "ref_slug=$REF_SLUG" >> "$GITHUB_OUTPUT"
           echo "env_slug=review-${REF_SLUG}" >> "$GITHUB_OUTPUT"
 
@@ -36,6 +40,10 @@ jobs:
     if: vars.BUILD_DISABLED != 'true'
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -63,6 +71,10 @@ jobs:
     if: vars.BUILD_DISABLED != 'true'
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -95,6 +107,10 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - name: Run PHPUnit
         run: |
           source ./bin/devops/k8s.sh
@@ -136,6 +152,10 @@ jobs:
       POSTGRES_DB: test
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - name: Run Behat
         run: |
           source ./bin/devops/k8s.sh
@@ -209,6 +229,10 @@ jobs:
       WARM_CACHE_CONCURRENCY: ${{ vars.WARM_CACHE_CONCURRENCY }}
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - uses: azure/setup-kubectl@v4
         with:
           version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}
@@ -342,6 +366,10 @@ jobs:
       WARM_CACHE_CONCURRENCY: ${{ vars.WARM_CACHE_CONCURRENCY }}
     steps:
       - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
       - uses: azure/setup-kubectl@v4
         with:
           version: ${{ vars.KUBERNETES_VERSION || '1.31.0' }}
