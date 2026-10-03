@@ -149,6 +149,11 @@
 	#     CADDY_TRUSTED_PROXIES to close that.
 	#   - Otherwise: {client_ip}, the connecting address, or the address the
 	#     trusted ingress saw (see `servers` in the global block).
+	# CADDY_EDGE=true says Caddy faces the internet itself (compose.prod.yaml sets
+	# it): nothing sits in front but possibly Cloudflare, so a public client's
+	# X-Forwarded-For can only be invented. The second case is then off and such a
+	# client is counted by its own address, so made-up headers can't dodge the
+	# limit. Cloudflare is still recognised, by its address ranges.
 	# The three matchers are complements, so exactly one `vars` applies.
 	@client_via_cloudflare {
 		import cloudflare_client
@@ -159,6 +164,7 @@
 		}
 		not remote_ip {$CADDY_TRUSTED_PROXIES:private_ranges}
 		header X-Forwarded-For *
+		expression `"{$CADDY_EDGE:false}" != "true"`
 	}
 	@client_direct {
 		not {
@@ -167,6 +173,7 @@
 		not {
 			not remote_ip {$CADDY_TRUSTED_PROXIES:private_ranges}
 			header X-Forwarded-For *
+			expression `"{$CADDY_EDGE:false}" != "true"`
 		}
 	}
 	vars @client_via_cloudflare cwa_client_ip {http.request.header.CF-Connecting-IP}

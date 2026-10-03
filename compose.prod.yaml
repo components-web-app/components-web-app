@@ -20,6 +20,10 @@ services:
       JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE}
       # The public host, for IRIs generated during SSR and for links in user emails.
       BROWSER_SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the site's domain}
+      # Caddy faces the internet here, so a public client's X-Forwarded-For is
+      # never believed for the rate limit (#106). Set it to false only if another
+      # proxy than Cloudflare sits in front, and trust it with CADDY_TRUSTED_PROXIES.
+      CADDY_EDGE: ${CADDY_EDGE:-true}
     networks:
       default:
         # The app container reaches php by this name. php.local:80 is in Caddy's
