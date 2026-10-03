@@ -1,0 +1,98 @@
+--- a/pkg/surrogate/providers/cloudflare.go
++++ b/pkg/surrogate/providers/cloudflare.go
+@@ -6,6 +6,7 @@
+ 	"io"
+ 	"net/http"
+ 	"strings"
++	"time"
+ 
+ 	"github.com/darkweak/souin/configurationtypes"
+ )
+@@ -56,7 +57,11 @@
+ 	}
+ }
+ 
+-func processBatches(arr []string, req *http.Request) {
++// purgeClient bounds each purge request, so a hung connection to Cloudflare
++// can't leave the purge goroutine running for the life of the process.
++var purgeClient = &http.Client{Timeout: 30 * time.Second}
++
++func processBatches(arr []string, newRequest func([]byte) (*http.Request, error), logger interface{ Errorf(string, ...interface{}) }) {
+ 	const maxPerBatch = 30
+ 	for i := 0; i < len(arr); i += maxPerBatch {
+ 		j := i + maxPerBatch
+@@ -65,28 +70,61 @@
+ 		}
+ 
+ 		body, _ := json.Marshal(map[string]interface{}{"tags": arr[i:j]})
+-		req.Body = io.NopCloser(bytes.NewBuffer(body))
+-		_, _ = new(http.Client).Do(req)
++		req, err := newRequest(body)
++		if err != nil {
++			logger.Errorf("Cloudflare purge of tags %v not sent: %v", arr[i:j], err)
++			continue
++		}
++		res, err := purgeClient.Do(req)
++		if err != nil {
++			logger.Errorf("Cloudflare purge of tags %v failed: %v", arr[i:j], err)
++			continue
++		}
++		b, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
++		_ = res.Body.Close()
++		if res.StatusCode != http.StatusOK {
++			logger.Errorf("Cloudflare purge of tags %v failed with status %d: %s", arr[i:j], res.StatusCode, b)
++		}
+ 	}
+ }
+ 
+ // Purge purges the urls associated to the tags
+ func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
+ 	keys, headers := c.baseStorage.Purge(header)
+-	req, err := http.NewRequest(
+-		http.MethodPost,
+-		"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge",
+-		nil,
+-	)
+-	if err == nil {
+-		req.Header.Set("X-Auth-Email", c.email)
+-		req.Header.Set("X-Auth-Key", c.providerAPIKey)
++	tags := []string{}
++	for _, h := range headers {
++		if h != "" {
++			tags = append(tags, h)
++		}
++	}
++	if len(tags) == 0 {
++		return keys, headers
++	}
++
++	newRequest := func(body []byte) (*http.Request, error) {
++		req, err := http.NewRequest(
++			http.MethodPost,
++			"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge_cache",
++			bytes.NewReader(body),
++		)
++		if err != nil {
++			return nil, err
++		}
++		// No email means api_key holds a scoped API token (Zone > Cache Purge),
++		// which Cloudflare only accepts as a bearer token. With an email it is
++		// the Global API Key, sent as before.
++		if c.email == "" {
++			req.Header.Set("Authorization", "Bearer "+c.providerAPIKey)
++		} else {
++			req.Header.Set("X-Auth-Email", c.email)
++			req.Header.Set("X-Auth-Key", c.providerAPIKey)
++		}
+ 		req.Header.Set("Content-Type", "application/json")
+ 
+-		go func() {
+-			processBatches(headers, req)
+-		}()
++		return req, nil
+ 	}
+ 
++	go processBatches(tags, newRequest, c.logger)
++
+ 	return keys, headers
+ }

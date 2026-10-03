@@ -166,6 +166,9 @@ Souin v1.7.9 deletes purged tags' index entries with an **unanchored regex**, so
 - `bin/test/souin-purge-isolation.sh` (in the unit-tests job on GitLab and GitHub) fails on the unpatched binary. Run it locally without an image build: `docker compose exec -T php sh -s < bin/test/souin-purge-isolation.sh`.
 - A site upgrading to the patched image whose API pod wasn't recreated needs one full flush.
 - Downstream copies must build the same Souin version (`frankenphp build-info | grep souin`), or the patch fails loudly.
+- **Third patch: `v1.7.9-cloudflare-purge.patch` (#108).** Souin's Cloudflare purge never worked: it POSTs to `/zones/<id>/purge` (not `/purge_cache`), sends only Global API Key headers, and discards the result in a goroutine, so it fails silently with any credential. The patch fixes the endpoint, sends `api_key` as `Authorization: Bearer` when `email` is empty (a scoped Zone → Cache Purge token), puts a 30s timeout on each request and logs any failure. Only active with `provider cloudflare` in `CADDY_CACHE_CDN_CONFIG`; setting that variable replaces the whole default, so repeat `strategy hard` in it.
+- **Only tag purges reach Cloudflare** (writes via `SouinPurger`, and `purge-rendered-html`). `/flush` ("Purge all cached data", `purge-http-cache`, every fixture load) doesn't, so those also need a Purge Everything in Cloudflare. `dynamic` in the `cdn` block is never read in v1.7.9.
+- **`Cache-Tag` comes from the Caddyfile, not Souin:** Souin never puts it on a response, hit or miss. A `header { >Cache-Tag {http.response.header.Surrogate-Key} }` block after `cache` copies it, so Cloudflare can purge by tag. Don't remove it if edge caching is in use.
 
 ### Caddy build pins
 

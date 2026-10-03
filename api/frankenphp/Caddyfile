@@ -412,6 +412,19 @@
 
     cache @use_cache
 
+    # Cloudflare purges by Cache-Tag, but Souin never puts that header on a
+    # response, a hit or a miss (it stores the tags in a goroutine after the
+    # response is written). Without it Cloudflare would cache pages untagged, and
+    # no tag purge could ever remove them (#108). Copied from Surrogate-Key on
+    # every response that has one, including Souin hits. Cloudflare strips it
+    # before visitors, and it costs nothing when Cloudflare isn't in front.
+    header {
+        >Cache-Tag {http.response.header.Surrogate-Key}
+        match {
+            header Surrogate-Key *
+        }
+    }
+
     # Per-visitor rate limit on the requests that cost something (#106): cache
     # misses, and everything the cache doesn't store. It runs inside the cache
     # (`order rate_limit after cache` in the global block), so hits are free and

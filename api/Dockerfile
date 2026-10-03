@@ -24,13 +24,22 @@ COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 # The patch is darkweak/souin#850 (issue #849): a timed-out request forgets the
 # key, so the next one starts a fresh call. Remove it with the replace below once
 # a Souin release includes it.
+#
+# Souin's Cloudflare purge has never worked: it POSTs to /zones/<id>/purge, not
+# /purge_cache, sends only Global API Key headers, and throws the result away in
+# a goroutine, so it fails silently with any credential (#108). The patch fixes
+# the endpoint, sends api_key as a bearer token when no email is set (a scoped
+# Zone > Cache Purge token), bounds each request with a timeout and logs any
+# failure. It only runs when CADDY_CACHE_CDN_CONFIG sets `provider cloudflare`.
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
 COPY --link frankenphp/souin/v1.7.9-singleflight-fix.patch /tmp/souin-singleflight-fix.patch
+COPY --link frankenphp/souin/v1.7.9-cloudflare-purge.patch /tmp/souin-cloudflare-purge.patch
 RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
 	cp -r "$SOUIN_DIR" /tmp/souin && \
 	chmod -R u+w /tmp/souin && \
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-purge-fix.patch && \
-	patch -d /tmp/souin -p1 --forward < /tmp/souin-singleflight-fix.patch
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-singleflight-fix.patch && \
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-cloudflare-purge.patch
 
 # The template's own Caddy handler: keeps only the allowlisted query parameters on
 # pages (`query_allowlist` in the Caddyfile, #106).
