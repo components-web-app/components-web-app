@@ -48,6 +48,36 @@
 	frankenphp {
 		{$FRANKENPHP_CONFIG}
 	}
+
+    # The real client IP, for the rate limit below (#106). Caddy believes
+    # X-Forwarded-For only from a trusted proxy (the ingress, on private
+    # addresses), and reads it right to left, so a client can't put a fake
+    # address in front of the one the ingress appended. ingress-nginx overwrites
+    # the header by default anyway. {client_ip} is then the address that
+    # connected to the edge: the visitor, or a Cloudflare server, which the site
+    # block resolves with CF-Connecting-IP. Without a proxy (compose),
+    # {client_ip} is simply the connecting address. A site behind another proxy
+    # with public addresses (a Google load balancer) adds its ranges to
+    # CADDY_TRUSTED_PROXIES. A site that sets `servers` options in
+    # CADDY_GLOBAL_CONFIG must merge them in here instead.
+    servers {
+        trusted_proxies static {$CADDY_TRUSTED_PROXIES:private_ranges}
+        trusted_proxies_strict
+        client_ip_headers X-Forwarded-For
+    }
+
+    # Inside the cache, so a cache hit is never counted or refused: only
+    # requests that reach php or Nuxt are (misses, and everything not cached).
+    order rate_limit after cache
+}
+
+# Addresses Cloudflare connects from (https://www.cloudflare.com/ips/, last
+# checked 2026-10-02). CF-Connecting-IP is believed only from these, and from
+# nowhere else: anyone can send that header. Set CLOUDFLARE_IP_RANGES to update
+# the list without a release.
+(cloudflare_client) {
+    client_ip {$CLOUDFLARE_IP_RANGES:173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32}
+    header CF-Connecting-IP *
 }
 
 {$SERVER_NAME:localhost} {
@@ -108,15 +138,52 @@
 	vars @cache_host_internal cwa_cache_host {$BROWSER_SERVER_NAME}
 	vars @cache_host_request cwa_cache_host {http.request.host}
 
+	# The visitor, as the rate limit counts them (#106). Never a proxy's address:
+	# behind a proxy every visitor connects from the proxy, so counting by its
+	# address would throttle the proxy itself and take the whole site down.
+	#   - Through Cloudflare (detected from its address ranges): CF-Connecting-IP.
+	#   - Through any other proxy we don't trust (a public address that sends
+	#     X-Forwarded-For, e.g. another CDN or a cloud load balancer): that address
+	#     plus the header, so each visitor still counts separately. A client can
+	#     dodge the limit this way by inventing headers; trust the proxy with
+	#     CADDY_TRUSTED_PROXIES to close that.
+	#   - Otherwise: {client_ip}, the connecting address, or the address the
+	#     trusted ingress saw (see `servers` in the global block).
+	# The three matchers are complements, so exactly one `vars` applies.
+	@client_via_cloudflare {
+		import cloudflare_client
+	}
+	@client_via_unknown_proxy {
+		not {
+			import cloudflare_client
+		}
+		not remote_ip {$CADDY_TRUSTED_PROXIES:private_ranges}
+		header X-Forwarded-For *
+	}
+	@client_direct {
+		not {
+			import cloudflare_client
+		}
+		not {
+			not remote_ip {$CADDY_TRUSTED_PROXIES:private_ranges}
+			header X-Forwarded-For *
+		}
+	}
+	vars @client_via_cloudflare cwa_client_ip {http.request.header.CF-Connecting-IP}
+	vars @client_via_unknown_proxy cwa_client_ip "{client_ip} {http.request.header.X-Forwarded-For}"
+	vars @client_direct cwa_client_ip {client_ip}
+
 	# Drop ad and campaign tracking parameters before the cache sees the request,
 	# so ?utm_source=... is served the page's normal entry instead of rendering and
 	# storing a copy for every value. The query is in the cache key, and a shared
 	# link or an ad click would otherwise always miss. They are dropped for /_api
 	# too, because the module passes the page query on to collection fetches.
+	# Pages also go through the allowlist below, which drops these anyway.
 	#
 	# Only the server loses them. Analytics scripts read them from the browser's
 	# address bar, which still has them. Neither Nuxt nor php uses them, so a
-	# project that does need one server-side must remove it from this list.
+	# project that does need one server-side must remove it from this list (and,
+	# for pages, add it to CACHE_QUERY_ALLOWLIST).
 	# `uri` runs before `cache` in the handler order, and the key's
 	# {http.request.uri.query} reads the rewritten query.
 	#
@@ -159,6 +226,51 @@
 		-mc_cid
 		-mc_eid
 	}
+
+	# Pages keep only the query parameters they read, so /?x=1, /?x=2, ... are all
+	# served the page's cached entry instead of each rendering it again (#106).
+	# Every new query string used to be a cache miss costing a server-side render,
+	# so one client could get past the cache entirely. Neither Souin nor Nuxt sees
+	# the dropped parameters; the browser's address bar keeps them.
+	#
+	# CACHE_QUERY_ALLOWLIST is a space-separated list of names. A name also keeps
+	# its bracketed forms (`order` keeps `order[title]`). The default is what the
+	# module's pages read: `page`, `search` and `order[...]` for collections, and
+	# `cwa_force`. A site whose own pages read another parameter must add it, or
+	# its pages will never see it. `*` turns the allowlist off. No wildcards.
+	#
+	# `query_allowlist` is this template's own handler (api/frankenphp/caddy/
+	# queryallowlist), because Caddy can only delete parameters it is told the
+	# names of. It removes whole pairs and leaves the rest byte for byte, unlike
+	# `uri query`, and runs straight after `uri`, before the cache.
+	#
+	# Only for pages that can be cached: the same exclusions as the HTML branch of
+	# @use_cache below (keep the two in sync), plus Nuxt internals (/__*). Auth
+	# pages read their own parameters (?redirect=, email tokens), and a signed-in
+	# request is never cached, so neither is touched. /_api keeps every parameter:
+	# each resource declares its own `parameters:` and collections take the page
+	# query, so an allowlist there would silently drop filters. The rate limit
+	# protects /_api instead.
+	@page_query expression `
+		{http.request.uri.query} != "" &&
+		{file.ext} == "" &&
+		!{path}.startsWith("/_api") &&
+		!{path}.startsWith("/__") &&
+		!{path}.startsWith("/.well-known/") &&
+		!{path}.startsWith("/_nuxt/") &&
+		!{path}.startsWith("/uploads/") &&
+		!{path}.startsWith("/bundles/") &&
+		!{path}.startsWith("/_cwa/") &&
+		!{path}.startsWith("/user-area") &&
+		!{path}.startsWith("/login") &&
+		!{path}.startsWith("/forgot-password") &&
+		!{path}.startsWith("/reset-password") &&
+		!{path}.startsWith("/verify-email") &&
+		!{path}.startsWith("/confirm-new-email") &&
+		!{http.request.header.Cookie}.matches("api_component=[^;]+") &&
+		{http.request.header.Authorization} == ""
+	`
+	query_allowlist @page_query {$CACHE_QUERY_ALLOWLIST:page search order cwa_force}
 
 	encode {
 		zstd
@@ -292,6 +404,39 @@
     `
 
     cache @use_cache
+
+    # Per-visitor rate limit on the requests that cost something (#106): cache
+    # misses, and everything the cache doesn't store. It runs inside the cache
+    # (`order rate_limit after cache` in the global block), so hits are free and
+    # unlimited. Over the limit, the client gets a 429 with Retry-After.
+    #
+    # Counted per {http.vars.cwa_client_ip}, the visitor's real address. Private
+    # addresses are exempt: server-side rendering, the page-cache warm and the
+    # kubelet's probes all reach php from inside the cluster or compose network,
+    # and one SSR pod makes the API calls of every visitor it renders for. A
+    # visitor can't fake one (see `servers` in the global block).
+    #
+    # /_nuxt/ (hashed static assets) and /.well-known/ (the Mercure stream) are
+    # never limited. The default is deliberately generous, 3000 a minute (50 a
+    # second, sustained, from one visitor): a signed-in editor's requests are
+    # never cached, opening one admin page makes dozens of API calls, an office
+    # or mobile network puts many visitors behind one address, and the deploy's
+    # cache warm renders every page from one CI runner (3 at a time, a few
+    # hundred milliseconds each, so 10-30 a second). It still stops a single
+    # client from sending misses as fast as it can. Sliding window, so a burst of
+    # the whole amount is allowed. RATE_LIMIT_ENABLED=false turns it off.
+    @rate_limited {
+        expression `"{$RATE_LIMIT_ENABLED:true}" == "true"`
+        not client_ip private_ranges
+        not path /_nuxt/* /.well-known/*
+    }
+    rate_limit @rate_limited {
+        zone origin {
+            key {http.vars.cwa_client_ip}
+            events {$RATE_LIMIT_EVENTS:3000}
+            window {$RATE_LIMIT_WINDOW:1m}
+        }
+    }
 
     @internal {
         header_regexp internal host ([A-Za-z\-0-9]+(?:\.local)?(?:\:[0-9]{1,4})?)

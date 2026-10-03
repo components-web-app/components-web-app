@@ -35,3 +35,27 @@ data:
   gcloud-public-url: {{ .Values.php.gcloud.publicUrl | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
   cache-url: "http://localhost:2019/souin-api/souin"
+  # Origin protection (#106). Written only when set; the env entries in _helpers.tpl
+  # are optional, so a missing key leaves the variable unset and the Caddyfile's
+  # default applies.
+  {{- with .Values.php.caddy.queryAllowlist }}
+  cache-query-allowlist: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.trustedProxies }}
+  caddy-trusted-proxies: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.cloudflareIpRanges }}
+  cloudflare-ip-ranges: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.rateLimit.enabled }}
+  rate-limit-enabled: {{ . | toString | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.rateLimit.events }}
+  rate-limit-events: {{ . | toString | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.rateLimit.window }}
+  rate-limit-window: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.php.frankenphp.maxWaitTime }}
+  frankenphp-max-wait-time: {{ . | quote }}
+  {{- end }}

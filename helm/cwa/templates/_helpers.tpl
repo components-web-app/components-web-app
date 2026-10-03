@@ -283,4 +283,14 @@ deployment sets it. The CronJob must never get it (#103).
     configMapKeyRef:
       name: {{ $fullName }}
       key: cache-url
+{{- /* Origin protection (#106). Optional: the configmap has each key only when it
+is set, and an unset variable keeps the Caddyfile's default. */}}
+{{- range $env, $key := dict "CACHE_QUERY_ALLOWLIST" "cache-query-allowlist" "CADDY_TRUSTED_PROXIES" "caddy-trusted-proxies" "CLOUDFLARE_IP_RANGES" "cloudflare-ip-ranges" "RATE_LIMIT_ENABLED" "rate-limit-enabled" "RATE_LIMIT_EVENTS" "rate-limit-events" "RATE_LIMIT_WINDOW" "rate-limit-window" "FRANKENPHP_MAX_WAIT_TIME" "frankenphp-max-wait-time" }}
+- name: {{ $env }}
+  valueFrom:
+    configMapKeyRef:
+      name: {{ $fullName }}
+      key: {{ $key }}
+      optional: true
+{{- end }}
 {{- end }}

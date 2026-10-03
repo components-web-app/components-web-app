@@ -287,6 +287,27 @@ generate_alias_tls_yaml() {
   printf "%s" "$alias_yaml"
 }
 
+# Optional ingress-nginx rate limits (#106), as annotation lines for the ingress
+# block of values.tmp.yaml. Off unless INGRESS_RATE_LIMIT_RPS is set. Caddy's own
+# rate limit (RATE_LIMIT_*) is the main protection; this is a coarser outer one.
+# Unlike Caddy's, it counts every request, cache hits and /_nuxt assets included,
+# so it must be far higher than RATE_LIMIT_EVENTS (a page load is dozens of
+# requests). And it counts by the address that connected to the ingress: behind
+# Cloudflare that is a Cloudflare server, so don't turn it on there unless the
+# ingress controller itself is set up to read the real IP from Cloudflare.
+ingress_rate_limit_annotations() {
+  if [ -z "${INGRESS_RATE_LIMIT_RPS:-}" ]; then
+    return
+  fi
+  printf '    "nginx.ingress.kubernetes.io/limit-rps": "%s"\n' "$INGRESS_RATE_LIMIT_RPS"
+  if [ -n "${INGRESS_RATE_LIMIT_BURST_MULTIPLIER:-}" ]; then
+    printf '    "nginx.ingress.kubernetes.io/limit-burst-multiplier": "%s"\n' "$INGRESS_RATE_LIMIT_BURST_MULTIPLIER"
+  fi
+  if [ -n "${INGRESS_RATE_LIMIT_CONNECTIONS:-}" ]; then
+    printf '    "nginx.ingress.kubernetes.io/limit-connections": "%s"\n' "$INGRESS_RATE_LIMIT_CONNECTIONS"
+  fi
+}
+
 # The chart's `cwa.fullname` for a release, which names its main ingress: the release name
 # alone if it already contains the chart name, otherwise `<release>-cwa`, cut to 63
 # characters with any trailing '-' dropped. k8s.sh never sets fullnameOverride or
@@ -546,6 +567,17 @@ php:
   caddy:
     cdnConfig: "${CADDY_CACHE_CDN_CONFIG_B64}"
     storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}"
+    # Origin protection (#106). Empty keeps the Caddyfile's default (the chart
+    # passes only the ones that are set), so no default is repeated here.
+    queryAllowlist: "${CACHE_QUERY_ALLOWLIST:-}"
+    trustedProxies: "${CADDY_TRUSTED_PROXIES:-}"
+    cloudflareIpRanges: "${CLOUDFLARE_IP_RANGES:-}"
+    rateLimit:
+      enabled: "${RATE_LIMIT_ENABLED:-}"
+      events: "${RATE_LIMIT_EVENTS:-}"
+      window: "${RATE_LIMIT_WINDOW:-}"
+  frankenphp:
+    maxWaitTime: "${FRANKENPHP_MAX_WAIT_TIME:-}"
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -567,6 +599,7 @@ ingress:
     "nginx.ingress.kubernetes.io/proxy-max-temp-file-size": "1024m"
     "nginx.ingress.kubernetes.io/from-to-www-redirect": "${KUBE_INGRESS_WWW_REDIRECT:-false}"
     "nginx.ingress.kubernetes.io/server-alias": "${KUBE_INGRESS_ALIAS_DOMAINS}"
+$(ingress_rate_limit_annotations)
   hosts:
     - host: ${DOMAIN:-"~"}
       paths:

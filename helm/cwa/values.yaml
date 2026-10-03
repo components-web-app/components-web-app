@@ -34,6 +34,24 @@ php:
     globalConfig: ${CADDY_GLOBAL_CONFIG:-""} # e.g. "auto_https off" "debug"
     cdnConfig: ${CADDY_CACHE_CDN_CONFIG_B64}
     storageConfig: ${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}
+    # Origin protection (#106). Each is passed to the php container only when set,
+    # so an empty value keeps the default written in api/frankenphp/Caddyfile:
+    # Caddy's {$VAR:default} uses the default only for an unset variable, and an
+    # empty one would replace it. Quote every value ("false", "600").
+    # CACHE_QUERY_ALLOWLIST: space-separated query parameters pages keep.
+    queryAllowlist: ""
+    # CADDY_TRUSTED_PROXIES: ranges whose X-Forwarded-For is believed.
+    trustedProxies: ""
+    # CLOUDFLARE_IP_RANGES: ranges whose CF-Connecting-IP is believed.
+    cloudflareIpRanges: ""
+    rateLimit:
+      # RATE_LIMIT_ENABLED, RATE_LIMIT_EVENTS, RATE_LIMIT_WINDOW.
+      enabled: ""
+      events: ""
+      window: ""
+  frankenphp:
+    # FRANKENPHP_MAX_WAIT_TIME (api/frankenphp/worker.Caddyfile). Empty keeps the default.
+    maxWaitTime: ""
   apiSecretToken: ~
   mailer:
     dsn: ${MAILER_DSN:-"~"}

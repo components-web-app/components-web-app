@@ -32,6 +32,10 @@ RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-purge-fix.patch && \
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-singleflight-fix.patch
 
+# The template's own Caddy handler: keeps only the allowlisted query parameters on
+# pages (`query_allowlist` in the Caddyfile, #106).
+COPY --link frankenphp/caddy/queryallowlist /tmp/queryallowlist
+
 RUN CGO_ENABLED=1 \
     XCADDY_SETCAP=1 \
     XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
@@ -44,7 +48,7 @@ RUN CGO_ENABLED=1 \
 	# Pinned: mercure/caddy v1.0.0 declares `go 1.27`, but dunglas/frankenphp:builder
 	# (v1.12.7) ships Go 1.26.8 with GOTOOLCHAIN=local, so the toolchain will not
 	# self-upgrade and the build dies with `module requires go >= 1.27`. v0.24.2 is
-	# the last release declaring go 1.26. Of the eight plugins below it is the only
+	# the last release declaring go 1.26. Of the plugins below it is the only
 	# one above 1.26, so nothing else needs a pin. Unpin once the builder ships a
 	# Go 1.27 toolchain (expected in frankenphp v1.12.8).
 	--with github.com/dunglas/mercure/caddy@v0.24.2 \
@@ -53,7 +57,10 @@ RUN CGO_ENABLED=1 \
 	--with github.com/darkweak/souin=/tmp/souin \
 	--with github.com/darkweak/storages/otter/caddy \
 	--with github.com/darkweak/storages/badger/caddy \
-	--with github.com/darkweak/storages/nuts/caddy
+	--with github.com/darkweak/storages/nuts/caddy \
+	# Per-visitor rate limit on cache misses (`rate_limit` in the Caddyfile, #106).
+	--with github.com/mholt/caddy-ratelimit \
+	--with github.com/components-web-app/components-web-app/api/frankenphp/caddy/queryallowlist=/tmp/queryallowlist
 	# --with github.com/darkweak/storages/go-redis/caddy \
 
 FROM dunglas/frankenphp:latest AS frankenphp_upstream

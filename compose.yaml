@@ -22,6 +22,17 @@ services:
       MERCURE_URL: ${CADDY_MERCURE_URL:-http://php.local/.well-known/mercure}
       MERCURE_PUBLIC_URL: ${CADDY_MERCURE_PUBLIC_URL:-https://${SERVER_NAME:-localhost}/.well-known/mercure}
       MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
+      # Origin protection (#106): passed through only when set in the shell or
+      # .env, so the defaults in api/frankenphp/Caddyfile and worker.Caddyfile
+      # apply otherwise. Don't give them a `${VAR:-}` fallback: Caddy treats an
+      # empty variable as a value, not as unset.
+      CACHE_QUERY_ALLOWLIST:
+      RATE_LIMIT_ENABLED:
+      RATE_LIMIT_EVENTS:
+      RATE_LIMIT_WINDOW:
+      CADDY_TRUSTED_PROXIES:
+      CLOUDFLARE_IP_RANGES:
+      FRANKENPHP_MAX_WAIT_TIME:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
