@@ -15,6 +15,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - A large file in Nuxt's `public/` (e.g. a PDF brochure) no longer runs the API container out of memory when someone downloads it. Only pages and the sitemap go through the page cache now, and PDFs under `/_api` are really excluded. ([7f84445](https://github.com/components-web-app/components-web-app/commit/7f84445927f3ff128cc5f2928a22f2a9d9cdd18e), [#105](https://github.com/components-web-app/components-web-app/issues/105))
 - One stalled request no longer leaves the API pod unready for good. Souin is patched (darkweak/souin#850) so a timed-out call releases its cache key, and the kubelet's probes skip the cache. ([9b7bca6](https://github.com/components-web-app/components-web-app/commit/9b7bca608d019231a9458ea2406a3a4e4d881208), [#104](https://github.com/components-web-app/components-web-app/issues/104))
 
+### Security
+- `api/.env`'s `TRUSTED_PROXIES` default trusted `172.0.0.0/8`, which includes public addresses; it's now the private `172.16.0.0/12`. No deployment used the default (compose and the chart set their own). Copy the fix to any project-specific `.env.local`. ([b5aa360](https://github.com/components-web-app/components-web-app/commit/b5aa360393fe77f0d2dbfd3ca33fa44bf7fe069b), [#107](https://github.com/components-web-app/components-web-app/issues/107))
+
 ## [2.0.0-alpha.3](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.3) - 2026-09-26
 
 Since [v2.0.0-alpha.2](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.2).
