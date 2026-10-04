@@ -21,7 +21,7 @@ services:
     # through the directory mount above. Keep the two in sync.
     command: ["frankenphp", "run", "--config", "/app/frankenphp/Caddyfile", "--watch"]
     environment:
-      MERCURE_EXTRA_DIRECTIVES: demo # - CHECK WHETHER WE STILL NEED THIS PATH ARG (/srv/mercure-assets/)
+      MERCURE_EXTRA_DIRECTIVES: debugger # Mercure 1.0's debugging UI (replaces `demo`, removed in 1.0). Dev only.
       # See https://xdebug.org/docs/all_settings#mode
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
       # CADDY_GLOBAL_CONFIG: "local_certs"

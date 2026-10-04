@@ -172,7 +172,8 @@ Souin v1.7.9 deletes purged tags' index entries with an **unanchored regex**, so
 
 ### Caddy build pins
 
-- `--with github.com/dunglas/mercure/caddy@v0.24.2` is pinned: `mercure/caddy@v1.0.0` declares `go 1.27`, but `dunglas/frankenphp:builder` ships Go 1.26 with `GOTOOLCHAIN=local`. **Unpinning checklist (#67), all together:** confirm the builder ships Go 1.27+ (`docker run --rm --entrypoint sh dunglas/frankenphp:builder -c 'go version'`); check the Caddyfile's mercure directives (`transport`, `publisher_jwt`, `subscriber_jwt`, `anonymous`, `subscriptions`, `cors_origins`) against Mercure 1.0; unpin or pin a tested `v1.x`.
+- **Nothing is pinned** (Mercure unpinned in #67, once `dunglas/frankenphp:builder` 1.13.0 shipped Go 1.27). The plugins follow their latest releases, which follow the builder's FrankenPHP: **a plugin can't be pinned below a version FrankenPHP itself requires.** Pinning `mercure/caddy@v0.24.2` under FrankenPHP 1.13 (which requires Mercure 1.0.3) made Go downgrade `frankenphp/caddy` to 1.12.7 and the build failed with `undefined: mercure.WithPublisherJWT`. If a plugin release needs a newer Go than the builder has (`requires go >= 1.27 (running go 1.26.8; GOTOOLCHAIN=local)`; Vulcain 1.4.4 did on 2026-10-02), check for a newer builder image before pinning anything.
+- **Mercure 1.0 rejects unknown directives** (`unknown mercure directive`) and removed `demo` and `ui`: use `debugger` (dev's `MERCURE_EXTRA_DIRECTIVES`) or `playground` (insecure, creates an all-access token; never in production). The value after `transport bolt` is ignored, in 0.x and 1.0 alike: the database is always `/data/caddy/mercure.db` (`transport bolt { path … }` sets it).
 - Comment lines inside a `RUN` continuation are safe (BuildKit strips them).
 
 ## Page cache
