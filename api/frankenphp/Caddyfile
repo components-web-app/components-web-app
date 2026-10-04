@@ -304,6 +304,12 @@
 		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
 		# Subscriber JWT key
 		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+		# Mercure 1.0 accepts publisher_jwt/subscriber_jwt only in compatibility mode,
+		# and refuses to start without this line. The tokens symfony/mercure issues
+		# (the API's publisher and the subscriber cookie) have no iss, aud or at+jwt
+		# typ, which modern mode requires, so this keeps Mercure 0.x's validation.
+		# Moving to an `issuer` block needs those claims first (#67).
+		protocol_version_compatibility 8
 		# Allow anonymous subscribers (double-check that it's what you want)
 		anonymous
 		# Enable the subscription API (double-check that it's what you want)
