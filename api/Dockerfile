@@ -45,9 +45,13 @@ RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 
 # pages (`query_allowlist` in the Caddyfile, #106).
 COPY --link frankenphp/caddy/queryallowlist /tmp/queryallowlist
 
+# deprecated_topic,deprecated_claim: Mercure 1.0's compatibility mode
+# (`protocol_version_compatibility 8` in the Caddyfile) works only with these tags,
+# and the bundle and module still speak the 0.x protocol. Remove them with that
+# line once they speak 1.0 (api-components-bundle#377, #67).
 RUN CGO_ENABLED=1 \
     XCADDY_SETCAP=1 \
-    XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
+    XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx,deprecated_topic,deprecated_claim" \
     CGO_CFLAGS=$(php-config --includes) \
     CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)" \
     xcaddy build \
