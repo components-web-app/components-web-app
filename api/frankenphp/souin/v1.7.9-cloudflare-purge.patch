@@ -21,7 +21,7 @@
  	const maxPerBatch = 30
  	for i := 0; i < len(arr); i += maxPerBatch {
  		j := i + maxPerBatch
-@@ -65,28 +70,61 @@
+@@ -65,28 +70,88 @@
  		}
  
  		body, _ := json.Marshal(map[string]interface{}{"tags": arr[i:j]})
@@ -45,17 +45,69 @@
  	}
  }
  
- // Purge purges the urls associated to the tags
- func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
- 	keys, headers := c.baseStorage.Purge(header)
--	req, err := http.NewRequest(
--		http.MethodPost,
+-// Purge purges the urls associated to the tags
+-func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
+-	keys, headers := c.baseStorage.Purge(header)
++// newRequest builds a purge_cache request for the zone.
++func (c *CloudflareSurrogateStorage) newRequest(body []byte) (*http.Request, error) {
+ 	req, err := http.NewRequest(
+ 		http.MethodPost,
 -		"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge",
 -		nil,
--	)
++		"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge_cache",
++		bytes.NewReader(body),
+ 	)
 -	if err == nil {
--		req.Header.Set("X-Auth-Email", c.email)
--		req.Header.Set("X-Auth-Key", c.providerAPIKey)
++	if err != nil {
++		return nil, err
++	}
++	// No email means api_key holds a scoped API token (Zone > Cache Purge),
++	// which Cloudflare only accepts as a bearer token. With an email it is
++	// the Global API Key, sent as before.
++	if c.email == "" {
++		req.Header.Set("Authorization", "Bearer "+c.providerAPIKey)
++	} else {
+ 		req.Header.Set("X-Auth-Email", c.email)
+ 		req.Header.Set("X-Auth-Key", c.providerAPIKey)
+-		req.Header.Set("Content-Type", "application/json")
++	}
++	req.Header.Set("Content-Type", "application/json")
++
++	return req, nil
++}
++
++// Destruct empties the surrogate key storage. Souin calls it only for a full
++// flush (PURGE .../flush), which deletes every cached response, so purge
++// everything in the Cloudflare zone as well: otherwise the edge keeps serving
++// what the flush meant to remove.
++func (c *CloudflareSurrogateStorage) Destruct() error {
++	go func() {
++		req, err := c.newRequest([]byte(`{"purge_everything":true}`))
++		if err != nil {
++			c.logger.Errorf("Cloudflare purge everything not sent: %v", err)
++			return
++		}
++		res, err := purgeClient.Do(req)
++		if err != nil {
++			c.logger.Errorf("Cloudflare purge everything failed: %v", err)
++			return
++		}
++		b, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
++		_ = res.Body.Close()
++		if res.StatusCode != http.StatusOK {
++			c.logger.Errorf("Cloudflare purge everything failed with status %d: %s", res.StatusCode, b)
++		}
++	}()
++
++	return c.baseStorage.Destruct()
++}
+ 
+-		go func() {
+-			processBatches(headers, req)
+-		}()
++// Purge purges the urls associated to the tags
++func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
++	keys, headers := c.baseStorage.Purge(header)
 +	tags := []string{}
 +	for _, h := range headers {
 +		if h != "" {
@@ -64,35 +116,9 @@
 +	}
 +	if len(tags) == 0 {
 +		return keys, headers
-+	}
-+
-+	newRequest := func(body []byte) (*http.Request, error) {
-+		req, err := http.NewRequest(
-+			http.MethodPost,
-+			"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge_cache",
-+			bytes.NewReader(body),
-+		)
-+		if err != nil {
-+			return nil, err
-+		}
-+		// No email means api_key holds a scoped API token (Zone > Cache Purge),
-+		// which Cloudflare only accepts as a bearer token. With an email it is
-+		// the Global API Key, sent as before.
-+		if c.email == "" {
-+			req.Header.Set("Authorization", "Bearer "+c.providerAPIKey)
-+		} else {
-+			req.Header.Set("X-Auth-Email", c.email)
-+			req.Header.Set("X-Auth-Key", c.providerAPIKey)
-+		}
- 		req.Header.Set("Content-Type", "application/json")
- 
--		go func() {
--			processBatches(headers, req)
--		}()
-+		return req, nil
  	}
  
-+	go processBatches(tags, newRequest, c.logger)
++	go processBatches(tags, c.newRequest, c.logger)
 +
  	return keys, headers
  }

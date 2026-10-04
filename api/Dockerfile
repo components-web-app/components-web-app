@@ -30,7 +30,9 @@ COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 # a goroutine, so it fails silently with any credential (#108). The patch fixes
 # the endpoint, sends api_key as a bearer token when no email is set (a scoped
 # Zone > Cache Purge token), bounds each request with a timeout and logs any
-# failure. It only runs when CADDY_CACHE_CDN_CONFIG sets `provider cloudflare`.
+# failure. A full flush (PURGE .../flush) also purges everything in the zone, so
+# "Purge all cached data", fixture loads and deploys clear the edge too. It only
+# runs when CADDY_CACHE_CDN_CONFIG sets `provider cloudflare`.
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
 COPY --link frankenphp/souin/v1.7.9-singleflight-fix.patch /tmp/souin-singleflight-fix.patch
 COPY --link frankenphp/souin/v1.7.9-cloudflare-purge.patch /tmp/souin-cloudflare-purge.patch

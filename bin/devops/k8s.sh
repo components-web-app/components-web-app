@@ -757,9 +757,25 @@ purge_rendered_html() {
   echo "Waiting for the API rollout..."
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  echo "Purging rendered HTML..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
-    -- php bin/console silverback:api-components:purge-rendered-html
+  # With Cloudflare edge caching (#108) the edge also holds /_api responses, which
+  # the rendered-HTML tag doesn't cover, so a release that changed API output
+  # would leave them stale there for up to a year. A full flush reaches
+  # Cloudflare as a purge everything (Destruct in the Souin Cloudflare patch);
+  # the API pod restart has already emptied Souin, so it costs nothing at the
+  # origin. Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone
+  # too, as its tag purges already do: the edge just refills.
+  case "${CADDY_CACHE_CDN_CONFIG:-}" in
+    *"provider cloudflare"*)
+      echo "Cloudflare is configured: flushing the HTTP cache, which also purges everything at Cloudflare..."
+      kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+        -- php bin/console silverback:api-components:purge-http-cache
+      ;;
+    *)
+      echo "Purging rendered HTML..."
+      kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+        -- php bin/console silverback:api-components:purge-rendered-html
+      ;;
+  esac
 }
 
 # Refills the page cache that purge_rendered_html has just emptied (#80). Without
