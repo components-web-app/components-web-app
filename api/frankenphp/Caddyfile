@@ -242,9 +242,11 @@
 	#
 	# CACHE_QUERY_ALLOWLIST is a space-separated list of names. A name also keeps
 	# its bracketed forms (`order` keeps `order[title]`). The default is what the
-	# module's pages read: `page`, `search` and `order[...]` for collections, and
-	# `cwa_force`. A site whose own pages read another parameter must add it, or
-	# its pages will never see it. `*` turns the allowlist off. No wildcards.
+	# module's pages read: `page`, `search` and `order[...]` for collections. Not
+	# `cwa_force`: only the admin uses it, admins aren't filtered (see @page_query),
+	# and on an anonymous request it could loop the server render
+	# (cwa-nuxt-module#366). A site whose own pages read another parameter must add
+	# it, or its pages will never see it. `*` turns the allowlist off. No wildcards.
 	#
 	# `query_allowlist` is this template's own handler (api/frankenphp/caddy/
 	# queryallowlist), because Caddy can only delete parameters it is told the
@@ -277,7 +279,7 @@
 		!{http.request.header.Cookie}.matches("api_component=[^;]+") &&
 		{http.request.header.Authorization} == ""
 	`
-	query_allowlist @page_query {$CACHE_QUERY_ALLOWLIST:page search order cwa_force}
+	query_allowlist @page_query {$CACHE_QUERY_ALLOWLIST:page search order}
 
 	encode {
 		zstd
