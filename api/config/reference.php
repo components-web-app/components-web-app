@@ -995,9 +995,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             lifetime?: int|Param, // Default: 31536000
  *             path?: scalar|Param|null, // Default: "/"
  *             domain?: scalar|Param|null, // Default: null
- *             secure?: true|false|"auto"|Param, // Default: "auto"
+ *             secure?: true|false|"auto"|Param, // Defaults to the value of "framework.session.cookie_secure", or to "auto".
  *             httponly?: bool|Param, // Default: true
- *             samesite?: null|"lax"|"strict"|"none"|Param, // Default: "%env(JWT_COOKIE_SAMESITE)%"
+ *             samesite?: null|"lax"|"strict"|"none"|Param, // Defaults to the value of "framework.session.cookie_samesite", or to "lax".
  *             always_remember_me?: bool|Param, // Default: false
  *             remember_me_parameter?: scalar|Param|null, // Default: "_remember_me"
  *         },
@@ -2015,6 +2015,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             subject?: scalar|Param|null, // Default: "Orphaned resources changed on {{ website_name }}"
  *         },
  *     },
+ *     orphaned_files?: array{ // The orphaned files report: stored files under an uploadable field's filesystem and prefix that no uploadable row references.
+ *         minimum_age?: int|Param, // Seconds since a file was last modified before it can be reported. An upload is stored before its row is flushed, so a younger file may be one being uploaded now. // Default: 3600
+ *         excluded_paths?: list<scalar|Param|null>,
+ *     },
  * }
  * @psalm-type LiipImagineConfig = array{
  *     resolvers?: array<string, array{ // Default: []
@@ -2087,6 +2091,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         filter_action?: scalar|Param|null, // Default: "Liip\\ImagineBundle\\Controller\\ImagineController::filterAction"
  *         filter_runtime_action?: scalar|Param|null, // Default: "Liip\\ImagineBundle\\Controller\\ImagineController::filterRuntimeAction"
  *         redirect_response_code?: int|Param, // Default: 302
+ *         debug?: bool|Param|null, // Whether to report images that can not be generated as an error. Defaults to the kernel debug mode. When disabled, the default image is served instead, if one is configured. // Default: null
  *     },
  *     filter_sets?: array<string, array{ // Default: []
  *         quality?: scalar|Param|null,

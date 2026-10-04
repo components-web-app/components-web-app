@@ -300,17 +300,23 @@
 	mercure {
 		# Transport to use (default to Bolt)
 		transport bolt {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
-		# Publisher JWT key
-		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
-		# Subscriber JWT key
-		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
-		# Mercure 1.0 compatibility mode: the bundle and module still speak the 0.x
-		# protocol (`mercure` claim, URI Template topics, `topic=`), which 1.0 accepts
-		# only in this mode and only from a binary built with the deprecated_topic and
-		# deprecated_claim tags (api/Dockerfile). It also drops 1.0's token checks, so
-		# it is a bridge: switch to an `issuer` block and remove this line and the tags
-		# once they speak 1.0 (api-components-bundle#377, #67).
-		protocol_version_compatibility 8
+		# Mercure 1.0: tokens are OAuth 2.0 access tokens, verified per issuer. The
+		# identifier must equal the `iss` claim the API mints (`jwt.claims.iss` in
+		# api/config/packages/mercure.yaml); both default to `cwa` and both read
+		# MERCURE_JWT_ISSUER, so set it on php or nowhere.
+		issuer {$MERCURE_JWT_ISSUER:cwa} {
+			publisher {
+				jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
+			}
+			subscriber {
+				jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
+			}
+		}
+		# The tokens' `aud` is the public hub URL (mercure-bundle's default), but the
+		# API publishes through the internal one (http://php.local/... or the
+		# in-cluster service), and an unpinned hub expects the URL each request
+		# arrived on: every publish would be 401. Pin it to the public URL.
+		resource_identifier {$MERCURE_PUBLIC_URL:https://localhost/.well-known/mercure}
 		# Allow anonymous subscribers (double-check that it's what you want)
 		anonymous
 		# Enable the subscription API (double-check that it's what you want)

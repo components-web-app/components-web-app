@@ -1,12 +1,21 @@
 parameters:
   env(MERCURE_JWT_ALGORITHM): 'hmac.sha256'
+  # Must equal the Caddyfile's `issuer` (both read MERCURE_JWT_ISSUER, default `cwa`).
+  env(MERCURE_JWT_ISSUER): 'cwa'
 
 mercure:
   hubs:
     default:
+      # Mercure 1.0: OAuth 2.0 access tokens with authorization_details. `aud`
+      # defaults to public_url, which the Caddyfile pins as resource_identifier.
+      protocol_version: '1.0'
       url: '%env(MERCURE_URL)%'
       public_url: '%env(MERCURE_PUBLIC_URL)%'
       jwt:
         secret: '%env(MERCURE_JWT_SECRET)%'
         publish: '*'
         algorithm: '%env(MERCURE_JWT_ALGORITHM)%'
+        claims:
+          iss: '%env(MERCURE_JWT_ISSUER)%'
+          sub: 'cwa-api'
+          client_id: 'cwa-api'
