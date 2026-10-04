@@ -14,7 +14,7 @@ data:
   jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
   mercure-url: "http://{{ include "cwa.fullname" . }}/.well-known/mercure"
-  mercure-public-url: {{ .Values.mercure.publicUrl | default "http://127.0.0.1/.well-known/mercure" | quote }}
+  mercure-public-url: {{ required "mercure.publicUrl must be the hub's public https URL (Mercure 1.0's __Secure- cookie needs https)" .Values.mercure.publicUrl | quote }}
   mercure-extra-directives: {{ .Values.mercure.extraDirectives | quote }}
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}

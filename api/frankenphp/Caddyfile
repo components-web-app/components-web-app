@@ -179,6 +179,9 @@
 	vars @client_via_cloudflare cwa_client_ip {http.request.header.CF-Connecting-IP}
 	vars @client_via_unknown_proxy cwa_client_ip "{client_ip} {http.request.header.X-Forwarded-For}"
 	vars @client_direct cwa_client_ip {client_ip}
+	# The access log's client_ip is the address that reached Caddy, which behind
+	# Cloudflare is Cloudflare's. Record the visitor resolved above as well.
+	log_append visitor_ip {http.vars.cwa_client_ip}
 
 	# Drop ad and campaign tracking parameters before the cache sees the request,
 	# so ?utm_source=... is served the page's normal entry instead of rendering and
@@ -304,9 +307,10 @@
 		transport bolt {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
 		# Mercure 1.0: tokens are OAuth 2.0 access tokens, verified per issuer. The
 		# identifier must equal the `iss` claim the API mints (`jwt.claims.iss` in
-		# api/config/packages/mercure.yaml); both default to `cwa` and both read
-		# MERCURE_JWT_ISSUER, so set it on php or nowhere.
-		issuer {$MERCURE_JWT_ISSUER:cwa} {
+		# api/config/packages/mercure.yaml). Fixed on both sides: this hub trusts only
+		# its own API, so there is nothing to configure, and a variable could only
+		# reach one side (Caddy reads the process env, Symfony also reads .env).
+		issuer cwa {
 			publisher {
 				jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
 			}

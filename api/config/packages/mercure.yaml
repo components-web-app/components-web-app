@@ -1,7 +1,5 @@
 parameters:
   env(MERCURE_JWT_ALGORITHM): 'hmac.sha256'
-  # Must equal the Caddyfile's `issuer` (both read MERCURE_JWT_ISSUER, default `cwa`).
-  env(MERCURE_JWT_ISSUER): 'cwa'
 
 mercure:
   hubs:
@@ -16,6 +14,7 @@ mercure:
         publish: '*'
         algorithm: '%env(MERCURE_JWT_ALGORITHM)%'
         claims:
-          iss: '%env(MERCURE_JWT_ISSUER)%'
+          # Must equal the Caddyfile's `issuer` block.
+          iss: 'cwa'
           sub: 'cwa-api'
           client_id: 'cwa-api'
