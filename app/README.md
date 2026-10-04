@@ -1,42 +1,23 @@
-# Nuxt 3 Minimal Starter
+# Components Web App: front end
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+The Nuxt 4 application, built on the [CWA Nuxt module](https://github.com/components-web-app/cwa-nuxt-module) (`@cwa/nuxt`). Documentation: https://cwa.rocks ([module setup](https://cwa.rocks/nuxt-module/module-setup)).
 
-## Setup
+## Development
 
-Make sure to install the dependencies:
+The app runs in the `app` container of the repository's Docker stack, which installs dependencies with pnpm and starts the dev server itself:
 
-```bash
-# yarn
-yarn install
-
-# npm
-npm install
-
-# pnpm
-pnpm install
+```sh
+docker compose up -d        # from the repository root
 ```
 
-## Development Server
+Open https://localhost. Don't run `pnpm dev` on the host: only the container is reached through Caddy at `https://localhost`.
 
-Start the development server on `http://localhost:3000`
+**Don't run `pnpm install` on the host while the stack is running.** `node_modules` is shared with the container, and a host install breaks the running dev server. If it happens, run `docker compose restart app`. To change dependencies, use `pnpm up` / `pnpm remove` with `--lockfile-only` on the host, then `docker compose restart app`.
 
-```bash
-npm run dev
+## Production build
+
+```sh
+docker compose exec app pnpm run build    # also type-checks with vue-tsc
 ```
 
-## Production
-
-Build the application for production:
-
-```bash
-npm run build
-```
-
-Locally preview production build:
-
-```bash
-npm run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Deploys build the production image from `Dockerfile` (see https://cwa.rocks/deployment/docker and https://cwa.rocks/deployment/kubernetes).

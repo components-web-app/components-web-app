@@ -1,6 +1,5 @@
-# Deploying to a Kubernetes Cluster
+# CWA Helm chart
 
-API Platform comes with native integration with [Kubernetes](https://kubernetes.io/) and the [Helm](https://helm.sh/)
-package manager.
+Deploys the API (FrankenPHP with Souin and Mercure) and the Nuxt front end to Kubernetes. The template's CI deploys it with `bin/devops/k8s.sh`, which sets the values (`deploy` in that script).
 
-[Learn how to deploy in the dedicated documentation entry](https://api-platform.com/docs/deployment/kubernetes/).
+See https://cwa.rocks/deployment/kubernetes for the variables, sizing and what each deploy step does.

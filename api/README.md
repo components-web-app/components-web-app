@@ -1,15 +1,19 @@
-# Components Web APP
+# Components Web App: API
 
-## API Components Bundle
-### [Documentation](https://docs.api.cwa.rocks/)
-### [GitHub](https://github.com/components-web-app/api-components-bundle)
+The Symfony and API Platform application behind the CWA template, served by FrankenPHP with the Souin HTTP cache and a Mercure hub (`frankenphp/Caddyfile`). It runs the [API Components Bundle](https://github.com/components-web-app/api-components-bundle).
 
-## CWA Nuxt Module
-### [Documentation](https://docs.nuxt-module.cwa.rocks/)
-### [GitHub](https://github.com/components-web-app/cwa-nuxt-module)
+- Documentation: https://cwa.rocks (the API section starts at [Bundle setup](https://cwa.rocks/api/bundle-setup))
+- Front end: the [CWA Nuxt module](https://github.com/components-web-app/cwa-nuxt-module), in `../app`
 
-## Step 1: Remember to create a user
-Create a user: https://docs.api.cwa.rocks/console-commands/#create-a-user
+## Create an admin user
 
-## API Platform
-The API uses API Platform. Refer to the [Getting Started Guide](https://api-platform.com/docs/distribution) for more information.
+The pipeline's fixtures create one from `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_PASSWORD`. To create one by hand, see [`user:create`](https://cwa.rocks/api/console-commands):
+
+```sh
+# asks for the username, email and password; --super-admin gives access to /_cwa
+docker compose exec php bin/console silverback:api-components:user:create --super-admin
+```
+
+## Built on API Platform
+
+See API Platform's [documentation](https://api-platform.com/docs/) for the framework itself.

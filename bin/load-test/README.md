@@ -97,11 +97,14 @@ reverse. So choose what you are measuring:
 
 - **`warm`**: plain anonymous requests, as a visitor sends them. After the first
   request for each page these should be cache hits. This is what visitors get.
-- **`cold`**: each page request carries a unique `k6cb=` query value, so every
-  one is a cache miss rendered by Nuxt. This is the cost of SSR, and the worst
-  case after a purge or deploy. `k6cb` is deliberately not one of the tracking
-  parameters the Caddyfile strips (`uri query { -utm_source ... }`); a `utm_`
-  or `gclid` buster would be stripped and served from cache.
+- **`cold`**: each page request carries a unique `k6cb=` query value, meant to
+  make every one a cache miss rendered by Nuxt: the cost of SSR, and the worst
+  case after a purge or deploy. **Since #106 the page query allowlist drops
+  `k6cb`**, so on a default stack cold page requests are cache hits. That's the
+  protection working: it is exactly a cache-busting flood. To measure render cost,
+  on a test stack only, add `k6cb` to `CACHE_QUERY_ALLOWLIST`
+  (`page search order k6cb`) and set `RATE_LIMIT_ENABLED=false`. `k6cb` is not a
+  tracking parameter, so the `uri query { -utm_source ... }` strip leaves it alone.
 - **`mixed`**: `COLD_RATIO` of page loads are cold, the rest warm.
 
 The client-side navigation's `/_api` calls stay cacheable unless `COLD_API=true`.
@@ -141,12 +144,19 @@ Totals
   `=>` line says whether the page numbers measured the cache or SSR.
 - **Thresholds**: pages p95 under `PAGE_P95_MS`, 99% of pages 200, API and
   static p95 under 1s, under 1% failed requests. k6 exits non-zero if any fail.
+- **429s are the rate limit** (#106): each visitor gets `RATE_LIMIT_EVENTS`
+  (default 3000) requests per `RATE_LIMIT_WINDOW` (1m) that miss the cache. Hits
+  are never counted, so a warm run won't trip it, but a cold, mixed or
+  `COLD_API=true` capacity or surge run from one machine will. Set
+  `RATE_LIMIT_ENABLED=false` on the test stack for those.
+- **Behind Cloudflare** the *Souin cache* line is misleading: Cloudflare replays
+  the `Cache-Status` header stored with the page, so an edge hit counts as a
+  Souin `miss`. Judge by time to first byte instead (an edge hit is tens of ms).
 - Requests are tagged `kind=page|api|asset` (and pages `cache_mode=warm|cold`),
   so the per-kind numbers are available in any k6 output (`--out json=...`).
 
-Known local quirks: the home page `/` is never cached on this template's fixture
-data (a draft component 404s, see cwa-nuxt-module#324), and dev pages expire after
-60s, so a "warm" dev run that starts more than a minute after the last shows misses.
+Known local quirk: dev pages expire after 60s, so a "warm" dev run that starts
+more than a minute after the last shows misses.
 
 ## Traps
 
