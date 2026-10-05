@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.5](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.5) - 2026-10-05
+
+Since [v2.0.0-alpha.4](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.4).
+
 ### Upgrade notes
 - **Add `name cwa` to the Caddyfile's `mercure` block** (or copy the template's). Without it, php doesn't start in the compose stack on an image with Mercure 1.0.3 or later. ([51ea465](https://github.com/components-web-app/components-web-app/commit/51ea465fc34749c1ceabfcf754705cbf4f4b220e), [#113](https://github.com/components-web-app/components-web-app/issues/113))
 
