@@ -22,7 +22,6 @@ api_platform:
       enabled: true
       urls: ['%env(CACHE_URL)%']
     public: true
-  use_symfony_listeners: true
   defaults:
     extra_properties:
       rfc_7807_compliant_errors: true
