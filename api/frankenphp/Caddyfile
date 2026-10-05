@@ -303,6 +303,12 @@
 	}
 
 	mercure {
+		# A named hub (#113). A SERVER_NAME with several ports (compose's
+		# `localhost, php.local:80, php.local:443`) makes one server per port, each
+		# with its own copy of this block, and Mercure >= 1.0.3 refuses a second
+		# unnamed hub. Copies with the same name share one transport, so the API's
+		# publish on php.local:80 still reaches browsers subscribed on :443.
+		name cwa
 		# Transport to use (default to Bolt)
 		transport bolt {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
 		# Mercure 1.0: tokens are OAuth 2.0 access tokens, verified per issuer. The
