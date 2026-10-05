@@ -146,15 +146,16 @@ run_test_phpunit() {
   APP_ENV=test vendor/bin/phpunit tests/Unit --log-junit build/logs/phpunit/junit.xml
 }
 
-run_test_behat() {
-	export TRUSTED_HOSTS='^(?:localhost|caddy(?:\.local)?|example\.com)$'
-  echo "run_behat function"
+run_test_functional() {
+  # HTTP tests through API Platform's test client (tests/Functional). Each test drops and
+  # rebuilds the schema, so this needs the job's own database (setup_test_db_environment).
+  # CI variables can carry the real site's TRUSTED_HOSTS; the test client's host is localhost.
+  export TRUSTED_HOSTS='^(?:localhost|caddy(?:\.local)?|example\.com)$'
+  echo "run_test_functional function"
   cd ./api || return
-  mkdir -p build/logs/behat/
+  mkdir -p build/logs/phpunit/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
-  php scripts/patch-behat.php
-  APP_ENV=test php bin/console dbal:run-sql "CREATE EXTENSION IF NOT EXISTS citext;"
-  php vendor/behat/behat/bin/behat --format=progress --out=std --format=junit --out=build/logs/behat/junit --profile=default --no-interaction --colors --tags='~@wip'
+  APP_ENV=test vendor/bin/phpunit tests/Functional --log-junit build/logs/phpunit/functional.xml
 }
 
 check_kube_domain() {

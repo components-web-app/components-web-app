@@ -123,8 +123,8 @@ jobs:
       - name: Check Souin purges only their own tags (#84)
         run: sh bin/test/souin-purge-isolation.sh
 
-  behat-tests:
-    name: Behat Tests
+  functional-tests:
+    name: Functional Tests
     runs-on: ubuntu-latest
     needs: [setup, build-api]
     if: always() && needs.setup.result == 'success' && vars.TEST_DISABLED != 'true' && needs.build-api.result != 'failure'
@@ -156,21 +156,21 @@ jobs:
         env:
           VARS_JSON: ${{ toJSON(vars) }}
         run: bin/devops/github-export-vars.sh
-      - name: Run Behat
+      - name: Run functional tests
         run: |
           source ./bin/devops/k8s.sh
           setup_test_db_environment
-          run_test_behat
+          run_test_functional
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: behat-results
-          path: api/build/logs/behat/junit/
+          name: functional-results
+          path: api/build/logs/phpunit/functional.xml
 
   review:
     name: Deploy Review
     runs-on: ubuntu-latest
-    needs: [setup, build-api, build-app, unit-tests, behat-tests]
+    needs: [setup, build-api, build-app, unit-tests, functional-tests]
     if: |
       always() &&
       needs.setup.result == 'success' &&
@@ -179,7 +179,7 @@ jobs:
       needs.build-api.result != 'failure' &&
       needs.build-app.result != 'failure' &&
       needs.unit-tests.result != 'failure' &&
-      needs.behat-tests.result != 'failure'
+      needs.functional-tests.result != 'failure'
     environment:
       name: review/${{ github.ref_name }}
       url: https://${{ needs.setup.outputs.ref_slug }}-review.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
@@ -308,7 +308,7 @@ jobs:
   staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
-    needs: [setup, build-api, build-app, unit-tests, behat-tests]
+    needs: [setup, build-api, build-app, unit-tests, functional-tests]
     if: |
       always() &&
       needs.setup.result == 'success' &&
@@ -317,7 +317,7 @@ jobs:
       needs.build-api.result != 'failure' &&
       needs.build-app.result != 'failure' &&
       needs.unit-tests.result != 'failure' &&
-      needs.behat-tests.result != 'failure'
+      needs.functional-tests.result != 'failure'
     environment:
       name: staging
       url: https://staging.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}

@@ -13,18 +13,6 @@
             "src/Entity/.gitignore"
         ]
     },
-    "behat/behat": {
-        "version": "v3.6.1"
-    },
-    "behat/gherkin": {
-        "version": "v4.6.2"
-    },
-    "behat/transliterator": {
-        "version": "v1.3.0"
-    },
-    "behatch/contexts": {
-        "version": "3.3.0"
-    },
     "brick/math": {
         "version": "0.8.15"
     },
@@ -112,18 +100,6 @@
     },
     "egulias/email-validator": {
         "version": "2.1.17"
-    },
-    "friends-of-behat/mink-extension": {
-        "version": "v2.5.0"
-    },
-    "friends-of-behat/symfony-extension": {
-        "version": "2.0",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "934",
-            "version": "2.0",
-            "ref": ""
-        }
     },
     "guzzlehttp/guzzle": {
         "version": "6.4.1"
@@ -321,9 +297,6 @@
     },
     "sebastian/version": {
         "version": "3.0.2"
-    },
-    "stella-maris/clock": {
-        "version": "0.1.4"
     },
     "symfony/asset": {
         "version": "v4.3.8"
@@ -597,19 +570,6 @@
     },
     "symfony/string": {
         "version": "v5.1.0"
-    },
-    "symfony/translation": {
-        "version": "3.3",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "master",
-            "version": "3.3",
-            "ref": "2ad9d2545bce8ca1a863e50e92141f0b9d87ffcd"
-        },
-        "files": [
-            "config/packages/translation.yaml",
-            "translations/.gitignore"
-        ]
     },
     "symfony/translation-contracts": {
         "version": "v1.1.7"

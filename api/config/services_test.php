@@ -9,9 +9,6 @@ return static function (ContainerConfigurator $configurator) {
         ->autowire()
         ->autoconfigure();
 
-    $services
-        ->load('App\\Features\\Bootstrap\\', '../features/bootstrap/*');
-
     /*
     Yaml from API Components Bundles
     app.imagine.cache.resolver.local:
