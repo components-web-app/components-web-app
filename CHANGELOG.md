@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.4](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.4) - 2026-10-05
+
+Since [v2.0.0-alpha.3](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.3).
+
 ### Upgrade notes
 - **Rebuild the API image** before deploying this Caddyfile: it uses two new Caddy modules (`query_allowlist`, `rate_limit`), and an old image refuses it. Locally: `docker compose build php && docker compose up -d php`. No new variable is required. If your pages read a query parameter other than `page`, `search`, `order[...]` or `cwa_force`, add it to `CACHE_QUERY_ALLOWLIST`, or SSR stops seeing it. Behind a proxy with public addresses other than Cloudflare (e.g. a Google load balancer), add its ranges to `CADDY_TRUSTED_PROXIES`. ([4cbe05a](https://github.com/components-web-app/components-web-app/commit/4cbe05a949518be7da67995f6d247807e7a39b7f), [#106](https://github.com/components-web-app/components-web-app/issues/106))
 - **GitHub projects:** variables you had added by hand to a workflow's `env:` can stay, but are no longer needed. Any repository variable now reaches `k8s.sh`, so check none holds a stale value you were relying on GitHub to ignore. ([8f290d8](https://github.com/components-web-app/components-web-app/commit/8f290d85d234a60da74b0eec6be8294764b7e842), [#91](https://github.com/components-web-app/components-web-app/issues/91))
