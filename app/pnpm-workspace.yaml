@@ -6,7 +6,6 @@ auditConfig:
 shamefullyHoist: true
 strictPeerDependencies: false
 minimumReleaseAge: 0
-confirmModulesPurge: false
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
