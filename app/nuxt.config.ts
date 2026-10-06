@@ -250,11 +250,7 @@ export default defineNuxtConfig({
               // The authoritative gate: api-components-bundle #200 marks an
               // authenticated GET of an affected resource `private, no-store`, so
               // the SW cache only ever holds public (published) data.
-              cacheWillUpdate: async ({ response }) => {
-                const cc = response.headers.get('cache-control') || ''
-                if (/no-store|private/.test(cc)) return null
-                return response.status === 200 ? response : null
-              },
+              cacheWillUpdate: async ({ response }) => /no-store|private/.test(response.headers.get('cache-control') || '') || response.status !== 200 ? null : response,
             }],
             // 4 hours, deliberately short. The no-store gate above is what keeps
             // authenticated data out of this cache. The one window it cannot close,
