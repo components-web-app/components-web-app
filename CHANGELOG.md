@@ -7,7 +7,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Added
-- CI's unit-tests job runs `bin/test/caddy-validate.sh`: `frankenphp validate` on the image's Caddyfile for helm's `SERVER_NAME=:80` and compose's multi-port one. `adapt` only parses, so errors raised while modules load (a second unnamed Mercure hub, #113; a `#` inside the cache CEL expression) passed CI and only showed when php didn't start. ([843082a](https://github.com/components-web-app/components-web-app/commit/843082a54c663a44bc6267314f491647ec94275e))
+- CI's unit-tests job runs `bin/test/caddy-validate.sh`: `frankenphp validate` on the image's Caddyfile for helm's `SERVER_NAME=:80` and compose's multi-port one. `adapt` only parses, so errors raised while modules load (a second unnamed Mercure hub, #113; a `#` inside the cache CEL expression) passed CI and only showed when php didn't start. ([843082a](https://github.com/components-web-app/components-web-app/commit/843082a54c663a44bc6267314f491647ec94275e), [f3912b0](https://github.com/components-web-app/components-web-app/commit/f3912b07f766bacf190e3ec57e81a4d0eb9d93d8))
 
 ## [2.0.0-alpha.5](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.5) - 2026-10-05
 
