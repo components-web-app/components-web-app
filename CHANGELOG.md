@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.7](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.7) - 2026-10-06
+
+Since [v2.0.0-alpha.6](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.6).
+
 ### Changed
 - `@cwa/nuxt` 2.0.0-alpha.7: page-data pages no longer show the previous page's dynamic component to visitors after client-side navigation, and pick up live changes to it (cwa-nuxt-module#368). ([e746bd9](https://github.com/components-web-app/components-web-app/commit/e746bd989ba2da1573300e76bbab8e250d30d836))
 
