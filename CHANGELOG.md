@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.6](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.6) - 2026-10-06
+
+Since [v2.0.0-alpha.5](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.5).
+
 ### Upgrade notes
 - In `app/nuxt.config.ts`, write the PWA `cacheWillUpdate` as a single expression: `async ({ response }) => /no-store|private/.test(response.headers.get('cache-control') || '') || response.status !== 200 ? null : response`. Workbox joins the function onto one line in `sw.js`, and from Nuxt 4.6.0 (which the next `@cwa/nuxt` requires) its source keeps no semicolons, so the old multi-statement version fails the build with "Unable to write the service worker file … Missing semicolon". Works on Nuxt 4.5 too. ([eac5e7b](https://github.com/components-web-app/components-web-app/commit/eac5e7bee474f04347a180e642163f7057e71949))
 
