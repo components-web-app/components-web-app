@@ -17,6 +17,14 @@ set -eu
 
 BIN="${1:-frankenphp}"
 CONFIG="${2:-/etc/caddy/Caddyfile}"
+# The prod worker's path is relative (`./public/index.php`), so validate from the
+# app's root, as php runs: the image's /app, else this checkout's api/.
+for dir in /app "$(dirname "$0")/../../api"; do
+	if [ -f "$dir/public/index.php" ]; then
+		cd "$dir"
+		break
+	fi
+done
 KEY='!ChangeThisMercureHubJWTSecretKey!-validate-only'
 OUT=$(mktemp)
 trap 'rm -f "$OUT"' EXIT
