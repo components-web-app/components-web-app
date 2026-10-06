@@ -76,11 +76,11 @@
 +	return req, nil
 +}
 +
-+// Destruct empties the surrogate key storage. Souin calls it only for a full
-+// flush (PURGE .../flush), which deletes every cached response, so purge
-+// everything in the Cloudflare zone as well: otherwise the edge keeps serving
-+// what the flush meant to remove.
-+func (c *CloudflareSurrogateStorage) Destruct() error {
++// Flush empties the surrogate key storage. Souin calls it for a full flush
++// (PURGE .../flush), which deletes every cached response, so purge everything
++// in the Cloudflare zone as well: otherwise the edge keeps serving what the
++// flush meant to remove.
++func (c *CloudflareSurrogateStorage) Flush() error {
 +	go func() {
 +		req, err := c.newRequest([]byte(`{"purge_everything":true}`))
 +		if err != nil {
@@ -99,7 +99,7 @@
 +		}
 +	}()
 +
-+	return c.baseStorage.Destruct()
++	return c.baseStorage.Flush()
 +}
  
 -		go func() {

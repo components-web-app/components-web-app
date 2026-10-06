@@ -122,6 +122,8 @@ jobs:
           path: api/build/logs/phpunit/junit.xml
       - name: Check Souin purges only their own tags (#84)
         run: sh bin/test/souin-purge-isolation.sh
+      - name: Check a full flush leaves every Souin storage usable (#114)
+        run: sh bin/test/souin-flush-storage.sh
       - name: Check the Caddyfile provisions for helm and compose (#113)
         run: sh bin/test/caddy-validate.sh
 

@@ -1,0 +1,47 @@
+diff --git a/pkg/api/souin.go b/pkg/api/souin.go
+index e62aade..ffaa7bd 100644
+--- a/pkg/api/souin.go
++++ b/pkg/api/souin.go
+@@ -342,7 +342,7 @@ func (s *SouinAPI) HandleRequest(w http.ResponseWriter, r *http.Request) {
+ 				for _, current := range s.storers {
+ 					current.DeleteMany(".+")
+ 				}
+-				e := s.surrogateStorage.Destruct()
++				e := s.surrogateStorage.Flush()
+ 				if e != nil {
+ 					fmt.Printf("Error while purging the surrogate keys: %+v.", e)
+ 				}
+diff --git a/pkg/surrogate/providers/common.go b/pkg/surrogate/providers/common.go
+index 9f98180..1ff2c6a 100644
+--- a/pkg/surrogate/providers/common.go
++++ b/pkg/surrogate/providers/common.go
+@@ -343,6 +343,18 @@ func (s *baseStorage) List() map[string]string {
+ 	return s.Storage.MapKeys(surrogatePrefix)
+ }
+ 
++// Flush method will delete every surrogate key and keep the storage usable.
++// Destruct calls the storer's Reset, which closes most storers (Badger, Nuts,
++// Redis, etcd, Olric), so a full flush must not use it.
++func (s *baseStorage) Flush() error {
++	if s.Storage == nil {
++		return nil
++	}
++	s.Storage.DeleteMany("^" + surrogatePrefix)
++
++	return nil
++}
++
+ // Destruct method will shutdown properly the provider
+ func (s *baseStorage) Destruct() error {
+ 	return s.Storage.Reset()
+diff --git a/pkg/surrogate/providers/types.go b/pkg/surrogate/providers/types.go
+index bbd2991..8ef46ca 100644
+--- a/pkg/surrogate/providers/types.go
++++ b/pkg/surrogate/providers/types.go
+@@ -20,5 +20,6 @@ type SurrogateInterface interface {
+ 	ParseHeaders(string) []string
+ 	List() map[string]string
+ 	candidateStore(string) bool
++	Flush() error
+ 	Destruct() error
+ }
