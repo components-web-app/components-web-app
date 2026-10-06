@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+- A full flush ("Purge all cached data", `purge-http-cache`, fixture loads, and deploys with `provider cloudflare`) no longer closes the Badger or Nuts store, which left nothing cached until php restarted (`BADGER-INSERTION-ERROR`). A fourth Souin patch makes the flush clear the surrogate keys instead of shutting the storage down; `bin/test/souin-flush-storage.sh` checks otter, badger and nuts in CI. Otter, the default, was never affected. ([8ebf5e9](https://github.com/components-web-app/components-web-app/commit/8ebf5e994687014d0496da33a209eafd2137cd93), [#114](https://github.com/components-web-app/components-web-app/issues/114))
+
 ## [2.0.0-alpha.6](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.6) - 2026-10-06
 
 Since [v2.0.0-alpha.5](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.5).
