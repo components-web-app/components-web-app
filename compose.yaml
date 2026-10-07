@@ -33,6 +33,12 @@ services:
       CADDY_TRUSTED_PROXIES:
       CLOUDFLARE_IP_RANGES:
       FRANKENPHP_MAX_WAIT_TIME:
+      # Cloudflare purge pacing (#115), read by the patched Souin, which has its
+      # own defaults; same pass-through rule.
+      CLOUDFLARE_PURGE_PLAN:
+      CLOUDFLARE_PURGE_REQUESTS:
+      CLOUDFLARE_PURGE_WINDOW:
+      CLOUDFLARE_PURGE_BURST:
     volumes:
       - caddy_data:/data
       - caddy_config:/config

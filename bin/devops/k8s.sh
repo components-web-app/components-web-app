@@ -577,6 +577,11 @@ php:
       enabled: "${RATE_LIMIT_ENABLED:-}"
       events: "${RATE_LIMIT_EVENTS:-}"
       window: "${RATE_LIMIT_WINDOW:-}"
+    cloudflarePurge:
+      plan: "${CLOUDFLARE_PURGE_PLAN:-}"
+      requests: "${CLOUDFLARE_PURGE_REQUESTS:-}"
+      window: "${CLOUDFLARE_PURGE_WINDOW:-}"
+      burst: "${CLOUDFLARE_PURGE_BURST:-}"
   frankenphp:
     maxWaitTime: "${FRANKENPHP_MAX_WAIT_TIME:-}"
 mercure:

@@ -38,8 +38,12 @@ COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 # the endpoint, sends api_key as a bearer token when no email is set (a scoped
 # Zone > Cache Purge token), bounds each request with a timeout and logs any
 # failure. A full flush (PURGE .../flush) also purges everything in the zone, so
-# "Purge all cached data", fixture loads and deploys clear the edge too. It only
-# runs when CADDY_CACHE_CDN_CONFIG sets `provider cloudflare`.
+# "Purge all cached data", fixture loads and deploys clear the edge too. Cloudflare
+# limits purges per account and answers 429 beyond that, so purges are queued,
+# deduplicated, sent up to 100 tags at a time at the plan's rate, and retried on
+# a 429; a backlog too big to send soon becomes one purge everything (#115,
+# CLOUDFLARE_PURGE_PLAN etc.). It only runs when CADDY_CACHE_CDN_CONFIG sets
+# `provider cloudflare`.
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
 COPY --link frankenphp/souin/v1.7.9-singleflight-fix.patch /tmp/souin-singleflight-fix.patch
 COPY --link frankenphp/souin/v1.7.9-flush-no-close.patch /tmp/souin-flush-no-close.patch

@@ -56,6 +56,18 @@ data:
   {{- with .Values.php.caddy.rateLimit.window }}
   rate-limit-window: {{ . | quote }}
   {{- end }}
+  {{- with .Values.php.caddy.cloudflarePurge.plan }}
+  cloudflare-purge-plan: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.cloudflarePurge.requests }}
+  cloudflare-purge-requests: {{ . | toString | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.cloudflarePurge.window }}
+  cloudflare-purge-window: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.php.caddy.cloudflarePurge.burst }}
+  cloudflare-purge-burst: {{ . | toString | quote }}
+  {{- end }}
   {{- with .Values.php.frankenphp.maxWaitTime }}
   frankenphp-max-wait-time: {{ . | quote }}
   {{- end }}

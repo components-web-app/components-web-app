@@ -49,6 +49,15 @@ php:
       enabled: ""
       events: ""
       window: ""
+    # Cloudflare purge pacing (#115), only used with `provider cloudflare` in
+    # cdnConfig. CLOUDFLARE_PURGE_PLAN (free, pro, business, enterprise; Souin's
+    # default is free), and overrides CLOUDFLARE_PURGE_REQUESTS per
+    # CLOUDFLARE_PURGE_WINDOW (a Go duration) and CLOUDFLARE_PURGE_BURST.
+    cloudflarePurge:
+      plan: ""
+      requests: ""
+      window: ""
+      burst: ""
   frankenphp:
     # FRANKENPHP_MAX_WAIT_TIME (api/frankenphp/worker.Caddyfile). Empty keeps the default.
     maxWaitTime: ""

@@ -1,63 +1,59 @@
+diff --git a/pkg/surrogate/providers/cloudflare.go b/pkg/surrogate/providers/cloudflare.go
 --- a/pkg/surrogate/providers/cloudflare.go
 +++ b/pkg/surrogate/providers/cloudflare.go
-@@ -6,6 +6,7 @@
+@@ -5,7 +5,11 @@ import (
+ 	"encoding/json"
  	"io"
  	"net/http"
++	"os"
++	"strconv"
  	"strings"
++	"sync"
 +	"time"
  
  	"github.com/darkweak/souin/configurationtypes"
  )
-@@ -56,7 +57,11 @@
+@@ -16,6 +20,7 @@ type CloudflareSurrogateStorage struct {
+ 	providerAPIKey string
+ 	email          string
+ 	zoneID         string
++	purger         *cloudflarePurger
+ }
+ 
+ func generateCloudflareInstance(config configurationtypes.AbstractConfigurationInterface, defaultStorerName string) *CloudflareSurrogateStorage {
+@@ -29,6 +34,7 @@ func generateCloudflareInstance(config configurationtypes.AbstractConfigurationI
+ 
+ 	f.init(config, defaultStorerName)
+ 	f.parent = f
++	f.purger = cloudflarePurgerFor(f)
+ 
+ 	return f
+ }
+@@ -56,37 +62,385 @@ func (*CloudflareSurrogateStorage) getOrderedSurrogateKeyHeadersCandidate() []st
  	}
  }
  
 -func processBatches(arr []string, req *http.Request) {
+-	const maxPerBatch = 30
+-	for i := 0; i < len(arr); i += maxPerBatch {
+-		j := i + maxPerBatch
+-		if j > len(arr) {
+-			j = len(arr)
+-		}
 +// purgeClient bounds each purge request, so a hung connection to Cloudflare
-+// can't leave the purge goroutine running for the life of the process.
++// can't stall the purge sender.
 +var purgeClient = &http.Client{Timeout: 30 * time.Second}
-+
-+func processBatches(arr []string, newRequest func([]byte) (*http.Request, error), logger interface{ Errorf(string, ...interface{}) }) {
- 	const maxPerBatch = 30
- 	for i := 0; i < len(arr); i += maxPerBatch {
- 		j := i + maxPerBatch
-@@ -65,28 +70,88 @@
- 		}
  
- 		body, _ := json.Marshal(map[string]interface{}{"tags": arr[i:j]})
+-		body, _ := json.Marshal(map[string]interface{}{"tags": arr[i:j]})
 -		req.Body = io.NopCloser(bytes.NewBuffer(body))
 -		_, _ = new(http.Client).Do(req)
-+		req, err := newRequest(body)
-+		if err != nil {
-+			logger.Errorf("Cloudflare purge of tags %v not sent: %v", arr[i:j], err)
-+			continue
-+		}
-+		res, err := purgeClient.Do(req)
-+		if err != nil {
-+			logger.Errorf("Cloudflare purge of tags %v failed: %v", arr[i:j], err)
-+			continue
-+		}
-+		b, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
-+		_ = res.Body.Close()
-+		if res.StatusCode != http.StatusOK {
-+			logger.Errorf("Cloudflare purge of tags %v failed with status %d: %s", arr[i:j], res.StatusCode, b)
-+		}
- 	}
- }
- 
--// Purge purges the urls associated to the tags
--func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
--	keys, headers := c.baseStorage.Purge(header)
 +// newRequest builds a purge_cache request for the zone.
 +func (c *CloudflareSurrogateStorage) newRequest(body []byte) (*http.Request, error) {
- 	req, err := http.NewRequest(
- 		http.MethodPost,
--		"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge",
--		nil,
++	req, err := http.NewRequest(
++		http.MethodPost,
 +		"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge_cache",
 +		bytes.NewReader(body),
- 	)
--	if err == nil {
++	)
 +	if err != nil {
 +		return nil, err
 +	}
@@ -67,10 +63,9 @@
 +	if c.email == "" {
 +		req.Header.Set("Authorization", "Bearer "+c.providerAPIKey)
 +	} else {
- 		req.Header.Set("X-Auth-Email", c.email)
- 		req.Header.Set("X-Auth-Key", c.providerAPIKey)
--		req.Header.Set("Content-Type", "application/json")
-+	}
++		req.Header.Set("X-Auth-Email", c.email)
++		req.Header.Set("X-Auth-Key", c.providerAPIKey)
+ 	}
 +	req.Header.Set("Content-Type", "application/json")
 +
 +	return req, nil
@@ -81,44 +76,631 @@
 +// in the Cloudflare zone as well: otherwise the edge keeps serving what the
 +// flush meant to remove.
 +func (c *CloudflareSurrogateStorage) Flush() error {
-+	go func() {
-+		req, err := c.newRequest([]byte(`{"purge_everything":true}`))
-+		if err != nil {
-+			c.logger.Errorf("Cloudflare purge everything not sent: %v", err)
-+			return
-+		}
-+		res, err := purgeClient.Do(req)
-+		if err != nil {
-+			c.logger.Errorf("Cloudflare purge everything failed: %v", err)
-+			return
-+		}
-+		b, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
-+		_ = res.Body.Close()
-+		if res.StatusCode != http.StatusOK {
-+			c.logger.Errorf("Cloudflare purge everything failed with status %d: %s", res.StatusCode, b)
-+		}
-+	}()
++	c.purger.purgeEverything()
 +
 +	return c.baseStorage.Flush()
-+}
+ }
+ 
+ // Purge purges the urls associated to the tags
+ func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
+ 	keys, headers := c.baseStorage.Purge(header)
+-	req, err := http.NewRequest(
+-		http.MethodPost,
+-		"https://api.cloudflare.com/client/v4/zones/"+c.zoneID+"/purge",
+-		nil,
+-	)
+-	if err == nil {
+-		req.Header.Set("X-Auth-Email", c.email)
+-		req.Header.Set("X-Auth-Key", c.providerAPIKey)
+-		req.Header.Set("Content-Type", "application/json")
++	c.purger.purge(headers)
  
 -		go func() {
 -			processBatches(headers, req)
 -		}()
-+// Purge purges the urls associated to the tags
-+func (c *CloudflareSurrogateStorage) Purge(header http.Header) (cacheKeys []string, surrogateKeys []string) {
-+	keys, headers := c.baseStorage.Purge(header)
-+	tags := []string{}
-+	for _, h := range headers {
-+		if h != "" {
-+			tags = append(tags, h)
-+		}
-+	}
-+	if len(tags) == 0 {
-+		return keys, headers
++	return keys, headers
++}
++
++// Cloudflare limits purge requests per account, every kind of purge sharing
++// one allowance, and refuses the rest with a 429. So purges don't go straight
++// out: they are queued, deduplicated and sent by one sender per zone, paced by
++// a token bucket sized for the account's plan. Several pods, or staging and
++// production, sharing an account each get the whole allowance, so set a lower
++// rate for them (CLOUDFLARE_PURGE_REQUESTS / _WINDOW / _BURST).
++// https://developers.cloudflare.com/cache/how-to/purge-cache/
++
++type cloudflarePlan struct {
++	requests int
++	window   time.Duration
++	burst    int
++}
++
++var cloudflarePlans = map[string]cloudflarePlan{
++	"free":       {requests: 5, window: time.Minute, burst: 25},
++	"pro":        {requests: 5, window: time.Second, burst: 25},
++	"business":   {requests: 10, window: time.Second, burst: 50},
++	"enterprise": {requests: 50, window: time.Second, burst: 500},
++}
++
++const (
++	// cloudflareMaxTags is the most tags Cloudflare accepts in one request.
++	cloudflareMaxTags = 100
++	// A backlog the bucket can't send within this window is replaced by one
++	// purge everything: one request, and still correct.
++	cloudflareCoalesceWindow = time.Minute
++	// cloudflareErrorRetry is the least wait before retrying after a network
++	// error or a 5xx.
++	cloudflareErrorRetry = 5 * time.Second
++)
++
++type purgeLogger interface {
++	Errorf(string, ...interface{})
++	Warnf(string, ...interface{})
++}
++
++type cloudflarePurger struct {
++	mu         sync.Mutex
++	pending    []string
++	queued     map[string]struct{}
++	everything bool
++	wake       chan struct{}
++
++	rate   float64 // tokens per second
++	burst  float64
++	tokens float64
++	last   time.Time
++
++	newRequest func([]byte) (*http.Request, error)
++	client     *http.Client
++	logger     purgeLogger
++	now        func() time.Time
++	sleep      func(time.Duration)
++}
++
++var (
++	cloudflarePurgersMu sync.Mutex
++	cloudflarePurgers   = map[string]*cloudflarePurger{}
++)
++
++// cloudflarePurgerFor returns the zone's sender, starting it on first use.
++// Souin builds a new provider on every config reload; sharing the sender keeps
++// one queue and one bucket per zone and doesn't leak a goroutine per reload.
++func cloudflarePurgerFor(c *CloudflareSurrogateStorage) *cloudflarePurger {
++	key := c.zoneID + "\x00" + c.email + "\x00" + c.providerAPIKey
++	cloudflarePurgersMu.Lock()
++	defer cloudflarePurgersMu.Unlock()
++	if p, ok := cloudflarePurgers[key]; ok {
++		return p
  	}
  
-+	go processBatches(tags, c.newRequest, c.logger)
+-	return keys, headers
++	rate, burst := cloudflarePurgeLimits(os.Getenv, c.logger)
++	p := newCloudflarePurger(rate, burst, c.newRequest, c.logger, time.Now, time.Sleep)
++	cloudflarePurgers[key] = p
++	go p.run()
 +
- 	return keys, headers
++	return p
++}
++
++// cloudflarePurgeLimits reads the bucket's rate (requests per second) and burst:
++// CLOUDFLARE_PURGE_PLAN (free, pro, business or enterprise; default free, which
++// is safe on every plan), overridden by CLOUDFLARE_PURGE_REQUESTS per
++// CLOUDFLARE_PURGE_WINDOW (a Go duration) and CLOUDFLARE_PURGE_BURST.
++func cloudflarePurgeLimits(getenv func(string) string, logger purgeLogger) (float64, float64) {
++	plan := cloudflarePlans["free"]
++	if name := strings.ToLower(strings.TrimSpace(getenv("CLOUDFLARE_PURGE_PLAN"))); name != "" {
++		if p, ok := cloudflarePlans[name]; ok {
++			plan = p
++		} else {
++			logger.Errorf("Unknown CLOUDFLARE_PURGE_PLAN %q, using free's purge limits", name)
++		}
++	}
++	if v := strings.TrimSpace(getenv("CLOUDFLARE_PURGE_REQUESTS")); v != "" {
++		if n, err := strconv.Atoi(v); err == nil && n > 0 {
++			plan.requests = n
++		} else {
++			logger.Errorf("Invalid CLOUDFLARE_PURGE_REQUESTS %q, using %d", v, plan.requests)
++		}
++	}
++	if v := strings.TrimSpace(getenv("CLOUDFLARE_PURGE_WINDOW")); v != "" {
++		if d, err := time.ParseDuration(v); err == nil && d > 0 {
++			plan.window = d
++		} else {
++			logger.Errorf("Invalid CLOUDFLARE_PURGE_WINDOW %q, using %s", v, plan.window)
++		}
++	}
++	if v := strings.TrimSpace(getenv("CLOUDFLARE_PURGE_BURST")); v != "" {
++		if n, err := strconv.Atoi(v); err == nil && n > 0 {
++			plan.burst = n
++		} else {
++			logger.Errorf("Invalid CLOUDFLARE_PURGE_BURST %q, using %d", v, plan.burst)
++		}
++	}
++
++	return float64(plan.requests) / plan.window.Seconds(), float64(plan.burst)
++}
++
++func newCloudflarePurger(rate, burst float64, newRequest func([]byte) (*http.Request, error), logger purgeLogger, now func() time.Time, sleep func(time.Duration)) *cloudflarePurger {
++	return &cloudflarePurger{
++		queued:     map[string]struct{}{},
++		wake:       make(chan struct{}, 1),
++		rate:       rate,
++		burst:      burst,
++		tokens:     burst,
++		last:       now(),
++		newRequest: newRequest,
++		client:     purgeClient,
++		logger:     logger,
++		now:        now,
++		sleep:      sleep,
++	}
++}
++
++// purge queues tags and returns at once.
++func (p *cloudflarePurger) purge(tags []string) {
++	p.mu.Lock()
++	added := false
++	if !p.everything {
++		for _, t := range tags {
++			if _, ok := p.queued[t]; t == "" || ok {
++				continue
++			}
++			p.queued[t] = struct{}{}
++			p.pending = append(p.pending, t)
++			added = true
++		}
++	}
++	p.mu.Unlock()
++	if added {
++		p.notify()
++	}
++}
++
++// purgeEverything queues a purge everything, which covers every queued tag.
++func (p *cloudflarePurger) purgeEverything() {
++	p.mu.Lock()
++	p.everything = true
++	p.pending = nil
++	p.queued = map[string]struct{}{}
++	p.mu.Unlock()
++	p.notify()
++}
++
++func (p *cloudflarePurger) notify() {
++	select {
++	case p.wake <- struct{}{}:
++	default:
++	}
++}
++
++func (p *cloudflarePurger) run() {
++	for range p.wake {
++		for p.sendNext() {
++		}
++	}
++}
++
++// refill adds the tokens earned since the last refill. Call with mu held.
++func (p *cloudflarePurger) refill() {
++	now := p.now()
++	p.tokens += now.Sub(p.last).Seconds() * p.rate
++	if p.tokens > p.burst {
++		p.tokens = p.burst
++	}
++	p.last = now
++}
++
++func (p *cloudflarePurger) interval() time.Duration {
++	return time.Duration(float64(time.Second) / p.rate)
++}
++
++// sendNext sends one request when the bucket allows, or waits for a token.
++// It returns false once nothing is queued.
++func (p *cloudflarePurger) sendNext() bool {
++	p.mu.Lock()
++	if !p.everything && len(p.pending) == 0 {
++		p.mu.Unlock()
++		return false
++	}
++	p.refill()
++	if p.tokens < 1 {
++		wait := time.Duration((1 - p.tokens) / p.rate * float64(time.Second))
++		p.mu.Unlock()
++		p.sleep(wait)
++		return true
++	}
++
++	everything := p.everything
++	if !everything {
++		needed := (len(p.pending) + cloudflareMaxTags - 1) / cloudflareMaxTags
++		if float64(needed) > p.tokens+p.rate*cloudflareCoalesceWindow.Seconds() {
++			p.logger.Warnf("Cloudflare purge: %d tags queued, more than the purge limit can send soon, so purging everything instead", len(p.pending))
++			everything = true
++		}
++	}
++	var tags []string
++	if everything {
++		p.everything = false
++		p.pending = nil
++		p.queued = map[string]struct{}{}
++	} else {
++		n := len(p.pending)
++		if n > cloudflareMaxTags {
++			n = cloudflareMaxTags
++		}
++		tags = append([]string(nil), p.pending[:n]...)
++		p.pending = p.pending[n:]
++		for _, t := range tags {
++			delete(p.queued, t)
++		}
++	}
++	p.tokens--
++	p.mu.Unlock()
++
++	if retry, wait := p.send(tags); retry {
++		p.requeue(tags)
++		p.sleep(wait)
++	}
++
++	return true
++}
++
++// requeue puts back a request that failed for a reason worth retrying, ahead
++// of what was queued since. A nil tags means purge everything.
++func (p *cloudflarePurger) requeue(tags []string) {
++	p.mu.Lock()
++	defer p.mu.Unlock()
++	if tags == nil {
++		p.everything = true
++		p.pending = nil
++		p.queued = map[string]struct{}{}
++		return
++	}
++	if p.everything {
++		return
++	}
++	back := make([]string, 0, len(tags)+len(p.pending))
++	for _, t := range tags {
++		if _, ok := p.queued[t]; !ok {
++			p.queued[t] = struct{}{}
++			back = append(back, t)
++		}
++	}
++	p.pending = append(back, p.pending...)
++}
++
++// send makes one purge request (nil tags: purge everything) and says whether
++// to retry it and after how long. A 429, a 5xx or a network error is retried;
++// any other failure, such as a bad token, is logged and dropped.
++func (p *cloudflarePurger) send(tags []string) (bool, time.Duration) {
++	what := "purge everything"
++	body := []byte(`{"purge_everything":true}`)
++	if tags != nil {
++		what = "purge of " + strconv.Itoa(len(tags)) + " tags"
++		body, _ = json.Marshal(map[string]interface{}{"tags": tags})
++	}
++
++	req, err := p.newRequest(body)
++	if err != nil {
++		p.logger.Errorf("Cloudflare %s not sent: %v %v", what, err, tags)
++		return false, 0
++	}
++	res, err := p.client.Do(req)
++	if err != nil {
++		p.logger.Warnf("Cloudflare %s failed, will retry: %v", what, err)
++		return true, p.errorRetry()
++	}
++	b, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
++	_ = res.Body.Close()
++
++	switch {
++	case res.StatusCode == http.StatusOK:
++		return false, 0
++	case res.StatusCode == http.StatusTooManyRequests:
++		wait := retryAfter(res.Header.Get("Retry-After"), p.now())
++		if wait <= 0 {
++			wait = p.interval()
++		}
++		// The account's allowance is used up, whatever this bucket thinks.
++		p.mu.Lock()
++		p.tokens = 0
++		p.last = p.now()
++		p.mu.Unlock()
++		p.logger.Warnf("Cloudflare %s rate limited, will retry in %s", what, wait)
++		return true, wait
++	case res.StatusCode >= 500:
++		p.logger.Warnf("Cloudflare %s failed with status %d, will retry: %s", what, res.StatusCode, b)
++		return true, p.errorRetry()
++	default:
++		p.logger.Errorf("Cloudflare %s failed with status %d: %s %v", what, res.StatusCode, b, tags)
++		return false, 0
++	}
++}
++
++func (p *cloudflarePurger) errorRetry() time.Duration {
++	if i := p.interval(); i > cloudflareErrorRetry {
++		return i
++	}
++	return cloudflareErrorRetry
++}
++
++// retryAfter reads a Retry-After header, in seconds or as an HTTP date.
++func retryAfter(v string, now time.Time) time.Duration {
++	v = strings.TrimSpace(v)
++	if v == "" {
++		return 0
++	}
++	if s, err := strconv.Atoi(v); err == nil {
++		return time.Duration(s) * time.Second
++	}
++	if t, err := http.ParseTime(v); err == nil {
++		return t.Sub(now)
++	}
++	return 0
  }
+diff --git a/pkg/surrogate/providers/cloudflare_purger_test.go b/pkg/surrogate/providers/cloudflare_purger_test.go
+new file mode 100644
+--- /dev/null
++++ b/pkg/surrogate/providers/cloudflare_purger_test.go
+@@ -0,0 +1,261 @@
++package providers
++
++import (
++	"encoding/json"
++	"fmt"
++	"io"
++	"net/http"
++	"net/http/httptest"
++	"strings"
++	"sync"
++	"testing"
++	"time"
++)
++
++type nopPurgeLogger struct{}
++
++func (nopPurgeLogger) Errorf(string, ...interface{}) {}
++func (nopPurgeLogger) Warnf(string, ...interface{})  {}
++
++type purgeCall struct {
++	tags       []string
++	everything bool
++}
++
++// stubCloudflare records each purge request and answers with the next status
++// in statuses (200 once they run out).
++type stubCloudflare struct {
++	mu       sync.Mutex
++	calls    []purgeCall
++	statuses []int
++}
++
++func (s *stubCloudflare) ServeHTTP(w http.ResponseWriter, r *http.Request) {
++	var body struct {
++		Tags            []string `json:"tags"`
++		PurgeEverything bool     `json:"purge_everything"`
++	}
++	b, _ := io.ReadAll(r.Body)
++	_ = json.Unmarshal(b, &body)
++	s.mu.Lock()
++	defer s.mu.Unlock()
++	s.calls = append(s.calls, purgeCall{tags: body.Tags, everything: body.PurgeEverything})
++	status := http.StatusOK
++	if len(s.statuses) > 0 {
++		status, s.statuses = s.statuses[0], s.statuses[1:]
++	}
++	if status == http.StatusTooManyRequests {
++		w.Header().Set("Retry-After", "7")
++	}
++	w.WriteHeader(status)
++}
++
++// testPurger runs a purger on a fake clock: sleep advances it and is recorded.
++func testPurger(t *testing.T, plan cloudflarePlan, stub *stubCloudflare) (*cloudflarePurger, *[]time.Duration) {
++	srv := httptest.NewServer(stub)
++	t.Cleanup(srv.Close)
++	now := time.Unix(1_700_000_000, 0)
++	sleeps := &[]time.Duration{}
++	p := newCloudflarePurger(
++		float64(plan.requests)/plan.window.Seconds(),
++		float64(plan.burst),
++		func(body []byte) (*http.Request, error) {
++			return http.NewRequest(http.MethodPost, srv.URL, strings.NewReader(string(body)))
++		},
++		nopPurgeLogger{},
++		func() time.Time { return now },
++		func(d time.Duration) {
++			*sleeps = append(*sleeps, d)
++			now = now.Add(d)
++		},
++	)
++
++	return p, sleeps
++}
++
++func drain(p *cloudflarePurger) {
++	for p.sendNext() {
++	}
++}
++
++func tagList(n int) []string {
++	tags := make([]string, n)
++	for i := range tags {
++		tags[i] = fmt.Sprintf("/_api/component/%d", i)
++	}
++	return tags
++}
++
++func TestCloudflarePurger_DeduplicatesAndSendsUpTo100TagsPerRequest(t *testing.T) {
++	stub := &stubCloudflare{}
++	p, _ := testPurger(t, cloudflarePlans["pro"], stub)
++
++	p.purge(tagList(150))
++	p.purge(append(tagList(100), "", "/_api/other", "/_api/other"))
++	drain(p)
++
++	if len(stub.calls) != 2 {
++		t.Fatalf("expected 2 requests, got %d", len(stub.calls))
++	}
++	if len(stub.calls[0].tags) != 100 || len(stub.calls[1].tags) != 51 {
++		t.Errorf("expected 100 + 51 tags, got %d + %d", len(stub.calls[0].tags), len(stub.calls[1].tags))
++	}
++}
++
++func TestCloudflarePurger_WaitsForATokenOnceTheBurstIsUsed(t *testing.T) {
++	stub := &stubCloudflare{}
++	p, sleeps := testPurger(t, cloudflarePlans["free"], stub)
++
++	for i := 0; i < 26; i++ {
++		p.purge([]string{fmt.Sprintf("/_api/page/%d", i)})
++		drain(p)
++	}
++
++	if len(stub.calls) != 26 {
++		t.Fatalf("expected 26 requests, got %d", len(stub.calls))
++	}
++	if len(*sleeps) != 1 || (*sleeps)[0] != 12*time.Second {
++		t.Errorf("expected one 12s wait before the 26th request, got %v", *sleeps)
++	}
++}
++
++func TestCloudflarePurger_CoalescesABacklogIntoOnePurgeEverything(t *testing.T) {
++	stub := &stubCloudflare{}
++	p, _ := testPurger(t, cloudflarePlans["free"], stub)
++
++	// 31 requests' worth: more than the 25 burst plus a minute's 5.
++	p.purge(tagList(3001))
++	drain(p)
++
++	if len(stub.calls) != 1 || !stub.calls[0].everything {
++		t.Fatalf("expected one purge everything, got %+v", stub.calls)
++	}
++
++	// 30 requests' worth can be sent within the minute, so stays tag purges.
++	stub.calls = nil
++	p.tokens = 25
++	p.purge(tagList(3000))
++	drain(p)
++	if len(stub.calls) != 30 || stub.calls[0].everything {
++		t.Fatalf("expected 30 tag purges, got %d", len(stub.calls))
++	}
++}
++
++func TestCloudflarePurger_FlushReplacesQueuedTags(t *testing.T) {
++	stub := &stubCloudflare{}
++	p, _ := testPurger(t, cloudflarePlans["pro"], stub)
++
++	p.purge(tagList(10))
++	p.purgeEverything()
++	p.purge(tagList(5))
++	drain(p)
++
++	if len(stub.calls) != 1 || !stub.calls[0].everything {
++		t.Fatalf("expected only a purge everything, got %+v", stub.calls)
++	}
++}
++
++func TestCloudflarePurger_RetriesA429AfterRetryAfter(t *testing.T) {
++	stub := &stubCloudflare{statuses: []int{http.StatusTooManyRequests}}
++	p, sleeps := testPurger(t, cloudflarePlans["pro"], stub)
++
++	p.purge([]string{"/_api/a"})
++	drain(p)
++
++	if len(stub.calls) != 2 || stub.calls[1].tags[0] != "/_api/a" {
++		t.Fatalf("expected the purge to be sent again, got %+v", stub.calls)
++	}
++	if len(*sleeps) != 1 || (*sleeps)[0] != 7*time.Second {
++		t.Errorf("expected a 7s wait from Retry-After, got %v", *sleeps)
++	}
++}
++
++func TestCloudflarePurger_RetriesA429PurgeEverything(t *testing.T) {
++	stub := &stubCloudflare{statuses: []int{http.StatusTooManyRequests, http.StatusBadGateway}}
++	p, _ := testPurger(t, cloudflarePlans["pro"], stub)
++
++	p.purgeEverything()
++	drain(p)
++
++	if len(stub.calls) != 3 || !stub.calls[2].everything {
++		t.Fatalf("expected the purge everything to be sent three times, got %+v", stub.calls)
++	}
++}
++
++func TestCloudflarePurger_DropsAPurgeCloudflareRefuses(t *testing.T) {
++	stub := &stubCloudflare{statuses: []int{http.StatusForbidden}}
++	p, _ := testPurger(t, cloudflarePlans["pro"], stub)
++
++	p.purge([]string{"/_api/a"})
++	drain(p)
++
++	if len(stub.calls) != 1 {
++		t.Fatalf("expected a refused purge not to be retried, got %d requests", len(stub.calls))
++	}
++}
++
++func TestCloudflarePurgeLimits(t *testing.T) {
++	cases := []struct {
++		env   map[string]string
++		rate  float64
++		burst float64
++	}{
++		{map[string]string{}, 5.0 / 60, 25},
++		{map[string]string{"CLOUDFLARE_PURGE_PLAN": "Pro"}, 5, 25},
++		{map[string]string{"CLOUDFLARE_PURGE_PLAN": "enterprise"}, 50, 500},
++		{map[string]string{"CLOUDFLARE_PURGE_PLAN": "nope"}, 5.0 / 60, 25},
++		{map[string]string{"CLOUDFLARE_PURGE_PLAN": "business", "CLOUDFLARE_PURGE_REQUESTS": "2", "CLOUDFLARE_PURGE_BURST": "10"}, 2, 10},
++		{map[string]string{"CLOUDFLARE_PURGE_REQUESTS": "3", "CLOUDFLARE_PURGE_WINDOW": "1m"}, 3.0 / 60, 25},
++		{map[string]string{"CLOUDFLARE_PURGE_WINDOW": "soon", "CLOUDFLARE_PURGE_BURST": "-1"}, 5.0 / 60, 25},
++	}
++	for _, c := range cases {
++		rate, burst := cloudflarePurgeLimits(func(k string) string { return c.env[k] }, nopPurgeLogger{})
++		if rate != c.rate || burst != c.burst {
++			t.Errorf("%v: expected %v/s burst %v, got %v/s burst %v", c.env, c.rate, c.burst, rate, burst)
++		}
++	}
++}
++
++func TestRetryAfter(t *testing.T) {
++	now := time.Unix(1_700_000_000, 0)
++	if d := retryAfter("30", now); d != 30*time.Second {
++		t.Errorf("expected 30s, got %s", d)
++	}
++	if d := retryAfter(now.Add(time.Minute).UTC().Format(http.TimeFormat), now); d != time.Minute {
++		t.Errorf("expected 1m, got %s", d)
++	}
++	if d := retryAfter("", now); d != 0 {
++		t.Errorf("expected 0, got %s", d)
++	}
++}
++
++func TestCloudflarePurger_RunSendsQueuedPurgesInTheBackground(t *testing.T) {
++	stub := &stubCloudflare{}
++	srv := httptest.NewServer(stub)
++	t.Cleanup(srv.Close)
++	p := newCloudflarePurger(5, 25, func(body []byte) (*http.Request, error) {
++		return http.NewRequest(http.MethodPost, srv.URL, strings.NewReader(string(body)))
++	}, nopPurgeLogger{}, time.Now, time.Sleep)
++	go p.run()
++
++	p.purge([]string{"/_api/a"})
++	p.purgeEverything()
++	deadline := time.Now().Add(5 * time.Second)
++	for {
++		stub.mu.Lock()
++		n := len(stub.calls)
++		stub.mu.Unlock()
++		if n >= 1 {
++			p.mu.Lock()
++			idle := !p.everything && len(p.pending) == 0
++			p.mu.Unlock()
++			if idle {
++				break
++			}
++		}
++		if time.Now().After(deadline) {
++			t.Fatal("the queued purges were never sent")
++		}
++		time.Sleep(10 * time.Millisecond)
++	}
++}
