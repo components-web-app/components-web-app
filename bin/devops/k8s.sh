@@ -442,8 +442,47 @@ cleanup_tls_certificates() {
   done
 }
 
+# Souin reads the first argument of every `cdn` directive without checking there
+# is one, so a line left without a value (`api_key` after a CI variable expanded
+# to nothing) panics on parse and php crash-loops, while helm still reports the
+# release deployed (#116). A value that is still `$NAME` is a reference CI didn't
+# expand. Either fails here, before anything is rolled out.
+check_cdn_config() {
+  local line directive value bad=""
+  while IFS= read -r line; do
+    set -f
+    # shellcheck disable=SC2086
+    set -- $line
+    set +f
+    directive="${1:-}"
+    value="${2:-}"
+    case "$directive" in
+      api_key|email|hostname|network|provider|service_id|strategy|zone_id) ;;
+      *) continue ;;
+    esac
+    if [ -z "$value" ]; then
+      bad="${bad}  '$directive' has no value
+"
+    else
+      case "$value" in
+        '$'*) bad="${bad}  '$directive' is '$value', a variable reference that was never expanded
+" ;;
+      esac
+    fi
+  done <<EOF
+${CADDY_CACHE_CDN_CONFIG:-}
+EOF
+  if [ -n "$bad" ]; then
+    echo "CADDY_CACHE_CDN_CONFIG is incomplete, so php would not start:" >&2
+    printf '%s' "$bad" >&2
+    echo "Check the variable it refers to reaches this job (on GitLab, a Protected variable is only given to protected branches) and that its reference is expanded." >&2
+    return 1
+  fi
+}
+
 deploy() {
 	local track="${1-stable}"
+	check_cdn_config || return 1
 	name="$RELEASE"
 	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
