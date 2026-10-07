@@ -100,6 +100,12 @@ php:
       # and never scales, however correct the rest of hpa.yaml is.
       cpu: 200m
       memory: 350Mi
+  # GOMEMLIMIT for FrankenPHP's Go runtime (Caddy, Souin, Mercure). Empty sets it
+  # to 80% of resources.limits.memory above (cwa.php.goMemLimit), so Go collects
+  # garbage harder as it nears the limit instead of growing until the container is
+  # OOMKilled (#117). PHP's own memory and cgo (cbrotli) are outside it, hence the
+  # headroom. A Go value such as "800MiB" overrides it; "off" leaves it unset.
+  goMemLimit: ""
 
 pwa:
   # Both default to the in-cluster service (see configmap.yaml). Leave apiUrl

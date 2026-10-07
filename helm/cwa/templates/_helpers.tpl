@@ -294,3 +294,28 @@ is set, and an unset variable keeps the Caddyfile's default. */}}
       optional: true
 {{- end }}
 {{- end }}
+
+{{/*
+GOMEMLIMIT for the php container (#117): php.goMemLimit if set, otherwise 80% of
+the memory limit when it is written in Mi or Gi. Prints nothing for "off" or a
+limit in any other form, which leaves the variable unset. Not in cwa.phpEnv, so
+the orphan scan CronJob keeps Go's default.
+*/}}
+{{- define "cwa.php.goMemLimit" -}}
+{{- $set := toString (.Values.php.goMemLimit | default "") -}}
+{{- if eq $set "off" -}}
+{{- else if $set -}}
+{{- $set -}}
+{{- else -}}
+{{- $limit := toString (dig "limits" "memory" "" .Values.php.resources) -}}
+{{- $mib := 0 -}}
+{{- if regexMatch "^[0-9]+Gi$" $limit -}}
+{{- $mib = mul (atoi (trimSuffix "Gi" $limit)) 1024 -}}
+{{- else if regexMatch "^[0-9]+Mi$" $limit -}}
+{{- $mib = atoi (trimSuffix "Mi" $limit) -}}
+{{- end -}}
+{{- if gt (int $mib) 0 -}}
+{{- div (mul $mib 8) 10 }}MiB
+{{- end -}}
+{{- end -}}
+{{- end -}}

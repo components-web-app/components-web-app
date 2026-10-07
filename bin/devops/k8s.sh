@@ -586,6 +586,8 @@ php:
     requests:
       cpu: ${PHP_CPU_REQUEST:-$PHP_CPU_REQUEST_DEFAULT}
       memory: ${PHP_MEMORY_REQUEST:-$PHP_MEMORY_REQUEST_DEFAULT}
+  # Empty: 80% of the memory limit above (helm/cwa/values.yaml, #117).
+  goMemLimit: "${PHP_GOMEMLIMIT:-}"
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${RESET_DATABASE:-false}"

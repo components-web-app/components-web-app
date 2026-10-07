@@ -180,6 +180,14 @@ export default defineNuxtConfig({
     typeCheck: true,
     strict: false
   },
+  nitro: {
+    // Writes a .br and a .gz beside each public asset at build time, and Nitro serves
+    // them by Accept-Encoding. php's Caddy proxies every /_nuxt/ request here and its
+    // `encode` leaves a response that already has a Content-Encoding alone, so it no
+    // longer brotli-compresses each JS file on every request: under load that took
+    // the php pod to a core and past its 1Gi memory limit (#117).
+    compressPublicAssets: { brotli: true, gzip: true },
+  },
   pwa: {
     // 'prompt', not 'autoUpdate': CWA admins edit inline, and an auto-updating SW
     // can swap assets mid-edit. With 'prompt' a new worker waits, and

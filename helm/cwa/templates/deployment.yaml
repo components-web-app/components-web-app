@@ -50,6 +50,10 @@ spec:
             # "true", and the orphan scan CronJob must never do that (#103).
             - name: RESET_DATABASE
               value: {{ .Values.php.resetDatabase | quote }}
+            {{- with include "cwa.php.goMemLimit" . }}
+            - name: GOMEMLIMIT
+              value: {{ . | quote }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 80
