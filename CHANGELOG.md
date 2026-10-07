@@ -6,6 +6,13 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.8](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.8) - 2026-10-07
+
+Since [v2.0.0-alpha.7](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.7).
+
+### Upgrade notes
+- Sites with `provider cloudflare` in `CADDY_CACHE_CDN_CONFIG`: replace `api/frankenphp/souin/v1.7.9-cloudflare-purge.patch` with the new one (the Dockerfile lines are unchanged apart from a comment) and rebuild php. Cloudflare's purge limit is per account, so when several sites, or staging and production, share an account, give each a share of it with `CLOUDFLARE_PURGE_REQUESTS`, `CLOUDFLARE_PURGE_WINDOW` and `CLOUDFLARE_PURGE_BURST` (or set `CLOUDFLARE_PURGE_PLAN` if the account isn't on Free). To pass them through, copy the `compose.yaml`, `bin/devops/k8s.sh` and `helm/cwa` changes from the same commit. ([37afcb1](https://github.com/components-web-app/components-web-app/commit/37afcb10d2e4594c3e36b6f462ab76e3569fdacb))
+
 ### Fixed
 - Cloudflare edge purges are no longer lost to Cloudflare's per-account purge rate limit (Free: 5 a minute, burst 25), which left pages stale at the edge for up to a year after a short editing session. The Cloudflare Souin patch now queues purges, deduplicates tags, sends up to 100 per request at the plan's rate, retries a `429` after `Retry-After` (and 5xx or network errors), and turns a backlog too big to send within a minute into one purge everything. Optional settings: `CLOUDFLARE_PURGE_PLAN` (`free` default, `pro`, `business`, `enterprise`), or `CLOUDFLARE_PURGE_REQUESTS` per `CLOUDFLARE_PURGE_WINDOW` and `CLOUDFLARE_PURGE_BURST`; set a lower rate when staging and production, or several sites, share a Cloudflare account. Only used with `provider cloudflare`. ([37afcb1](https://github.com/components-web-app/components-web-app/commit/37afcb10d2e4594c3e36b6f462ab76e3569fdacb), [#115](https://github.com/components-web-app/components-web-app/issues/115))
 
