@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+- A deploy now fails before helm, with a message naming the line, when `CADDY_CACHE_CDN_CONFIG` has a `cdn` directive with no value or an unexpanded `$NAME` (e.g. `api_key $CLOUDFLARE_API_TOKEN` when the token is a Protected GitLab variable and the branch isn't protected). Souin panics parsing it, so php crash-looped while helm reported the release deployed. ([f0e62d7](https://github.com/components-web-app/components-web-app/commit/f0e62d7b2a9dba93aa4b1a6e6a458d89bfdd8153), [#116](https://github.com/components-web-app/components-web-app/issues/116))
+
 ## [2.0.0-alpha.8](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.8) - 2026-10-07
 
 Since [v2.0.0-alpha.7](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.7).
