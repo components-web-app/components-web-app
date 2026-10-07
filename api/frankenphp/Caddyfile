@@ -443,7 +443,14 @@
     # no tag purge could ever remove them (#108). Copied from Surrogate-Key on
     # every response that has one, including Souin hits. Cloudflare strips it
     # before visitors, and it costs nothing when Cloudflare isn't in front.
-    header {
+    #
+    # Not on internal hosts (php.local, the in-cluster service: dotless, the same
+    # test as @cache_host_internal): SSR never goes through Cloudflare, and the
+    # copy doubled the headers of a big collection past Node's 16 KB limit, so
+    # SSR's fetch of /_api/_/routes failed and the sitemap came out empty (#118).
+    # /_api keeps it on public hosts, for sites whose Cloudflare rule caches it.
+    @cache_tag not header_regexp host ^[A-Za-z0-9-]+(\.local)?(:[0-9]{1,5})?$
+    header @cache_tag {
         >Cache-Tag {http.response.header.Surrogate-Key}
         match {
             header Surrogate-Key *
