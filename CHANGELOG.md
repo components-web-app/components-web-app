@@ -7,6 +7,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
+- Copy the `nitro` block from `app/nuxt.config.ts`, and the `goMemLimit` lines and `cwa.php.goMemLimit` helper from `helm/cwa` and `bin/devops/k8s.sh`. ([5e732e9](https://github.com/components-web-app/components-web-app/commit/5e732e9d36688fcbdb59b656f47ccbae1ccfd8e2))
 - Copy the `@cache_tag` matcher and `header @cache_tag` block from `api/frankenphp/Caddyfile`, and the `NODE_OPTIONS` line from `app/Dockerfile`; if your deploy sets `NODE_OPTIONS`, add `--max-http-header-size=65536` to it. A site whose sitemap is empty, or whose SSR log shows `UND_ERR_HEADERS_OVERFLOW`, needs this. ([3eae185](https://github.com/components-web-app/components-web-app/commit/3eae1859ff82264773072b57856febb83e420a91))
 
 ### Fixed
