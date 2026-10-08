@@ -6,6 +6,16 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Update `components-web-app/api-components-bundle` to 2.0.0-alpha.9 and `@cwa/nuxt` to 2.0.0-alpha.8 **together**, and add the migration for the new `is_reachable_without_route` column on `_acb_page` and `_acb_abstract_page_data` (generate your own with `doctrine:migrations:diff`, or copy `Version20261008121224.php` if your schema matches the template's). The module's toggle needs the bundle's column. ([d1849ab](https://github.com/components-web-app/components-web-app/commit/d1849abb898385590190d470a883c22ff62018fb), [cca6db5](https://github.com/components-web-app/components-web-app/commit/cca6db54b842e47328c78deb96f455e8ceea7064))
+- Migrations are upward-only: delete `down()` from your migrations, including new ones, so a rollback aborts instead of dropping data. ([3fbfb4e](https://github.com/components-web-app/components-web-app/commit/3fbfb4e142d6a7f20714843ff24c45e1b43c6ffc))
+
+### Added
+- Pages and page data have a **Public without a route** admin toggle (bundle `isReachableWithoutRoute`): a routeless page loaded by a custom fetch IRI, such as a share link, can be read by visitors (#121, api-components-bundle#381, cwa-nuxt-module#369). ([d1849ab](https://github.com/components-web-app/components-web-app/commit/d1849abb898385590190d470a883c22ff62018fb), [cca6db5](https://github.com/components-web-app/components-web-app/commit/cca6db54b842e47328c78deb96f455e8ceea7064))
+
+### Removed
+- Every migration's `down()`; Doctrine's inherited one aborts. ([3fbfb4e](https://github.com/components-web-app/components-web-app/commit/3fbfb4e142d6a7f20714843ff24c45e1b43c6ffc))
+
 ## [2.0.0-alpha.14](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.14) - 2026-10-08
 
 Since [v2.0.0-alpha.13](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.13).
