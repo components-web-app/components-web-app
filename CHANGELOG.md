@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- **Keep `CLUSTER_ISSUER=letsencrypt-prod`** in production. v2.0.0-alpha.11's notes listed it as a default you could delete, but `bin/devops/setup.sh` makes an unset one `letsencrypt-staging` first, so deleting it gives the site an untrusted staging certificate. If you deleted it, set it again and redeploy. ([be0da08](https://github.com/components-web-app/components-web-app/commit/be0da0807f93d1d64f54741873428f55d78ac5ca))
+
+### Fixed
+- `CLUSTER_ISSUER` is no longer given a `letsencrypt-prod` default that never applied; it stays a per-project setting (`letsencrypt-staging` when unset). `setup.sh` no longer warns about an unset `CORS_ALLOW_ORIGIN` or `TRUSTED_HOSTS`, which now default to the deploy's hostnames. ([be0da08](https://github.com/components-web-app/components-web-app/commit/be0da0807f93d1d64f54741873428f55d78ac5ca))
+
 ## [2.0.0-alpha.11](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.11) - 2026-10-08
 
 Since [v2.0.0-alpha.10](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.10).
