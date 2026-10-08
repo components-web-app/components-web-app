@@ -480,9 +480,45 @@ EOF
   fi
 }
 
+# The hostnames this deploy serves: DOMAIN, plus KUBE_INGRESS_ALIAS_DOMAINS on the
+# stable track (the only one that gets them), space-separated.
+site_hosts() {
+  local hosts="$DOMAIN"
+  if [ "${1:-stable}" = "stable" ]; then
+    hosts="$hosts $(generate_alias_tls_yaml stable | sed 's/^ *- *//' | tr '\n' ' ')"
+  fi
+  echo $hosts
+}
+
+# Defaults every site used to set by hand with the same values (2026-10-08). Each
+# is only a default: a CI variable still wins. CORS_ALLOW_ORIGIN, TRUSTED_HOSTS
+# and MERCURE_CORS_ORIGIN follow this deploy's own hostnames, so review apps and
+# staging get theirs instead of production's. CLUSTER_ISSUER uses `-`, not `:-`,
+# so a variable set to "" still turns cert-manager off.
+apply_site_defaults() {
+  local track="${1:-stable}" hosts alt="" origins="" host escaped
+  hosts=$(site_hosts "$track")
+  for host in $hosts; do
+    escaped=$(printf '%s' "$host" | sed 's/[.]/\\./g')
+    alt="${alt:+$alt|}$escaped"
+    origins="${origins:+$origins }https://$host"
+  done
+  INGRESS_ENABLED="${INGRESS_ENABLED:-true}"
+  CLUSTER_ISSUER="${CLUSTER_ISSUER-letsencrypt-prod}"
+  CORS_ALLOW_ORIGIN="${CORS_ALLOW_ORIGIN:-^https://(?:$alt)\$}"
+  TRUSTED_HOSTS="${TRUSTED_HOSTS:-^(?:$alt|localhost)\$}"
+  MERCURE_CORS_ORIGIN="${MERCURE_CORS_ORIGIN:-$origins}"
+  # An external database (no in-cluster PostgreSQL) is reached over the network,
+  # so it needs TLS; the in-cluster chart's PostgreSQL has none.
+  if [ "${POSTGRESQL_ENABLED:-true}" = "false" ]; then
+    DATABASE_SSL_MODE="${DATABASE_SSL_MODE:-require}"
+  fi
+}
+
 deploy() {
 	local track="${1-stable}"
 	check_cdn_config || return 1
+	apply_site_defaults "$track"
 	name="$RELEASE"
 	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
@@ -500,7 +536,13 @@ deploy() {
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
   DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
   DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
-  CADDY_CACHE_CDN_CONFIG_B64=$(echo "${CADDY_CACHE_CDN_CONFIG:-""}" | base64 -w0)
+  # Empty when unset, so the chart passes nothing and the Caddyfile's default
+  # (`strategy hard`) applies. `echo "" | base64` gave "Cg==", a newline, which
+  # replaced that default with an empty cdn block.
+  CADDY_CACHE_CDN_CONFIG_B64=""
+  if [ -n "${CADDY_CACHE_CDN_CONFIG:-}" ]; then
+    CADDY_CACHE_CDN_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_CDN_CONFIG" | base64 -w0)
+  fi
   CADDY_CACHE_EXTRA_CONFIG_B64=$(echo "${CADDY_CACHE_EXTRA_CONFIG:-"otter"}" | base64 -w0)
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)

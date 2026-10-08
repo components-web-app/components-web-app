@@ -163,6 +163,7 @@ deployment sets it. The CronJob must never get it (#103).
     secretKeyRef:
       name: {{ include "cwa.fullname" . }}
       key: caddy-cache-cdn-config
+      optional: true
 - name: CADDY_CACHE_EXTRA_CONFIG
   valueFrom:
     secretKeyRef:
