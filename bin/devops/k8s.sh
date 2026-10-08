@@ -108,7 +108,11 @@ build_api() {
 	docker context create builder
 	docker buildx create builder --driver=docker-container --use
 
+  # COMPOSER_AUTH (from GITHUB_TOKEN in setup.sh) authenticates composer's ~180
+  # downloads from github.com. A build secret, so it's never written to the
+  # image; empty is fine, the Dockerfile only uses it when it has content.
   docker buildx build --push \
+  	--secret id=composer_auth,env=COMPOSER_AUTH \
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	--tag $PHP_REPOSITORY:$TAG \
@@ -151,10 +155,19 @@ run_test_functional() {
   # rebuilds the schema, so this needs the job's own database (setup_test_db_environment).
   # CI variables can carry the real site's TRUSTED_HOSTS; the test client's host is localhost.
   export TRUSTED_HOSTS='^(?:localhost|caddy(?:\.local)?|example\.com)$'
+  # Every CI variable is in this job's environment, and a real environment
+  # variable beats api/.env. A project's MAILER_DSN is its live mail relay, so a
+  # test that sends email (a contact form, a password reset) would deliver it
+  # for real on every pipeline. Unset, the tests get .env's values instead.
+  unset MAILER_DSN MAILER_EMAIL
   echo "run_test_functional function"
   cd ./api || return
   mkdir -p build/logs/phpunit/
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
+  # A test that signs in needs a keypair matching .env's JWT_PASSPHRASE. The
+  # .pem files are git-ignored, so they aren't in the image, and this job doesn't
+  # run generate_jwt_keys. --skip-if-exists leaves a working local checkout alone.
+  APP_ENV=test php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
   APP_ENV=test vendor/bin/phpunit tests/Functional --log-junit build/logs/phpunit/functional.xml
 }
 
@@ -261,7 +274,7 @@ create_docker_pull_secret() {
     --docker-username="${CI_DEPLOY_USER:-$CI_REGISTRY_USER}" \
     --docker-password="${CI_DEPLOY_PASSWORD:-$CI_REGISTRY_PASSWORD}" \
     --docker-email="$GITLAB_USER_EMAIL" \
-    -o yaml --dry-run=client | kubectl replace -n "$KUBE_NAMESPACE" --force -f -
+    -o yaml --dry-run=client | kubectl apply -n "$KUBE_NAMESPACE" -f -
 }
 
 generate_alias_tls_yaml() {
@@ -635,7 +648,6 @@ php:
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${RESET_DATABASE:-false}"
-  apiSecretToken: ${VARNISH_TOKEN:-"~"}
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}

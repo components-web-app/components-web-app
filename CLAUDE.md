@@ -128,6 +128,10 @@ Known harmless duplicates: `nuxt` pulls its own `@nuxt/devtools` 3.x beside the 
 
 `The ".../symfony/recipes-contrib/flex/main/index.json" file could not be downloaded (HTTP/2 404)` is a **stale GitHub PAT** in `/config/composer/auth.json`. GitHub returns 404, not 401, for a bad token, and an unauthenticated `curl` returns 200, so manual testing misleads. It persists because `/config` is a volume and the entrypoint only clears it when `vendor/` is empty. Fix: `docker compose exec php rm -f /config/composer/auth.json` (or set a valid `GITHUB_TOKEN`).
 
+**CI composer installs authenticate with an optional `GITHUB_TOKEN`** (any fine-grained token, no permissions needed; GitHub Actions maps its own). `setup.sh` turns it into `COMPOSER_AUTH`, which test jobs use directly and `build_api` passes as the `composer_auth` build secret (never a build arg: it would land in the image history). Unset, it stays unset: an empty token is rejected outright, worse than anonymous. Anonymous installs get 60 requests an hour per IP and fail part way through on a shared runner. The build log's `github rate limit for this build:` line says 60 or 5000.
+
+**`run_test_functional` unsets `MAILER_DSN` and `MAILER_EMAIL`:** every CI variable reaches the job and beats `api/.env`, so a project's live relay would deliver any email a test sends. Keep it that way when adding mail settings.
+
 ### Cold dev renders can 504
 
 The first request to a page after a restart can exceed Souin's 10s backend timeout (`504`, `cache-status: … detail=DEADLINE-EXCEEDED`). Retry. A freshly restarted dev server also 504s under concurrency while Vite compiles.

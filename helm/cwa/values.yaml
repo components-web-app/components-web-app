@@ -61,7 +61,6 @@ php:
   frankenphp:
     # FRANKENPHP_MAX_WAIT_TIME (api/frankenphp/worker.Caddyfile). Empty keeps the default.
     maxWaitTime: ""
-  apiSecretToken: ~
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}

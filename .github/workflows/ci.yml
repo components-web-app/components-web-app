@@ -59,6 +59,8 @@ jobs:
           CI_COMMIT_SHA: ${{ github.sha }}
           CI_COMMIT_REF_NAME: ${{ github.ref_name }}
           KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+          # Authenticates composer's downloads from github.com (setup.sh → COMPOSER_AUTH).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
