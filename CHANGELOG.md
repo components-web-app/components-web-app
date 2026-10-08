@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.14](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.14) - 2026-10-08
+
+Since [v2.0.0-alpha.13](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.13).
+
 ### Upgrade notes
 - **Production certificates are opt-in again:** with no `CLUSTER_ISSUER` variable, deploys use `letsencrypt-staging` (as before alpha.11). Every production site must set `CLUSTER_ISSUER=letsencrypt-prod`; alpha.12's advice that it could be deleted is withdrawn. Check it exists **before** syncing `bin/devops/setup.sh`. ([5f3f785](https://github.com/components-web-app/components-web-app/commit/5f3f78521fca025b9d6f9f0fdb8132cbb679b92d))
 - Replace alpha.13's `routeRules` `/sw.js` block with `registerWebManifestInRouteRules: true` in the `pwa` block of `app/nuxt.config.ts`. ([e4ebb26](https://github.com/components-web-app/components-web-app/commit/e4ebb264617e5013ff4b5a70d477c27edd451209))
