@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+- Release steps tag with `--cleanup=verbatim`, so a tag message keeps the changelog's `###` headings. ([56f3065](https://github.com/components-web-app/components-web-app/commit/56f3065abea729f33375ee5db664510114fed341))
+
 ## [2.0.0-alpha.15](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.15) - 2026-10-08
 
 Since [v2.0.0-alpha.14](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.14).
