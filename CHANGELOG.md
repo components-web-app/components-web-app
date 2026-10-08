@@ -6,8 +6,21 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Copy `run_test_functional` from `bin/devops/k8s.sh`: it unsets `MAILER_DSN` and `MAILER_EMAIL`, so a test that sends email can't deliver it through your live relay (every CI variable reaches the test job and beats `api/.env`). ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
+- Optional: add a `GITHUB_TOKEN` CI variable (a fine-grained token with no permissions is enough) and copy the composer step from `api/Dockerfile`, `build_api` from `bin/devops/k8s.sh`, the `COMPOSER_AUTH` block at the end of `bin/devops/setup.sh` and the build step's `GITHUB_TOKEN` in `.github/workflows/ci.yml`, so composer installs stop failing on GitHub's anonymous rate limit. Without the token nothing changes. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
+
+### Added
+- Composer authenticates to github.com with an optional `GITHUB_TOKEN`, passed to the API build as a build secret, with at most 6 parallel downloads. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
+
 ### Fixed
+- A downstream functional test that sends email no longer reaches the live mail relay, and tests that sign in get a JWT keypair. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
+- The registry pull secret is applied rather than replaced with `--force`, so releases that share a namespace don't race ("already exists"). ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
+- `helm lint` and `helm template` work on the chart's own defaults: `jwt-passphrase` defaults to `""` instead of failing `b64enc`. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
 - Release steps tag with `--cleanup=verbatim`, so a tag message keeps the changelog's `###` headings. ([56f3065](https://github.com/components-web-app/components-web-app/commit/56f3065abea729f33375ee5db664510114fed341))
+
+### Removed
+- `apiSecretToken` (`VARNISH_TOKEN`), which nothing in the chart read. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
 
 ## [2.0.0-alpha.15](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.15) - 2026-10-08
 
