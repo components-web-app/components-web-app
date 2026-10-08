@@ -574,7 +574,10 @@ deploy() {
   # wins - these only fill the gap.
   case "$track" in
     stable|canary)
-      PWA_AUTOSCALE_MIN_DEFAULT="2"
+      # Production keeps two SSR pods so a rolling deploy or a lost node never
+      # leaves the site with none. A canary runs beside production, which keeps
+      # serving, so one is enough (#124).
+      if [ "$track" = "stable" ]; then PWA_AUTOSCALE_MIN_DEFAULT="2"; else PWA_AUTOSCALE_MIN_DEFAULT="1"; fi
       PWA_AUTOSCALE_MAX_DEFAULT="6"
       PWA_CPU_REQUEST_DEFAULT="100m"
       PWA_MEMORY_REQUEST_DEFAULT="160Mi"
