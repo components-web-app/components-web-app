@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Deploys now default `INGRESS_ENABLED=true`, `CLUSTER_ISSUER=letsencrypt-prod`, `CORS_ALLOW_ORIGIN`, `TRUSTED_HOSTS` and `MERCURE_CORS_ORIGIN` (exact matches for the deploy's own hostname and, in production, `KUBE_INGRESS_ALIAS_DOMAINS`), `DATABASE_SSL_MODE=require` when `POSTGRESQL_ENABLED=false`, and an unset `CADDY_CACHE_CDN_CONFIG` now really means `strategy hard`. Copy `apply_site_defaults` and `site_hosts` from `bin/devops/k8s.sh` and the `caddy-cache-cdn-config` changes in `helm/cwa`, deploy once, then delete the CI variables that only repeated these values. Keep `CORS_ALLOW_ORIGIN`/`TRUSTED_HOSTS` if another site calls this API from the browser; set `CLUSTER_ISSUER` to an empty value on a cluster without cert-manager. Don't delete `CADDY_CACHE_CDN_CONFIG=strategy hard` before that deploy. ([be14ab0](https://github.com/components-web-app/components-web-app/commit/be14ab050a7f2b7d6bb843ab4dc85982fede316c))
+
+### Fixed
+- An unset `CADDY_CACHE_CDN_CONFIG` replaced the Caddyfile's `strategy hard` with an empty `cdn` block (Kubernetes received a newline), so Souin would keep stale copies of purged responses; every site had to set `strategy hard` by hand. ([be14ab0](https://github.com/components-web-app/components-web-app/commit/be14ab050a7f2b7d6bb843ab4dc85982fede316c))
+
 ## [2.0.0-alpha.10](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.10) - 2026-10-08
 
 Since [v2.0.0-alpha.9](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.9).
