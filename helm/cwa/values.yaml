@@ -95,10 +95,13 @@ php:
       # first, because it's the one furthest over its request.
       memory: 1Gi
     requests:
-      # Required, not cosmetic: an HPA expresses CPU as a percentage of the
-      # *request*, so with no request the autoscaler reports `cpu: <unknown>`
-      # and never scales, however correct the rest of hpa.yaml is.
-      cpu: 200m
+      # A floor, not a size. With no CPU limit php bursts above it; the request
+      # sets its share of a busy node (a pod with none was starved and its probes
+      # timed out) and what the scheduler reserves. The API never scales past one
+      # pod, so hpa.yaml's CPU percentage of it changes nothing. 100m held a load
+      # test at 50 visitors, peaking at 282m (smoking-and-alcohol-websites,
+      # 2026-10-08).
+      cpu: 100m
       memory: 350Mi
   # GOMEMLIMIT for FrankenPHP's Go runtime (Caddy, Souin, Mercure). Empty sets it
   # to 80% of resources.limits.memory above (cwa.php.goMemLimit), so Go collects
@@ -128,7 +131,10 @@ pwa:
       cpu: 1000m
       memory: 1Gi
     requests:
-      cpu: 250m
+      # With page HTML cached, SSR pods mostly idle (1-5m), so this reserves
+      # little. It is also what the HPA's CPU percentage below is measured
+      # against: change the two together.
+      cpu: 100m
       # What the scheduler reserves, not a ceiling: the container is OOMKilled
       # only at the 1Gi limit above. An idle SSR pod measures about 70-80Mi
       # and about 125Mi under normal load, so reserving more just holds node
@@ -140,9 +146,11 @@ pwa:
     enabled: true
     minReplicas: 1
     maxReplicas: 6
-    # Lower than the API's 90%. SSR is CPU-bound per render, so by the time a
-    # pod is at 90% the render queue has already formed and latency has gone.
-    targetCPUUtilizationPercentage: 70
+    # A percentage of the 100m request above, so 175% adds a pod at about 175m:
+    # roughly one ~150ms render a second, before a render queue forms. Over 100%
+    # is valid (the limit is 1000m). Keep request x target near 175m if either
+    # changes; at 70% of 100m, ordinary traffic would add pods.
+    targetCPUUtilizationPercentage: 175
     # No memory target. SSR is CPU-bound, so another pod does not relieve
     # memory: each one holds its own copy of the same caches. Node also rarely
     # hands memory back after GC, and an HPA scales down only when every metric

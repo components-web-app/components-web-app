@@ -518,9 +518,9 @@ deploy() {
     stable|canary)
       PWA_AUTOSCALE_MIN_DEFAULT="2"
       PWA_AUTOSCALE_MAX_DEFAULT="6"
-      PWA_CPU_REQUEST_DEFAULT="250m"
+      PWA_CPU_REQUEST_DEFAULT="100m"
       PWA_MEMORY_REQUEST_DEFAULT="160Mi"
-      PHP_CPU_REQUEST_DEFAULT="200m"
+      PHP_CPU_REQUEST_DEFAULT="100m"
       PHP_MEMORY_REQUEST_DEFAULT="350Mi"
       ;;
     *)
@@ -558,7 +558,7 @@ pwa:
     enabled: ${PWA_AUTOSCALE:-"true"}
     minReplicas: ${PWA_AUTOSCALE_MIN:-$PWA_AUTOSCALE_MIN_DEFAULT}
     maxReplicas: ${PWA_AUTOSCALE_MAX:-$PWA_AUTOSCALE_MAX_DEFAULT}
-    targetCPUUtilizationPercentage: ${PWA_AUTOSCALE_CPU_PERCENT:-"70"}
+    targetCPUUtilizationPercentage: ${PWA_AUTOSCALE_CPU_PERCENT:-"175"}
     targetMemoryUtilizationPercentage: ${PWA_AUTOSCALE_MEMORY_PERCENT:-"~"}
   resources:
     limits:
