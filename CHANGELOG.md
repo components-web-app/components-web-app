@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.12](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.12) - 2026-10-08
+
+Since [v2.0.0-alpha.11](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.11).
+
 ### Upgrade notes
 - **Copy `bin/devops/setup.sh` before deleting `CLUSTER_ISSUER`.** v2.0.0-alpha.11's `letsencrypt-prod` default never applied, because `setup.sh` set an unset value to `letsencrypt-staging` first, so a site that deleted the variable got an untrusted staging certificate on its next deploy. With this release's `setup.sh` (no `CLUSTER_ISSUER` default) and `k8s.sh`, an unset value gives `letsencrypt-prod`; an empty value still turns cert-manager off. Until you've synced both, keep `CLUSTER_ISSUER=letsencrypt-prod`. ([0225e8c](https://github.com/components-web-app/components-web-app/commit/0225e8ce48cbed0e49627938d965f335884e2269), [#119](https://github.com/components-web-app/components-web-app/issues/119))
 
