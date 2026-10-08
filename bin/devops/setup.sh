@@ -15,6 +15,13 @@ if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
   export DEPLOYMENT_BRANCH=main
 fi
 
+# Production certificates are opt-in per project: set CLUSTER_ISSUER=letsencrypt-prod
+# once the domain points at the cluster. Until then a misconfigured domain fails
+# against Let's Encrypt's staging issuer, not production's rate limits
+# (Daniel, 2026-10-08). An explicit empty value turns cert-manager off.
+if [[ -z "${CLUSTER_ISSUER+x}" ]]; then
+  export CLUSTER_ISSUER="letsencrypt-staging"
+fi
 if [[ -z "$LETSENCRYPT_SECRET_NAME" ]]; then
   export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
 fi
@@ -31,9 +38,8 @@ export APP_REPOSITORY_CACHE="${DOCKER_REPOSITORY}/app-cache"
 export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/php.}"
 export KUBE_INGRESS_ALIAS_DOMAINS="${KUBE_INGRESS_ALIAS_DOMAINS}"
 
-# CLUSTER_ISSUER, CORS_ALLOW_ORIGIN, TRUSTED_HOSTS and MERCURE_CORS_ORIGIN are
-# defaulted by apply_site_defaults in k8s.sh. Don't set them here: an unset
-# CLUSTER_ISSUER made letsencrypt-staging here pre-empted that default (#119).
+# CORS_ALLOW_ORIGIN, TRUSTED_HOSTS and MERCURE_CORS_ORIGIN default to this
+# deploy's own hostnames (apply_site_defaults in k8s.sh), so they're optional.
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
