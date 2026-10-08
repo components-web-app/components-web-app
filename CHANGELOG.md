@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.13](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.13) - 2026-10-08
+
+Since [v2.0.0-alpha.12](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.12).
+
 ### Upgrade notes
 - Copy the `routeRules` block (`/sw.js` with `cache-control: no-cache`) into `app/nuxt.config.ts`. Then a Cloudflare zone can rely on Cloudflare's default caching of static files: no blanket "Bypass cache for everything" rule and no `/_nuxt` exception rule. ([4add7fe](https://github.com/components-web-app/components-web-app/commit/4add7fe97b9b191b5eec862dd8d50d27b4a70f37))
 
