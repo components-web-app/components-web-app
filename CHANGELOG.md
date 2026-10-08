@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.10](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.10) - 2026-10-08
+
+Since [v2.0.0-alpha.9](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.9).
+
 ### Upgrade notes
 - Production CPU requests are lower: php 200m → 100m, SSR 250m → 100m, and the SSR autoscaler's CPU target 70% → 175%, so a pod is still added at about 175m. A site that sets only `PWA_AUTOSCALE_CPU_PERCENT` or only `PWA_CPU_REQUEST` must set the other to match (request × target ≈ 175m), or SSR scales on ordinary traffic. ([e79ad3b](https://github.com/components-web-app/components-web-app/commit/e79ad3b7fc18feb7f20fcfe8d810da3ef1973c09))
 
