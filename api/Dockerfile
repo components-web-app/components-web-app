@@ -159,8 +159,19 @@ ENV GOOGLE_CLOUD_PROJECT="local-fallback-id"
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY --link composer.* symfony.* ./
-RUN set -eux; \
-	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+# composer_auth is an optional build secret (k8s.sh build_api): without it every
+# download is an anonymous request to github.com, capped at 60 an hour per IP,
+# and a shared CI runner gets a 429 part way through ~180 packages. A secret, not
+# a build arg, so the token stays out of the image history. The rate-limit line
+# prints 60 when the token didn't reach the build and 5000 when it did; it echoes
+# the limit header only, never the token.
+RUN --mount=type=secret,id=composer_auth \
+	set -eu; \
+	if [ -s /run/secrets/composer_auth ]; then COMPOSER_AUTH="$(cat /run/secrets/composer_auth)"; export COMPOSER_AUTH; fi; \
+	GH_TOKEN="$(printf '%s' "${COMPOSER_AUTH:-}" | sed -n 's/.*"github\.com": *"\([^"]*\)".*/\1/p')"; \
+	if [ -n "$GH_TOKEN" ]; then RL="$(curl -s -o /dev/null -D - -H "Authorization: Bearer ${GH_TOKEN}" https://api.github.com/rate_limit || true)"; else RL="$(curl -s -o /dev/null -D - https://api.github.com/rate_limit || true)"; fi; \
+	echo "github rate limit for this build: $(printf '%s' "$RL" | tr -d '\r' | sed -n 's/^[Xx]-[Rr]ate[Ll]imit-[Ll]imit: //p' | head -1)  (60 = anonymous, 5000 = token applied)"; \
+	COMPOSER_MAX_PARALLEL_HTTP=6 composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
 # Moved these below the composer install as they will not affect it and then if we change them it will miss cache and wait for composer install again
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
