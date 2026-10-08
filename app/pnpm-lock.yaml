@@ -171,8 +171,8 @@ importers:
   .:
     dependencies:
       '@cwa/nuxt':
-        specifier: ^2.0.0-alpha.7
-        version: 2.0.0-alpha.7(cf9969e1c75040708d844a861aead060)
+        specifier: ^2.0.0-alpha.8
+        version: 2.0.0-alpha.8(cf9969e1c75040708d844a861aead060)
       '@headlessui/vue':
         specifier: ^1.7.23
         version: 1.7.23(vue@3.5.43(typescript@6.0.3))
@@ -819,8 +819,8 @@ packages:
     resolution: {integrity: sha512-OoKoR0f76dCY666JlcbhmVTs2drYj1GUXZTYTcbUgJjh9Nv41aFfZ21bPQTERm5+L5cBDo466NltB2lplS5GBw==}
     engines: {node: '>=20.19.0'}
 
-  '@cwa/nuxt@2.0.0-alpha.7':
-    resolution: {integrity: sha512-LrhXw3zWVnYC9XH7fOpbuCdTPQXNX1QYCSw/N64Le1e+lwRUjPpDKpDqPwpGoe2IJGSP95XflgL9mDGj337BDg==}
+  '@cwa/nuxt@2.0.0-alpha.8':
+    resolution: {integrity: sha512-ZCG8knQfqJokC8CkkVNOdMNj+W0mFH70hGV48je33czaA539YY00mFrvkbHx857qeDaDin4YqLFDM8+Kvnnv9Q==}
     engines: {pnpm: '>=11.5.3'}
     hasBin: true
     peerDependencies:
@@ -7790,7 +7790,7 @@ snapshots:
 
   '@csstools/css-tokenizer@4.0.2': {}
 
-  '@cwa/nuxt@2.0.0-alpha.7(cf9969e1c75040708d844a861aead060)':
+  '@cwa/nuxt@2.0.0-alpha.8(cf9969e1c75040708d844a861aead060)':
     dependencies:
       '@headlessui/vue': 1.7.23(vue@3.5.43(typescript@6.0.3))
       '@internationalized/date': 3.12.4
