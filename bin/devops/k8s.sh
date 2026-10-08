@@ -156,9 +156,10 @@ run_test_functional() {
   # CI variables can carry the real site's TRUSTED_HOSTS; the test client's host is localhost.
   export TRUSTED_HOSTS='^(?:localhost|caddy(?:\.local)?|example\.com)$'
   # Every CI variable is in this job's environment, and a real environment
-  # variable beats api/.env. A project's MAILER_DSN is its live mail relay, so a
-  # test that sends email (a contact form, a password reset) would deliver it
-  # for real on every pipeline. Unset, the tests get .env's values instead.
+  # variable beats api/.env.test. A project's MAILER_DSN is its live mail relay,
+  # so a test that sends email (a contact form, a password reset) would deliver
+  # it for real on every pipeline. Unset, the tests get .env.test's null
+  # transport (built, never sent) and .env's MAILER_EMAIL.
   unset MAILER_DSN MAILER_EMAIL
   echo "run_test_functional function"
   cd ./api || return
