@@ -14,6 +14,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Added
 - Composer authenticates to github.com with an optional `GITHUB_TOKEN`, passed to the API build as a build secret, with at most 6 parallel downloads. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
 
+### Changed
+- A canary release's SSR (PWA) minimum defaults to 1 pod instead of 2; production keeps 2, and `PWA_AUTOSCALE_MIN` still wins ([#124](https://github.com/components-web-app/components-web-app/issues/124)). ([095c074](https://github.com/components-web-app/components-web-app/commit/095c074eba4a660412fad08c74a6415c11591115))
+
 ### Fixed
 - A downstream functional test that sends email no longer reaches the live mail relay (`.env.test` uses the null transport), and tests that sign in get a JWT keypair. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
 - The registry pull secret is applied rather than replaced with `--force`, so releases that share a namespace don't race ("already exists"). The first deploy after this prints a harmless one-off warning about a missing `last-applied-configuration` annotation. ([!12](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/12), [#123](https://github.com/components-web-app/components-web-app/issues/123))
