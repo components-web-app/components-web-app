@@ -32,10 +32,4 @@ final class Version20260926075921 extends AbstractMigration
             )
         SQL);
     }
-
-    public function down(Schema $schema): void
-    {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('DROP TABLE _acb_orphaned_resource_report');
-    }
 }

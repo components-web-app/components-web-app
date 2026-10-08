@@ -23,9 +23,4 @@ final class Version20260921141436 extends AbstractMigration
     {
         $this->addSql('ALTER TABLE _acb_route ADD live_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP');
     }
-
-    public function down(Schema $schema): void
-    {
-        $this->addSql('ALTER TABLE _acb_route DROP live_at');
-    }
 }

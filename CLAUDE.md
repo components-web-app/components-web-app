@@ -57,6 +57,8 @@ The CLI lives in `packages/create-cwa/`. It is published manually via a git tag;
 
 **Updating the bundle:** `composer update components-web-app/api-components-bundle` inside the php container (`api/composer.json` doesn't require API Platform directly, so a plain `composer update` may move it a major). Then `bin/console doctrine:migrations:diff`, generate and commit any migration with the lock, `lint:container` in dev and prod, PHPUnit, `composer audit`, and check pages hydrate. **A `composer update` in the running dev container can cause a few minutes of 500s** while `vendor/` is rewritten; it recovers without a restart.
 
+**Migrations are upward-only (Daniel, 2026-10-08).** Delete the generated `down()` from every new migration; Doctrine's inherited `down()` then aborts (`No down() migration implemented`). A schema change is undone by a new forward migration, never by migrating down.
+
 **Updating the module / front-end deps:** on the host use `pnpm up/remove/dedupe --lockfile-only` (a plain host `pnpm up` fails with `ERR_PNPM_UNEXPECTED_STORE`, because host `node_modules` comes from the container's store), then `docker compose restart app`. Then `pnpm run build` (runs `vue-tsc` via `typescript.typeCheck: true`) and a real-browser hydration check (see *Front end*).
 
 **Check after every dependency change:**

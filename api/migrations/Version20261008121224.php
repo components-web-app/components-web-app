@@ -23,11 +23,4 @@ final class Version20261008121224 extends AbstractMigration
         $this->addSql('ALTER TABLE _acb_abstract_page_data ADD is_reachable_without_route BOOLEAN DEFAULT false NOT NULL');
         $this->addSql('ALTER TABLE _acb_page ADD is_reachable_without_route BOOLEAN DEFAULT false NOT NULL');
     }
-
-    public function down(Schema $schema): void
-    {
-        // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE _acb_abstract_page_data DROP is_reachable_without_route');
-        $this->addSql('ALTER TABLE _acb_page DROP is_reachable_without_route');
-    }
 }
