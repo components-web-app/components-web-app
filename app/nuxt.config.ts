@@ -188,6 +188,13 @@ export default defineNuxtConfig({
     // the php pod to a core and past its 1Gi memory limit (#117).
     compressPublicAssets: { brotli: true, gzip: true },
   },
+  routeRules: {
+    // The service worker keeps its name across builds, and Nitro sends it with no
+    // Cache-Control, so a CDN (Cloudflare caches .js by default) kept the previous
+    // build's worker for hours after a deploy. no-cache makes every check reach
+    // the origin. Browsers already skip their own HTTP cache for this check.
+    '/sw.js': { headers: { 'cache-control': 'no-cache' } },
+  },
   pwa: {
     // 'prompt', not 'autoUpdate': CWA admins edit inline, and an auto-updating SW
     // can swap assets mid-edit. With 'prompt' a new worker waits, and
