@@ -34,14 +34,8 @@ export APP_REPOSITORY_CACHE="${DOCKER_REPOSITORY}/app-cache"
 export MERCURE_SUBSCRIBE_DOMAIN="${DOMAIN/php.}"
 export KUBE_INGRESS_ALIAS_DOMAINS="${KUBE_INGRESS_ALIAS_DOMAINS}"
 
-if [[ -z "$CORS_ALLOW_ORIGIN" ]]; then
-  echo "!!!! WARNING CORS_ALLOW_ORIGIN ENVIRONMENT IS NOT SET !!!!";
-  echo "Expected a regex string similar to ^https?:\/\/(.*\.)?example\.com"
-fi
-if [[ -z "$TRUSTED_HOSTS" ]]; then
-  echo '!!!! WARNING TRUSTED_HOSTS ENVIRONMENT IS NOT SET !!!!';
-  echo "Expected a regex string similar to ^.*\.example\.com$"
-fi
+# CORS_ALLOW_ORIGIN, TRUSTED_HOSTS and MERCURE_CORS_ORIGIN default to this
+# deploy's own hostnames (apply_site_defaults in k8s.sh), so they're optional.
 
 if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"

@@ -493,8 +493,10 @@ site_hosts() {
 # Defaults every site used to set by hand with the same values (2026-10-08). Each
 # is only a default: a CI variable still wins. CORS_ALLOW_ORIGIN, TRUSTED_HOSTS
 # and MERCURE_CORS_ORIGIN follow this deploy's own hostnames, so review apps and
-# staging get theirs instead of production's. CLUSTER_ISSUER uses `-`, not `:-`,
-# so a variable set to "" still turns cert-manager off.
+# staging get theirs instead of production's. CLUSTER_ISSUER is not defaulted
+# here: setup.sh already makes it letsencrypt-staging when unset, and production
+# certificates stay a per-project choice (no Let's Encrypt production rate-limit
+# burn before a site's DNS points at the cluster).
 apply_site_defaults() {
   local track="${1:-stable}" hosts alt="" origins="" host escaped
   hosts=$(site_hosts "$track")
@@ -504,7 +506,6 @@ apply_site_defaults() {
     origins="${origins:+$origins }https://$host"
   done
   INGRESS_ENABLED="${INGRESS_ENABLED:-true}"
-  CLUSTER_ISSUER="${CLUSTER_ISSUER-letsencrypt-prod}"
   CORS_ALLOW_ORIGIN="${CORS_ALLOW_ORIGIN:-^https://(?:$alt)\$}"
   TRUSTED_HOSTS="${TRUSTED_HOSTS:-^(?:$alt|localhost)\$}"
   MERCURE_CORS_ORIGIN="${MERCURE_CORS_ORIGIN:-$origins}"
