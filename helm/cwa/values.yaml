@@ -10,9 +10,7 @@ php:
   gcloud:
     jsonKey: "my-dummy-very-long-json-key-placeholder-value"
     bucket: "no-gcloud-bucket"
-    # Public base URL for uploaded media, e.g. https://cdn.example.com/ (trailing
-    # slash required). Empty falls back to https://storage.googleapis.com/<bucket>/
-    # in api/config/services.php, so an unset value still yields working URLs.
+    # Public base URL for media, with a trailing slash. Empty falls back to https://storage.googleapis.com/<bucket>/ (#68).
     publicUrl: ""
   image:
     repository: "chart-example.local/cwa/php"
@@ -48,42 +46,19 @@ php:
     mode: ${DATABASE_SSL_MODE:-"prefer"}
   resources:
     limits:
-      # Deliberately no CPU limit. Caddy fronts every request and serves cached
-      # ones itself, so it should be free to burst into whatever the node has
-      # spare; a limit here throttles the cheap path along with the expensive one.
-      #
-      # Memory is a ceiling, not a reservation: the scheduler and the cluster
-      # autoscaler only count the request below. 1Gi covers the worst realistic case
-      # for 20 MB photo uploads: about 190Mi of baseline, plus one upload at PHP's
-      # memory_limit of 512M (GD decodes a ~24-megapixel JPEG to 100-150 MB, and the
-      # bundle builds the thumbnail inside the upload request), plus the other 3 of the
-      # 4 fixed worker threads (worker.Caddyfile) on ordinary requests at about 50Mi
-      # each: about 850Mi. The request stays low on purpose (Daniel, 2026-09-23). The
-      # cost is that a node short of memory during a large upload may evict this pod
-      # first, because it's the one furthest over its request.
+      # No CPU limit on purpose: Caddy serves cached responses and should burst (#69).
+      # Memory: 4 workers plus one large upload at memory_limit 512M fit in 1Gi. The request stays low on purpose.
       memory: 1Gi
     requests:
-      # A floor, not a size. With no CPU limit php bursts above it; the request
-      # sets its share of a busy node (a pod with none was starved and its probes
-      # timed out) and what the scheduler reserves. The API never scales past one
-      # pod, so hpa.yaml's CPU percentage of it changes nothing. 100m held a load
-      # test at 50 visitors, peaking at 282m (smoking-and-alcohol-websites,
-      # 2026-10-08).
+      # A floor and the scheduler's reservation. Never remove it: it sets php's share of a busy node (#69).
       cpu: 100m
       memory: 350Mi
-  # GOMEMLIMIT for FrankenPHP's Go runtime (Caddy, Souin, Mercure). Empty sets it
-  # to 80% of resources.limits.memory above (cwa.php.goMemLimit), so Go collects
-  # garbage harder as it nears the limit instead of growing until the container is
-  # OOMKilled (#117). PHP's own memory and cgo (cbrotli) are outside it, hence the
-  # headroom. A Go value such as "800MiB" overrides it; "off" leaves it unset.
+  # GOMEMLIMIT for Caddy, Souin and Mercure: empty is 80% of the memory limit (#117). A Go value overrides; "off" unsets.
   goMemLimit: ""
 
 pwa:
-  # Both default to the in-cluster service (see configmap.yaml). Leave apiUrl
-  # unset unless the SSR container genuinely cannot reach the API service:
-  # pointing it at the public URL makes every server-side render hairpin out to
-  # the load balancer and back in over TLS. apiUrlBrowser does have to be the
-  # public URL, and bin/devops/k8s.sh sets it.
+  # Both default to the in-cluster service (configmap.yaml). Leave apiUrl unset, or SSR hairpins through the load
+  # balancer; k8s.sh sets apiUrlBrowser to the public URL.
   apiUrl: ~
   apiUrlBrowser: ~
   image:
@@ -93,20 +68,13 @@ pwa:
     tag: ""
   resources:
     limits:
-      # A page render costs roughly 150ms of CPU, so a 150m limit *is* a ceiling
-      # of one page per second no matter how many pods or visitors there are -
-      # the container simply gets throttled. Give it a whole core to render with.
+      # The CPU limit caps renders per second whatever the pod count, so give each pod a whole core (#69).
       cpu: 1000m
       memory: 1Gi
     requests:
-      # With page HTML cached, SSR pods mostly idle (1-5m), so this reserves
-      # little. It is also what the HPA's CPU percentage below is measured
-      # against: change the two together.
+      # The HPA's CPU percentage is measured against this: change the two together.
       cpu: 100m
-      # What the scheduler reserves, not a ceiling: the container is OOMKilled
-      # only at the 1Gi limit above. An idle SSR pod measures about 70-80Mi
-      # and about 125Mi under normal load, so reserving more just holds node
-      # memory nobody uses.
+      # A reservation, not a ceiling: the OOMKill is at the limit above.
       memory: 160Mi
   # Used when pwa.autoscaling.enabled is false.
   replicaCount: 1
@@ -114,22 +82,14 @@ pwa:
     enabled: true
     minReplicas: 1
     maxReplicas: 6
-    # A percentage of the 100m request above, so 175% adds a pod at about 175m:
-    # roughly one ~150ms render a second, before a render queue forms. Over 100%
-    # is valid (the limit is 1000m). Keep request x target near 175m if either
-    # changes; at 70% of 100m, ordinary traffic would add pods.
+    # A percentage of the 100m request, about one render a second per pod. Keep request x target near 175m (#69).
     targetCPUUtilizationPercentage: 175
-    # No memory target. SSR is CPU-bound, so another pod does not relieve
-    # memory: each one holds its own copy of the same caches. Node also rarely
-    # hands memory back after GC, and an HPA scales down only when every metric
-    # is under target, so a memory target could add pods under normal load and
-    # then keep them. Set a percentage here (or
-    # CWA_CI_PWA_AUTOSCALE_MEMORY_PERCENT in CI) to turn it back on.
+    # No memory target: Node rarely returns memory, and an HPA scales down only when every metric is under target.
+    # Set a percentage (CWA_CI_PWA_AUTOSCALE_MEMORY_PERCENT in CI) to turn it on.
     targetMemoryUtilizationPercentage: ~
     behavior:
       scaleUp:
-        # A traffic spike arrives well inside a minute; the default 5-minute
-        # stabilisation window would add the pods after it had passed.
+        # Spikes arrive inside a minute, so add pods at once.
         stabilizationWindowSeconds: 0
         policies:
           - type: Percent
@@ -140,8 +100,7 @@ pwa:
             periodSeconds: 30
         selectPolicy: Max
       scaleDown:
-        # Deliberately slow: shedding pods during a lull leaves the next burst
-        # to be served by a cold, undersized deployment.
+        # Slow on purpose, so a lull doesn't leave the next burst to an undersized deployment.
         stabilizationWindowSeconds: 600
         policies:
           - type: Pods
@@ -219,12 +178,7 @@ podSecurityContext: {}
   # fsGroup: 2000
 
 securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+  # e.g. capabilities.drop [ALL], readOnlyRootFilesystem: true, runAsNonRoot: true, runAsUser: 1000
 
 service:
   type: ClusterIP
@@ -246,16 +200,8 @@ ingress:
 # If you use Mercure, you need the managed or the On Premise version to deploy more than one pod: https://mercure.rocks/docs/hub/cluster
 replicaCount: 1
 
-# Autoscaling for the API (php) tier only. The PWA has its own block above.
-#
-# maxReplicas is 1 on purpose. The API is the stateful tier: Souin's default
-# `otter` store is in-memory and API Platform purges it over localhost
-# (`cache-url` in configmap.yaml), so a write served by a second pod never
-# purges the first pod's copy - and with a long s-maxage that staleness is
-# effectively permanent. Mercure's bolt transport is pod-local for the same
-# reason. Nor does it need to scale: one pod serves cached responses in the
-# high hundreds of requests per second. Raise this only alongside a shared
-# cache store and a clustered Mercure hub.
+# The API (php) tier only; the PWA has its own block above. maxReplicas stays 1: Souin's otter store and Mercure's
+# bolt transport are per pod, so a second pod's cache is never purged. Raise it only with shared ones (#85).
 autoscaling:
   enabled: true
   minReplicas: 1
@@ -270,9 +216,7 @@ tolerations: []
 
 affinity: {}
 
-# Daily orphaned-resource scan (#101, templates/orphan-scan-cronjob.yaml). Off by
-# default; bin/devops/k8s.sh turns it on for production only, because staging and
-# canary can share production's database and would send the same alert again.
+# Daily orphan scan (#101). bin/devops/k8s.sh turns it on for production only.
 cronjobs:
   orphanScan:
     enabled: false

@@ -66,23 +66,13 @@ spec:
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "/bin/sleep 1; kill -QUIT 1"]
-          # Startup covers the whole boot (database wait, migrations, ANALYZE)
-          # before Caddy listens: 60 x 5s = the same 300s budget as before, but
-          # polled twice as often so readiness can start within ~5s of Caddy
-          # coming up. Readiness and liveness only run once this has passed.
+          # The whole boot (database wait, migrations, ANALYZE): 60 x 5s. Readiness and liveness wait for it.
           startupProbe:
             tcpSocket:
               port: http
             failureThreshold: 60
             periodSeconds: 5
-          # Is php still answering? A TCP check only proved Caddy was listening, so
-          # a pod whose php had stopped answering stayed alive, unready and out of
-          # service until someone restarted it by hand (35h on cymru-kitchens,
-          # 2026-09-30). This is the readiness request, which the Caddyfile keeps
-          # out of the cache for the kubelet, so it reaches php every time. 6 x 10s
-          # is a minute of failures before a restart: long enough to ride out a
-          # burst that queues behind the 4 workers, while readiness has already
-          # taken the pod out of service after 30s.
+          # Restarts a pod whose php stops answering after a minute of failures, on readiness's uncached request (#104).
           livenessProbe:
             httpGet:
               path: /_api/_/site_config_parameters.jsonld
@@ -101,29 +91,11 @@ spec:
               httpHeaders:
               - name: Accept
                 value: application/ld+json,application/json
-            # 5s, not 30s. The startup probe already holds readiness back until
-            # Caddy listens, so a long delay here only kept a ready pod out of
-            # service: measured on staging, Caddy served at +6s but the pod went
-            # Ready at +30-39s. That is 24-33s of avoidable downtime every time the
-            # single API pod is evicted or its node is upgraded.
+            # Short: the startup probe already holds readiness back until Caddy listens.
             initialDelaySeconds: 5
             periodSeconds: 10
             failureThreshold: 3
-            # Unset, this defaults to 1s, which a cold worker's first request can
-            # exceed. Measured on staging, the very first request to this path,
-            # made the instant Caddy started, took 0.16s, so 5s leaves about 30x
-            # headroom.
-            #
-            # A probe that gave up mid-flight used to cost the pod for good. Souin
-            # coalesced the cached path's fetches through singleflight, and an
-            # abandoned call held the key, so every later probe waited out the 10s
-            # backend timeout and 504'd, and the TCP liveness check never noticed
-            # (#62, a pod stuck 0/1 for three hours; cymru-kitchens for 35h on
-            # 2026-09-30). Three things now stop that: the Caddyfile keeps the
-            # kubelet's requests to this path out of the cache, the Souin build
-            # carries the darkweak/souin#850 fix so a timed-out call releases its
-            # key, and the liveness probe above restarts a pod whose php has
-            # stopped answering.
+            # Keep 5s: the 1s default can lose a cold worker's first request. The Caddyfile keeps probes off the cache (#62, #104).
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.php.resources | nindent 12 }}

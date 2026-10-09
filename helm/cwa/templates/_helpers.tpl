@@ -84,10 +84,8 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
-The php container's environment, shared by the API deployment and the orphan
-scan CronJob so the two can never drift apart. RESET_DATABASE is deliberately not
-here: the entrypoint drops the schema when it is "true", so only the API
-deployment sets it. The CronJob must never get it (#103).
+The php container's env, shared by the API deployment and the orphan scan CronJob.
+Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the schema (#103).
 */}}
 {{- define "cwa.phpEnv" -}}
 {{- $fullName := include "cwa.fullname" . -}}
@@ -297,10 +295,8 @@ envFrom:
 {{- end }}
 
 {{/*
-GOMEMLIMIT for the php container (#117): php.goMemLimit if set, otherwise 80% of
-the memory limit when it is written in Mi or Gi. Prints nothing for "off" or a
-limit in any other form, which leaves the variable unset. Not in cwa.phpEnv, so
-the orphan scan CronJob keeps Go's default.
+GOMEMLIMIT (#117): php.goMemLimit, else 80% of a Mi/Gi memory limit; nothing for "off" or
+another form. Deployment only, not cwa.phpEnv.
 */}}
 {{- define "cwa.php.goMemLimit" -}}
 {{- $set := toString (.Values.php.goMemLimit | default "") -}}

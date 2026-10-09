@@ -17,14 +17,8 @@ data:
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | quote }}
-  # The API lives under /_api (see @api_handle in api/frankenphp/Caddyfile), so
-  # the prefix belongs in the default - without it the default is unusable and
-  # every caller has to override it. api-url is server-side and points at the
-  # in-cluster service, like mercure-url above: sending SSR through the public
-  # hostname instead makes each render hairpin pod -> load balancer -> ingress
-  # -> Caddy over TLS for every API call it makes. The Caddyfile's @internal
-  # matcher rewrites Host to BROWSER_SERVER_NAME on these, so generated IRIs
-  # still come back with the public hostname.
+  # api-url is server-side: the in-cluster service, with /_api. Never the public hostname, or SSR hairpins through
+  # the load balancer; the Caddyfile's @internal still gives IRIs the public hostname.
   api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s/_api" (include "cwa.fullname" .)) | quote }}
   api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s/_api" (include "cwa.fullname" .)) | quote }}
   mailer-email: {{ .Values.php.mailer.email | quote }}

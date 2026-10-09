@@ -1,7 +1,5 @@
 {{- if .Values.cronjobs.orphanScan.enabled }}
-# Daily orphaned-resource scan (#101). `scan-orphaned` only reports: it stores the
-# report the admin's /_cwa/orphaned page reads, and emails MAILER_EMAIL when the
-# orphans have changed since the last alert. Deleting stays an admin decision.
+# Daily orphan scan (#101): `scan-orphaned` only reports, emailing MAILER_EMAIL on change; deleting is an admin action.
 # Its pods get their own name label so the API Service never selects them.
 apiVersion: batch/v1
 kind: CronJob
