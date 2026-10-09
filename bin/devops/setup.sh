@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # echo the commands that are run
-[[ "$TRACE" ]] && set -x
+[[ "$CWA_CI_TRACE" ]] && set -x
 
 export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
 export CI_APPLICATION_TAG=$CI_COMMIT_SHA
@@ -12,19 +12,20 @@ export KUBERNETES_VERSION="${KUBERNETES_VERSION:-1.31.0}"
 export HELM_VERSION="${HELM_VERSION:-3.19.0}"
 
 # Choose the branch for production deploy.
-if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
-  export DEPLOYMENT_BRANCH=main
+if [[ -z "$CWA_CI_DEPLOYMENT_BRANCH" ]]; then
+  export CWA_CI_DEPLOYMENT_BRANCH=main
 fi
 
-# Production certificates are opt-in per project: set CLUSTER_ISSUER=letsencrypt-prod
-# once the domain points at the cluster. Until then a misconfigured domain fails
-# against Let's Encrypt's staging issuer, not production's rate limits
-# (Daniel, 2026-10-08). An explicit empty value turns cert-manager off.
-if [[ -z "${CLUSTER_ISSUER+x}" ]]; then
-  export CLUSTER_ISSUER="letsencrypt-staging"
+# Production certificates are opt-in per project: set
+# CWA_CI_CLUSTER_ISSUER=letsencrypt-prod once the domain points at the cluster.
+# Until then a misconfigured domain fails against Let's Encrypt's staging issuer,
+# not production's rate limits (Daniel, 2026-10-08). An explicit empty value turns
+# cert-manager off.
+if [[ -z "${CWA_CI_CLUSTER_ISSUER+x}" ]]; then
+  export CWA_CI_CLUSTER_ISSUER="letsencrypt-staging"
 fi
-if [[ -z "$LETSENCRYPT_SECRET_NAME" ]]; then
-  export LETSENCRYPT_SECRET_NAME="letsencrypt-cert"
+if [[ -z "$CWA_CI_TLS_SECRET_NAME" ]]; then
+  export CWA_CI_TLS_SECRET_NAME="letsencrypt-cert"
 fi
 if [[ -z "$CI_ENVIRONMENT_URL" ]]; then
   export CI_ENVIRONMENT_URL="test-domain.com"
@@ -42,7 +43,7 @@ export KUBE_INGRESS_ALIAS_DOMAINS="${KUBE_INGRESS_ALIAS_DOMAINS}"
 # CORS_ALLOW_ORIGIN, TRUSTED_HOSTS and MERCURE_CORS_ORIGIN default to this
 # deploy's own hostnames (apply_site_defaults in k8s.sh), so they're optional.
 
-if [[ "$CI_COMMIT_REF_NAME" == "$DEPLOYMENT_BRANCH" ]]; then
+if [[ "$CI_COMMIT_REF_NAME" == "$CWA_CI_DEPLOYMENT_BRANCH" ]]; then
   export RELEASE="${CI_ENVIRONMENT_SLUG}"
   export TAG=${CI_COMMIT_REF_SLUG}
 else

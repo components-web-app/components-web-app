@@ -307,23 +307,23 @@ generate_alias_tls_yaml() {
 }
 
 # Optional ingress-nginx rate limits (#106), as annotation lines for the ingress
-# block of values.tmp.yaml. Off unless INGRESS_RATE_LIMIT_RPS is set. Caddy's own
-# rate limit (RATE_LIMIT_*) is the main protection; this is a coarser outer one.
-# Unlike Caddy's, it counts every request, cache hits and /_nuxt assets included,
-# so it must be far higher than RATE_LIMIT_EVENTS (a page load is dozens of
-# requests). And it counts by the address that connected to the ingress: behind
+# block of values.tmp.yaml. Off unless CWA_CI_INGRESS_RATE_LIMIT_RPS is set. Caddy's
+# own rate limit (RATE_LIMIT_*) is the main protection; this is a coarser outer
+# one. Unlike Caddy's, it counts every request, cache hits and /_nuxt assets
+# included, so it must be far higher than RATE_LIMIT_EVENTS (a page load is dozens
+# of requests). And it counts by the address that connected to the ingress: behind
 # Cloudflare that is a Cloudflare server, so don't turn it on there unless the
 # ingress controller itself is set up to read the real IP from Cloudflare.
 ingress_rate_limit_annotations() {
-  if [ -z "${INGRESS_RATE_LIMIT_RPS:-}" ]; then
+  if [ -z "${CWA_CI_INGRESS_RATE_LIMIT_RPS:-}" ]; then
     return
   fi
-  printf '    "nginx.ingress.kubernetes.io/limit-rps": "%s"\n' "$INGRESS_RATE_LIMIT_RPS"
-  if [ -n "${INGRESS_RATE_LIMIT_BURST_MULTIPLIER:-}" ]; then
-    printf '    "nginx.ingress.kubernetes.io/limit-burst-multiplier": "%s"\n' "$INGRESS_RATE_LIMIT_BURST_MULTIPLIER"
+  printf '    "nginx.ingress.kubernetes.io/limit-rps": "%s"\n' "$CWA_CI_INGRESS_RATE_LIMIT_RPS"
+  if [ -n "${CWA_CI_INGRESS_RATE_LIMIT_BURST_MULTIPLIER:-}" ]; then
+    printf '    "nginx.ingress.kubernetes.io/limit-burst-multiplier": "%s"\n' "$CWA_CI_INGRESS_RATE_LIMIT_BURST_MULTIPLIER"
   fi
-  if [ -n "${INGRESS_RATE_LIMIT_CONNECTIONS:-}" ]; then
-    printf '    "nginx.ingress.kubernetes.io/limit-connections": "%s"\n' "$INGRESS_RATE_LIMIT_CONNECTIONS"
+  if [ -n "${CWA_CI_INGRESS_RATE_LIMIT_CONNECTIONS:-}" ]; then
+    printf '    "nginx.ingress.kubernetes.io/limit-connections": "%s"\n' "$CWA_CI_INGRESS_RATE_LIMIT_CONNECTIONS"
   fi
 }
 
@@ -365,7 +365,7 @@ ensure_tls_certificate() {
 
   TLS_SECRET_NAME="$base"
   TLS_PREVIOUS_SECRET_NAME=""
-  if [ "$track" != "stable" ] || [ "${INGRESS_ENABLED:-false}" != "true" ] || [ -z "${CLUSTER_ISSUER:-}" ]; then
+  if [ "$track" != "stable" ] || [ "${CWA_CI_INGRESS_ENABLED:-false}" != "true" ] || [ -z "${CWA_CI_CLUSTER_ISSUER:-}" ]; then
     return 0
   fi
   if ! kubectl auth can-i create certificates.cert-manager.io -n "$KUBE_NAMESPACE" >/dev/null 2>&1; then
@@ -423,13 +423,13 @@ spec:
   issuerRef:
     group: cert-manager.io
     kind: ClusterIssuer
-    name: $CLUSTER_ISSUER
+    name: $CWA_CI_CLUSTER_ISSUER
   dnsNames:
 $(printf '%s\n' "$names" | sed 's/^/    - /')
 EOF
 
   if ! kubectl wait -n "$KUBE_NAMESPACE" --for=condition=Ready "certificate/$new" \
-      --timeout="${TLS_CERTIFICATE_TIMEOUT:-600s}"; then
+      --timeout="${CWA_CI_TLS_CERTIFICATE_TIMEOUT:-600s}"; then
     echo "❌ TLS CERTIFICATE NOT READY: '$new' was not issued, so the deploy stopped before changing anything."
     echo "   The live site still serves '$current'. Check every hostname above resolves to this cluster, then re-run."
     kubectl describe certificate "$new" -n "$KUBE_NAMESPACE" | sed -n '/^Status:/,$p' || true
@@ -511,11 +511,10 @@ site_hosts() {
 # Defaults every site used to set by hand with the same values (2026-10-08). Each
 # is only a default: a CI variable still wins. CORS_ALLOW_ORIGIN, TRUSTED_HOSTS
 # and MERCURE_CORS_ORIGIN follow this deploy's own hostnames, so review apps and
-# staging get theirs instead of production's. CLUSTER_ISSUER is deliberately not
-# defaulted here: setup.sh makes an unset one letsencrypt-staging, so production
-# certificates are switched on per project (CLUSTER_ISSUER=letsencrypt-prod) and a
-# misconfigured domain fails against the staging issuer's far higher limits
-# (Daniel, 2026-10-08).
+# staging get theirs instead of production's. CWA_CI_CLUSTER_ISSUER is deliberately not defaulted here: setup.sh makes an unset
+# one letsencrypt-staging, so production certificates are switched on per project
+# (CWA_CI_CLUSTER_ISSUER=letsencrypt-prod) and a misconfigured domain fails against
+# the staging issuer's far higher limits (Daniel, 2026-10-08).
 apply_site_defaults() {
   local track="${1:-stable}" hosts alt="" origins="" host escaped
   hosts=$(site_hosts "$track")
@@ -524,13 +523,13 @@ apply_site_defaults() {
     alt="${alt:+$alt|}$escaped"
     origins="${origins:+$origins }https://$host"
   done
-  INGRESS_ENABLED="${INGRESS_ENABLED:-true}"
+  CWA_CI_INGRESS_ENABLED="${CWA_CI_INGRESS_ENABLED:-true}"
   CORS_ALLOW_ORIGIN="${CORS_ALLOW_ORIGIN:-^https://(?:$alt)\$}"
   TRUSTED_HOSTS="${TRUSTED_HOSTS:-^(?:$alt|localhost)\$}"
   MERCURE_CORS_ORIGIN="${MERCURE_CORS_ORIGIN:-$origins}"
   # An external database (no in-cluster PostgreSQL) is reached over the network,
   # so it needs TLS; the in-cluster chart's PostgreSQL has none.
-  if [ "${POSTGRESQL_ENABLED:-true}" = "false" ]; then
+  if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ]; then
     DATABASE_SSL_MODE="${DATABASE_SSL_MODE:-require}"
   fi
 }
@@ -560,7 +559,7 @@ cwa_environment_name() {
 # of them is refused by site_env_values: an explicit `env:` entry beats `envFrom`,
 # so the value would be silently ignored. Keep in sync with cwa.phpEnv in
 # helm/cwa/templates/_helpers.tpl, deployment.yaml and pwa-deployment.yaml. Each
-# one with its own CI variable (MAILER_DSN, RATE_LIMIT_*, PHP_GOMEMLIMIT, ...) is
+# one with its own CI variable (MAILER_DSN, RATE_LIMIT_*, CWA_CI_API_GOMEMLIMIT, ...) is
 # set through that variable. The API list also has FRANKENPHP_CONFIG, which the
 # image sets and worker mode needs. NUXT_PUBLIC_CWA_API_URL is the deprecated name
 # of NUXT_CWA_API_URL (module #345): set in CI it would put the internal API URL
@@ -751,7 +750,7 @@ check_postgres_persistence() {
       return 1
       ;;
   esac
-  if [ "${POSTGRESQL_ENABLED:-true}" = "false" ] || [ -z "$want$size$class" ]; then
+  if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ] || [ -z "$want$size$class" ]; then
     return 0
   fi
   # Bitnami's "-" means no storage class.
@@ -803,26 +802,28 @@ EOF
 }
 
 deploy() {
-	local track="${1-stable}" environment_name site_env_yaml
+	local track="${1-stable}" environment_name site_env_yaml pwa_min_default pwa_max_default
+	local pwa_cpu_request_default pwa_memory_request_default api_cpu_request_default
+	local api_memory_request_default orphan_scan_default
 	check_cdn_config || return 1
 	apply_site_defaults "$track"
 	# Before anything changes in the cluster, so a bad name stops the deploy cold.
 	environment_name=$(cwa_environment_name "$track") || return 1
 	site_env_yaml=$(site_env_values "$environment_name") || return 1
 	name="$RELEASE"
-	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
+	TLS_SECRET_NAME_SCOPED="$CWA_CI_TLS_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
 
 	echo "Installing/upgrading release '${name}' on namespace '${KUBE_NAMESPACE}' and host '${DOMAIN}' (${CI_ENVIRONMENT_URL})"
 
-  if [[ -n "$HELM_UNINSTALL" ]]; then
+  if [[ -n "$CWA_CI_HELM_UNINSTALL" ]]; then
   	delete ${track}
   fi
 
   check_postgres_persistence "$name" || return 1
-  ensure_tls_certificate "$track" "$name" "${LETSENCRYPT_SECRET_NAME_SCOPED}-api" || return 1
+  ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
   DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
@@ -852,28 +853,28 @@ deploy() {
       # Production keeps two SSR pods so a rolling deploy or a lost node never
       # leaves the site with none. A canary runs beside production, which keeps
       # serving, so one is enough (#124).
-      if [ "$track" = "stable" ]; then PWA_AUTOSCALE_MIN_DEFAULT="2"; else PWA_AUTOSCALE_MIN_DEFAULT="1"; fi
-      PWA_AUTOSCALE_MAX_DEFAULT="6"
-      PWA_CPU_REQUEST_DEFAULT="100m"
-      PWA_MEMORY_REQUEST_DEFAULT="160Mi"
-      PHP_CPU_REQUEST_DEFAULT="100m"
-      PHP_MEMORY_REQUEST_DEFAULT="350Mi"
+      if [ "$track" = "stable" ]; then pwa_min_default="2"; else pwa_min_default="1"; fi
+      pwa_max_default="6"
+      pwa_cpu_request_default="100m"
+      pwa_memory_request_default="160Mi"
+      api_cpu_request_default="100m"
+      api_memory_request_default="350Mi"
       ;;
     *)
-      PWA_AUTOSCALE_MIN_DEFAULT="1"
-      PWA_AUTOSCALE_MAX_DEFAULT="2"
-      PWA_CPU_REQUEST_DEFAULT="100m"
-      PWA_MEMORY_REQUEST_DEFAULT="128Mi"
-      PHP_CPU_REQUEST_DEFAULT="100m"
-      PHP_MEMORY_REQUEST_DEFAULT="256Mi"
+      pwa_min_default="1"
+      pwa_max_default="2"
+      pwa_cpu_request_default="100m"
+      pwa_memory_request_default="128Mi"
+      api_cpu_request_default="100m"
+      api_memory_request_default="256Mi"
       ;;
   esac
 
   # The daily orphan scan runs on production only (#101): staging and canary can
   # share production's database, so their scans would send the same alert again.
   case "$track" in
-    stable) ORPHAN_SCAN_DEFAULT="true" ;;
-    *) ORPHAN_SCAN_DEFAULT="false" ;;
+    stable) orphan_scan_default="true" ;;
+    *) orphan_scan_default="false" ;;
   esac
 
   cat >values.tmp.yaml <<EOF
@@ -889,20 +890,20 @@ pwa:
   # TLS for each API call it makes. Only the browser needs the public URL.
   apiUrl: ~
   apiUrlBrowser: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
-  replicaCount: ${PWA_REPLICA_COUNT:-"1"}
+  replicaCount: ${CWA_CI_PWA_REPLICA_COUNT:-"1"}
   autoscaling:
-    enabled: ${PWA_AUTOSCALE:-"true"}
-    minReplicas: ${PWA_AUTOSCALE_MIN:-$PWA_AUTOSCALE_MIN_DEFAULT}
-    maxReplicas: ${PWA_AUTOSCALE_MAX:-$PWA_AUTOSCALE_MAX_DEFAULT}
-    targetCPUUtilizationPercentage: ${PWA_AUTOSCALE_CPU_PERCENT:-"175"}
-    targetMemoryUtilizationPercentage: ${PWA_AUTOSCALE_MEMORY_PERCENT:-"~"}
+    enabled: ${CWA_CI_PWA_AUTOSCALE:-"true"}
+    minReplicas: ${CWA_CI_PWA_AUTOSCALE_MIN:-$pwa_min_default}
+    maxReplicas: ${CWA_CI_PWA_AUTOSCALE_MAX:-$pwa_max_default}
+    targetCPUUtilizationPercentage: ${CWA_CI_PWA_AUTOSCALE_CPU_PERCENT:-"175"}
+    targetMemoryUtilizationPercentage: ${CWA_CI_PWA_AUTOSCALE_MEMORY_PERCENT:-"~"}
   resources:
     limits:
-      cpu: ${PWA_CPU_LIMIT:-"1000m"}
-      memory: ${PWA_MEMORY_LIMIT:-"1Gi"}
+      cpu: ${CWA_CI_PWA_CPU_LIMIT:-"1000m"}
+      memory: ${CWA_CI_PWA_MEMORY_LIMIT:-"1Gi"}
     requests:
-      cpu: ${PWA_CPU_REQUEST:-$PWA_CPU_REQUEST_DEFAULT}
-      memory: ${PWA_MEMORY_REQUEST:-$PWA_MEMORY_REQUEST_DEFAULT}
+      cpu: ${CWA_CI_PWA_CPU_REQUEST:-$pwa_cpu_request_default}
+      memory: ${CWA_CI_PWA_MEMORY_REQUEST:-$pwa_memory_request_default}
 php:
   image:
     repository: ${PHP_REPOSITORY}
@@ -918,15 +919,15 @@ php:
     publicUrl: "${GCLOUD_PUBLIC_URL:-}"
   resources:
     limits:
-      memory: ${PHP_MEMORY_LIMIT:-"1Gi"}
+      memory: ${CWA_CI_API_MEMORY_LIMIT:-"1Gi"}
     requests:
-      cpu: ${PHP_CPU_REQUEST:-$PHP_CPU_REQUEST_DEFAULT}
-      memory: ${PHP_MEMORY_REQUEST:-$PHP_MEMORY_REQUEST_DEFAULT}
+      cpu: ${CWA_CI_API_CPU_REQUEST:-$api_cpu_request_default}
+      memory: ${CWA_CI_API_MEMORY_REQUEST:-$api_memory_request_default}
   # Empty: 80% of the memory limit above (helm/cwa/values.yaml, #117).
-  goMemLimit: "${PHP_GOMEMLIMIT:-}"
+  goMemLimit: "${CWA_CI_API_GOMEMLIMIT:-}"
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
-  resetDatabase: "${RESET_DATABASE:-false}"
+  resetDatabase: "${CWA_CI_RESET_DATABASE:-false}"
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}
@@ -969,17 +970,17 @@ mercure:
     publisher:
       algorithm: ${MERCURE_PUBLISHER_JWT_ALG:-"HS256"}
 ingress:
-  enabled: ${INGRESS_ENABLED:-"false"}
+  enabled: ${CWA_CI_INGRESS_ENABLED:-"false"}
   annotations:
     "spec.ingressClassName": nginx
-    "cert-manager.io/cluster-issuer": ${CLUSTER_ISSUER:-"~"}
+    "cert-manager.io/cluster-issuer": ${CWA_CI_CLUSTER_ISSUER:-"~"}
     "nginx.ingress.kubernetes.io/connection-proxy-header": "keep-alive"
     "nginx.ingress.kubernetes.io/proxy-buffering": "on"
     "nginx.ingress.kubernetes.io/proxy-buffers-number": "4"
     "nginx.ingress.kubernetes.io/proxy-buffer-size": "256k"
     "nginx.ingress.kubernetes.io/proxy-body-size": "30m"
     "nginx.ingress.kubernetes.io/proxy-max-temp-file-size": "1024m"
-    "nginx.ingress.kubernetes.io/from-to-www-redirect": "${KUBE_INGRESS_WWW_REDIRECT:-false}"
+    "nginx.ingress.kubernetes.io/from-to-www-redirect": "${CWA_CI_WWW_REDIRECT:-false}"
     "nginx.ingress.kubernetes.io/server-alias": "${KUBE_INGRESS_ALIAS_DOMAINS}"
 $(ingress_rate_limit_annotations)
   hosts:
@@ -994,14 +995,14 @@ $(ingress_rate_limit_annotations)
 $(generate_alias_tls_yaml "$track")
 postgresql:
   image:
-    tag: ${DATABASE_IMAGE_TAG:-"14"}
+    tag: ${CWA_CI_POSTGRES_IMAGE_TAG:-"14"}
   url: ${DATABASE_URL:-"~"}
-  enabled: ${POSTGRESQL_ENABLED:-"true"}
+  enabled: ${CWA_CI_POSTGRES_ENABLED:-"true"}
   auth:
     postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
 $(postgres_auth_yaml)
 $(postgres_persistence_yaml)
-replicaCount: ${REPLICA_COUNT:-"1"}
+replicaCount: ${CWA_CI_API_REPLICA_COUNT:-"1"}
 podAnnotations:
   timestamp: "${CURRENT_DATE}"
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
@@ -1011,16 +1012,16 @@ podAnnotations:
 # so a second pod would serve and purge a cache the first pod never sees. See
 # the autoscaling comment in helm/cwa/values.yaml.
 autoscaling:
-  enabled: ${AUTOSCALE:-"true"}
-  minReplicas: ${AUTOSCALE_MIN:-"1"}
-  maxReplicas: ${AUTOSCALE_MAX:-"1"}
-  targetCPUUtilizationPercentage: ${AUTOSCALE_CPU_PERCENT:-"90"}
-  targetMemoryUtilizationPercentage: ${AUTOSCALE_MEMORY_PERCENT:-"90"}
+  enabled: ${CWA_CI_API_AUTOSCALE:-"true"}
+  minReplicas: ${CWA_CI_API_AUTOSCALE_MIN:-"1"}
+  maxReplicas: ${CWA_CI_API_AUTOSCALE_MAX:-"1"}
+  targetCPUUtilizationPercentage: ${CWA_CI_API_AUTOSCALE_CPU_PERCENT:-"90"}
+  targetMemoryUtilizationPercentage: ${CWA_CI_API_AUTOSCALE_MEMORY_PERCENT:-"90"}
 cronjobs:
   orphanScan:
-    enabled: ${ORPHAN_SCAN:-$ORPHAN_SCAN_DEFAULT}
-    schedule: "${ORPHAN_SCAN_SCHEDULE:-0 3 * * *}"
-    timeZone: "${ORPHAN_SCAN_TIMEZONE:-Europe/London}"
+    enabled: ${CWA_CI_ORPHAN_SCAN:-$orphan_scan_default}
+    schedule: "${CWA_CI_ORPHAN_SCAN_SCHEDULE:-0 3 * * *}"
+    timeZone: "${CWA_CI_ORPHAN_SCAN_TIMEZONE:-Europe/London}"
 EOF
 
   # Its own file, written only now and removed after helm: it holds the site's
@@ -1064,8 +1065,8 @@ load_fixtures() {
   echo "Waiting for PHP deployment to be ready..."
   kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  # FIXTURES_PURGE empties every table before loading, for an early project whose
-  # database should be rebuilt from its fixtures. Only this job reads it, so a
+  # CWA_CI_FIXTURES_PURGE empties every table before loading, for an early project
+  # whose database should be rebuilt from its fixtures. Only this job reads it, so a
   # deploy or pod restart can never purge, and it depends on the track:
   # - review: "true" (or "force").
   # - stable (production): only "force", so a project-wide "true" meant for review
@@ -1076,16 +1077,16 @@ load_fixtures() {
   # Otherwise the load appends (#74): since bundle 2.0.0-alpha.5 the scaffold
   # creates only what's missing and keeps everything that exists.
   local append="--append"
-  case "$track:${FIXTURES_PURGE:-false}" in
+  case "$track:${CWA_CI_FIXTURES_PURGE:-false}" in
     review:true|review:force|stable:force)
       append=""
-      echo "FIXTURES_PURGE=$FIXTURES_PURGE: EMPTYING EVERY TABLE in $KUBE_NAMESPACE, then loading fixtures..."
+      echo "CWA_CI_FIXTURES_PURGE=$CWA_CI_FIXTURES_PURGE: EMPTYING EVERY TABLE in $KUBE_NAMESPACE, then loading fixtures..."
       ;;
     stable:true)
-      echo "FIXTURES_PURGE=true is ignored for production, which needs FIXTURES_PURGE=force. Appending instead."
+      echo "CWA_CI_FIXTURES_PURGE=true is ignored for production, which needs CWA_CI_FIXTURES_PURGE=force. Appending instead."
       ;;
     *:true|*:force)
-      echo "FIXTURES_PURGE is only read for review apps and production. Appending instead."
+      echo "CWA_CI_FIXTURES_PURGE is only read for review apps and production. Appending instead."
       ;;
   esac
   [ -n "$append" ] && echo "Loading database fixtures (append - existing content is kept)..."
@@ -1193,11 +1194,11 @@ purge_rendered_html() {
 #   Authorization header bypasses the shared cache, so it would warm nothing.
 # - Redirects are NOT followed for pages. A sitemap should list final URLs, so a
 #   3xx is reported as a failure like any other non-200.
-# - Concurrency is modest (WARM_CACHE_CONCURRENCY, default 3). The point is to
-#   spare the SSR pods a burst, not to create one.
+# - Concurrency is modest (CWA_CI_WARM_CACHE_CONCURRENCY, default 3). The point is
+#   to spare the SSR pods a burst, not to create one.
 # - Each page is stored once whatever the browser's Accept or Accept-Encoding
 #   (#79), so one warm request per page fills the cache for every visitor.
-# - WARM_CACHE_INSECURE=true skips TLS verification. It exists for testing
+# - CWA_CI_WARM_CACHE_INSECURE=true skips TLS verification. It exists for testing
 #   against the local stack's self-signed certificate; never set it in CI.
 # - The public URL reaches whichever API pod the ingress picks. That is the whole
 #   store while the API is capped at one replica (see purge_rendered_html). For
@@ -1208,9 +1209,9 @@ purge_rendered_html() {
 # which busybox supports.
 warm_cache() {
   local base="${1:-$CI_ENVIRONMENT_URL}"
-  local concurrency="${WARM_CACHE_CONCURRENCY:-3}"
+  local concurrency="${CWA_CI_WARM_CACHE_CONCURRENCY:-3}"
   local tls_opt=""
-  if [[ "$WARM_CACHE_INSECURE" == "true" ]]; then
+  if [[ "$CWA_CI_WARM_CACHE_INSECURE" == "true" ]]; then
     tls_opt="--insecure"
   fi
 
@@ -1329,46 +1330,48 @@ sitemap_pages() {
 #
 #   performance_audit [base_url]    base_url defaults to CI_ENVIRONMENT_URL
 #
-# Pages: PERFORMANCE_AUDIT_URLS if set (comma or space separated; a path such as
-# /form is joined to base_url), otherwise the first PERFORMANCE_AUDIT_MAX_PAGES
-# (default 3) pages of the sitemap, read the same way as warm_cache.
+# Pages: CWA_CI_PERFORMANCE_AUDIT_URLS if set (comma or space separated; a path such
+# as /form is joined to base_url), otherwise the first
+# CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES (default 3) pages of the sitemap, read the same
+# way as warm_cache.
 #
 # - Runs after the warm, so pages come from the cache: the audit measures what
 #   visitors get, not a cold SSR render. Lighthouse loads each page anonymously,
 #   and sends no query string, so it neither bypasses nor splits the cache.
-# - PERFORMANCE_AUDIT_FORM_FACTORS: "mobile" (default, Lighthouse's throttled
-#   mobile profile), "desktop", or "mobile,desktop".
-# - PERFORMANCE_AUDIT_THROTTLING: "devtools" (default, real throttling) or "simulate".
-# - PERFORMANCE_AUDIT_RUNS (default 5) runs per page; budgets use the median run, so one
-#   slow run on a shared CI runner can't flip the result.
-# - Budgets are in bin/devops/lighthouserc.json, or PERFORMANCE_AUDIT_CONFIG.
+# - CWA_CI_PERFORMANCE_AUDIT_FORM_FACTORS: "mobile" (default, Lighthouse's
+#   throttled mobile profile), "desktop", or "mobile,desktop".
+# - CWA_CI_PERFORMANCE_AUDIT_THROTTLING: "devtools" (default, real throttling) or
+#   "simulate".
+# - CWA_CI_PERFORMANCE_AUDIT_RUNS (default 5) runs per page; budgets use the median
+#   run, so one slow run on a shared CI runner can't flip the result.
+# - Budgets are in bin/devops/lighthouserc.json, or CWA_CI_PERFORMANCE_AUDIT_CONFIG.
 #   A missed budget returns 1. The CI jobs allow that to fail, so it shows as a
 #   warning and never fails a deploy that is already live.
-# - Writes the reports to PERFORMANCE_AUDIT_OUTPUT (default performance-report/):
-#   Lighthouse's HTML and JSON per page and form factor, assertion results, a
-#   Markdown summary (also added to the GitHub step summary) and
-#   browser-performance.json in GitLab's browser_performance report format.
+# - Writes the reports to CWA_CI_PERFORMANCE_AUDIT_OUTPUT (default
+#   performance-report/): Lighthouse's HTML and JSON per page and form factor,
+#   assertion results, a Markdown summary (also added to the GitHub step summary)
+#   and browser-performance.json in GitLab's browser_performance report format.
 # - Needs node, npx and Chrome: GitHub's ubuntu-latest has them, and the GitLab
-#   jobs use PERFORMANCE_AUDIT_IMAGE. @lhci/cli is pinned by
-#   PERFORMANCE_AUDIT_LHCI_VERSION.
-# - PERFORMANCE_AUDIT_INSECURE=true skips TLS verification, for testing against
-#   the local stack only.
+#   jobs use CWA_CI_PERFORMANCE_AUDIT_IMAGE. @lhci/cli is pinned by
+#   CWA_CI_PERFORMANCE_AUDIT_LHCI_VERSION.
+# - CWA_CI_PERFORMANCE_AUDIT_INSECURE=true skips TLS verification, for testing
+#   against the local stack only.
 performance_audit() {
   local base="${1:-$CI_ENVIRONMENT_URL}"
-  local max="${PERFORMANCE_AUDIT_MAX_PAGES:-3}"
-  local runs="${PERFORMANCE_AUDIT_RUNS:-5}"
-  local form_factors="${PERFORMANCE_AUDIT_FORM_FACTORS:-mobile}"
-  local config="${PERFORMANCE_AUDIT_CONFIG:-bin/devops/lighthouserc.json}"
-  local out="${PERFORMANCE_AUDIT_OUTPUT:-performance-report}"
-  local lhci="npx --yes @lhci/cli@${PERFORMANCE_AUDIT_LHCI_VERSION:-0.15.1}"
+  local max="${CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES:-3}"
+  local runs="${CWA_CI_PERFORMANCE_AUDIT_RUNS:-5}"
+  local form_factors="${CWA_CI_PERFORMANCE_AUDIT_FORM_FACTORS:-mobile}"
+  local config="${CWA_CI_PERFORMANCE_AUDIT_CONFIG:-bin/devops/lighthouserc.json}"
+  local out="${CWA_CI_PERFORMANCE_AUDIT_OUTPUT:-performance-report}"
+  local lhci="npx --yes @lhci/cli@${CWA_CI_PERFORMANCE_AUDIT_LHCI_VERSION:-0.15.1}"
   local chrome_flags="--headless=new --no-sandbox --disable-dev-shm-usage"
   # devtools (real) throttling by default: Lighthouse's simulated throttling gave
   # bimodal scores on shared CI runners (0.60-0.96 for the same page and deploy), while
   # real throttled loads matched what devices see. "simulate" is still available.
-  local throttling="${PERFORMANCE_AUDIT_THROTTLING:-devtools}"
+  local throttling="${CWA_CI_PERFORMANCE_AUDIT_THROTTLING:-devtools}"
   local tls_opt="" status=0 ff preset page tmp
 
-  if [ "${PERFORMANCE_AUDIT_INSECURE:-}" = "true" ]; then
+  if [ "${CWA_CI_PERFORMANCE_AUDIT_INSECURE:-}" = "true" ]; then
     tls_opt="--insecure"
     chrome_flags="$chrome_flags --ignore-certificate-errors"
   fi
@@ -1383,8 +1386,8 @@ performance_audit() {
   base="${base%/}"
 
   tmp=$(mktemp -d)
-  if [ -n "${PERFORMANCE_AUDIT_URLS:-}" ]; then
-    for page in $(echo "$PERFORMANCE_AUDIT_URLS" | tr ',' ' '); do
+  if [ -n "${CWA_CI_PERFORMANCE_AUDIT_URLS:-}" ]; then
+    for page in $(echo "$CWA_CI_PERFORMANCE_AUDIT_URLS" | tr ',' ' '); do
       case "$page" in
         http://*|https://*) echo "$page" ;;
         /*) echo "${base}${page}" ;;
