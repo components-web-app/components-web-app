@@ -713,6 +713,95 @@ postgres_auth_yaml() {
   fi
 }
 
+# Optional persistence for the in-cluster database: CWA_CI_POSTGRES_PERSISTENCE
+# (true/false), CWA_CI_POSTGRES_PERSISTENCE_SIZE, CWA_CI_POSTGRES_STORAGE_CLASS.
+# Only the ones set are written to postgresql.primary.persistence, so
+# helm/cwa/values.yaml's defaults (off, 1Gi, standard) apply otherwise.
+postgres_persistence_yaml() {
+  local lines=""
+  if [ -n "$CWA_CI_POSTGRES_PERSISTENCE" ]; then
+    lines="${lines}      enabled: ${CWA_CI_POSTGRES_PERSISTENCE}
+"
+  fi
+  if [ -n "$CWA_CI_POSTGRES_PERSISTENCE_SIZE" ]; then
+    lines="${lines}      size: $(yaml_squote "$CWA_CI_POSTGRES_PERSISTENCE_SIZE")
+"
+  fi
+  if [ -n "$CWA_CI_POSTGRES_STORAGE_CLASS" ]; then
+    lines="${lines}      storageClass: $(yaml_squote "$CWA_CI_POSTGRES_STORAGE_CLASS")
+"
+  fi
+  if [ -n "$lines" ]; then
+    printf '  primary:\n    persistence:\n%s' "$lines"
+  fi
+}
+
+# Read-only, before helm: a StatefulSet's volumeClaimTemplates can't change in
+# place, so turning persistence on or off, or changing the size or storage class
+# of a live release, makes `helm upgrade` fail part way. Compares what the deploy
+# sets with the live StatefulSet and stops with what to run instead. Values left
+# unset are the chart's and aren't compared.
+check_postgres_persistence() {
+  local name="$1" want="${CWA_CI_POSTGRES_PERSISTENCE:-}" size="${CWA_CI_POSTGRES_PERSISTENCE_SIZE:-}"
+  local class="${CWA_CI_POSTGRES_STORAGE_CLASS:-}" out sts live_size live_class pvc fix
+  case "$want" in
+    ''|true|false) ;;
+    *)
+      echo "CWA_CI_POSTGRES_PERSISTENCE must be true or false, not '$want'." >&2
+      return 1
+      ;;
+  esac
+  if [ "${POSTGRESQL_ENABLED:-true}" = "false" ] || [ -z "$want$size$class" ]; then
+    return 0
+  fi
+  # Bitnami's "-" means no storage class.
+  if [ "$class" = "-" ]; then class=""; fi
+  if ! out=$(kubectl get statefulset -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/instance=$name,app.kubernetes.io/name=postgresql,app.kubernetes.io/component=primary" \
+    -o jsonpath='{range .items[*]}{.metadata.name}{" "}{range .spec.volumeClaimTemplates[?(@.metadata.name=="data")]}{.spec.resources.requests.storage}{" "}{.spec.storageClassName}{end}{"\n"}{end}' 2>&1); then
+    echo "Warning: can't read the PostgreSQL StatefulSet, so the persistence check is skipped: $out" >&2
+    return 0
+  fi
+  # No StatefulSet yet: a first deploy can have any volume.
+  [ -n "$out" ] || return 0
+  read -r sts live_size live_class <<EOF
+$out
+EOF
+  pvc="data-$sts-0"
+  fix="kubectl delete statefulset $sts -n $KUBE_NAMESPACE --cascade=orphan"
+  if [ "$want" = "true" ] && [ -z "$live_size" ]; then
+    echo "CWA_CI_POSTGRES_PERSISTENCE=true, but the live in-cluster PostgreSQL ($sts) has no volume, and helm can't add one to a StatefulSet." >&2
+    echo "Its data lives only in the pod and is lost when the pod is replaced: pg_dump it first if you need it. Then run" >&2
+    echo "  $fix" >&2
+    echo "and deploy again. The new pod starts with an empty volume (load fixtures or restore the dump)." >&2
+    return 1
+  fi
+  if [ "$want" = "false" ] && [ -n "$live_size" ]; then
+    echo "CWA_CI_POSTGRES_PERSISTENCE=false, but the live in-cluster PostgreSQL ($sts) has a volume, and helm can't remove it from a StatefulSet." >&2
+    echo "To stop using it, run" >&2
+    echo "  $fix" >&2
+    echo "and deploy again. The new pod starts empty; the volume ($pvc) and its data stay until you run kubectl delete pvc $pvc -n $KUBE_NAMESPACE." >&2
+    return 1
+  fi
+  [ -n "$live_size" ] || return 0
+  if [ -n "$size" ] && [ "$size" != "$live_size" ]; then
+    echo "CWA_CI_POSTGRES_PERSISTENCE_SIZE=$size, but the live in-cluster PostgreSQL ($sts) was created with $live_size, and helm can't change it." >&2
+    echo "Set it back to $live_size, or run" >&2
+    echo "  $fix" >&2
+    echo "and deploy again: the volume ($pvc) and its data are kept, still at $live_size. To grow it (if the storage class allows expansion):" >&2
+    echo "  kubectl patch pvc $pvc -n $KUBE_NAMESPACE -p '{\"spec\":{\"resources\":{\"requests\":{\"storage\":\"$size\"}}}}'" >&2
+    return 1
+  fi
+  if [ -n "$CWA_CI_POSTGRES_STORAGE_CLASS" ] && [ "$class" != "$live_class" ]; then
+    echo "CWA_CI_POSTGRES_STORAGE_CLASS=$CWA_CI_POSTGRES_STORAGE_CLASS, but the live in-cluster PostgreSQL ($sts) uses '$live_class', and helm can't change it." >&2
+    echo "Set it back, or move to a new volume: pg_dump the data, then run" >&2
+    echo "  $fix" >&2
+    echo "  kubectl delete pvc $pvc -n $KUBE_NAMESPACE   # deletes the data" >&2
+    echo "and deploy again, then restore the dump." >&2
+    return 1
+  fi
+}
+
 deploy() {
 	local track="${1-stable}" environment_name site_env_yaml
 	check_cdn_config || return 1
@@ -732,6 +821,7 @@ deploy() {
   	delete ${track}
   fi
 
+  check_postgres_persistence "$name" || return 1
   ensure_tls_certificate "$track" "$name" "${LETSENCRYPT_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
@@ -910,6 +1000,7 @@ postgresql:
   auth:
     postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
 $(postgres_auth_yaml)
+$(postgres_persistence_yaml)
 replicaCount: ${REPLICA_COUNT:-"1"}
 podAnnotations:
   timestamp: "${CURRENT_DATE}"
@@ -1386,6 +1477,16 @@ function delete() {
   # soft fail the uninstall in case of failed permissions
 	helm uninstall --namespace="$KUBE_NAMESPACE" "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
+
+  # A review app's database volume (CWA_CI_POSTGRES_PERSISTENCE) goes with it:
+  # helm leaves a StatefulSet's PVCs behind, and a redeployed branch would get the
+  # old data and credentials. Matched by the exact release, so nothing else can
+  # match. Staging, canary and production keep theirs: what happens to persistent
+  # data there is the project's call.
+  if [ "$track" = "review" ]; then
+    kubectl delete pvc --namespace="$KUBE_NAMESPACE" --wait=false \
+      -l "app.kubernetes.io/instance=$name,app.kubernetes.io/name=postgresql" || true
+  fi
 
   # If we delete the namespace, when we create it we also need to recreate role bindings - no permissions for this
   # We should see if that will be possible, or manually clean up empty namespaces when they are no longer needed
