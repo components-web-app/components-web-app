@@ -3,7 +3,7 @@ name: Performance audit
 # Lighthouse CI audit of a deployed environment (#87), run by hand from the Actions
 # tab. GitHub has no manual steps inside a push-triggered workflow, so this is the
 # equivalent of GitLab's manual `performance audit <track>` jobs. Available by
-# default; set the repository variable PERFORMANCE_AUDIT_PRODUCTION /
+# default; set the repository variable CWA_CI_PERFORMANCE_AUDIT_PRODUCTION /
 # _STAGING / _REVIEW to "false" to stop that environment being audited.
 #
 # For a review app, run the workflow from the branch the review app was deployed
@@ -44,19 +44,19 @@ jobs:
     name: Audit ${{ inputs.environment }}
     runs-on: ubuntu-latest
     if: |
-      vars.CI_DISABLED != 'true' && (
-        (inputs.environment == 'production' && vars.PERFORMANCE_AUDIT_PRODUCTION != 'false') ||
-        (inputs.environment == 'staging' && vars.PERFORMANCE_AUDIT_STAGING != 'false') ||
-        (inputs.environment == 'review' && vars.PERFORMANCE_AUDIT_REVIEW != 'false')
+      vars.CWA_CI_DISABLED != 'true' && (
+        (inputs.environment == 'production' && vars.CWA_CI_PERFORMANCE_AUDIT_PRODUCTION != 'false') ||
+        (inputs.environment == 'staging' && vars.CWA_CI_PERFORMANCE_AUDIT_STAGING != 'false') ||
+        (inputs.environment == 'review' && vars.CWA_CI_PERFORMANCE_AUDIT_REVIEW != 'false')
       )
     env:
       KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
-      PERFORMANCE_AUDIT_FORM_FACTORS: ${{ inputs.form_factors }}
-      PERFORMANCE_AUDIT_URLS: ${{ vars.PERFORMANCE_AUDIT_URLS }}
-      PERFORMANCE_AUDIT_MAX_PAGES: ${{ vars.PERFORMANCE_AUDIT_MAX_PAGES }}
-      PERFORMANCE_AUDIT_RUNS: ${{ vars.PERFORMANCE_AUDIT_RUNS }}
-      PERFORMANCE_AUDIT_CONFIG: ${{ vars.PERFORMANCE_AUDIT_CONFIG }}
-      PERFORMANCE_AUDIT_LHCI_VERSION: ${{ vars.PERFORMANCE_AUDIT_LHCI_VERSION }}
+      CWA_CI_PERFORMANCE_AUDIT_FORM_FACTORS: ${{ inputs.form_factors }}
+      CWA_CI_PERFORMANCE_AUDIT_URLS: ${{ vars.CWA_CI_PERFORMANCE_AUDIT_URLS }}
+      CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES: ${{ vars.CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES }}
+      CWA_CI_PERFORMANCE_AUDIT_RUNS: ${{ vars.CWA_CI_PERFORMANCE_AUDIT_RUNS }}
+      CWA_CI_PERFORMANCE_AUDIT_CONFIG: ${{ vars.CWA_CI_PERFORMANCE_AUDIT_CONFIG }}
+      CWA_CI_PERFORMANCE_AUDIT_LHCI_VERSION: ${{ vars.CWA_CI_PERFORMANCE_AUDIT_LHCI_VERSION }}
     steps:
       - uses: actions/checkout@v4
       - name: Expose repository variables to the scripts, as GitLab does

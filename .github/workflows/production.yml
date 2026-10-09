@@ -54,10 +54,10 @@ jobs:
       # without MAILER_EMAIL the orphan scan sends no alert.
       MAILER_DSN: ${{ secrets.MAILER_DSN }}
       MAILER_EMAIL: ${{ vars.MAILER_EMAIL }}
-      ORPHAN_SCAN: ${{ vars.ORPHAN_SCAN }}
-      ORPHAN_SCAN_SCHEDULE: ${{ vars.ORPHAN_SCAN_SCHEDULE }}
-      ORPHAN_SCAN_TIMEZONE: ${{ vars.ORPHAN_SCAN_TIMEZONE }}
-      FIXTURES_PURGE: ${{ vars.FIXTURES_PURGE }}
+      CWA_CI_ORPHAN_SCAN: ${{ vars.CWA_CI_ORPHAN_SCAN }}
+      CWA_CI_ORPHAN_SCAN_SCHEDULE: ${{ vars.CWA_CI_ORPHAN_SCAN_SCHEDULE }}
+      CWA_CI_ORPHAN_SCAN_TIMEZONE: ${{ vars.CWA_CI_ORPHAN_SCAN_TIMEZONE }}
+      CWA_CI_FIXTURES_PURGE: ${{ vars.CWA_CI_FIXTURES_PURGE }}
       # Media storage. Without these three a GitHub deploy falls back to the
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
       # automatically; GitHub Actions does not, so each one must be mapped here.
@@ -65,7 +65,7 @@ jobs:
       GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
       GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
       # Optional; warm_cache defaults to 3 concurrent page requests.
-      WARM_CACHE_CONCURRENCY: ${{ vars.WARM_CACHE_CONCURRENCY }}
+      CWA_CI_WARM_CACHE_CONCURRENCY: ${{ vars.CWA_CI_WARM_CACHE_CONCURRENCY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,15 +108,16 @@ jobs:
           deploy canary
           purge_rendered_html canary
       # Refill the page cache the purge emptied (#80). Only production is warmed
-      # by default (WARM_CACHE_PRODUCTION="false" turns it off); review, staging
-      # and canary are opt-in via WARM_CACHE_REVIEW / _STAGING / _CANARY="true"
+      # by default (CWA_CI_WARM_CACHE_PRODUCTION="false" turns it off); review,
+      # staging and canary are opt-in via CWA_CI_WARM_CACHE_REVIEW / _STAGING /
+      # _CANARY="true"
       # (repository variables). Its own step with
       # continue-on-error: a page that does not return 200 marks this step failed,
       # and warm_cache adds an ::error annotation, without failing the job, because
       # the release is already live. It runs after the fixtures step, so a new
       # environment is warmed once its content exists.
       - name: Warm the page cache
-        if: inputs.action == 'canary' && vars.WARM_CACHE_CANARY == 'true'
+        if: inputs.action == 'canary' && vars.CWA_CI_WARM_CACHE_CANARY == 'true'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh
@@ -139,15 +140,15 @@ jobs:
           delete canary
           delete staging
           persist_environment_url
-      # Off unless ENABLE_DATABASE_FIXTURES is "true", matching GitLab. It was
+      # Off unless CWA_CI_FIXTURES_ENABLED is "true", matching GitLab. It was
       # previously part of the deploy step and ran on every deploy, emptying the
-      # database first (#74). load_fixtures appends unless FIXTURES_PURGE is
-      # "force" ("true" is not enough for production), which empties the
+      # database first (#74). load_fixtures appends unless CWA_CI_FIXTURES_PURGE
+      # is "force" ("true" is not enough for production), which empties the
       # production database first on every production run while both are set.
       # An append creates only what's missing (bundle 2.0.0-alpha.5). Failure is
       # allowed, as on GitLab. The load ends by flushing the HTTP cache.
       - name: Load fixtures
-        if: inputs.action == 'production' && vars.ENABLE_DATABASE_FIXTURES == 'true'
+        if: inputs.action == 'production' && vars.CWA_CI_FIXTURES_ENABLED == 'true'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh
@@ -155,15 +156,16 @@ jobs:
           apply_kube_context
           load_fixtures
       # Refill the page cache the purge emptied (#80). Only production is warmed
-      # by default (WARM_CACHE_PRODUCTION="false" turns it off); review, staging
-      # and canary are opt-in via WARM_CACHE_REVIEW / _STAGING / _CANARY="true"
+      # by default (CWA_CI_WARM_CACHE_PRODUCTION="false" turns it off); review,
+      # staging and canary are opt-in via CWA_CI_WARM_CACHE_REVIEW / _STAGING /
+      # _CANARY="true"
       # (repository variables). Its own step with
       # continue-on-error: a page that does not return 200 marks this step failed,
       # and warm_cache adds an ::error annotation, without failing the job, because
       # the release is already live. It runs after the fixtures step, so a new
       # environment is warmed once its content exists.
       - name: Warm the page cache
-        if: inputs.action == 'production' && vars.WARM_CACHE_PRODUCTION != 'false'
+        if: inputs.action == 'production' && vars.CWA_CI_WARM_CACHE_PRODUCTION != 'false'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh
