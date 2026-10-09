@@ -533,6 +533,10 @@ load fixtures production:
   rules:
     - if: '$CWA_CI_FIXTURES_ENABLED != "true"'
       when: never
+    # Not without the production job it needs: GitLab refuses to create a
+    # pipeline in which a job needs one that doesn't exist.
+    - if: '$CWA_CI_PRODUCTION_DISABLED == "true"'
+      when: never
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: manual
       allow_failure: true
