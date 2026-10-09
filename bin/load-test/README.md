@@ -60,8 +60,14 @@ To reach the local stack from the container, share the php container's network s
 | `soak` | `PEOPLE / 6` visitors for 15m (`DURATION`) | steady traffic, to catch leaks and slow degradation |
 
 One visitor loads a page with its `/_nuxt` files, reads for 2-6s, then makes one
-client-side navigation, which in CWA is two `/_api` calls (the route and its
-resource manifest), not another server-side render. Then reads for 3-9s more.
+client-side navigation, which in CWA is `/_api` calls, not another server-side
+render: the route and its resource manifest, then up to `MAX_RESOURCES` of the
+resources the manifest lists, a depth at a time, as the module fetches them.
+Then reads for 3-9s more. Each visitor is two **page views**: the page load and
+the navigation.
+
+The same `MAX_RESOURCES` cap applies to every site, so a site with charts or long
+pages isn't measured against a heavier mix than one without.
 
 ## Environment
 
@@ -77,6 +83,9 @@ resource manifest), not another server-side render. Then reads for 3-9s more.
 | `PAGES` | sitemap | Comma-separated paths, instead of reading the sitemap |
 | `MAX_PAGES` | `50` | Most pages taken from the sitemap |
 | `MAX_ASSETS` | `12` | Most `/_nuxt` files fetched per page load |
+| `MAX_RESOURCES` | `20` | Most resources from the manifest fetched per navigation (`0` fetches none) |
+| `RANDOM_SEED` | | Fixes the random choices (pages, cold loads, reading time), so runs repeat |
+| `ORIGIN_IP` | | Sends requests for `BASE_URL`'s host to this address, skipping a CDN in front. The Host header and TLS name stay the site's |
 | `DURATION` | `30s` / `3m` / `15m` | Length of smoke, of the surge hold, or of soak |
 | `STAGE` | `30s` | Length of each capacity step |
 | `PEAK_RATE` | `PEOPLE / 7`, at least 2 | Capacity's top arrival rate, visitors per second |
@@ -130,7 +139,13 @@ Souin cache
   => page latency above is mostly SSR rendering (cache misses)
 Totals
   ...
+  page views          12 (0.40/s)
+  ...
 ```
+
+Behind Cloudflare, a **Cloudflare** line also counts `cf-cache-status`: the share
+of page and API responses served from Cloudflare's cache (`HIT`) rather than
+passed to the origin.
 
 - **Time to first byte** is split by kind, because a cache hit, an SSR render, an
   API call and a static file differ by orders of magnitude. Read p95, not avg.
