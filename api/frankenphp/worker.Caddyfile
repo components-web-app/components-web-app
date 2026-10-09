@@ -1,24 +1,12 @@
 # Imported into the global `frankenphp` block (FRANKENPHP_CONFIG in the prod image).
 
-# Shed load instead of queueing it (#106). A request that waits this long for a free
-# worker gets a 503 at once, instead of queueing until Souin's 10s backend timeout
-# turns it into a 504 and every request behind it does the same. A flood then costs
-# fast errors, and the queue is empty again as soon as it stops. 5s is generous: a
-# normal wait is well under a second, and only a request that would have queued for
-# half of Souin's timeout is refused, while 4 workers are all busy (an editor's
-# uploads build thumbnails inside the request, so leave room for those). It also
-# matches the probes' 5s timeout, so a probe that can't get a worker fails exactly
-# as it would have. 0 turns it off (wait for ever, the old behaviour). FrankenPHP
-# only accepts it here, in the global block, not inside `worker`.
+# Shed load (#106): a request that waits this long for a worker gets a 503, not Souin's 10s 504. 0 turns it off.
+# FrankenPHP accepts it only here, in the global block, not inside `worker`.
 max_wait_time {$FRANKENPHP_MAX_WAIT_TIME:5s}
 
 worker {
 	file ./public/index.php
-	# A fixed pool. By default FrankenPHP starts 2 threads per CPU it can see, and the php
-	# pod deliberately has no CPU limit, so the pool followed the node's size (4 on a
-	# 2-vCPU node, 16 on an 8-vCPU one), and so did the pod's worst-case memory. At
-	# memory_limit 512M, 4 workers stay inside the 1Gi pod limit in practice: see the
-	# comment on php.resources in helm/cwa/values.yaml.
+	# A fixed pool: the default follows the node's CPUs (php has no CPU limit), and worst-case memory with it.
 	num {$FRANKENPHP_WORKER_NUM:4}
 	env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
 }

@@ -20,17 +20,12 @@ return static function (ContainerConfigurator $configurator) {
         ->parameters()
         ->set('locale', 'en')
         ->set('env(GCLOUD_JSON)', '{}')
-        // Public base URL that uploaded media and cached image URLs are built on.
-        // Point it at a CDN in front of the bucket where there is one. Left empty,
-        // it falls back to the bucket's own public URL, so a project that has not
-        // configured a CDN still gets working URLs - never somebody else's domain.
-        // Must end in a slash; it is concatenated with the object path.
+        // Public base URL for media (a CDN in front of the bucket), with a trailing slash. Empty falls back to the
+        // bucket's own public URL (#68).
         ->set('env(GCLOUD_PUBLIC_URL)', '')
         ->set('app.gcloud_bucket_public_url', 'https://storage.googleapis.com/%env(GCLOUD_BUCKET)%/')
         ->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%')
-        // Links in user emails (password reset, verification) point here. The bundle
-        // refuses those emails unless an origin is configured, and never trusts the
-        // request's Origin or Host for it. Defaults to the site's public host.
+        // Origin for links in user emails; the bundle refuses those emails without one. Defaults to the public host.
         ->set('env(EMAIL_LINK_DEFAULT_ORIGIN)', '')
         ->set('app.browser_origin', 'https://%env(BROWSER_SERVER_NAME)%')
         ->set('app.email_link_default_origin', '%env(default:app.browser_origin:EMAIL_LINK_DEFAULT_ORIGIN)%')
@@ -59,10 +54,7 @@ return static function (ContainerConfigurator $configurator) {
         ])
         ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
 
-    // api_components.filesystem.gcloud is a service with a factory Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider
-    // we need to override this filesystem provider or have acb config options to pass configs into this provider
-//    $services
-//        ->alias('api_platform.http_cache.purger', 'api_platform.http_cache.purger.varnish.xkey');
+    // The gcloud filesystem is built by the bundle's FilesystemProvider; its adapter is configured below.
 
     if ($configurator->env() !== 'prod') {
         $services
@@ -94,11 +86,8 @@ return static function (ContainerConfigurator $configurator) {
         $services
             ->set(GoogleCloudStorageAdapter::class)
             ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
-            // Only public_url is honoured here. This config array becomes League
-            // Flysystem's Filesystem config, which reads `public_url` and nothing
-            // else relevant - a `prefix` key in it is silently ignored. A bucket
-            // path prefix has to be passed to the GoogleCloudStorageAdapter
-            // constructor instead (see App\Flysystem\GoogleCloudStorageFactory).
+            // Flysystem reads only public_url from this config; a bucket prefix goes to the adapter's constructor
+            // (App\Flysystem\GoogleCloudStorageFactory).
             ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => '%app.media_public_url%' ] ]);
         $services
             ->set(FlysystemCacheResolver::class)

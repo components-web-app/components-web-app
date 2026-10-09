@@ -12,10 +12,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		composer install --prefer-dist --no-progress --no-interaction
 	fi
 
-	# A fresh checkout has no JWT keys (config/jwt/*.pem is gitignored), and login
-	# fails without them. Production passes the keys as env instead (the helm chart
-	# and compose.prod.yaml), and the prod image carries no key files, so only the
-	# dev image generates them.
+	# Dev keys only: production passes the keys as env, and the prod image carries no key files.
 	if [ "$APP_ENV" != 'prod' ]; then
 		php bin/console lexik:jwt:generate-keypair --skip-if-exists
 	fi

@@ -3,11 +3,8 @@ ARG NODE_VERSION=26
 # Versions
 FROM node:${NODE_VERSION}-alpine AS node_upstream
 
-# Node refuses responses whose headers pass 16 KB, and the API's Surrogate-Key
-# grows with every resource in a collection (/_api/_/routes passes it at about
-# 230 routes), so SSR's fetch failed with UND_ERR_HEADERS_OVERFLOW (#118).
-# Node's fetch (undici) honours this. A deploy that sets NODE_OPTIONS replaces
-# it, so keep the flag in yours.
+# The API's Surrogate-Key outgrows Node's 16 KB header limit on big collections (#118).
+# A deploy that sets NODE_OPTIONS must keep this flag.
 ENV NODE_OPTIONS=--max-http-header-size=65536
 
 # Base stage for dev and build

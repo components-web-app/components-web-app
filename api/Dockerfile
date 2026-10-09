@@ -8,42 +8,8 @@ FROM dunglas/frankenphp:builder AS builder
 # Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
-# Souin v1.7.9 deletes purged surrogate keys with an unanchored regex, so purging
-# one tag also drops the index entry of every tag containing it, and those cached
-# responses can never be purged again. Build from a patched copy of v1.7.9.
-# Remove this, the patch and the replace below once a Souin release includes the
-# fix; bin/test/souin-purge-isolation.sh must pass.
-# https://github.com/components-web-app/components-web-app/issues/84
-# https://github.com/darkweak/souin/issues/867 (fix: https://github.com/darkweak/souin/pull/868)
-#
-# Souin coalesces upstream fetches with singleflight, and v1.7.9 keeps a key's
-# call open until php returns. A request that never returns therefore costs the
-# key for the life of the process: every later request for it waits out the
-# backend timeout and 504s. On the readiness probe's URL that leaves the pod
-# unready and never restarted (#62, and cymru-kitchens for 35h on 2026-09-30).
-# The patch is darkweak/souin#850 (issue #849): a timed-out request forgets the
-# key, so the next one starts a fresh call. Remove it with the replace below once
-# a Souin release includes it.
-#
-# A full flush (PURGE .../flush) called the surrogate storage's Destruct, whose
-# Reset closes Badger and Nuts (and Redis, etcd, Olric), so after "Purge all
-# cached data", a fixture load or a Cloudflare deploy nothing was cached until php
-# restarted (#114). The patch gives the flush its own Flush, which deletes the
-# surrogate keys and keeps the storage open. Remove it once a Souin release has
-# the same fix; the Cloudflare patch below then needs rebasing onto it.
-#
-# Souin's Cloudflare purge has never worked: it POSTs to /zones/<id>/purge, not
-# /purge_cache, sends only Global API Key headers, and throws the result away in
-# a goroutine, so it fails silently with any credential (#108). The patch fixes
-# the endpoint, sends api_key as a bearer token when no email is set (a scoped
-# Zone > Cache Purge token), bounds each request with a timeout and logs any
-# failure. A full flush (PURGE .../flush) also purges everything in the zone, so
-# "Purge all cached data", fixture loads and deploys clear the edge too. Cloudflare
-# limits purges per account and answers 429 beyond that, so purges are queued,
-# deduplicated, sent up to 100 tags at a time at the plan's rate, and retried on
-# a 429; a backlog too big to send soon becomes one purge everything (#115,
-# CLOUDFLARE_PURGE_PLAN etc.). It only runs when CADDY_CACHE_CDN_CONFIG sets
-# `provider cloudflare`.
+# Patched Souin v1.7.9: purge regex (#84), singleflight (#62), flush (#114), Cloudflare purge (#108, #115).
+# Remove each with its replace once a Souin release has it (bin/test/souin-*.sh must pass).
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
 COPY --link frankenphp/souin/v1.7.9-singleflight-fix.patch /tmp/souin-singleflight-fix.patch
 COPY --link frankenphp/souin/v1.7.9-flush-no-close.patch /tmp/souin-flush-no-close.patch
@@ -159,12 +125,8 @@ ENV GOOGLE_CLOUD_PROJECT="local-fallback-id"
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY --link composer.* symfony.* ./
-# composer_auth is an optional build secret (k8s.sh build_api): without it every
-# download is an anonymous request to github.com, capped at 60 an hour per IP,
-# and a shared CI runner gets a 429 part way through ~180 packages. A secret, not
-# a build arg, so the token stays out of the image history. The rate-limit line
-# prints 60 when the token didn't reach the build and 5000 when it did; it echoes
-# the limit header only, never the token.
+# composer_auth is an optional build secret, never a build arg (it would land in the image history).
+# The rate-limit line prints 60 when no token reached the build and 5000 when one did.
 RUN --mount=type=secret,id=composer_auth \
 	set -eu; \
 	if [ -s /run/secrets/composer_auth ]; then COMPOSER_AUTH="$(cat /run/secrets/composer_auth)"; export COMPOSER_AUTH; fi; \

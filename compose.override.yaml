@@ -7,14 +7,7 @@ services:
     volumes:
       - ./api:/app
       - /app/var
-      # Deliberately no single-file bind mounts here. A single-file mount caches
-      # the file's size, so an edit that replaces it with a longer file is served
-      # to the container truncated to the old length, and Caddy then fails to
-      # parse a file that is perfectly valid on disk (issue #57). The ./api:/app
-      # directory mount above already exposes these same files and is immune, so
-      # the entrypoint and command below read them from /app/frankenphp instead.
-      # If you develop on Mac or Windows you can remove the vendor/ directory
-      #  from the bind-mount for better performance by enabling the next line:
+      # No single-file bind mounts: they truncate a longer edited file (#57). On Mac or Windows, the next line speeds up vendor/:
       #- /app/vendor
     entrypoint: /app/frankenphp/docker-entrypoint.sh
     # Mirrors the frankenphp_dev CMD in api/Dockerfile, but reads the Caddyfile

@@ -2,22 +2,12 @@
 {
 	{$CADDY_GLOBAL_CONFIG}
 
-    # Loopback only: the admin API can replace this whole config and flush the
-    # cache, so nothing outside the container may reach it. Every consumer runs
-    # in-container (CACHE_URL purges, the HEALTHCHECK, kubectl exec). Caddy also
-    # rejects any Host not listed here; php.local keeps older CACHE_URLs working.
+    # Loopback only: never publish port 2019. php.local keeps older CACHE_URLs working.
     admin localhost:2019 {
         origins localhost:2019 127.0.0.1:2019 [::1]:2019 php.local:2019
     }
 
-    # Run the cache INSIDE encode, not outside it. Souin registers `cache`
-    # before `rewrite`, which puts it ahead of `encode` in the handler chain,
-    # so it used to store the already-compressed body - and, because `encode`
-    # adds `Vary: Accept-Encoding`, it honoured that and kept one entry per
-    # distinct Accept-Encoding string (every browser sends a different one).
-    # Inside encode, Souin stores the identity body once and never sees that
-    # Vary; encode then compresses each response, hit or miss, for the client
-    # that asked. Issue #79.
+    # Cache inside encode: one stored copy per page, compressed per client (#79).
     order cache after encode
 
     cache {
@@ -31,10 +21,7 @@
 			{$CADDY_CACHE_CDN_CONFIG:strategy hard}
 		}
 
-		# {http.vars.cwa_cache_accept} is the request's Accept header for /_api only, and
-		# empty for everything else - see the `vars` in the site block (#79).
-		# {http.vars.cwa_cache_host} is the Host that php will actually see, not the
-		# one the client sent - see the `vars` below it in the site block.
+		# Accept is in the key for /_api only, and Host is the one php sees: see the `vars` in the site block (#79).
 		key {
 		    hide
 			template "{http.request.method}-{http.vars.cwa_cache_host}-{http.request.uri.path}-{http.request.uri.query}-{http.vars.cwa_cache_accept}-{http.request.cookie.api_component}-{http.request.header.Authorization}"
@@ -49,32 +36,20 @@
 		{$FRANKENPHP_CONFIG}
 	}
 
-    # The real client IP, for the rate limit below (#106). Caddy believes
-    # X-Forwarded-For only from a trusted proxy (the ingress, on private
-    # addresses), and reads it right to left, so a client can't put a fake
-    # address in front of the one the ingress appended. ingress-nginx overwrites
-    # the header by default anyway. {client_ip} is then the address that
-    # connected to the edge: the visitor, or a Cloudflare server, which the site
-    # block resolves with CF-Connecting-IP. Without a proxy (compose),
-    # {client_ip} is simply the connecting address. A site behind another proxy
-    # with public addresses (a Google load balancer) adds its ranges to
-    # CADDY_TRUSTED_PROXIES. A site that sets `servers` options in
-    # CADDY_GLOBAL_CONFIG must merge them in here instead.
+    # {client_ip} is the address that reached the ingress, read right to left from trusted proxies (#106).
+    # Another proxy with public addresses goes in CADDY_TRUSTED_PROXIES; CADDY_GLOBAL_CONFIG `servers` options merge here.
     servers {
         trusted_proxies static {$CADDY_TRUSTED_PROXIES:private_ranges}
         trusted_proxies_strict
         client_ip_headers X-Forwarded-For
     }
 
-    # Inside the cache, so a cache hit is never counted or refused: only
-    # requests that reach php or Nuxt are (misses, and everything not cached).
+    # Inside the cache, so a hit is never counted (#106).
     order rate_limit after cache
 }
 
-# Addresses Cloudflare connects from (https://www.cloudflare.com/ips/, last
-# checked 2026-10-02). CF-Connecting-IP is believed only from these, and from
-# nowhere else: anyone can send that header. Set CLOUDFLARE_IP_RANGES to update
-# the list without a release.
+# Cloudflare's ranges (https://www.cloudflare.com/ips/), the only senders CF-Connecting-IP is believed from.
+# CLOUDFLARE_IP_RANGES overrides the list.
 (cloudflare_client) {
     client_ip {$CLOUDFLARE_IP_RANGES:173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32}
     header CF-Connecting-IP *
@@ -92,41 +67,13 @@
 
 	root * /app/public
 
-	# Accept goes into the cache key for the API only (issue #79); the key
-	# template above reads it as {http.vars.cwa_cache_accept}.
-	#
-	# Page HTML is the same whatever Accept says, and every browser sends a
-	# different one, so keying pages on it stored a copy of each page per
-	# browser. The API genuinely negotiates on Accept (JSON-LD / JSON / HTML
-	# docs) and must stay split on it. Souin's Vary handling is NOT enough on
-	# its own there: API Platform's HTML docs response (Swagger UI, on /_api
-	# and /_api/docs) omits `Vary: Accept`, so once cached it matches every
-	# Accept and is served to JSON-LD clients. Measured - do not "simplify"
-	# this into dropping Accept from the key for everything.
-	#
-	# Souin's own per-path `cache_keys` cannot do this: in v1.7.9 a global key
-	# `template` short-circuits before the per-path overrides are consulted.
-	# Nor can `map`: its outputs are stored literally, not expanded. `vars`
-	# does expand them, and runs before `cache` in the handler order, so the
-	# value is set by the time Souin builds the key.
+	# /_api negotiates on Accept and its HTML docs omit Vary: Accept, so key on it there only (#79).
+	# Don't drop Accept from the key in favour of Vary; Souin's cache_keys and Caddy's map can't do this (#79).
 	@cache_accept path /_api*
 	vars @cache_accept cwa_cache_accept {http.request.header.accept}
 
-	# The Host in the cache key is the one php will actually see, so SSR and
-	# browsers share API entries. SSR reaches the API on an internal hostname
-	# (php.local here, the in-cluster service name on k8s), and @internal in
-	# @api_handle rewrites that Host to BROWSER_SERVER_NAME before php runs -
-	# so the response is byte-for-byte what a browser on the public hostname
-	# gets. But `cache` runs before that rewrite, so keying on the raw Host
-	# stored every SSR-fetched resource under the internal name, and a
-	# visitor's first client-side fetch of the same resource missed and hit
-	# php, warmed cache or not. Measured: hit on Host php.local, miss on
-	# localhost, for the same resource.
-	#
-	# The two matchers are exact complements, so exactly one `vars` applies and
-	# their relative order cannot matter. The regex is anchored, unlike the
-	# @internal matcher's: a public hostname has a dot, so it never matches
-	# and keeps its own key.
+	# Key on the Host php sees, so SSR (internal hostname) and browsers share API entries.
+	# Exact complements; the anchored regex never matches a public (dotted) host.
 	@cache_host_internal {
 		path /_api* /uploads/* /bundles/*
 		header_regexp host ^[A-Za-z0-9-]+(\.local)?(:[0-9]{1,5})?$
@@ -138,23 +85,8 @@
 	vars @cache_host_internal cwa_cache_host {$BROWSER_SERVER_NAME}
 	vars @cache_host_request cwa_cache_host {http.request.host}
 
-	# The visitor, as the rate limit counts them (#106). Never a proxy's address:
-	# behind a proxy every visitor connects from the proxy, so counting by its
-	# address would throttle the proxy itself and take the whole site down.
-	#   - Through Cloudflare (detected from its address ranges): CF-Connecting-IP.
-	#   - Through any other proxy we don't trust (a public address that sends
-	#     X-Forwarded-For, e.g. another CDN or a cloud load balancer): that address
-	#     plus the header, so each visitor still counts separately. A client can
-	#     dodge the limit this way by inventing headers; trust the proxy with
-	#     CADDY_TRUSTED_PROXIES to close that.
-	#   - Otherwise: {client_ip}, the connecting address, or the address the
-	#     trusted ingress saw (see `servers` in the global block).
-	# CADDY_EDGE=true says Caddy faces the internet itself (compose.prod.yaml sets
-	# it): nothing sits in front but possibly Cloudflare, so a public client's
-	# X-Forwarded-For can only be invented. The second case is then off and such a
-	# client is counted by its own address, so made-up headers can't dodge the
-	# limit. Cloudflare is still recognised, by its address ranges.
-	# The three matchers are complements, so exactly one `vars` applies.
+	# The visitor the rate limit counts, never a proxy (#106): CF-Connecting-IP via Cloudflare, address + X-Forwarded-For
+	# via an untrusted public proxy (off with CADDY_EDGE=true), else {client_ip}. Complements: exactly one `vars` applies.
 	@client_via_cloudflare {
 		import cloudflare_client
 	}
@@ -179,31 +111,11 @@
 	vars @client_via_cloudflare cwa_client_ip {http.request.header.CF-Connecting-IP}
 	vars @client_via_unknown_proxy cwa_client_ip "{client_ip} {http.request.header.X-Forwarded-For}"
 	vars @client_direct cwa_client_ip {client_ip}
-	# The access log's client_ip is the address that reached Caddy, which behind
-	# Cloudflare is Cloudflare's. Record the visitor resolved above as well.
+	# The access log's client_ip is Cloudflare's behind Cloudflare; log the resolved visitor too (#111).
 	log_append visitor_ip {http.vars.cwa_client_ip}
 
-	# Drop ad and campaign tracking parameters before the cache sees the request,
-	# so ?utm_source=... is served the page's normal entry instead of rendering and
-	# storing a copy for every value. The query is in the cache key, and a shared
-	# link or an ad click would otherwise always miss. They are dropped for /_api
-	# too, because the module passes the page query on to collection fetches.
-	# Pages also go through the allowlist below, which drops these anyway.
-	#
-	# Only the server loses them. Analytics scripts read them from the browser's
-	# address bar, which still has them. Neither Nuxt nor php uses them, so a
-	# project that does need one server-side must remove it from this list (and,
-	# for pages, add it to CACHE_QUERY_ALLOWLIST).
-	# `uri` runs before `cache` in the handler order, and the key's
-	# {http.request.uri.query} reads the rewritten query.
-	#
-	# Only when a listed parameter is present, and never for /_nuxt/*. Caddy's
-	# `uri query` re-encodes the whole query whenever it runs, even with nothing to
-	# remove, and turns a valueless key `k` into `k=`. That broke `nuxt dev`: Vite's
-	# `?vue&type=style&index=0&lang.css` arrived as `?vue=&...&lang.css=`, so Vite
-	# no longer saw a CSS request and served every SFC style block as raw CSS labelled
-	# text/javascript, and the client app never mounted. The expression's list must
-	# match the parameters below; keep it on one line (CEL has no comments).
+	# Strip tracking parameters before the cache so they don't split it. Only when one is present and never for /_nuxt/*:
+	# `uri query` re-encodes the whole query and breaks Vite. Keep the expression's list identical to the -lines below.
 	@tracking_query {
 		not path /_nuxt/*
 		expression `{http.request.uri.query}.matches("(^|&)(utm_source|utm_medium|utm_campaign|utm_term|utm_content|utm_id|utm_source_platform|utm_creative_format|utm_marketing_tactic|gclid|gclsrc|gbraid|wbraid|dclid|srsltid|_gl|_ga|fbclid|msclkid|twclid|ttclid|li_fat_id|igshid|yclid|mc_cid|mc_eid)(=|&|$)")`
@@ -237,32 +149,8 @@
 		-mc_eid
 	}
 
-	# Pages keep only the query parameters they read, so /?x=1, /?x=2, ... are all
-	# served the page's cached entry instead of each rendering it again (#106).
-	# Every new query string used to be a cache miss costing a server-side render,
-	# so one client could get past the cache entirely. Neither Souin nor Nuxt sees
-	# the dropped parameters; the browser's address bar keeps them.
-	#
-	# CACHE_QUERY_ALLOWLIST is a space-separated list of names. A name also keeps
-	# its bracketed forms (`order` keeps `order[title]`). The default is what the
-	# module's pages read: `page`, `search` and `order[...]` for collections. Not
-	# `cwa_force`: only the admin uses it, admins aren't filtered (see @page_query),
-	# and on an anonymous request it could loop the server render
-	# (cwa-nuxt-module#366). A site whose own pages read another parameter must add
-	# it, or its pages will never see it. `*` turns the allowlist off. No wildcards.
-	#
-	# `query_allowlist` is this template's own handler (api/frankenphp/caddy/
-	# queryallowlist), because Caddy can only delete parameters it is told the
-	# names of. It removes whole pairs and leaves the rest byte for byte, unlike
-	# `uri query`, and runs straight after `uri`, before the cache.
-	#
-	# Only for pages that can be cached: the same exclusions as the HTML branch of
-	# @use_cache below (keep the two in sync), plus Nuxt internals (/__*). Auth
-	# pages read their own parameters (?redirect=, email tokens), and a signed-in
-	# request is never cached, so neither is touched. /_api keeps every parameter:
-	# each resource declares its own `parameters:` and collections take the page
-	# query, so an allowlist there would silently drop filters. The rate limit
-	# protects /_api instead.
+	# Pages keep only CACHE_QUERY_ALLOWLIST's parameters, so ?x=1, ?x=2 share one entry (#106). Never add cwa_force
+	# (cwa-nuxt-module#366). Keep the exclusions in sync with @use_cache's HTML branch; /_api keeps every parameter.
 	@page_query expression `
 		{http.request.uri.query} != "" &&
 		{file.ext} == "" &&
@@ -303,19 +191,11 @@
 	}
 
 	mercure {
-		# A named hub (#113). A SERVER_NAME with several ports (compose's
-		# `localhost, php.local:80, php.local:443`) makes one server per port, each
-		# with its own copy of this block, and Mercure >= 1.0.3 refuses a second
-		# unnamed hub. Copies with the same name share one transport, so the API's
-		# publish on php.local:80 still reaches browsers subscribed on :443.
+		# Named (#113): each SERVER_NAME port gets a copy of this block, and same-named copies share one transport.
 		name cwa
 		# Transport to use (default to Bolt)
 		transport bolt {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
-		# Mercure 1.0: tokens are OAuth 2.0 access tokens, verified per issuer. The
-		# identifier must equal the `iss` claim the API mints (`jwt.claims.iss` in
-		# api/config/packages/mercure.yaml). Fixed on both sides: this hub trusts only
-		# its own API, so there is nothing to configure, and a variable could only
-		# reach one side (Caddy reads the process env, Symfony also reads .env).
+		# Must equal the API's `iss` (jwt.claims.iss in mercure.yaml): change both or neither (#110).
 		issuer cwa {
 			publisher {
 				jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
@@ -324,10 +204,7 @@
 				jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
 			}
 		}
-		# The tokens' `aud` is the public hub URL (mercure-bundle's default), but the
-		# API publishes through the internal one (http://php.local/... or the
-		# in-cluster service), and an unpinned hub expects the URL each request
-		# arrived on: every publish would be 401. Pin it to the public URL.
+		# Pin `aud` to the public URL: the API publishes through the internal one, so unpinned every publish is 401.
 		resource_identifier {$MERCURE_PUBLIC_URL:https://localhost/.well-known/mercure}
 		# Allow anonymous subscribers (double-check that it's what you want)
 		anonymous
@@ -347,55 +224,9 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
-    # Two things are cached here: API responses under /_api, and the page HTML
-    # rendered by the Nuxt upstream. Both are purge-driven - API Platform's
-    # SouinPurger sends the affected IRIs to CACHE_URL on every write, and the
-    # module tags each rendered page with the IRIs it rendered from (plus the
-    # constant `cwa-html` key), so the existing purge invalidates pages too.
-    #
-    # The api_component clause exists so an authenticated response is never
-    # cached: skip the cache only when that cookie carries an actual value.
-    # Do not compare the cookie placeholder against an empty string. An absent
-    # cookie does not resolve to empty (unlike a missing header, which does), so
-    # that form matches only when the cookie is present AND empty. A logged-out
-    # browser sends it empty, so it looks like it works, while any client sending
-    # no cookie at all, such as SSR or curl, silently misses the cache entirely.
-    #
-    # The exclusions on the HTML branch are the whole safety story, so read this
-    # before adding a path to it:
-    #
-    #   /.well-known/   Mercure is SSE. A cached SSE response never completes, so
-    #                   connections pile up behind it and it looks exactly like
-    #                   the site falling over. This one is not optional.
-    #   /_nuxt/         Already immutable and hashed. Large bundles would evict an
-    #                   in-memory store for nothing.
-    #   /uploads/       Served by php via @api_handle, not the renderer.
-    #   /bundles/       As above.
-    #   /_cwa/          Health check and module internals.
-    #   the rest        Auth-varying pages. They render per-user content or
-    #                   redirect, so a shared cache entry is wrong even anonymous.
-    #
-    # The HTML branch also caches only paths with no file extension (pages) or
-    # `.xml` (the sitemap, which the module tags for purging). Everything else
-    # there is a static file from Nuxt's public/, and Souin buffers a cacheable
-    # response's whole body in memory before deciding anything, including
-    # whether it's too big to store (`max_cacheable_body_bytes` is checked after
-    # buffering). One download of a 187 MB brochure.pdf took the API container
-    # from ~550 MB past its 1Gi limit, every time (#105). Streamed past the cache,
-    # a static file costs nothing. `{file.ext}` includes the dot (".pdf"), so the
-    # API branch compares against ".pdf"; `"pdf"` never matched.
-    #
-    # The kubelet's probes of the site config are excluded too. They exist to ask
-    # whether php answers, which a cached copy can't tell them, and the liveness
-    # probe restarts the pod on that answer. The exclusion is limited to that one
-    # cheap path, so a client faking the kube-probe User-Agent can't turn it into a
-    # way to make every API request skip the cache.
-    #
-    # NOTE: everything between the backticks is CEL, not Caddyfile. It has no
-    # comment syntax - a `#` line in there is a parse error that `frankenphp
-    # adapt` will NOT catch, because Caddy treats the backtick string as opaque.
-    # It surfaces only at runtime, as a crash-looping container. Keep commentary
-    # out here, above the block.
+    # Purge-driven cache for /_api and page HTML. Keep the HTML exclusions (Mercure's SSE above all) in sync with @page_query.
+    # Match the cookie with .matches(): an absent cookie isn't "". Pages are extensionless or .xml only, never big files (#105).
+    # CEL has no comments: a `#` inside the backticks crash-loops php, and `frankenphp adapt` won't catch it.
     @use_cache expression `
         (
             method('GET') &&
@@ -437,18 +268,8 @@
 
     cache @use_cache
 
-    # Cloudflare purges by Cache-Tag, but Souin never puts that header on a
-    # response, a hit or a miss (it stores the tags in a goroutine after the
-    # response is written). Without it Cloudflare would cache pages untagged, and
-    # no tag purge could ever remove them (#108). Copied from Surrogate-Key on
-    # every response that has one, including Souin hits. Cloudflare strips it
-    # before visitors, and it costs nothing when Cloudflare isn't in front.
-    #
-    # Not on internal hosts (php.local, the in-cluster service: dotless, the same
-    # test as @cache_host_internal): SSR never goes through Cloudflare, and the
-    # copy doubled the headers of a big collection past Node's 16 KB limit, so
-    # SSR's fetch of /_api/_/routes failed and the sitemap came out empty (#118).
-    # /_api keeps it on public hosts, for sites whose Cloudflare rule caches it.
+    # Cloudflare purges by Cache-Tag, which Souin never sets, so copy Surrogate-Key (#108).
+    # Public hosts only: on SSR's internal host it pushed headers past Node's 16 KB limit (#118).
     @cache_tag not header_regexp host ^[A-Za-z0-9-]+(\.local)?(:[0-9]{1,5})?$
     header @cache_tag {
         >Cache-Tag {http.response.header.Surrogate-Key}
@@ -457,26 +278,8 @@
         }
     }
 
-    # Per-visitor rate limit on the requests that cost something (#106): cache
-    # misses, and everything the cache doesn't store. It runs inside the cache
-    # (`order rate_limit after cache` in the global block), so hits are free and
-    # unlimited. Over the limit, the client gets a 429 with Retry-After.
-    #
-    # Counted per {http.vars.cwa_client_ip}, the visitor's real address. Private
-    # addresses are exempt: server-side rendering, the page-cache warm and the
-    # kubelet's probes all reach php from inside the cluster or compose network,
-    # and one SSR pod makes the API calls of every visitor it renders for. A
-    # visitor can't fake one (see `servers` in the global block).
-    #
-    # /_nuxt/ (hashed static assets) and /.well-known/ (the Mercure stream) are
-    # never limited. The default is deliberately generous, 3000 a minute (50 a
-    # second, sustained, from one visitor): a signed-in editor's requests are
-    # never cached, opening one admin page makes dozens of API calls, an office
-    # or mobile network puts many visitors behind one address, and the deploy's
-    # cache warm renders every page from one CI runner (3 at a time, a few
-    # hundred milliseconds each, so 10-30 a second). It still stops a single
-    # client from sending misses as fast as it can. Sliding window, so a burst of
-    # the whole amount is allowed. RATE_LIMIT_ENABLED=false turns it off.
+    # Per-visitor rate limit on misses and uncached paths (#106); private addresses (SSR, warm, probes) are exempt.
+    # The default is generous on purpose: editors, shared networks and the deploy's cache warm must never hit it.
     @rate_limited {
         expression `"{$RATE_LIMIT_ENABLED:true}" == "true"`
         not client_ip private_ranges
@@ -501,10 +304,8 @@
     handle @api_handle {
         # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
         request_header @internal host {$BROWSER_SERVER_NAME}
-        # SSR reaches php over plain HTTP (the in-cluster service on k8s), so without
-        # this php builds http:// absolute URLs, including the docs Link header, and
-        # the browser blocks them as mixed content (#83). Needs TRUSTED_PROXIES to
-        # cover the caller's network.
+        # SSR reaches php over plain HTTP, so php would build http:// URLs, blocked as mixed content (#83).
+        # Needs TRUSTED_PROXIES to cover the caller's network.
         request_header @internal X-Forwarded-Proto https
 
         php_server
