@@ -31,12 +31,7 @@ php:
     - "172.16.0.0/12"
     - "192.168.0.0/16"
   caddy:
-    # The API's optional Caddy and runtime settings (CACHE_QUERY_ALLOWLIST,
-    # RATE_LIMIT_*, CADDY_TRUSTED_PROXIES, CLOUDFLARE_IP_RANGES,
-    # CLOUDFLARE_PURGE_*, FRANKENPHP_MAX_WAIT_TIME, CADDY_GLOBAL_CONFIG,
-    # JWT_COOKIE_SAMESITE, MERCURE_JWT_ALGORITHM, ...) have no keys here: set them
-    # in siteEnv.apiSecret (CI: CWA_API_<NAME>), which passes only the ones that
-    # are set, so the Caddyfile's and Symfony's defaults apply to the rest.
+    # Other php settings: siteEnv.apiSecret (CWA_API_<NAME> in CI).
     cdnConfig: ${CADDY_CACHE_CDN_CONFIG_B64}
     storageConfig: ${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}
   mailer:
@@ -196,17 +191,10 @@ postgresql:
         memory: 50Mi
         cpu: 10m
 
-# The environment this release serves: CWA_ENVIRONMENT in the API and
-# NUXT_PUBLIC_CWA_ENVIRONMENT in the PWA (production, staging, canary or review;
-# #125). k8s.sh sets it from the track. Empty sets neither.
+# CWA_ENVIRONMENT / NUXT_PUBLIC_CWA_ENVIRONMENT. Empty sets neither.
 cwaEnvironment: ""
 
-# Site settings passed through by k8s.sh (#125), as { NAME: <base64 value> }:
-# NUXT_PUBLIC_* CI variables in `pwa` (a ConfigMap), every other NUXT_* in
-# `pwaSecret`, and CWA_API_<NAME> as <NAME> in `apiSecret` (the API and the
-# orphan-scan CronJob). Each non-empty map becomes a ConfigMap or Secret the
-# container reads through envFrom (templates/site-env.yaml). A name the chart sets
-# explicitly wins over these, and k8s.sh refuses one (SITE_ENV_RESERVED_*).
+# Site settings from k8s.sh (#125), { NAME: <base64> }; see templates/site-env.yaml.
 siteEnv:
   pwa: {}
   pwaSecret: {}

@@ -282,12 +282,8 @@ production:
   when: manual
   retry: 1
   allow_failure: false
-  # Wait for the builds and tests as well as staging. With
-  # CWA_CI_STAGING_ENABLED=false the staging job is absent, and a needs list of only
-  # `staging` became `needs: []`: the manual deploy was clickable at once, deployed
-  # the previous :main image, and a failing test no longer blocked it (GitLab issue
-  # #1, found on cymru-kitchens-cwa).
-  # All optional, because CWA_CI_BUILD_DISABLED / _TEST_DISABLED can remove these jobs.
+  # Needs the builds and tests too: without staging, needs: [] would deploy the
+  # previous image. Optional, as the switches can remove them.
   needs:
     - job: 'build api'
       optional: true
@@ -306,16 +302,8 @@ production:
     variables:
       - $CWA_CI_PRODUCTION_DISABLED == "true"
 
-# Warm the page cache after deploys (#80). By default only PRODUCTION is warmed
-# (turn it off with CWA_CI_WARM_CACHE_PRODUCTION="false"); review, staging and
-# canary are opt-in via CWA_CI_WARM_CACHE_REVIEW / _STAGING / _CANARY="true".
-# Each job reads the sitemap and requests every
-# page anonymously so the first real visitors hit the cache. Each is its own job,
-# needing its deploy job, with allow_failure: a page that does not return 200 shows
-# the pipeline as "passed with warnings" and lists the pages in the job log, without
-# marking a deploy that is already live as failed (and without the deploy job's
-# retry redeploying it). The URL is passed explicitly; action: verify ties the job to
-# the environment without recording a deployment.
+# Warm the page cache after deploys (#80): production by default, the others opt-in.
+# allow_failure, so a failed page never marks a live deploy failed.
 warm cache review:
   stage: review
   needs: ['review']
@@ -325,9 +313,7 @@ warm cache review:
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    # Same conditions as the review deploy job (branches except main, unless
-    # CWA_CI_REVIEW_DISABLED), plus opt-in: review environments are not warmed
-    # unless CWA_CI_WARM_CACHE_REVIEW is "true".
+    # The review job's conditions, plus opt-in.
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_WARM_CACHE_REVIEW == "true"'
   script:
     - skip_unless_review_deployed
@@ -343,8 +329,7 @@ warm cache staging:
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    # Same conditions as the staging deploy job, plus opt-in: staging is not
-    # warmed unless CWA_CI_WARM_CACHE_STAGING is "true".
+    # The staging job's conditions, plus opt-in.
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_WARM_CACHE_STAGING == "true"'
   script:
     - apk add --no-cache curl >/dev/null
@@ -359,8 +344,7 @@ warm cache canary:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    # Same conditions as the canary deploy job, plus opt-in: canary is not
-    # warmed unless CWA_CI_WARM_CACHE_CANARY is "true".
+    # The canary job's conditions, plus opt-in.
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_WARM_CACHE_CANARY == "true"'
   script:
     - apk add --no-cache curl >/dev/null
@@ -375,25 +359,14 @@ warm cache production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    # Same conditions as the production deploy job. On by default: production
-    # is the environment warming is for. Set CWA_CI_WARM_CACHE_PRODUCTION to
-    # "false" to turn it off.
+    # The production job's conditions; on unless "false".
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_WARM_CACHE_PRODUCTION != "false"'
   script:
     - apk add --no-cache curl >/dev/null
     - warm_cache "https://$KUBE_INGRESS_BASE_DOMAIN"
 
-# Lighthouse CI audit (#87): a MANUAL job after each deploy, never automatic. It is
-# on by default for review, staging and production (set
-# CWA_CI_PERFORMANCE_AUDIT_REVIEW / _STAGING / _PRODUCTION to "false" to remove the
-# job), and opt-in for canary (CWA_CI_PERFORMANCE_AUDIT_CANARY="true"), because
-# canary shares production's hostname and would measure whichever pod answers. It needs its deploy job and, when it
-# exists, the warm job for the same track, so pages come from the cache.
-# allow_failure: a missed budget shows as "passed with warnings" and never fails a
-# live deploy, and an unrun manual job never blocks the pipeline. The HTML reports
-# are kept as artifacts, and browser-performance.json feeds GitLab's merge request
-# comparison (a paid GitLab feature; on Free the artifact is simply kept). See
-# performance_audit in bin/devops/k8s.sh for the variables that tune it.
+# Lighthouse CI audit (#87): manual, after the deploy and its warm. Canary is opt-in
+# (it shares production's hostname). A missed budget never fails a deploy.
 performance audit review:
   stage: review
   image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
@@ -533,8 +506,7 @@ load fixtures production:
   rules:
     - if: '$CWA_CI_FIXTURES_ENABLED != "true"'
       when: never
-    # Not without the production job it needs: GitLab refuses to create a
-    # pipeline in which a job needs one that doesn't exist.
+    # It needs the production job.
     - if: '$CWA_CI_PRODUCTION_DISABLED == "true"'
       when: never
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
@@ -582,12 +554,8 @@ canary:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
-  # Wait for the builds and tests as well as staging. With
-  # CWA_CI_STAGING_ENABLED=false the staging job is absent, and a needs list of only
-  # `staging` became `needs: []`: the manual deploy was clickable at once, deployed
-  # the previous :main image, and a failing test no longer blocked it (GitLab issue
-  # #1, found on cymru-kitchens-cwa).
-  # All optional, because CWA_CI_BUILD_DISABLED / _TEST_DISABLED can remove these jobs.
+  # Needs the builds and tests too: without staging, needs: [] would deploy the
+  # previous image. Optional, as the switches can remove them.
   needs:
     - job: 'build api'
       optional: true

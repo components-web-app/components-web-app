@@ -1,24 +1,7 @@
 #!/usr/bin/env bash
-# Exposes the site's NUXT_* and CWA_API_* secrets (repository, organisation and
-# environment) to the job's later steps, so k8s.sh's site environment passthrough
-# (#125) finds them as GitLab's jobs do. GitHub can't list secrets or give them to
-# a job unless each one is named, so a new setting would otherwise need a workflow
-# edit. Variables with these names already arrive through github-export-vars.sh.
-# Run it in deploy jobs only (never a build job), after the kubectl and helm setup
-# actions, just before the deploy steps, so the values reach this repository's own
-# scripts and not those actions:
-#
-#   - name: Expose NUXT_* and CWA_API_* secrets to the deploy
-#     env:
-#       SECRETS_JSON: ${{ toJSON(secrets) }}
-#     run: bin/devops/github-export-secrets.sh
-#
-# Only those names are exported; every other secret stays out of $GITHUB_ENV. The
-# JSON arrives through the environment, never interpolated into the script. Each
-# value is masked again, line by line as well as whole, so a multi-line secret
-# stays hidden in the logs. A name the job already has (a variable of the same
-# name) is left alone, with a warning. A NUXT_PUBLIC_* secret is exported with a
-# warning: Nuxt sends public runtime config to every browser, so it isn't secret.
+# Exports the NUXT_* and CWA_API_* secrets (GitHub can't list secrets) to the
+# job's later steps, masked. Deploy jobs only, after the setup actions:
+#   env: { SECRETS_JSON: ${{ toJSON(secrets) }} }
 set -euo pipefail
 
 : "${GITHUB_ENV:?run this inside a GitHub Actions job}"

@@ -250,11 +250,7 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
-      # Site secrets named NUXT_* or CWA_API_* (#125): GitHub can't list secrets,
-      # so this step gets them all and exports only those names, masked, to the
-      # steps after it. Placed after the kubectl and helm setup actions, so those
-      # never see them; deploy jobs only, so no image build can. Variables with
-      # these names already arrive through github-export-vars.sh.
+      # After the setup actions, so they never see the secrets.
       - name: Expose NUXT_* and CWA_API_* secrets to the deploy
         env:
           SECRETS_JSON: ${{ toJSON(secrets) }}
@@ -289,13 +285,7 @@ jobs:
           create_docker_pull_secret
           deploy review
           purge_rendered_html review
-      # Off unless CWA_CI_FIXTURES_ENABLED is "true", matching GitLab. It was
-      # previously part of the deploy step and ran on every deploy, emptying the
-      # database first (#74). load_fixtures appends unless CWA_CI_FIXTURES_PURGE
-      # is "true" (or "force"), which empties the review database first on every
-      # deploy while both are set. An append creates only what's missing
-      # (bundle 2.0.0-alpha.5). Failure is allowed, as on GitLab. The load ends
-      # by flushing the HTTP cache.
+      # Off unless CWA_CI_FIXTURES_ENABLED is "true". See load_fixtures.
       - name: Load fixtures
         if: steps.namespace.outputs.state == 'present' && vars.CWA_CI_FIXTURES_ENABLED == 'true'
         continue-on-error: true
@@ -304,15 +294,7 @@ jobs:
           source ./bin/devops/k8s.sh
           apply_kube_context
           load_fixtures review
-      # Refill the page cache the purge emptied (#80). Only production is warmed
-      # by default (CWA_CI_WARM_CACHE_PRODUCTION="false" turns it off); review,
-      # staging and canary are opt-in via CWA_CI_WARM_CACHE_REVIEW / _STAGING /
-      # _CANARY="true"
-      # (repository variables). Its own step with
-      # continue-on-error: a page that does not return 200 marks this step failed,
-      # and warm_cache adds an ::error annotation, without failing the job, because
-      # the release is already live. It runs after the fixtures step, so a new
-      # environment is warmed once its content exists.
+      # Refill the page cache (#80). A failed page never fails the live deploy.
       - name: Warm the page cache
         if: steps.namespace.outputs.state == 'present' && vars.CWA_CI_WARM_CACHE_REVIEW == 'true'
         continue-on-error: true
@@ -397,11 +379,7 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
-      # Site secrets named NUXT_* or CWA_API_* (#125): GitHub can't list secrets,
-      # so this step gets them all and exports only those names, masked, to the
-      # steps after it. Placed after the kubectl and helm setup actions, so those
-      # never see them; deploy jobs only, so no image build can. Variables with
-      # these names already arrive through github-export-vars.sh.
+      # After the setup actions, so they never see the secrets.
       - name: Expose NUXT_* and CWA_API_* secrets to the deploy
         env:
           SECRETS_JSON: ${{ toJSON(secrets) }}
@@ -418,15 +396,7 @@ jobs:
           create_docker_pull_secret
           deploy staging
           purge_rendered_html staging
-      # Refill the page cache the purge emptied (#80). Only production is warmed
-      # by default (CWA_CI_WARM_CACHE_PRODUCTION="false" turns it off); review,
-      # staging and canary are opt-in via CWA_CI_WARM_CACHE_REVIEW / _STAGING /
-      # _CANARY="true"
-      # (repository variables). Its own step with
-      # continue-on-error: a page that does not return 200 marks this step failed,
-      # and warm_cache adds an ::error annotation, without failing the job, because
-      # the release is already live. Staging has no fixtures step: it shares
-      # production's database.
+      # Refill the page cache (#80). A failed page never fails the live deploy.
       - name: Warm the page cache
         if: vars.CWA_CI_WARM_CACHE_STAGING == 'true'
         continue-on-error: true

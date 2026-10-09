@@ -2,10 +2,8 @@
 # Exposes every GitHub variable (repository, organisation and environment) to the
 # job's later steps, the way GitLab exposes project variables to every job (#91).
 #
-# GitHub only passes the variables a job's `env:` names, so anything k8s.sh reads
-# that a workflow forgot to map (CWA_CI_INGRESS_ENABLED, CWA_CI_CLUSTER_ISSUER, the
-# sizing and Caddy variables, ...) silently fell back to its default. Run this as
-# the first step after checkout:
+# GitHub only passes the variables a job's `env:` names. Run this as the first
+# step after checkout:
 #
 #   - name: Expose repository variables to the scripts, as GitLab does
 #     env:

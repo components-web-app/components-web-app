@@ -1,17 +1,7 @@
 name: Performance audit
 
-# Lighthouse CI audit of a deployed environment (#87), run by hand from the Actions
-# tab. GitHub has no manual steps inside a push-triggered workflow, so this is the
-# equivalent of GitLab's manual `performance audit <track>` jobs. Available by
-# default; set the repository variable CWA_CI_PERFORMANCE_AUDIT_PRODUCTION /
-# _STAGING / _REVIEW to "false" to stop that environment being audited.
-#
-# For a review app, run the workflow from the branch the review app was deployed
-# from: its URL is built from the branch name, as in ci.yml.
-#
-# A missed budget fails this run, which is only ever the audit, never a deploy.
-# The table is in the run summary and the full reports are in the artifact. See
-# performance_audit in bin/devops/k8s.sh for the variables that tune it.
+# Lighthouse CI audit (#87), run by hand. CWA_CI_PERFORMANCE_AUDIT_<ENV>="false"
+# removes an environment. For a review app, run it from that branch.
 
 on:
   workflow_dispatch:

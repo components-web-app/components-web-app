@@ -273,20 +273,11 @@ deployment sets it. The CronJob must never get it (#103).
     configMapKeyRef:
       name: {{ $fullName }}
       key: cache-url
-{{- /* The API's optional settings (origin protection #106, CADDY_GLOBAL_CONFIG,
-JWT_COOKIE_SAMESITE, ...) have no entries here: they come from siteEnv.apiSecret
-through cwa.siteEnvFrom, and only when set, so the Caddyfile's and Symfony's
-defaults apply otherwise. An entry here would beat that, and k8s.sh would have to
-reserve its name. */}}
+{{- /* Optional php settings come from cwa.siteEnvFrom (CWA_API_*). */}}
 {{- end }}
 
 {{/*
-envFrom for the site settings k8s.sh passes through (#125, templates/site-env.yaml),
-for one side: (dict "ctx" $ "side" "api") or "pwa". Prints nothing when the side
-has none. The API deployment and the orphan scan CronJob both use the api side, so
-they read the same settings, like cwa.phpEnv. Only the PWA has a ConfigMap (its
-NUXT_PUBLIC_* values); the API's are always a Secret. Explicit env entries beat
-these.
+envFrom for the site settings (templates/site-env.yaml): (dict "ctx" $ "side" "api"|"pwa").
 */}}
 {{- define "cwa.siteEnvFrom" -}}
 {{- $fullName := include "cwa.fullname" .ctx -}}

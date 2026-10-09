@@ -7,7 +7,6 @@ export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
 export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
-# Defaults only, so a CI variable can choose the versions, as on GitHub.
 export KUBERNETES_VERSION="${KUBERNETES_VERSION:-1.31.0}"
 export HELM_VERSION="${HELM_VERSION:-3.19.0}"
 
@@ -16,11 +15,8 @@ if [[ -z "$CWA_CI_DEPLOYMENT_BRANCH" ]]; then
   export CWA_CI_DEPLOYMENT_BRANCH=main
 fi
 
-# Production certificates are opt-in per project: set
-# CWA_CI_CLUSTER_ISSUER=letsencrypt-prod once the domain points at the cluster.
-# Until then a misconfigured domain fails against Let's Encrypt's staging issuer,
-# not production's rate limits (Daniel, 2026-10-08). An explicit empty value turns
-# cert-manager off.
+# Production certificates are opt-in (CWA_CI_CLUSTER_ISSUER=letsencrypt-prod);
+# an explicit empty value turns cert-manager off.
 if [[ -z "${CWA_CI_CLUSTER_ISSUER+x}" ]]; then
   export CWA_CI_CLUSTER_ISSUER="letsencrypt-staging"
 fi

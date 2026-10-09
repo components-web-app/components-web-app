@@ -1,8 +1,4 @@
-{{- /* Site settings passed through by k8s.sh (#125): see siteEnv in values.yaml.
-Values arrive base64-encoded, so quotes, colons and newlines survive. Each object
-is rendered only when it has something in it; cwa.siteEnvFrom adds the matching
-envFrom entries. The PWA's NUXT_PUBLIC_* values are public (Nuxt sends them to
-browsers), so they go in a ConfigMap; everything else is a Secret. */}}
+{{- /* Site settings from k8s.sh (#125), base64-encoded. NUXT_PUBLIC_* are public: a ConfigMap. */}}
 {{- $fullName := include "cwa.fullname" . }}
 {{- with .Values.siteEnv.pwa }}
 ---
@@ -29,7 +25,6 @@ metadata:
 type: Opaque
 data:
   {{- range $name, $value := . }}
-  {{- /* Decoded and re-encoded, so the stored value is always valid base64. */}}
   {{ $name | quote }}: {{ $value | b64dec | b64enc | quote }}
   {{- end }}
 {{- end }}

@@ -132,10 +132,7 @@ build_app() {
 	docker context create builder
   docker buildx create builder --driver=docker-container --use
 
-  # No site setting goes into the image (#125): NUXT_* and CWA_API_* CI variables
-  # are in this job's environment, but buildx passes the build only what it names
-  # (CI here, the composer_auth secret in build_api), and the deploy delivers them
-  # at runtime. Never add a --build-arg or --secret for one.
+  # Site settings are runtime env: never pass one as a --build-arg or --secret.
   docker buildx build \
     --build-arg CI=true \
     --push \
@@ -306,14 +303,8 @@ generate_alias_tls_yaml() {
   printf "%s" "$alias_yaml"
 }
 
-# Optional ingress-nginx rate limits (#106), as annotation lines for the ingress
-# block of values.tmp.yaml. Off unless CWA_CI_INGRESS_RATE_LIMIT_RPS is set. Caddy's
-# own rate limit (CWA_API_RATE_LIMIT_*) is the main protection; this is a coarser
-# outer one. Unlike Caddy's, it counts every request, cache hits and /_nuxt assets
-# included, so it must be far higher than CWA_API_RATE_LIMIT_EVENTS (a page load
-# is dozens of requests). And it counts by the address that connected to the ingress: behind
-# Cloudflare that is a Cloudflare server, so don't turn it on there unless the
-# ingress controller itself is set up to read the real IP from Cloudflare.
+# Optional ingress-nginx rate limits (#106). Counts every request (hits, /_nuxt) by
+# the connecting address, so keep it far above Caddy's and off behind Cloudflare.
 ingress_rate_limit_annotations() {
   if [ -z "${CWA_CI_INGRESS_RATE_LIMIT_RPS:-}" ]; then
     return
@@ -508,15 +499,8 @@ site_hosts() {
   echo $hosts
 }
 
-# Defaults every site used to set by hand with the same values (2026-10-08). Each
-# is only a default: a CI variable still wins. CORS_ALLOW_ORIGIN, TRUSTED_HOSTS
-# and MERCURE_CORS_ORIGIN follow this deploy's own hostnames, so review apps and
-# staging get theirs instead of production's. They keep their own CI names (not
-# CWA_API_*) because they're computed here, as is DATABASE_SSL_MODE.
-# CWA_CI_CLUSTER_ISSUER is deliberately not defaulted here: setup.sh makes an unset
-# one letsencrypt-staging, so production certificates are switched on per project
-# (CWA_CI_CLUSTER_ISSUER=letsencrypt-prod) and a misconfigured domain fails against
-# the staging issuer's far higher limits (Daniel, 2026-10-08).
+# Defaults a CI variable still overrides. CWA_CI_CLUSTER_ISSUER is defaulted in
+# setup.sh (letsencrypt-staging): production certificates are opt-in.
 apply_site_defaults() {
   local track="${1:-stable}" hosts alt="" origins="" host escaped
   hosts=$(site_hosts "$track")
@@ -536,11 +520,8 @@ apply_site_defaults() {
   fi
 }
 
-# The environment a deploy serves, as both containers see it: CWA_ENVIRONMENT in
-# the API, NUXT_PUBLIC_CWA_ENVIRONMENT in the PWA. It comes from the track, so
-# staging says "staging" although its GitLab job runs as `environment: production`
-# (#125). A CWA_ENVIRONMENT CI variable overrides it; on GitLab, scope it with care,
-# since a production-scoped value reaches staging too.
+# CWA_ENVIRONMENT / NUXT_PUBLIC_CWA_ENVIRONMENT, from the track (staging's GitLab
+# job runs as environment: production). A CWA_ENVIRONMENT CI variable overrides it.
 cwa_environment_name() {
   local name
   case "${1:-stable}" in
@@ -557,17 +538,9 @@ cwa_environment_name() {
   printf '%s' "$name"
 }
 
-# Names the chart sets explicitly on each container. A site variable reaching one
-# of them is refused by site_env_values: an explicit `env:` entry beats `envFrom`,
-# so the value would be silently ignored. Keep in sync with cwa.phpEnv in
-# helm/cwa/templates/_helpers.tpl, deployment.yaml and pwa-deployment.yaml. Each
-# one with its own CI variable (MAILER_DSN, CORS_ALLOW_ORIGIN, CWA_CI_API_GOMEMLIMIT
-# for GOMEMLIMIT, CWA_CI_RESET_DATABASE, ...) is set through that variable. The
-# API's optional runtime settings (RATE_LIMIT_*, CADDY_GLOBAL_CONFIG, ...) aren't
-# here: they have no wiring of their own, so they're set as CWA_API_<NAME>. The
-# API list also has FRANKENPHP_CONFIG, which the image sets and worker mode needs. NUXT_PUBLIC_CWA_API_URL is the deprecated name
-# of NUXT_CWA_API_URL (module #345): set in CI it would put the internal API URL
-# into every page's HTML.
+# Names the chart sets with explicit `env:` entries, which would beat envFrom.
+# Keep in sync with cwa.phpEnv, deployment.yaml and pwa-deployment.yaml.
+# NUXT_PUBLIC_CWA_API_URL (deprecated) would put the internal API URL in pages.
 SITE_ENV_RESERVED_API="
   ADMIN_EMAIL ADMIN_PASSWORD ADMIN_USERNAME APP_DEBUG APP_ENV APP_SECRET APP_UPSTREAM
   BROWSER_SERVER_NAME CACHE_URL CADDY_CACHE_CDN_CONFIG CADDY_CACHE_EXTRA_CONFIG
@@ -584,27 +557,10 @@ SITE_ENV_RESERVED_PWA="
   NUXT_PUBLIC_CWA_ENVIRONMENT
 "
 
-# Site settings without template edits (#125). Every CI variable named
-#   NUXT_PUBLIC_<NAME>  reaches the PWA unchanged, from a ConfigMap (Nuxt sends
-#                       public runtime config to browsers anyway);
-#   NUXT_<NAME>         (any other) reaches the PWA unchanged, from a Secret;
-#   CWA_API_<NAME>      reaches the API and the orphan-scan CronJob as <NAME>,
-#                       always from a Secret, and only when it isn't empty,
-# through `envFrom`. So a project sets Nuxt runtime config exactly as anywhere
-# else, and the API's settings keep a prefix only because its names (DATABASE_URL,
-# APP_SECRET, ...) are too generic to sweep up whole. The API's optional runtime
-# settings (CWA_API_RATE_LIMIT_EVENTS, CWA_API_CADDY_GLOBAL_CONFIG, ...) all
-# arrive this way (their old bare CI names are no longer read).
-#
-# Prints a helm values file (cwaEnvironment and siteEnv) for the environment name
-# in $1, with every value base64-encoded so quotes, colons, `$` and newlines can't
-# break the YAML; the chart decodes them (b64dec). Names are listed from `env`, but
-# each value is read by name, so a multi-line value survives, and a line inside
-# another variable's value that happens to look like `NUXT_X=` is skipped because
-# no such variable is set. Values are never printed.
-#
-# Fails, naming every problem, on a reserved name (see above) or a name that isn't
-# a valid variable name.
+# Site settings (#125): NUXT_PUBLIC_* to the PWA's ConfigMap, other NUXT_* to its
+# Secret, CWA_API_<NAME> to the API's Secret as <NAME>, all through envFrom.
+# Prints a values file with base64 values. Values are read by name (multi-line
+# safe) and never printed. Fails on a reserved or unusable name.
 site_env_values() {
   local environment="$1" names name target kind key value isset b64
   local pwa="" pwa_secret="" api_secret="" bad="" summary=""
@@ -631,11 +587,7 @@ site_env_values() {
 "
       continue
     fi
-    # An empty API value is left out, so the container sees the variable unset:
-    # Caddy's {$VAR:default} keeps its default only for an unset variable, and an
-    # empty one would replace it (the origin protection settings, #106), as
-    # Symfony's .env defaults would be. Nuxt is different: an empty NUXT_* value
-    # deliberately replaces a runtimeConfig default with "", so it's passed on.
+    # Empty would replace a Caddyfile/Symfony default; Nuxt applies empty on purpose.
     if [ "$target" = api ] && [ -z "$value" ]; then
       summary="${summary}  api: $key left unset, $name is empty
 "
@@ -676,7 +628,7 @@ site_env_values() {
 site_env_reserved() {
   local list
   if [ "$1" = api ]; then list="$SITE_ENV_RESERVED_API"; else list="$SITE_ENV_RESERVED_PWA"; fi
-  # One space between names, and one at each end, so " NAME " matches whole names.
+  # Space-padded, so only whole names match.
   # shellcheck disable=SC2086,SC2116
   list=" $(echo $list) "
   case "$list" in
@@ -693,18 +645,13 @@ site_env_block() {
   fi
 }
 
-# A YAML single-quoted scalar, so any value (a password starting with "!", or
-# holding ": " or "#") stays a plain string.
+# A YAML single-quoted scalar.
 yaml_squote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"
 }
 
-# The in-cluster database's user, password and database, under the chart's
-# postgresql.global.postgresql.auth: Bitnami's chart prefers it to
-# postgresql.auth, and secrets.yaml builds database-url from it. Only the ones
-# set are written, so helm/cwa/values.yaml's defaults (example, !ChangeMe!, api)
-# apply otherwise, and nothing at all is written when none is set. The names are
-# the postgres image's, as in compose and the test jobs.
+# postgresql.global.postgresql.auth (Bitnami prefers it; secrets.yaml builds
+# database-url from it), with only the values that are set.
 postgres_auth_yaml() {
   local lines=""
   if [ -n "$POSTGRES_USER" ]; then
@@ -724,10 +671,7 @@ postgres_auth_yaml() {
   fi
 }
 
-# Optional persistence for the in-cluster database: CWA_CI_POSTGRES_PERSISTENCE
-# (true/false), CWA_CI_POSTGRES_PERSISTENCE_SIZE, CWA_CI_POSTGRES_STORAGE_CLASS.
-# Only the ones set are written to postgresql.primary.persistence, so
-# helm/cwa/values.yaml's defaults (off, 1Gi, standard) apply otherwise.
+# postgresql.primary.persistence, with only the values that are set.
 postgres_persistence_yaml() {
   local lines=""
   if [ -n "$CWA_CI_POSTGRES_PERSISTENCE" ]; then
@@ -747,11 +691,8 @@ postgres_persistence_yaml() {
   fi
 }
 
-# Read-only, before helm: a StatefulSet's volumeClaimTemplates can't change in
-# place, so turning persistence on or off, or changing the size or storage class
-# of a live release, makes `helm upgrade` fail part way. Compares what the deploy
-# sets with the live StatefulSet and stops with what to run instead. Values left
-# unset are the chart's and aren't compared.
+# A StatefulSet's volumeClaimTemplates can't change, so stop before helm when the
+# persistence settings differ from the live one, saying what to run.
 check_postgres_persistence() {
   local name="$1" want="${CWA_CI_POSTGRES_PERSISTENCE:-}" size="${CWA_CI_POSTGRES_PERSISTENCE_SIZE:-}"
   local class="${CWA_CI_POSTGRES_STORAGE_CLASS:-}" out sts live_size live_class pvc fix
@@ -953,10 +894,7 @@ php:
   caddy:
     cdnConfig: "${CADDY_CACHE_CDN_CONFIG_B64}"
     storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}"
-    # The other Caddy settings (origin protection #106, Cloudflare purge pacing
-    # #115, CADDY_GLOBAL_CONFIG, FRANKENPHP_MAX_WAIT_TIME) are CWA_API_<NAME>
-    # site settings, so only the ones a project sets reach the container and the
-    # Caddyfile's defaults apply to the rest.
+    # The other php settings are CWA_API_* site settings.
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -1020,8 +958,7 @@ cronjobs:
     timeZone: "${CWA_CI_ORPHAN_SCAN_TIMEZONE:-Europe/London}"
 EOF
 
-  # Its own file, written only now and removed after helm: it holds the site's
-  # secrets, only base64-encoded.
+  # Holds secrets: removed after helm.
   printf '%s\n' "$site_env_yaml" > values.site-env.tmp.yaml
 
   helm upgrade --install \
@@ -1476,11 +1413,7 @@ function delete() {
 	helm uninstall --namespace="$KUBE_NAMESPACE" "$name" || EXIT_CODE=$? && true
   echo ${EXIT_CODE}
 
-  # A review app's database volume (CWA_CI_POSTGRES_PERSISTENCE) goes with it:
-  # helm leaves a StatefulSet's PVCs behind, and a redeployed branch would get the
-  # old data and credentials. Matched by the exact release, so nothing else can
-  # match. Staging, canary and production keep theirs: what happens to persistent
-  # data there is the project's call.
+  # helm leaves PVCs behind; a review app's goes with it. Other tracks keep theirs.
   if [ "$track" = "review" ]; then
     kubectl delete pvc --namespace="$KUBE_NAMESPACE" --wait=false \
       -l "app.kubernetes.io/instance=$name,app.kubernetes.io/name=postgresql" || true
