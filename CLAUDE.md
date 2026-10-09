@@ -16,6 +16,7 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 - **Two issue trackers.** Issues are on GitHub (`gh` works against this repo), and GitLab has its own tracker too: `glab issue list -R silverback-web-apps/cwa/components-web-app`.
 - **Every change to `main` gets a `CHANGELOG.md` line.** See *Releasing the template*.
 - **Measure caching claims against `APP_ENV=prod` config, not just the dev stack.** Dev TTLs are deliberately short and hide problems (see *Page cache*).
+- **Comments are one line, two at most** (#131): what the line does or what not to change, with the issue number. The why goes in issues, the CHANGELOG and this file; no measurements, dates or history in comments.
 
 ## Releasing the template
 
@@ -308,7 +309,7 @@ Changing the stable ingress's host list in place makes cert-manager put a self-s
 
 ### Review namespaces (GitLab #4)
 
-`ensure_namespace` never creates namespaces (CI can't create role bindings). `skip_review_without_namespace` runs first in the GitLab review job and exits **3** (`REVIEW_NO_NAMESPACE_EXIT_CODE`) when the namespace is missing, which `allow_failure: exit_codes: [3]` shows orange. **Keep those two numbers in sync.** Only `NotFound`/`Forbidden` count as missing; any other `kubectl` error fails red. Staging, canary and production keep plain `ensure_namespace`. GitHub's `ci.yml` uses a "Check for a review namespace" step that warns and skips.
+`ensure_namespace` never creates namespaces (CI can't create role bindings). `skip_review_without_namespace` runs first in the GitLab review job and exits **3** (`REVIEW_NO_NAMESPACE_EXIT_CODE`) when the namespace is missing, which `allow_failure: exit_codes: [3]` shows orange. **Keep those two numbers in sync.** Only `NotFound`/`Forbidden` count as missing; any other `kubectl` error fails red. Staging, canary and production keep plain `ensure_namespace`. GitHub's `ci.yml` uses a "Check for a review namespace" step that warns and skips. The jobs after an orange review job still run, since `needs` treats an allowed failure as success (#99), so they start with `skip_unless_review_deployed` (no `environment_url.txt`, no deploy).
 
 ## CI
 
@@ -393,7 +394,7 @@ The module ships no service worker; the template carries the reference config in
 - **Upload sizing:** `upload_max_filesize = 20M`, `post_max_size = 21M` (`10-app.ini`), `Assert\File(maxSize: '20M')` on `Image::$file`, `memory_limit = 512M` (a per-request ceiling). The ingress allows 30m.
 - **Thumbnails are built synchronously in the upload request with GD, ~11.7 MB per megapixel**, so 512M handles ~43 MP. `Image::$file` rejects over **40 MP** with a 422 (`Assert\Image(maxPixels: 40_000_000)` inside `Assert\When`, so SVG is exempt; without the `When`, SVG is rejected). Non-images (e.g. PDF) are rejected. The module downscales in the browser by default (module #335: >2560px or >20 MP), so the limit is the safety net for direct API uploads.
 - **FrankenPHP worker pool is fixed** at `num {$FRANKENPHP_WORKER_NUM:4}` in `worker.Caddyfile` (the default follows node CPUs, and with it worst-case memory).
-- **php pod memory:** limit 1Gi (`CWA_CI_API_MEMORY_LIMIT`), request 350Mi. **`GOMEMLIMIT`** (#117) defaults to 80% of that limit (`cwa.php.goMemLimit`, Mi/Gi limits only; `CWA_CI_API_GOMEMLIMIT`/`php.goMemLimit` overrides, `off` unsets). It bounds only Go's heap (Caddy, Souin, Mercure), not PHP's memory or cgo such as cbrotli. Deployment only, not in `cwa.phpEnv`. If a cluster forces limits to equal requests (GKE Autopilot), lower `CWA_CI_API_MEMORY_LIMIT`.
+- **php pod memory:** limit 1Gi (`CWA_CI_API_MEMORY_LIMIT`), request 350Mi. **`GOMEMLIMIT`** (#117) defaults to 80% of that limit (`cwa.php.goMemLimit`, Mi/Gi limits only; `CWA_CI_API_GOMEMLIMIT`/`php.goMemLimit` overrides, `off` unsets). It bounds only Go's heap (Caddy, Souin, Mercure), not PHP's memory or cgo such as cbrotli. Deployment only, not in `cwa.phpEnv`. The 1Gi limit covers 4 workers plus one large upload at `memory_limit` 512M; the request stays low on purpose, at the cost that a node short of memory evicts this pod first. If a cluster forces limits to equal requests (GKE Autopilot), lower `CWA_CI_API_MEMORY_LIMIT`.
 
 ## CORS: `Retry-After` is exposed (#100)
 
