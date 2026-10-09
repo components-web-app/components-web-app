@@ -236,7 +236,14 @@ Sample content is bundled. Load it after the API container is healthy:
 docker compose exec php bin/console doctrine:fixtures:load --append
 \`\`\`
 `
-    : ''
+    : `## Admin account
+
+The database starts empty. Create an admin once the API container is healthy:
+
+\`\`\`bash
+docker compose exec php bin/console silverback:api-components:user:create --admin
+\`\`\`
+`
 
   const readme = `# ${answers.projectName}
 
@@ -329,7 +336,7 @@ async function main(): Promise<void> {
     }
 
     if (!answers.fixtures) {
-      await removeExcluded(tempDir, ['api/src/DataFixtures/Parts/'])
+      await removeExcluded(tempDir, ['api/src/DataFixtures/'])
     }
 
     await processNuxtConfig(tempDir, answers.features)
@@ -415,6 +422,10 @@ async function main(): Promise<void> {
     outroLines.push('')
     outroLines.push('Load sample content (once the API container is healthy):')
     outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load --append')
+  } else {
+    outroLines.push('')
+    outroLines.push('Create an admin (once the API container is healthy):')
+    outroLines.push('  docker compose exec php bin/console silverback:api-components:user:create --admin')
   }
 
   outro(outroLines.join('\n'))

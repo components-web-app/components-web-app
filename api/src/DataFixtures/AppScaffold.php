@@ -9,14 +9,14 @@ use App\DataFixtures\Parts\ScaffoldPartInterface;
 use App\DataFixtures\Parts\ScaffoldState;
 use Silverback\ApiComponentsBundle\Fixture\AbstractCwaScaffold;
 use Silverback\ApiComponentsBundle\Fixture\CwaFixtureBuilder;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 class AppScaffold extends AbstractCwaScaffold
 {
     /** @param iterable<ScaffoldPartInterface> $parts */
     public function __construct(
         CwaFixtureBuilder $cwa,
-        #[TaggedIterator('cwa.scaffold_part', defaultPriorityMethod: 'getPriority')]
+        #[AutowireIterator('cwa.scaffold_part', defaultPriorityMethod: 'getPriority')]
         private readonly iterable $parts,
     ) {
         parent::__construct($cwa);

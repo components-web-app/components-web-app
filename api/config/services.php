@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Resources\config;
 
-use App\DataFixtures\AppScaffold;
-use App\DataFixtures\UsersFixture;
 use App\Flysystem\GoogleCloudStorageFactory;
 use App\Mercure\SkipAwareMercureHub;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
@@ -14,7 +12,6 @@ use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
 use Silverback\ApiComponentsBundle\Imagine\FlysystemCacheResolver;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 use Symfony\Component\DependencyInjection\Reference;
 
 
@@ -37,9 +34,6 @@ return static function (ContainerConfigurator $configurator) {
         ->set('env(EMAIL_LINK_DEFAULT_ORIGIN)', '')
         ->set('app.browser_origin', 'https://%env(BROWSER_SERVER_NAME)%')
         ->set('app.email_link_default_origin', '%env(default:app.browser_origin:EMAIL_LINK_DEFAULT_ORIGIN)%')
-        ->set('env(ADMIN_USERNAME)', null)
-        ->set('env(ADMIN_PASSWORD)', null)
-        ->set('env(ADMIN_EMAIL)', null)
     ;
 
     $services = $configurator->services();
@@ -57,20 +51,6 @@ return static function (ContainerConfigurator $configurator) {
     $services
         ->load('App\\Controller\\', '../src/Controller')
         ->tag('controller.service_subscriber');
-
-    $services
-        ->set(UsersFixture::class)
-        ->args([
-            '$adminUsername' => '%env(ADMIN_USERNAME)%',
-            '$adminPassword' => '%env(ADMIN_PASSWORD)%',
-            '$adminEmail' => '%env(ADMIN_EMAIL)%'
-        ])
-    ;
-
-    $services
-        ->set(AppScaffold::class)
-        ->args(['$parts' => tagged_iterator('cwa.scaffold_part', defaultPriorityMethod: 'getPriority')])
-    ;
 
     $services
         ->set(LocalFilesystemAdapter::class)

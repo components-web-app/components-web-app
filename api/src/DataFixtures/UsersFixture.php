@@ -7,6 +7,7 @@ namespace App\DataFixtures;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Silverback\ApiComponentsBundle\Factory\User\UserFactory;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
  * @author Daniel West <daniel@silverback.is>
@@ -16,8 +17,11 @@ class UsersFixture extends Fixture
 
     public function __construct(
         private readonly UserFactory $factory,
+        #[Autowire(env: 'default::ADMIN_USERNAME')]
         private readonly ?string $adminUsername = null,
+        #[Autowire(env: 'default::ADMIN_PASSWORD')]
         private readonly ?string $adminPassword = null,
+        #[Autowire(env: 'default::ADMIN_EMAIL')]
         private readonly ?string $adminEmail = null
     ) {
     }
