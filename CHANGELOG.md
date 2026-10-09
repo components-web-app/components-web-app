@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+- Bundle 2.0.0-alpha.10, `symfony/mercure-bundle` 0.6 and `symfony/mercure` 0.9 ([api-components-bundle#384](https://github.com/components-web-app/api-components-bundle/issues/384)). `mercure.yaml` pins `cookie_name: '__Secure-mercure_access_token'`: mercure-bundle 0.6 drops the prefix when `kernel.debug` is on, and the hub wouldn't read it. ([b71fd4d](https://github.com/components-web-app/components-web-app/commit/b71fd4d1f6193ab6c80fd05c07a9cb3e576414fe))
+
 ## [2.0.0-alpha.18](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.18) - 2026-10-10
 
 ### Changed
