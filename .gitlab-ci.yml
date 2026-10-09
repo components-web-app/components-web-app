@@ -12,18 +12,18 @@ workflow:
     - when: always
 
 variables:
-  BUILD_DISABLED: "false"
-  TEST_DISABLED: "false"
-  STAGING_ENABLED: "true"
-  CANARY_ENABLED: "true"
-  ENABLE_DATABASE_FIXTURES: "false"
+  CWA_CI_BUILD_DISABLED: "false"
+  CWA_CI_TEST_DISABLED: "false"
+  CWA_CI_STAGING_ENABLED: "true"
+  CWA_CI_CANARY_ENABLED: "true"
+  CWA_CI_FIXTURES_ENABLED: "false"
   # Makes a manual fixture job empty the database before loading: "true" on review
   # apps, "force" for production. Staging has no fixture job. See load_fixtures in
   # bin/devops/k8s.sh.
-  FIXTURES_PURGE: "false"
+  CWA_CI_FIXTURES_PURGE: "false"
   # Node, npx and Chrome for the performance audit jobs (#87). Pinned so a Chrome
   # update can't move the numbers between pipelines unnoticed.
-  PERFORMANCE_AUDIT_IMAGE: "cypress/browsers:node-24.21.0-chrome-153.0.8010.36-1-ff-156.0-edge-153.0.4234.32-1"
+  CWA_CI_PERFORMANCE_AUDIT_IMAGE: "cypress/browsers:node-24.21.0-chrome-153.0.8010.36-1-ff-156.0-edge-153.0.4234.32-1"
 
 stages:
   - build
@@ -61,7 +61,7 @@ build api:
     - branches
   except:
     variables:
-      - $BUILD_DISABLED == "true"
+      - $CWA_CI_BUILD_DISABLED == "true"
        
 build app:
   stage: build
@@ -78,7 +78,7 @@ build app:
     - branches
   except:
     variables:
-      - $BUILD_DISABLED == "true"
+      - $CWA_CI_BUILD_DISABLED == "true"
 
 unit tests:
   image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG
@@ -100,7 +100,7 @@ unit tests:
     - branches
   except:
     variables:
-      - $TEST_DISABLED == "true"
+      - $CWA_CI_TEST_DISABLED == "true"
 
 functional tests:
   stage: test
@@ -127,7 +127,7 @@ functional tests:
       junit: api/build/logs/phpunit/functional.xml
   except:
     variables:
-      - $TEST_DISABLED == "true"
+      - $CWA_CI_TEST_DISABLED == "true"
 
 #review pwa:
 #  stage: review
@@ -145,7 +145,7 @@ functional tests:
 #    refs:
 #      - main
 #    variables:
-#      - $REVIEW_DISABLED == "true"
+#      - $CWA_CI_REVIEW_DISABLED == "true"
 
 review:
   stage: review
@@ -190,7 +190,7 @@ review:
     refs:
       - main
     variables:
-      - $REVIEW_DISABLED == "true"
+      - $CWA_CI_REVIEW_DISABLED == "true"
 
 #staging pwa:
 #  stage: staging
@@ -205,7 +205,7 @@ review:
 #    refs:
 #      - main
 #    variables:
-#      - $STAGING_ENABLED == "true"
+#      - $CWA_CI_STAGING_ENABLED == "true"
 #  allow_failure: false
 
 staging:
@@ -238,7 +238,7 @@ staging:
     refs:
       - main
     variables:
-      - $STAGING_ENABLED == "true"
+      - $CWA_CI_STAGING_ENABLED == "true"
   allow_failure: false
 
 #production pwa:
@@ -257,9 +257,6 @@ staging:
 #  needs:
 #    - job: 'staging pwa'
 #      optional: true
-#  except:
-#    variables:
-#      - $PRODUCTION_PWA_DISABLED == "true"
 
 production:
   stage: production
@@ -285,11 +282,12 @@ production:
   when: manual
   retry: 1
   allow_failure: false
-  # Wait for the builds and tests as well as staging. With STAGING_ENABLED=false the
-  # staging job is absent, and a needs list of only `staging` became `needs: []`: the
-  # manual deploy was clickable at once, deployed the previous :main image, and a
-  # failing test no longer blocked it (GitLab issue #1, found on cymru-kitchens-cwa).
-  # All optional, because BUILD_DISABLED / TEST_DISABLED can remove these jobs.
+  # Wait for the builds and tests as well as staging. With
+  # CWA_CI_STAGING_ENABLED=false the staging job is absent, and a needs list of only
+  # `staging` became `needs: []`: the manual deploy was clickable at once, deployed
+  # the previous :main image, and a failing test no longer blocked it (GitLab issue
+  # #1, found on cymru-kitchens-cwa).
+  # All optional, because CWA_CI_BUILD_DISABLED / _TEST_DISABLED can remove these jobs.
   needs:
     - job: 'build api'
       optional: true
@@ -306,11 +304,11 @@ production:
       - main
   except:
     variables:
-      - $PRODUCTION_API_DISABLED == "true"
+      - $CWA_CI_PRODUCTION_DISABLED == "true"
 
 # Warm the page cache after deploys (#80). By default only PRODUCTION is warmed
-# (turn it off with WARM_CACHE_PRODUCTION="false"); review, staging and canary
-# are opt-in via WARM_CACHE_REVIEW / WARM_CACHE_STAGING / WARM_CACHE_CANARY="true".
+# (turn it off with CWA_CI_WARM_CACHE_PRODUCTION="false"); review, staging and
+# canary are opt-in via CWA_CI_WARM_CACHE_REVIEW / _STAGING / _CANARY="true".
 # Each job reads the sitemap and requests every
 # page anonymously so the first real visitors hit the cache. Each is its own job,
 # needing its deploy job, with allow_failure: a page that does not return 200 shows
@@ -328,9 +326,9 @@ warm cache review:
     action: verify
   rules:
     # Same conditions as the review deploy job (branches except main, unless
-    # REVIEW_DISABLED), plus opt-in: review environments are not warmed unless
-    # WARM_CACHE_REVIEW is "true".
-    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $WARM_CACHE_REVIEW == "true"'
+    # CWA_CI_REVIEW_DISABLED), plus opt-in: review environments are not warmed
+    # unless CWA_CI_WARM_CACHE_REVIEW is "true".
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_WARM_CACHE_REVIEW == "true"'
   script:
     - skip_unless_review_deployed
     - apk add --no-cache curl >/dev/null
@@ -346,8 +344,8 @@ warm cache staging:
     action: verify
   rules:
     # Same conditions as the staging deploy job, plus opt-in: staging is not
-    # warmed unless WARM_CACHE_STAGING is "true".
-    - if: '$CI_COMMIT_BRANCH == "main" && $STAGING_ENABLED == "true" && $WARM_CACHE_STAGING == "true"'
+    # warmed unless CWA_CI_WARM_CACHE_STAGING is "true".
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_WARM_CACHE_STAGING == "true"'
   script:
     - apk add --no-cache curl >/dev/null
     - warm_cache "https://staging.$KUBE_INGRESS_BASE_DOMAIN"
@@ -362,8 +360,8 @@ warm cache canary:
     action: verify
   rules:
     # Same conditions as the canary deploy job, plus opt-in: canary is not
-    # warmed unless WARM_CACHE_CANARY is "true".
-    - if: '$CI_COMMIT_BRANCH == "main" && $CANARY_ENABLED == "true" && $WARM_CACHE_CANARY == "true"'
+    # warmed unless CWA_CI_WARM_CACHE_CANARY is "true".
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_WARM_CACHE_CANARY == "true"'
   script:
     - apk add --no-cache curl >/dev/null
     - warm_cache "https://$KUBE_INGRESS_BASE_DOMAIN"
@@ -378,18 +376,18 @@ warm cache production:
     action: verify
   rules:
     # Same conditions as the production deploy job. On by default: production
-    # is the environment warming is for. Set WARM_CACHE_PRODUCTION to "false"
-    # to turn it off.
-    - if: '$CI_COMMIT_BRANCH == "main" && $PRODUCTION_API_DISABLED != "true" && $WARM_CACHE_PRODUCTION != "false"'
+    # is the environment warming is for. Set CWA_CI_WARM_CACHE_PRODUCTION to
+    # "false" to turn it off.
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_WARM_CACHE_PRODUCTION != "false"'
   script:
     - apk add --no-cache curl >/dev/null
     - warm_cache "https://$KUBE_INGRESS_BASE_DOMAIN"
 
 # Lighthouse CI audit (#87): a MANUAL job after each deploy, never automatic. It is
-# on by default for review, staging and production (set PERFORMANCE_AUDIT_REVIEW /
-# _STAGING / _PRODUCTION to "false" to remove the job), and opt-in for canary
-# (PERFORMANCE_AUDIT_CANARY="true"), because canary shares production's hostname
-# and would measure whichever pod answers. It needs its deploy job and, when it
+# on by default for review, staging and production (set
+# CWA_CI_PERFORMANCE_AUDIT_REVIEW / _STAGING / _PRODUCTION to "false" to remove the
+# job), and opt-in for canary (CWA_CI_PERFORMANCE_AUDIT_CANARY="true"), because
+# canary shares production's hostname and would measure whichever pod answers. It needs its deploy job and, when it
 # exists, the warm job for the same track, so pages come from the cache.
 # allow_failure: a missed budget shows as "passed with warnings" and never fails a
 # live deploy, and an unrun manual job never blocks the pipeline. The HTML reports
@@ -398,7 +396,7 @@ warm cache production:
 # performance_audit in bin/devops/k8s.sh for the variables that tune it.
 performance audit review:
   stage: review
-  image: $PERFORMANCE_AUDIT_IMAGE
+  image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'review'
     - job: 'warm cache review'
@@ -409,7 +407,7 @@ performance audit review:
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $REVIEW_DISABLED != "true" && $PERFORMANCE_AUDIT_REVIEW != "false"'
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_PERFORMANCE_AUDIT_REVIEW != "false"'
       when: manual
   script:
     - skip_unless_review_deployed
@@ -425,7 +423,7 @@ performance audit review:
 
 performance audit staging:
   stage: staging
-  image: $PERFORMANCE_AUDIT_IMAGE
+  image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'staging'
     - job: 'warm cache staging'
@@ -436,7 +434,7 @@ performance audit staging:
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $STAGING_ENABLED == "true" && $PERFORMANCE_AUDIT_STAGING != "false"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_PERFORMANCE_AUDIT_STAGING != "false"'
       when: manual
   script:
     # cypress/browsers has no curl, which sitemap_pages needs.
@@ -451,7 +449,7 @@ performance audit staging:
 
 performance audit canary:
   stage: canary
-  image: $PERFORMANCE_AUDIT_IMAGE
+  image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'canary'
     - job: 'warm cache canary'
@@ -462,7 +460,7 @@ performance audit canary:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CANARY_ENABLED == "true" && $PERFORMANCE_AUDIT_CANARY == "true"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_PERFORMANCE_AUDIT_CANARY == "true"'
       when: manual
   script:
     # cypress/browsers has no curl, which sitemap_pages needs.
@@ -477,7 +475,7 @@ performance audit canary:
 
 performance audit production:
   stage: production
-  image: $PERFORMANCE_AUDIT_IMAGE
+  image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'production'
     - job: 'warm cache production'
@@ -488,7 +486,7 @@ performance audit production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $PRODUCTION_API_DISABLED != "true" && $PERFORMANCE_AUDIT_PRODUCTION != "false"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_PERFORMANCE_AUDIT_PRODUCTION != "false"'
       when: manual
   script:
     # cypress/browsers has no curl, which sitemap_pages needs.
@@ -513,9 +511,9 @@ load fixtures review:
     name: review/$CI_COMMIT_REF_NAME
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
   rules:
-    - if: '$ENABLE_DATABASE_FIXTURES != "true"'
+    - if: '$CWA_CI_FIXTURES_ENABLED != "true"'
       when: never
-    - if: '$REVIEW_DISABLED == "true"'
+    - if: '$CWA_CI_REVIEW_DISABLED == "true"'
       when: never
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
       when: manual
@@ -533,7 +531,7 @@ load fixtures production:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   rules:
-    - if: '$ENABLE_DATABASE_FIXTURES != "true"'
+    - if: '$CWA_CI_FIXTURES_ENABLED != "true"'
       when: never
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: manual
@@ -561,7 +559,7 @@ stop review:
     refs:
       - main
     variables:
-      - $REVIEW_DISABLED == "true"
+      - $CWA_CI_REVIEW_DISABLED == "true"
 
 canary:
   stage: canary
@@ -580,11 +578,12 @@ canary:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   when: manual
-  # Wait for the builds and tests as well as staging. With STAGING_ENABLED=false the
-  # staging job is absent, and a needs list of only `staging` became `needs: []`: the
-  # manual deploy was clickable at once, deployed the previous :main image, and a
-  # failing test no longer blocked it (GitLab issue #1, found on cymru-kitchens-cwa).
-  # All optional, because BUILD_DISABLED / TEST_DISABLED can remove these jobs.
+  # Wait for the builds and tests as well as staging. With
+  # CWA_CI_STAGING_ENABLED=false the staging job is absent, and a needs list of only
+  # `staging` became `needs: []`: the manual deploy was clickable at once, deployed
+  # the previous :main image, and a failing test no longer blocked it (GitLab issue
+  # #1, found on cymru-kitchens-cwa).
+  # All optional, because CWA_CI_BUILD_DISABLED / _TEST_DISABLED can remove these jobs.
   needs:
     - job: 'build api'
       optional: true
@@ -600,4 +599,4 @@ canary:
     refs:
       - main
     variables:
-      - $CANARY_ENABLED == "true"
+      - $CWA_CI_CANARY_ENABLED == "true"
