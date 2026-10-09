@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.16](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.16) - 2026-10-09
+
 ### Upgrade notes
 - **Rename your CI variables before or with the next deploy: the old names are no longer read.** ([3a4ab9a](https://github.com/components-web-app/components-web-app/commit/3a4ab9a2996c7b2639c93fa3f2afd9d90c157185), [1960c43](https://github.com/components-web-app/components-web-app/commit/1960c431e3688591ce1d87e5f11d6ffdb541c9c4), [151fa6f](https://github.com/components-web-app/components-web-app/commit/151fa6fb4e46b62fe711783f7f078f4064183d64), [d64c278](https://github.com/components-web-app/components-web-app/commit/d64c278997770b07fb0c2d04ed2fa7383059ab03))
   - `CWA_CI_` + the same name: `BUILD_DISABLED`, `TEST_DISABLED`, `REVIEW_DISABLED`, `STAGING_ENABLED`, `CANARY_ENABLED`, `FIXTURES_PURGE`, `RESET_DATABASE`, `HELM_UNINSTALL`, `DEPLOYMENT_BRANCH`, `TRACE`, `INGRESS_ENABLED`, `CLUSTER_ISSUER`, `TLS_CERTIFICATE_TIMEOUT`, `INGRESS_RATE_LIMIT_*`, `PWA_*` (sizing), `ORPHAN_SCAN*`, `WARM_CACHE_*`, `PERFORMANCE_AUDIT_*`.
