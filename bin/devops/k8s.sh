@@ -162,6 +162,8 @@ run_test_functional() {
   # it for real on every pipeline. Unset, the tests get .env.test's null
   # transport (built, never sent) and .env's MAILER_EMAIL.
   unset MAILER_DSN MAILER_EMAIL
+  # CI's JWT_* hold key contents for the deploy, not .env's paths (#130).
+  unset JWT_SECRET_KEY JWT_PUBLIC_KEY JWT_PASSPHRASE
   echo "run_test_functional function"
   cd ./api || return
   mkdir -p build/logs/phpunit/
