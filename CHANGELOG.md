@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.17](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.17) - 2026-10-09
+
 ### Upgrade notes
 - Copy `run_test_functional` again: it unsets `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY` and `JWT_PASSPHRASE`, whose CI values (key contents) failed the functional tests and printed the encrypted key in the log. If that happened, erase the job log, or rotate the keypair. ([#130](https://github.com/components-web-app/components-web-app/issues/130), [c1d2581](https://github.com/components-web-app/components-web-app/commit/c1d2581a2c1478d618765474b5d5808857b98868))
 
