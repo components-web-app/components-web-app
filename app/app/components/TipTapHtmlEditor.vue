@@ -95,10 +95,7 @@ import { computed, toRef, watch } from 'vue'
 import type { Editor, ChainedCommands } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
 
-// The formatting buttons the menus can offer. Hiding a button only removes it from
-// the menus: the extension stays registered (Underline comes with StarterKit, Link
-// is registered below), so pasted content and keyboard shortcuts can still apply
-// that style.
+// The menu buttons. Hiding one only removes it from the menus: the extension stays registered (pastes, shortcuts).
 type EditorStyle = 'h1' | 'h2' | 'bold' | 'italic' | 'underline' | 'link' | 'bulletList'
 
 const props = defineProps<{
@@ -196,18 +193,8 @@ function showLinkManager() {
     .run()
 }
 
-// Match the editor to the modelValue prop - but never while someone is typing.
-//
-// setContent replaces the whole document, which puts the caret at the end. While
-// the editor has focus it is the source of truth: everything the model holds came
-// from this editor, so a value that differs is an older one on its way back (the
-// resource model briefly falls back to the stored value, for example while a first
-// edit creates a draft under a new IRI). Replacing the document with it moved the
-// caret to the end mid-sentence and dropped what had been typed since. The change
-// is applied on blur instead.
-//
-// emitUpdate: false, because TipTap v3's setContent fires onUpdate by default,
-// which sent the value straight back out through the model as another save.
+// Match the editor to modelValue, but never while it has focus: setContent moves the caret to the end, and the
+// model can briefly hold an older value. Applied on blur; emitUpdate: false, or onUpdate would save it again.
 function syncFromModel() {
   if (!editor.value || editor.value.isFocused) {
     return

@@ -1,12 +1,7 @@
 import tailwindcss from '@tailwindcss/vite'
 
-// Chunks only admins need: the TipTap editor and the /_cwa admin pages. `isAdminOnlySource`
-// is for the service worker's precache only (`pwa.workbox.manifestTransforms`), which would
-// otherwise fetch them all in the background after a visitor's first page load. The module
-// already keeps admin chunks out of the prefetch hints (cwa-nuxt-module#329, #336), but it
-// ships no service worker, so this precache rule stays here. The editor is template code,
-// so its prefetch filter (below) stays too. Chunk files are named by hash, so `globIgnores`
-// can't select them; the build manifest maps them to sources.
+// Admin-only chunks (the TipTap editor, /_cwa pages), kept out of the SW precache by source via the build manifest,
+// as hashed names defeat globIgnores. The module keeps them out of prefetch hints but ships no service worker.
 const isEditorSource = (id: string) => id.endsWith('components/TipTapHtmlEditor.vue')
 const isAdminOnlySource = (id: string) => isEditorSource(id) || id.includes('/pages/_cwa/')
 const adminOnlyFiles = new Set<string>()
@@ -135,15 +130,8 @@ export default defineNuxtConfig({
   devtools: {
     enabled: true
   },
-  // Dev-only workaround for #95, a bug in @unhead/bundler 3.4.1. nuxt-seo-utils
-  // registers unhead's Vite plugin, and its DevTools part adds a runtime import in
-  // `configResolved` with no de-duplication. Nuxt's dev server calls that twice
-  // (separate client and SSR Vite servers sharing one plugin instance), so
-  // `unhead.client.js` declares `__unhead_devtoolsPlugin` twice and the app
-  // never hydrates. This turns off
-  // only unhead's own DevTools panel; Nuxt DevTools, the useSeoMeta transform and
-  // the production build are unchanged (the plugin is `apply: 'serve'`). Remove
-  // once an unhead release de-duplicates the registration.
+  // Dev-only workaround for #95: @unhead/bundler registers its DevTools plugin twice and the app never hydrates.
+  // Remove once an unhead release de-duplicates the registration.
   unhead: {
     vite: {
       devtools: false
@@ -162,11 +150,7 @@ export default defineNuxtConfig({
     // @cwa-end:image
     '@vite-pwa/nuxt',
     'nuxt-svgo',
-    // HtmlContent loads the TipTap editor only when an admin starts editing
-    // (cwa-nuxt-module#332). Nuxt would still send a prefetch hint for that chunk
-    // (about 400 KB of TipTap and ProseMirror) on every page with body text, so
-    // visitors would download it anyway. Leaving it out of `dynamicImports` drops
-    // only the hint: the editor still loads on demand when it is first shown.
+    // Drops the lazy editor's prefetch hint from every page; it still loads on demand (cwa-nuxt-module#332).
     (_options, nuxt) => {
       nuxt.hook('build:manifest', (manifest) => {
         collectAdminOnlyFiles(manifest)
@@ -181,24 +165,13 @@ export default defineNuxtConfig({
     strict: false
   },
   nitro: {
-    // Writes a .br and a .gz beside each public asset at build time, and Nitro serves
-    // them by Accept-Encoding. php's Caddy proxies every /_nuxt/ request here and its
-    // `encode` leaves a response that already has a Content-Encoding alone, so it no
-    // longer brotli-compresses each JS file on every request: under load that took
-    // the php pod to a core and past its 1Gi memory limit (#117).
+    // Precompressed .br/.gz for /_nuxt, served by Accept-Encoding; php's Caddy passes them through. Don't remove (#117).
     compressPublicAssets: { brotli: true, gzip: true },
   },
   pwa: {
-    // 'prompt', not 'autoUpdate': CWA admins edit inline, and an auto-updating SW
-    // can swap assets mid-edit. With 'prompt' a new worker waits, and
-    // app/plugins/pwa-update.client.ts applies it silently on the next page
-    // navigation, holding it back while $cwa.admin.isEditing is true. There is
-    // no notice for visitors to act on (#73).
+    // 'prompt': a new worker waits, and plugins/pwa-update.client.ts applies it on the next navigation unless editing (#73).
     registerType: 'prompt',
-    // Off by default upstream. Adds route rules sending the service worker (and the
-    // manifest) as `public, max-age=0, must-revalidate`; without it Nitro sent sw.js
-    // with no Cache-Control, and Cloudflare, which caches .js by default, kept the
-    // previous build's worker for hours after a deploy.
+    // Sends sw.js and the manifest `public, max-age=0, must-revalidate`, so a CDN never serves an old worker.
     registerWebManifestInRouteRules: true,
     manifest: {
       name: 'CWA',
@@ -224,18 +197,10 @@ export default defineNuxtConfig({
       ]
     },
     workbox: {
-      // Presence of this key (not its value) disables navigation interception in
-      // the PROD build, so SSR navigations are not served the app shell. Do not
-      // remove it. (In dev the plugin coalesces null -> '/', but devOptions is
-      // disabled below so the dev SW never runs.)
+      // Must be present (even null), or the prod build serves the app shell for every SSR navigation. Don't remove.
       navigateFallback: null,
-      // Required for the update prompt to finish. Applying an update posts
-      // SKIP_WAITING, and the page reloads only when the new worker takes
-      // control. A page the old worker controlled is handed over automatically,
-      // but a page with no controller (the first load that registered the worker,
-      // or a Shift-reload) is never claimed without this, so Reload spun forever.
-      // Safe with registerType 'prompt': clientsClaim runs on activation, and
-      // activation still waits for the user (#73).
+      // Required for updates: a page with no controller is otherwise never claimed and never reloads (#73).
+      // Safe with 'prompt': activation still waits for SKIP_WAITING.
       clientsClaim: true,
       cleanupOutdatedCaches: true,
       // Leaves the admin-only chunks collected in `build:manifest` out of the precache.
@@ -249,10 +214,8 @@ export default defineNuxtConfig({
       globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2,webp,jpg,jpeg}'],
       runtimeCaching: [
         {
-          // Anchored to the /_api content paths (see the module's resource-utils.ts
-          // endpoint map). Must match every content endpoint or offline layout
-          // breaks; must NOT be broadened to all of /_api or it swallows the
-          // Mercure SSE stream and /me. If the module adds a resource type, add it.
+          // Anchored and exhaustive: a missing content type breaks offline rendering, and all of /_api would swallow
+          // the Mercure stream and /me. Add any new module resource type.
           urlPattern: ({ url }) => /\/_api\/(?:_\/(?:routes|resource_manifest|pages|layouts|component_groups|component_positions)|page_data|component)\b/.test(url.pathname),
           // Cache is only ever read offline; online the network always wins.
           handler: 'NetworkFirst',
@@ -265,15 +228,8 @@ export default defineNuxtConfig({
               // the SW cache only ever holds public (published) data.
               cacheWillUpdate: async ({ response }) => /no-store|private/.test(response.headers.get('cache-control') || '') || response.status !== 200 ? null : response,
             }],
-            // 4 hours, deliberately short. The no-store gate above is what keeps
-            // authenticated data out of this cache. The one window it cannot close,
-            // a cache filled while signed in outliving the session on a shared
-            // device, is closed by @cwa/nuxt: when a session ends (sign-out, or a
-            // 401 while signed in) it deletes this cache, because
-            // cwa.auth.clearCachesOnSessionEnd defaults to ['cwa-api'] whenever
-            // @vite-pwa/nuxt is installed (cwa-nuxt-module#293). Rename this cache
-            // and that option has to follow. The short expiry is now only a
-            // backstop for that purge.
+            // A backstop: the no-store gate keeps authenticated data out, and @cwa/nuxt deletes this cache when a session
+            // ends (cwa-nuxt-module#293). Renaming it means setting cwa.auth.clearCachesOnSessionEnd to match.
             expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 4 },
           },
         },
@@ -282,9 +238,7 @@ export default defineNuxtConfig({
     client: {
       installPrompt: true,
     },
-    // Do not run the service worker in dev: a SW intercepting requests during
-    // development is a common source of confusing issues (it was the reason PWA
-    // was previously parked), and it avoids the dev-only navigateFallback coalesce.
+    // No service worker in dev: it confuses development, and dev coalesces navigateFallback to '/'.
     devOptions: {
       enabled: false,
     }

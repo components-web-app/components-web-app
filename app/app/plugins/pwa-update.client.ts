@@ -1,21 +1,6 @@
-// Applies a waiting service worker silently, on the next page navigation, rather
-// than asking the visitor (#73).
-//
-// registerType stays 'prompt' in nuxt.config.ts, so a new worker installs and then
-// waits until something asks for it. updateServiceWorker() only posts SKIP_WAITING;
-// @vite-pwa/nuxt then reloads the page itself once the new worker takes control,
-// which is why workbox.clientsClaim has to stay on.
-//
-// This runs in afterEach, not beforeEach, because of that reload. By afterEach the
-// URL is already the destination, so the reload lands where the visitor was going.
-// Starting the update in beforeEach and navigating with location.assign() races
-// the plugin's own reload, which can cancel the navigation and leave the visitor
-// on the page they were leaving.
-//
-// Only a change of path counts, so an in-page anchor or a query change never
-// triggers a reload. The update is held while an admin is editing, because the
-// reload would throw away unsaved inline edits; it applies on the first
-// navigation after edit mode ends.
+// Applies a waiting service worker silently on the next path change, held while an admin is editing (#73).
+// afterEach, not beforeEach + location.assign: updateServiceWorker() posts SKIP_WAITING and the plugin reloads
+// on `controlling`, so the URL must already be the destination. Needs workbox.clientsClaim.
 export default defineNuxtPlugin((nuxtApp) => {
   useRouter().afterEach((to, from, failure) => {
     if (failure || to.path === from.path) {
