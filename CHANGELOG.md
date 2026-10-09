@@ -9,6 +9,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Changed
 - API Platform 5.0.3, Doctrine ORM 3.7.5, liip/imagine-bundle 2.18.1, Nuxt 4.6.1, satori 0.47 (for nuxt-og-image), `@nuxt/devtools` 4.0.0-beta.4 and patch updates. Mercure stays on mercure-bundle 0.5 / mercure 0.8 until the bundle allows 0.6 / 0.9 ([api-components-bundle#384](https://github.com/components-web-app/api-components-bundle/issues/384)). ([30ef432](https://github.com/components-web-app/components-web-app/commit/30ef432becfe328d9c57357aecf2fbca1005974b))
 
+### Added
+- Load test: `page_views` (a page load or a client-side navigation), the resource manifest's resources fetched on each navigation (`MAX_RESOURCES`, default 20), a Cloudflare `cf-cache-status` line, `RANDOM_SEED` for repeatable runs, and `ORIGIN_IP` to measure the origin without the CDN. ([!13](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/13))
+
 ## [2.0.0-alpha.17](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.17) - 2026-10-09
 
 ### Upgrade notes
