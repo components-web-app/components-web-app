@@ -132,6 +132,10 @@ build_app() {
 	docker context create builder
   docker buildx create builder --driver=docker-container --use
 
+  # No site setting goes into the image (#125): NUXT_* and CWA_API_* CI variables
+  # are in this job's environment, but buildx passes the build only what it names
+  # (CI here, the composer_auth secret in build_api), and the deploy delivers them
+  # at runtime. Never add a --build-arg or --secret for one.
   docker buildx build \
     --build-arg CI=true \
     --push \
@@ -531,10 +535,160 @@ apply_site_defaults() {
   fi
 }
 
+# The environment a deploy serves, as both containers see it: CWA_ENVIRONMENT in
+# the API, NUXT_PUBLIC_CWA_ENVIRONMENT in the PWA. It comes from the track, so
+# staging says "staging" although its GitLab job runs as `environment: production`
+# (#125). A CWA_ENVIRONMENT CI variable overrides it; on GitLab, scope it with care,
+# since a production-scoped value reaches staging too.
+cwa_environment_name() {
+  local name
+  case "${1:-stable}" in
+    stable) name="production" ;;
+    *) name="$1" ;;
+  esac
+  name="${CWA_ENVIRONMENT:-$name}"
+  case "$name" in
+    ''|*[!A-Za-z0-9._-]*)
+      echo "CWA_ENVIRONMENT must be letters, digits, '.', '_' or '-', not '$name'." >&2
+      return 1
+      ;;
+  esac
+  printf '%s' "$name"
+}
+
+# Names the chart sets explicitly on each container. A site variable reaching one
+# of them is refused by site_env_values: an explicit `env:` entry beats `envFrom`,
+# so the value would be silently ignored. Keep in sync with cwa.phpEnv in
+# helm/cwa/templates/_helpers.tpl, deployment.yaml and pwa-deployment.yaml. Each
+# one with its own CI variable (MAILER_DSN, RATE_LIMIT_*, PHP_GOMEMLIMIT, ...) is
+# set through that variable. The API list also has FRANKENPHP_CONFIG, which the
+# image sets and worker mode needs. NUXT_PUBLIC_CWA_API_URL is the deprecated name
+# of NUXT_CWA_API_URL (module #345): set in CI it would put the internal API URL
+# into every page's HTML.
+SITE_ENV_RESERVED_API="
+  ADMIN_EMAIL ADMIN_PASSWORD ADMIN_USERNAME APP_DEBUG APP_ENV APP_SECRET APP_UPSTREAM
+  BROWSER_SERVER_NAME CACHE_QUERY_ALLOWLIST CACHE_URL CADDY_CACHE_CDN_CONFIG
+  CADDY_CACHE_EXTRA_CONFIG CADDY_GLOBAL_CONFIG CADDY_TRUSTED_PROXIES
+  CLOUDFLARE_IP_RANGES CLOUDFLARE_PURGE_BURST CLOUDFLARE_PURGE_PLAN
+  CLOUDFLARE_PURGE_REQUESTS CLOUDFLARE_PURGE_WINDOW CORS_ALLOW_ORIGIN CWA_ENVIRONMENT
+  DATABASE_CA_CERT DATABASE_CLIENT_CERT DATABASE_CLIENT_KEY DATABASE_SSL_MODE
+  DATABASE_URL FRANKENPHP_CONFIG FRANKENPHP_MAX_WAIT_TIME GCLOUD_BUCKET GCLOUD_JSON
+  GCLOUD_PUBLIC_URL GOMEMLIMIT JWT_COOKIE_SAMESITE JWT_PASSPHRASE JWT_PUBLIC_KEY
+  JWT_SECRET_KEY MAILER_DSN MAILER_EMAIL MERCURE_CORS_ORIGIN MERCURE_EXTRA_DIRECTIVES
+  MERCURE_JWT_ALGORITHM MERCURE_JWT_SECRET MERCURE_PUBLIC_URL MERCURE_PUBLISHER_JWT_ALG
+  MERCURE_PUBLISHER_JWT_KEY MERCURE_SUBSCRIBER_JWT_ALG MERCURE_SUBSCRIBER_JWT_KEY
+  MERCURE_URL RATE_LIMIT_ENABLED RATE_LIMIT_EVENTS RATE_LIMIT_WINDOW RESET_DATABASE
+  SERVER_NAME TRUSTED_HOSTS TRUSTED_PROXIES
+"
+SITE_ENV_RESERVED_PWA="
+  NUXT_CWA_API_URL NUXT_PUBLIC_CWA_API_URL NUXT_PUBLIC_CWA_API_URL_BROWSER
+  NUXT_PUBLIC_CWA_ENVIRONMENT
+"
+
+# Site settings without template edits (#125). Every CI variable named
+#   NUXT_PUBLIC_<NAME>  reaches the PWA unchanged, from a ConfigMap (Nuxt sends
+#                       public runtime config to browsers anyway);
+#   NUXT_<NAME>         (any other) reaches the PWA unchanged, from a Secret;
+#   CWA_API_<NAME>      reaches the API and the orphan-scan CronJob as <NAME>,
+#                       always from a Secret,
+# through `envFrom`. So a project sets Nuxt runtime config exactly as anywhere
+# else, and the API's settings keep a prefix only because its names (DATABASE_URL,
+# APP_SECRET, ...) are too generic to sweep up whole.
+#
+# Prints a helm values file (cwaEnvironment and siteEnv) for the environment name
+# in $1, with every value base64-encoded so quotes, colons, `$` and newlines can't
+# break the YAML; the chart decodes them (b64dec). Names are listed from `env`, but
+# each value is read by name, so a multi-line value survives, and a line inside
+# another variable's value that happens to look like `NUXT_X=` is skipped because
+# no such variable is set. Values are never printed.
+#
+# Fails, naming every problem, on a reserved name (see above) or a name that isn't
+# a valid variable name.
+site_env_values() {
+  local environment="$1" names name target kind key value isset b64
+  local pwa="" pwa_secret="" api_secret="" bad="" summary=""
+  names=$(env | sed -n -e 's/^\(NUXT_[A-Za-z0-9_]*\)=.*/\1/p' -e 's/^\(CWA_API_[A-Za-z0-9_]*\)=.*/\1/p' | sort -u)
+  for name in $names; do
+    case "$name" in
+      NUXT_PUBLIC_*) target=pwa; kind=config; key="$name" ;;
+      NUXT_*) target=pwa; kind=secret; key="$name" ;;
+      CWA_API_*) target=api; kind=secret; key="${name#CWA_API_}" ;;
+      *) continue ;;
+    esac
+    eval "isset=\${$name+x}"
+    [ -n "$isset" ] || continue
+    eval "value=\${$name}"
+    case "$key" in
+      ''|[0-9]*|NUXT_|NUXT_PUBLIC_)
+        bad="${bad}  $name: '$key' is not a usable variable name
+"
+        continue
+        ;;
+    esac
+    if site_env_reserved "$target" "$key"; then
+      bad="${bad}  $name: $key is reserved on the $target container: the chart or its image sets it (use its own CI variable, if it has one, or delete this one)
+"
+      continue
+    fi
+    b64=$(printf '%s' "$value" | base64 -w0)
+    case "$target:$kind" in
+      pwa:config) pwa="${pwa}    \"$key\": \"$b64\"
+" ;;
+      pwa:secret) pwa_secret="${pwa_secret}    \"$key\": \"$b64\"
+" ;;
+      api:secret) api_secret="${api_secret}    \"$key\": \"$b64\"
+" ;;
+    esac
+    summary="${summary}  $target $kind $key (from $name)
+"
+  done
+
+  if [ -n "$bad" ]; then
+    echo "❌ Site environment variables (NUXT_*, CWA_API_*) that can't be passed through:" >&2
+    printf '%s' "$bad" >&2
+    return 1
+  fi
+  echo "Environment name: $environment" >&2
+  if [ -n "$summary" ]; then
+    echo "Site environment variables:" >&2
+    printf '%s' "$summary" >&2
+  else
+    echo "Site environment variables: none" >&2
+  fi
+
+  printf 'cwaEnvironment: "%s"\nsiteEnv:\n' "$environment"
+  site_env_block pwa "$pwa"
+  site_env_block pwaSecret "$pwa_secret"
+  site_env_block apiSecret "$api_secret"
+}
+
+site_env_reserved() {
+  local list
+  if [ "$1" = api ]; then list="$SITE_ENV_RESERVED_API"; else list="$SITE_ENV_RESERVED_PWA"; fi
+  # One space between names, and one at each end, so " NAME " matches whole names.
+  # shellcheck disable=SC2086,SC2116
+  list=" $(echo $list) "
+  case "$list" in
+    *" $2 "*) return 0 ;;
+  esac
+  return 1
+}
+
+site_env_block() {
+  if [ -n "$2" ]; then
+    printf '  %s:\n%s' "$1" "$2"
+  else
+    printf '  %s: {}\n' "$1"
+  fi
+}
+
 deploy() {
-	local track="${1-stable}"
+	local track="${1-stable}" environment_name site_env_yaml
 	check_cdn_config || return 1
 	apply_site_defaults "$track"
+	# Before anything changes in the cluster, so a bad name stops the deploy cold.
+	environment_name=$(cwa_environment_name "$track") || return 1
+	site_env_yaml=$(site_env_values "$environment_name") || return 1
 	name="$RELEASE"
 	LETSENCRYPT_SECRET_NAME_SCOPED="$LETSENCRYPT_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
@@ -749,6 +903,10 @@ cronjobs:
     timeZone: "${ORPHAN_SCAN_TIMEZONE:-Europe/London}"
 EOF
 
+  # Its own file, written only now and removed after helm: it holds the site's
+  # secrets, only base64-encoded.
+  printf '%s\n' "$site_env_yaml" > values.site-env.tmp.yaml
+
   helm upgrade --install \
     --reset-values \
     --namespace="$KUBE_NAMESPACE" \
@@ -758,7 +916,9 @@ EOF
     --set php.caddy.globalConfig="${CADDY_GLOBAL_CONFIG}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
-  	-f values.tmp.yaml || return 1
+  	-f values.tmp.yaml \
+  	-f values.site-env.tmp.yaml || { rm -f values.site-env.tmp.yaml; return 1; }
+  rm -f values.site-env.tmp.yaml
 
   if [ -n "$TLS_PREVIOUS_SECRET_NAME" ]; then
     cleanup_tls_certificates "$name" "$TLS_SECRET_NAME" "$TLS_PREVIOUS_SECRET_NAME"

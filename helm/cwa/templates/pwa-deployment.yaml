@@ -21,6 +21,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/site-env: {{ include (print $.Template.BasePath "/site-env.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -60,6 +61,13 @@ spec:
                   key: api-url-browser
             - name: NODE_ENV
               value: production
+            {{- with .Values.cwaEnvironment }}
+            - name: NUXT_PUBLIC_CWA_ENVIRONMENT
+              value: {{ . | quote }}
+            {{- end }}
+          {{- with include "cwa.siteEnvFrom" (dict "ctx" . "side" "pwa") }}
+          {{- . | nindent 10 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 3000

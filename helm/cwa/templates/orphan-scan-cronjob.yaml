@@ -50,6 +50,9 @@ spec:
               args: ["bin/console", "silverback:api-components:scan-orphaned"]
               env:
                 {{- include "cwa.phpEnv" . | nindent 16 }}
+              {{- with include "cwa.siteEnvFrom" (dict "ctx" . "side" "api") }}
+              {{- . | nindent 14 }}
+              {{- end }}
               resources:
                 {{- toYaml .Values.cronjobs.orphanScan.resources | nindent 16 }}
           {{- with .Values.nodeSelector }}

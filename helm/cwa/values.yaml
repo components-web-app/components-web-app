@@ -222,6 +222,22 @@ postgresql:
         memory: 50Mi
         cpu: 10m
 
+# The environment this release serves: CWA_ENVIRONMENT in the API and
+# NUXT_PUBLIC_CWA_ENVIRONMENT in the PWA (production, staging, canary or review;
+# #125). k8s.sh sets it from the track. Empty sets neither.
+cwaEnvironment: ""
+
+# Site settings passed through by k8s.sh (#125), as { NAME: <base64 value> }:
+# NUXT_PUBLIC_* CI variables in `pwa` (a ConfigMap), every other NUXT_* in
+# `pwaSecret`, and CWA_API_<NAME> as <NAME> in `apiSecret` (the API and the
+# orphan-scan CronJob). Each non-empty map becomes a ConfigMap or Secret the
+# container reads through envFrom (templates/site-env.yaml). A name the chart sets
+# explicitly wins over these, and k8s.sh refuses one (SITE_ENV_RESERVED_*).
+siteEnv:
+  pwa: {}
+  pwaSecret: {}
+  apiSecret: {}
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

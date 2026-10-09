@@ -23,6 +23,7 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        checksum/site-env: {{ include (print $.Template.BasePath "/site-env.yaml") . | sha256sum }}
         # Single replica: stop the cluster autoscaler evicting it to consolidate nodes.
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
         {{- with .Values.podAnnotations }}
@@ -54,6 +55,9 @@ spec:
             - name: GOMEMLIMIT
               value: {{ . | quote }}
             {{- end }}
+          {{- with include "cwa.siteEnvFrom" (dict "ctx" . "side" "api") }}
+          {{- . | nindent 10 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 80

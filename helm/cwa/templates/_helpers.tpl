@@ -96,6 +96,10 @@ deployment sets it. The CronJob must never get it (#103).
   value: {{ $primaryHost.host | quote }}
 - name: SERVER_NAME
   value: :80
+{{- with .Values.cwaEnvironment }}
+- name: CWA_ENVIRONMENT
+  value: {{ . | quote }}
+{{- end }}
 - name: APP_UPSTREAM
   value: {{ include "cwa.fullname" . }}-pwa:3000
 - name: MERCURE_PUBLISHER_JWT_KEY
@@ -294,6 +298,31 @@ is set, and an unset variable keeps the Caddyfile's default. */}}
       key: {{ $key }}
       optional: true
 {{- end }}
+{{- end }}
+
+{{/*
+envFrom for the site settings k8s.sh passes through (#125, templates/site-env.yaml),
+for one side: (dict "ctx" $ "side" "api") or "pwa". Prints nothing when the side
+has none. The API deployment and the orphan scan CronJob both use the api side, so
+they read the same settings, like cwa.phpEnv. Only the PWA has a ConfigMap (its
+NUXT_PUBLIC_* values); the API's are always a Secret. Explicit env entries beat
+these.
+*/}}
+{{- define "cwa.siteEnvFrom" -}}
+{{- $fullName := include "cwa.fullname" .ctx -}}
+{{- $plain := and (eq .side "pwa") .ctx.Values.siteEnv.pwa -}}
+{{- $secret := index .ctx.Values.siteEnv (printf "%sSecret" .side) -}}
+{{- if or $plain $secret -}}
+envFrom:
+{{- if $plain }}
+  - configMapRef:
+      name: {{ $fullName }}-{{ .side }}-env
+{{- end }}
+{{- if $secret }}
+  - secretRef:
+      name: {{ $fullName }}-{{ .side }}-env
+{{- end }}
+{{- end -}}
 {{- end }}
 
 {{/*
