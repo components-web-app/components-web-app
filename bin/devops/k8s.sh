@@ -682,6 +682,37 @@ site_env_block() {
   fi
 }
 
+# A YAML single-quoted scalar, so any value (a password starting with "!", or
+# holding ": " or "#") stays a plain string.
+yaml_squote() {
+  printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"
+}
+
+# The in-cluster database's user, password and database, under the chart's
+# postgresql.global.postgresql.auth: Bitnami's chart prefers it to
+# postgresql.auth, and secrets.yaml builds database-url from it. Only the ones
+# set are written, so helm/cwa/values.yaml's defaults (example, !ChangeMe!, api)
+# apply otherwise, and nothing at all is written when none is set. The names are
+# the postgres image's, as in compose and the test jobs.
+postgres_auth_yaml() {
+  local lines=""
+  if [ -n "$POSTGRES_USER" ]; then
+    lines="${lines}        username: $(yaml_squote "$POSTGRES_USER")
+"
+  fi
+  if [ -n "$POSTGRES_PASSWORD" ]; then
+    lines="${lines}        password: $(yaml_squote "$POSTGRES_PASSWORD")
+"
+  fi
+  if [ -n "$POSTGRES_DB" ]; then
+    lines="${lines}        database: $(yaml_squote "$POSTGRES_DB")
+"
+  fi
+  if [ -n "$lines" ]; then
+    printf '  global:\n    postgresql:\n      auth:\n%s' "$lines"
+  fi
+}
+
 deploy() {
 	local track="${1-stable}" environment_name site_env_yaml
 	check_cdn_config || return 1
@@ -878,9 +909,7 @@ postgresql:
   enabled: ${POSTGRESQL_ENABLED:-"true"}
   auth:
     postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
-    database: ${POSTGRES_DB:-"pg_database"}
-    username: ${POSTGRES_USERNAME:-"pg_user"}
-    password: ${POSTGRES_PASSWORD:-"pg_password"}
+$(postgres_auth_yaml)
 replicaCount: ${REPLICA_COUNT:-"1"}
 podAnnotations:
   timestamp: "${CURRENT_DATE}"
