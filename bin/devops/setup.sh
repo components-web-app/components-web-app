@@ -7,8 +7,9 @@ export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
 export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 
 export GITLAB_PULL_SECRET_NAME=gitlab-registry
-export KUBERNETES_VERSION=1.31.0
-export HELM_VERSION=3.19.0
+# Defaults only, so a CI variable can choose the versions, as on GitHub.
+export KUBERNETES_VERSION="${KUBERNETES_VERSION:-1.31.0}"
+export HELM_VERSION="${HELM_VERSION:-3.19.0}"
 
 # Choose the branch for production deploy.
 if [[ -z "$DEPLOYMENT_BRANCH" ]]; then
