@@ -255,10 +255,8 @@ jobs:
         env:
           SECRETS_JSON: ${{ toJSON(secrets) }}
         run: bin/devops/github-export-secrets.sh
-      # A review environment is optional: a branch has one only once its namespace
-      # exists (see skip_review_without_namespace in k8s.sh). GitHub has no "passed
-      # with warnings" state, so a branch without one gets a warning annotation and
-      # the deploy steps are skipped; any other kubectl error still fails (#4).
+      # A branch without a review namespace gets a warning and skips the deploy (GitHub has no orange);
+      # any other kubectl error still fails (#4).
       - name: Check for a review namespace
         id: namespace
         run: |
