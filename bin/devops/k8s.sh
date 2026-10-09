@@ -308,10 +308,10 @@ generate_alias_tls_yaml() {
 
 # Optional ingress-nginx rate limits (#106), as annotation lines for the ingress
 # block of values.tmp.yaml. Off unless CWA_CI_INGRESS_RATE_LIMIT_RPS is set. Caddy's
-# own rate limit (RATE_LIMIT_*) is the main protection; this is a coarser outer
-# one. Unlike Caddy's, it counts every request, cache hits and /_nuxt assets
-# included, so it must be far higher than RATE_LIMIT_EVENTS (a page load is dozens
-# of requests). And it counts by the address that connected to the ingress: behind
+# own rate limit (CWA_API_RATE_LIMIT_*) is the main protection; this is a coarser
+# outer one. Unlike Caddy's, it counts every request, cache hits and /_nuxt assets
+# included, so it must be far higher than CWA_API_RATE_LIMIT_EVENTS (a page load
+# is dozens of requests). And it counts by the address that connected to the ingress: behind
 # Cloudflare that is a Cloudflare server, so don't turn it on there unless the
 # ingress controller itself is set up to read the real IP from Cloudflare.
 ingress_rate_limit_annotations() {
@@ -511,7 +511,9 @@ site_hosts() {
 # Defaults every site used to set by hand with the same values (2026-10-08). Each
 # is only a default: a CI variable still wins. CORS_ALLOW_ORIGIN, TRUSTED_HOSTS
 # and MERCURE_CORS_ORIGIN follow this deploy's own hostnames, so review apps and
-# staging get theirs instead of production's. CWA_CI_CLUSTER_ISSUER is deliberately not defaulted here: setup.sh makes an unset
+# staging get theirs instead of production's. They keep their own CI names (not
+# CWA_API_*) because they're computed here, as is DATABASE_SSL_MODE.
+# CWA_CI_CLUSTER_ISSUER is deliberately not defaulted here: setup.sh makes an unset
 # one letsencrypt-staging, so production certificates are switched on per project
 # (CWA_CI_CLUSTER_ISSUER=letsencrypt-prod) and a misconfigured domain fails against
 # the staging issuer's far higher limits (Daniel, 2026-10-08).
@@ -559,25 +561,23 @@ cwa_environment_name() {
 # of them is refused by site_env_values: an explicit `env:` entry beats `envFrom`,
 # so the value would be silently ignored. Keep in sync with cwa.phpEnv in
 # helm/cwa/templates/_helpers.tpl, deployment.yaml and pwa-deployment.yaml. Each
-# one with its own CI variable (MAILER_DSN, RATE_LIMIT_*, CWA_CI_API_GOMEMLIMIT, ...) is
-# set through that variable. The API list also has FRANKENPHP_CONFIG, which the
-# image sets and worker mode needs. NUXT_PUBLIC_CWA_API_URL is the deprecated name
+# one with its own CI variable (MAILER_DSN, CORS_ALLOW_ORIGIN, CWA_CI_API_GOMEMLIMIT
+# for GOMEMLIMIT, CWA_CI_RESET_DATABASE, ...) is set through that variable. The
+# API's optional runtime settings (RATE_LIMIT_*, CADDY_GLOBAL_CONFIG, ...) aren't
+# here: they have no wiring of their own, so they're set as CWA_API_<NAME>. The
+# API list also has FRANKENPHP_CONFIG, which the image sets and worker mode needs. NUXT_PUBLIC_CWA_API_URL is the deprecated name
 # of NUXT_CWA_API_URL (module #345): set in CI it would put the internal API URL
 # into every page's HTML.
 SITE_ENV_RESERVED_API="
   ADMIN_EMAIL ADMIN_PASSWORD ADMIN_USERNAME APP_DEBUG APP_ENV APP_SECRET APP_UPSTREAM
-  BROWSER_SERVER_NAME CACHE_QUERY_ALLOWLIST CACHE_URL CADDY_CACHE_CDN_CONFIG
-  CADDY_CACHE_EXTRA_CONFIG CADDY_GLOBAL_CONFIG CADDY_TRUSTED_PROXIES
-  CLOUDFLARE_IP_RANGES CLOUDFLARE_PURGE_BURST CLOUDFLARE_PURGE_PLAN
-  CLOUDFLARE_PURGE_REQUESTS CLOUDFLARE_PURGE_WINDOW CORS_ALLOW_ORIGIN CWA_ENVIRONMENT
-  DATABASE_CA_CERT DATABASE_CLIENT_CERT DATABASE_CLIENT_KEY DATABASE_SSL_MODE
-  DATABASE_URL FRANKENPHP_CONFIG FRANKENPHP_MAX_WAIT_TIME GCLOUD_BUCKET GCLOUD_JSON
-  GCLOUD_PUBLIC_URL GOMEMLIMIT JWT_COOKIE_SAMESITE JWT_PASSPHRASE JWT_PUBLIC_KEY
-  JWT_SECRET_KEY MAILER_DSN MAILER_EMAIL MERCURE_CORS_ORIGIN MERCURE_EXTRA_DIRECTIVES
-  MERCURE_JWT_ALGORITHM MERCURE_JWT_SECRET MERCURE_PUBLIC_URL MERCURE_PUBLISHER_JWT_ALG
+  BROWSER_SERVER_NAME CACHE_URL CADDY_CACHE_CDN_CONFIG CADDY_CACHE_EXTRA_CONFIG
+  CORS_ALLOW_ORIGIN CWA_ENVIRONMENT DATABASE_CA_CERT DATABASE_CLIENT_CERT
+  DATABASE_CLIENT_KEY DATABASE_SSL_MODE DATABASE_URL FRANKENPHP_CONFIG GCLOUD_BUCKET
+  GCLOUD_JSON GCLOUD_PUBLIC_URL GOMEMLIMIT JWT_PASSPHRASE JWT_PUBLIC_KEY JWT_SECRET_KEY
+  MAILER_DSN MAILER_EMAIL MERCURE_CORS_ORIGIN MERCURE_EXTRA_DIRECTIVES
+  MERCURE_JWT_SECRET MERCURE_PUBLIC_URL MERCURE_PUBLISHER_JWT_ALG
   MERCURE_PUBLISHER_JWT_KEY MERCURE_SUBSCRIBER_JWT_ALG MERCURE_SUBSCRIBER_JWT_KEY
-  MERCURE_URL RATE_LIMIT_ENABLED RATE_LIMIT_EVENTS RATE_LIMIT_WINDOW RESET_DATABASE
-  SERVER_NAME TRUSTED_HOSTS TRUSTED_PROXIES
+  MERCURE_URL RESET_DATABASE SERVER_NAME TRUSTED_HOSTS TRUSTED_PROXIES
 "
 SITE_ENV_RESERVED_PWA="
   NUXT_CWA_API_URL NUXT_PUBLIC_CWA_API_URL NUXT_PUBLIC_CWA_API_URL_BROWSER
@@ -589,10 +589,12 @@ SITE_ENV_RESERVED_PWA="
 #                       public runtime config to browsers anyway);
 #   NUXT_<NAME>         (any other) reaches the PWA unchanged, from a Secret;
 #   CWA_API_<NAME>      reaches the API and the orphan-scan CronJob as <NAME>,
-#                       always from a Secret,
+#                       always from a Secret, and only when it isn't empty,
 # through `envFrom`. So a project sets Nuxt runtime config exactly as anywhere
 # else, and the API's settings keep a prefix only because its names (DATABASE_URL,
-# APP_SECRET, ...) are too generic to sweep up whole.
+# APP_SECRET, ...) are too generic to sweep up whole. The API's optional runtime
+# settings (CWA_API_RATE_LIMIT_EVENTS, CWA_API_CADDY_GLOBAL_CONFIG, ...) all
+# arrive this way (their old bare CI names are no longer read).
 #
 # Prints a helm values file (cwaEnvironment and siteEnv) for the environment name
 # in $1, with every value base64-encoded so quotes, colons, `$` and newlines can't
@@ -626,6 +628,16 @@ site_env_values() {
     esac
     if site_env_reserved "$target" "$key"; then
       bad="${bad}  $name: $key is reserved on the $target container: the chart or its image sets it (use its own CI variable, if it has one, or delete this one)
+"
+      continue
+    fi
+    # An empty API value is left out, so the container sees the variable unset:
+    # Caddy's {$VAR:default} keeps its default only for an unset variable, and an
+    # empty one would replace it (the origin protection settings, #106), as
+    # Symfony's .env defaults would be. Nuxt is different: an empty NUXT_* value
+    # deliberately replaces a runtimeConfig default with "", so it's passed on.
+    if [ "$target" = api ] && [ -z "$value" ]; then
+      summary="${summary}  api: $key left unset, $name is empty
 "
       continue
     fi
@@ -933,10 +945,6 @@ php:
     email: ${MAILER_EMAIL:-"~"}
   jwt:
     passphrase: "${JWT_PASSPHRASE:-"~"}"
-    samesite: "${JWT_COOKIE_SAMESITE:-"lax"}"
-  mercure:
-    jwt:
-      algorithm: "${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}"
   databaseSSL:
     ca: "${DATABASE_CA_CERT_B64}"
     key: "${DATABASE_CLIENT_KEY_B64}"
@@ -945,22 +953,10 @@ php:
   caddy:
     cdnConfig: "${CADDY_CACHE_CDN_CONFIG_B64}"
     storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}"
-    # Origin protection (#106). Empty keeps the Caddyfile's default (the chart
-    # passes only the ones that are set), so no default is repeated here.
-    queryAllowlist: "${CACHE_QUERY_ALLOWLIST:-}"
-    trustedProxies: "${CADDY_TRUSTED_PROXIES:-}"
-    cloudflareIpRanges: "${CLOUDFLARE_IP_RANGES:-}"
-    rateLimit:
-      enabled: "${RATE_LIMIT_ENABLED:-}"
-      events: "${RATE_LIMIT_EVENTS:-}"
-      window: "${RATE_LIMIT_WINDOW:-}"
-    cloudflarePurge:
-      plan: "${CLOUDFLARE_PURGE_PLAN:-}"
-      requests: "${CLOUDFLARE_PURGE_REQUESTS:-}"
-      window: "${CLOUDFLARE_PURGE_WINDOW:-}"
-      burst: "${CLOUDFLARE_PURGE_BURST:-}"
-  frankenphp:
-    maxWaitTime: "${FRANKENPHP_MAX_WAIT_TIME:-}"
+    # The other Caddy settings (origin protection #106, Cloudflare purge pacing
+    # #115, CADDY_GLOBAL_CONFIG, FRANKENPHP_MAX_WAIT_TIME) are CWA_API_<NAME>
+    # site settings, so only the ones a project sets reach the container and the
+    # Caddyfile's defaults apply to the rest.
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'
   publicUrl: https://${MERCURE_SUBSCRIBE_DOMAIN}/.well-known/mercure
@@ -1034,7 +1030,6 @@ EOF
     "$name" ./helm/cwa \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
-    --set php.caddy.globalConfig="${CADDY_GLOBAL_CONFIG}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
   	-f values.tmp.yaml \

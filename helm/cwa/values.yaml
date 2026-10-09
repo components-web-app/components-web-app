@@ -31,36 +31,14 @@ php:
     - "172.16.0.0/12"
     - "192.168.0.0/16"
   caddy:
-    globalConfig: ${CADDY_GLOBAL_CONFIG:-""} # e.g. "auto_https off" "debug"
+    # The API's optional Caddy and runtime settings (CACHE_QUERY_ALLOWLIST,
+    # RATE_LIMIT_*, CADDY_TRUSTED_PROXIES, CLOUDFLARE_IP_RANGES,
+    # CLOUDFLARE_PURGE_*, FRANKENPHP_MAX_WAIT_TIME, CADDY_GLOBAL_CONFIG,
+    # JWT_COOKIE_SAMESITE, MERCURE_JWT_ALGORITHM, ...) have no keys here: set them
+    # in siteEnv.apiSecret (CI: CWA_API_<NAME>), which passes only the ones that
+    # are set, so the Caddyfile's and Symfony's defaults apply to the rest.
     cdnConfig: ${CADDY_CACHE_CDN_CONFIG_B64}
     storageConfig: ${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}
-    # Origin protection (#106). Each is passed to the php container only when set,
-    # so an empty value keeps the default written in api/frankenphp/Caddyfile:
-    # Caddy's {$VAR:default} uses the default only for an unset variable, and an
-    # empty one would replace it. Quote every value ("false", "600").
-    # CACHE_QUERY_ALLOWLIST: space-separated query parameters pages keep.
-    queryAllowlist: ""
-    # CADDY_TRUSTED_PROXIES: ranges whose X-Forwarded-For is believed.
-    trustedProxies: ""
-    # CLOUDFLARE_IP_RANGES: ranges whose CF-Connecting-IP is believed.
-    cloudflareIpRanges: ""
-    rateLimit:
-      # RATE_LIMIT_ENABLED, RATE_LIMIT_EVENTS, RATE_LIMIT_WINDOW.
-      enabled: ""
-      events: ""
-      window: ""
-    # Cloudflare purge pacing (#115), only used with `provider cloudflare` in
-    # cdnConfig. CLOUDFLARE_PURGE_PLAN (free, pro, business, enterprise; Souin's
-    # default is free), and overrides CLOUDFLARE_PURGE_REQUESTS per
-    # CLOUDFLARE_PURGE_WINDOW (a Go duration) and CLOUDFLARE_PURGE_BURST.
-    cloudflarePurge:
-      plan: ""
-      requests: ""
-      window: ""
-      burst: ""
-  frankenphp:
-    # FRANKENPHP_MAX_WAIT_TIME (api/frankenphp/worker.Caddyfile). Empty keeps the default.
-    maxWaitTime: ""
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}
@@ -68,10 +46,6 @@ php:
     secret: ''
     public: ''
     passphrase: ~
-    samesite: 'lax'
-  mercure:
-    jwt:
-      algorithm: ${MERCURE_JWT_ALGORITHM:-"hmac.sha256"}
   databaseSSL:
     ca: ${DATABASE_CA_CERT_B64}
     key: ${DATABASE_CLIENT_KEY_B64}
@@ -154,8 +128,8 @@ pwa:
     # memory: each one holds its own copy of the same caches. Node also rarely
     # hands memory back after GC, and an HPA scales down only when every metric
     # is under target, so a memory target could add pods under normal load and
-    # then keep them. Set a percentage here (or PWA_AUTOSCALE_MEMORY_PERCENT in
-    # CI) to turn it back on.
+    # then keep them. Set a percentage here (or
+    # CWA_CI_PWA_AUTOSCALE_MEMORY_PERCENT in CI) to turn it back on.
     targetMemoryUtilizationPercentage: ~
     behavior:
       scaleUp:

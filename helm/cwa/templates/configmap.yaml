@@ -10,8 +10,6 @@ data:
   php-cors-allow-origin: {{ .Values.php.corsAllowOrigin | quote }}
   php-trusted-hosts: {{ .Values.php.trustedHosts | quote }}
   php-trusted-proxies: "{{ join "," .Values.php.trustedProxies }}"
-  php-mercure-jwt-algorithm: {{ .Values.php.mercure.jwt.algorithm | quote }}
-  jwt-cookie-samesite: {{ .Values.php.jwt.samesite | quote }}
   jwt-public: {{ .Values.php.jwt.public | quote }}
   mercure-url: "http://{{ include "cwa.fullname" . }}/.well-known/mercure"
   mercure-public-url: {{ required "mercure.publicUrl must be the hub's public https URL (Mercure 1.0's __Secure- cookie needs https)" .Values.mercure.publicUrl | quote }}
@@ -19,7 +17,6 @@ data:
   mercure-subscriber-jwt-algorithm: {{ .Values.mercure.jwtKey.subscriber.algorithm | quote }}
   mercure-publisher-jwt-algorithm: {{ .Values.mercure.jwtKey.publisher.algorithm | quote }}
   mercure-cors-origin: {{ .Values.mercure.corsOrigin | quote }}
-  caddy-global-options: {{ .Values.php.caddy.globalConfig | quote }}
   # The API lives under /_api (see @api_handle in api/frankenphp/Caddyfile), so
   # the prefix belongs in the default - without it the default is unusable and
   # every caller has to override it. api-url is server-side and points at the
@@ -35,39 +32,3 @@ data:
   gcloud-public-url: {{ .Values.php.gcloud.publicUrl | quote }}
   database-ssl-mode: {{ .Values.php.databaseSSL.mode | quote }}
   cache-url: "http://localhost:2019/souin-api/souin"
-  # Origin protection (#106). Written only when set; the env entries in _helpers.tpl
-  # are optional, so a missing key leaves the variable unset and the Caddyfile's
-  # default applies.
-  {{- with .Values.php.caddy.queryAllowlist }}
-  cache-query-allowlist: {{ . | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.trustedProxies }}
-  caddy-trusted-proxies: {{ . | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.cloudflareIpRanges }}
-  cloudflare-ip-ranges: {{ . | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.rateLimit.enabled }}
-  rate-limit-enabled: {{ . | toString | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.rateLimit.events }}
-  rate-limit-events: {{ . | toString | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.rateLimit.window }}
-  rate-limit-window: {{ . | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.cloudflarePurge.plan }}
-  cloudflare-purge-plan: {{ . | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.cloudflarePurge.requests }}
-  cloudflare-purge-requests: {{ . | toString | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.cloudflarePurge.window }}
-  cloudflare-purge-window: {{ . | quote }}
-  {{- end }}
-  {{- with .Values.php.caddy.cloudflarePurge.burst }}
-  cloudflare-purge-burst: {{ . | toString | quote }}
-  {{- end }}
-  {{- with .Values.php.frankenphp.maxWaitTime }}
-  frankenphp-max-wait-time: {{ . | quote }}
-  {{- end }}

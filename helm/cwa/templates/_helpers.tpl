@@ -157,11 +157,6 @@ deployment sets it. The CronJob must never get it (#103).
     secretKeyRef:
       name: {{ include "cwa.fullname" . }}
       key: database-url
-- name: CADDY_GLOBAL_CONFIG
-  valueFrom:
-    configMapKeyRef:
-      name: {{ include "cwa.fullname" . }}
-      key: caddy-global-options
 - name: CADDY_CACHE_CDN_CONFIG
   valueFrom:
     secretKeyRef:
@@ -198,16 +193,6 @@ deployment sets it. The CronJob must never get it (#103).
     configMapKeyRef:
       name: {{ $fullName }}
       key: mercure-cors-origin
-- name: MERCURE_JWT_ALGORITHM
-  valueFrom:
-    configMapKeyRef:
-      name: {{ $fullName }}
-      key: php-mercure-jwt-algorithm
-- name: JWT_COOKIE_SAMESITE
-  valueFrom:
-    configMapKeyRef:
-      name: {{ $fullName }}
-      key: jwt-cookie-samesite
 - name: JWT_SECRET_KEY
   valueFrom:
     secretKeyRef:
@@ -288,16 +273,11 @@ deployment sets it. The CronJob must never get it (#103).
     configMapKeyRef:
       name: {{ $fullName }}
       key: cache-url
-{{- /* Origin protection (#106). Optional: the configmap has each key only when it
-is set, and an unset variable keeps the Caddyfile's default. */}}
-{{- range $env, $key := dict "CACHE_QUERY_ALLOWLIST" "cache-query-allowlist" "CADDY_TRUSTED_PROXIES" "caddy-trusted-proxies" "CLOUDFLARE_IP_RANGES" "cloudflare-ip-ranges" "RATE_LIMIT_ENABLED" "rate-limit-enabled" "RATE_LIMIT_EVENTS" "rate-limit-events" "RATE_LIMIT_WINDOW" "rate-limit-window" "FRANKENPHP_MAX_WAIT_TIME" "frankenphp-max-wait-time" "CLOUDFLARE_PURGE_PLAN" "cloudflare-purge-plan" "CLOUDFLARE_PURGE_REQUESTS" "cloudflare-purge-requests" "CLOUDFLARE_PURGE_WINDOW" "cloudflare-purge-window" "CLOUDFLARE_PURGE_BURST" "cloudflare-purge-burst" }}
-- name: {{ $env }}
-  valueFrom:
-    configMapKeyRef:
-      name: {{ $fullName }}
-      key: {{ $key }}
-      optional: true
-{{- end }}
+{{- /* The API's optional settings (origin protection #106, CADDY_GLOBAL_CONFIG,
+JWT_COOKIE_SAMESITE, ...) have no entries here: they come from siteEnv.apiSecret
+through cwa.siteEnvFrom, and only when set, so the Caddyfile's and Symfony's
+defaults apply otherwise. An entry here would beat that, and k8s.sh would have to
+reserve its name. */}}
 {{- end }}
 
 {{/*
