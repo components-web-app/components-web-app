@@ -250,6 +250,15 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
+      # Site secrets named NUXT_* or CWA_API_* (#125): GitHub can't list secrets,
+      # so this step gets them all and exports only those names, masked, to the
+      # steps after it. Placed after the kubectl and helm setup actions, so those
+      # never see them; deploy jobs only, so no image build can. Variables with
+      # these names already arrive through github-export-vars.sh.
+      - name: Expose NUXT_* and CWA_API_* secrets to the deploy
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: bin/devops/github-export-secrets.sh
       # A review environment is optional: a branch has one only once its namespace
       # exists (see skip_review_without_namespace in k8s.sh). GitHub has no "passed
       # with warnings" state, so a branch without one gets a warning annotation and
@@ -387,6 +396,15 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
+      # Site secrets named NUXT_* or CWA_API_* (#125): GitHub can't list secrets,
+      # so this step gets them all and exports only those names, masked, to the
+      # steps after it. Placed after the kubectl and helm setup actions, so those
+      # never see them; deploy jobs only, so no image build can. Variables with
+      # these names already arrive through github-export-vars.sh.
+      - name: Expose NUXT_* and CWA_API_* secrets to the deploy
+        env:
+          SECRETS_JSON: ${{ toJSON(secrets) }}
+        run: bin/devops/github-export-secrets.sh
       - name: Deploy to staging
         run: |
           source ./bin/devops/setup.sh
