@@ -1,13 +1,5 @@
 #!/bin/sh
-# Regression test: a full flush must empty every storage the image builds and
-# leave it usable. Souin v1.7.9's flush called the surrogate storage's Destruct,
-# whose Reset closes Badger and Nuts (Redis, etcd and Olric too), so nothing was
-# cached again until php restarted (BADGER-INSERTION-ERROR). api/Dockerfile
-# carries a patch.
-# https://github.com/components-web-app/components-web-app/issues/114
-#
-# Runs the frankenphp binary on a throwaway Caddyfile per storage: a cache in
-# front of a stub, so no php or database is needed.
+# Regression test (#114): a full flush must empty every storage and leave it usable. No php or database needed.
 # Usage: bin/test/souin-flush-storage.sh [path-to-frankenphp]
 set -eu
 

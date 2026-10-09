@@ -54,12 +54,8 @@ fi
 export MERCURE_SUBSCRIBER_JWT_ALG=HS256
 export MERCURE_PUBLISHER_JWT_ALG=HS256
 
-# Composer downloads ~180 packages from github.com per install: anonymously that's
-# 60 requests an hour per IP, which a shared CI runner can't fit, so installs fail
-# part way through. An optional GITHUB_TOKEN (a fine-grained token with no
-# permissions is enough) authenticates them, in builds (a build secret, see
-# build_api) and test jobs alike. Built here so that an unset GITHUB_TOKEN leaves
-# COMPOSER_AUTH unset: an empty token is rejected outright, worse than anonymous.
+# An optional GITHUB_TOKEN authenticates composer (anonymous is 60 requests an hour per IP).
+# Unset stays unset: an empty token is rejected outright, worse than anonymous.
 if [[ -n "$GITHUB_TOKEN" ]]; then
   export COMPOSER_AUTH="{\"github-oauth\": {\"github.com\": \"${GITHUB_TOKEN}\"}}"
   echo "COMPOSER_AUTH: configured from GITHUB_TOKEN"

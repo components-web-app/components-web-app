@@ -1,13 +1,5 @@
 #!/bin/sh
-# Regression test: a surrogate-key purge must not remove the index entry of any
-# other tag. Souin v1.7.9 deletes purged tags with an unanchored regex, so purging
-# a collection tag wiped every item's tag and left their cached responses
-# unpurgeable. api/Dockerfile carries a patch.
-# https://github.com/components-web-app/components-web-app/issues/84
-# https://github.com/darkweak/souin/issues/867
-#
-# Runs the frankenphp binary on a throwaway Caddyfile: a cache in front of a stub
-# that tags each response with its own path, so no php or database is needed.
+# Regression test (#84): a surrogate-key purge must not remove any other tag's index entry. No php or database needed.
 # Usage: bin/test/souin-purge-isolation.sh [path-to-frankenphp]
 set -eu
 

@@ -1,18 +1,6 @@
 #!/bin/sh
-# Provisions the API's Caddyfile without starting the server, for each SERVER_NAME
-# shape the template runs with: helm's ":80" (one server) and compose's
-# "localhost, php.local:80, php.local:443" (one server per port).
-#
-# `frankenphp adapt` only parses. Errors raised while modules provision, such as
-# Mercure >= 1.0.3 refusing a second unnamed hub, pass `adapt` and only show when
-# php fails to start (#113). `validate` provisions every module, so it catches them.
-# https://github.com/components-web-app/components-web-app/issues/113
-#
-# Runs in the API image (the CI unit-tests job, or `docker compose exec php`). The
-# job's own environment is kept, so a project's CADDY_* settings are validated too;
-# only the variables the Caddyfile needs without a default are set here, with
-# throwaway values.
-# Usage: bin/test/caddy-validate.sh [path-to-frankenphp] [path-to-Caddyfile]
+# Provisions the Caddyfile (`validate`, which catches what `adapt` passes) for helm's and compose's SERVER_NAME (#113).
+# Runs in the API image with the job's CADDY_* env. Usage: bin/test/caddy-validate.sh [frankenphp] [Caddyfile]
 set -eu
 
 BIN="${1:-frankenphp}"

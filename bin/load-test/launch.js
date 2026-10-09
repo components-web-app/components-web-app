@@ -1,42 +1,12 @@
-// k6 load test for a CWA site. Manual tool, deliberately not wired into CI.
-// See bin/load-test/README.md for the full guide.
-//
+// k6 load test for a CWA site: a manual tool, not in CI. Settings and usage: bin/load-test/README.md.
 //   BASE_URL=https://localhost INSECURE=true MODE=smoke k6 run bin/load-test/launch.js
-//   BASE_URL=https://staging.example.com CONFIRM=yes MODE=capacity k6 run bin/load-test/launch.js
-//   BASE_URL=https://www.example.com CONFIRM=yes MODE=surge PEOPLE=200 CACHE=mixed k6 run bin/load-test/launch.js
-//
-// TRAP: run it from a cloud VM near the cluster, not a laptop. A laptop runs out
-// of sockets and downlink first: around 300 VUs k6 reports `dial: i/o timeout`
-// long before the cluster notices anything, and the result measures your Wi-Fi.
-//
-// Environment (all optional except BASE_URL):
-//   BASE_URL      site origin, e.g. https://www.example.com (required)
-//   CONFIRM       must be "yes" for any host that is not local (see the guard)
-//   MODE          smoke | capacity | surge | soak                 (default smoke)
-//   PEOPLE        simultaneous visitors for surge; soak uses a sixth (default 100)
-//   CACHE         warm | cold | mixed                              (default warm)
-//   COLD_RATIO    share of page loads that bust the cache in mixed (default 0.2)
-//   COLD_API      "true" also busts the cache on the /_api calls   (default false)
-//   PAGES         comma-separated paths, overrides the sitemap
-//   MAX_PAGES     cap on pages taken from the sitemap              (default 50)
-//   MAX_ASSETS    /_nuxt files fetched per page load               (default 12)
-//   MAX_RESOURCES resources from the manifest fetched per navigation (default 20)
-//   RANDOM_SEED   fixes the random choices (pages, timings), so runs compare
-//   ORIGIN_IP     send requests for BASE_URL's host to this address (the origin,
-//                 skipping a CDN in front); the Host header stays the same
-//   DURATION      length of smoke / soak, or the surge hold
-//   STAGE         length of each capacity step                     (default 30s)
-//   PEAK_RATE     capacity's top arrival rate, visitors/second     (default PEOPLE/7, min 2)
-//   PAGE_P95_MS   page time-to-first-byte p95 threshold            (default 2000)
-//   INSECURE      "true" skips TLS verification (local self-signed stack only)
-//   SUMMARY_JSON  also write k6's full summary data to this file
+// Run it from a cloud VM near the cluster: a laptop runs out of sockets first and measures your Wi-Fi.
 import http from 'k6/http'
 import { check, group, sleep, fail } from 'k6'
 import { Trend, Rate, Counter } from 'k6/metrics'
 
 // ---------------------------------------------------------------------------
-// Configuration and the production guard. This all runs in k6's init context,
-// before setup() and before any request is sent, so a refusal sends nothing.
+// Configuration and the production guard: k6's init context, so a refusal sends nothing.
 // ---------------------------------------------------------------------------
 
 const RAW_BASE = (__ENV.BASE_URL || '').trim().replace(/\/+$/, '')
@@ -80,16 +50,11 @@ if (!LOCAL_HOST.test(HOST) && __ENV.CONFIRM !== 'yes') {
   )
 }
 
-// A value that is NOT in the Caddyfile's `uri query { -utm_source ... }` strip
-// list, so it survives into the Souin cache key and every busted request is a
-// miss that reaches Nuxt (pages) or php (API). Do not rename it to utm_*, gclid,
-// fbclid, srsltid etc.: those are stripped before the cache and would be hits.
+// Not a stripped tracking parameter, so busted API requests miss (pages drop it via CACHE_QUERY_ALLOWLIST).
+// Never rename it to utm_*, gclid, fbclid, srsltid etc.: those are stripped before the cache.
 const BUST_PARAM = 'k6cb'
 
-// TRAP: pin Accept-Encoding to gzip. k6 cannot decode brotli (or zstd), which
-// Caddy's `encode` prefers, and reports the undecodable response in a way that is
-// indistinguishable from a server error: one run showed 89% "failed" against a
-// perfectly healthy server.
+// Pin Accept-Encoding to gzip: k6 can't decode brotli or zstd, and reports them like server errors.
 const PAGE_HEADERS = { 'Accept-Encoding': 'gzip', Accept: 'text/html,application/xhtml+xml' }
 // What @cwa/nuxt sends for its API fetches. Accept is part of the API cache key
 // (Caddyfile, issue #79), so a different value would measure a separate entry.
@@ -97,9 +62,7 @@ const API_HEADERS = { 'Accept-Encoding': 'gzip', Accept: 'application/ld+json,ap
 const ASSET_HEADERS = { 'Accept-Encoding': 'gzip' }
 
 // ---------------------------------------------------------------------------
-// Metrics. Latency is time to first byte (k6's `waiting`), kept apart per kind,
-// because a cached page, an SSR render, an API call and a static file differ by
-// orders of magnitude and a blended average describes none of them.
+// Metrics: TTFB (k6's `waiting`) per kind; a hit, a render, an API call and a file differ by orders of magnitude.
 // ---------------------------------------------------------------------------
 
 const pageTtfb = new Trend('page_ttfb', true)
@@ -125,10 +88,8 @@ function recordEdge(res) {
   edgeCounters[!v ? 'none' : v === 'HIT' ? 'hit' : 'other'].add(1)
 }
 
-// Souin's Cache-Status: "Souin; hit; ttl=55; ..." on a hit, "Souin; fwd=uri-miss;
-// stored" on a miss, "Souin; fwd=bypass; ..." when it did not serve from cache
-// (e.g. DEADLINE-EXCEEDED). No header at all means the request never reached
-// Souin's matcher (excluded path, a cookie, or no Souin in front).
+// Souin's Cache-Status: `hit`, `fwd=uri-miss; stored`, or `fwd=bypass` (not served from cache).
+// No header: the request never reached Souin's matcher (excluded path, a cookie, or no Souin).
 function cacheOutcome(res) {
   const v = (res.headers['Cache-Status'] || '').toLowerCase()
   if (!v) return 'none'
@@ -144,10 +105,8 @@ function recordCache(kind, res) {
   ;(kind === 'page' ? pageHit : apiHit).add(outcome === 'hit')
 }
 
-// The script's random choices (pages, cold loads, reading time). With
-// RANDOM_SEED each VU draws the same sequence on every run, so two runs, or two
-// sites with the same pages, see the same visitors. (k6's own randomSeed option
-// is gone in recent versions.) Cache-busting tokens stay truly random.
+// Random choices (pages, cold loads, reading time); RANDOM_SEED repeats them per VU across runs.
+// Cache-busting tokens stay truly random.
 let seeded = null
 function random() {
   if (!__ENV.RANDOM_SEED) return Math.random()
@@ -170,8 +129,7 @@ function bust(path) {
 }
 
 // ---------------------------------------------------------------------------
-// Scenarios. PEOPLE is simultaneous visitors; one iteration is one visitor
-// (a page load with its assets, reading time, one client-side navigation).
+// Scenarios. PEOPLE is simultaneous visitors; one iteration is one visitor.
 // ---------------------------------------------------------------------------
 
 function capacityStages() {
@@ -249,10 +207,7 @@ function sitemapLocs(xml) {
   return locs
 }
 
-// The same approach as sitemap_pages in bin/devops/k8s.sh: /sitemap.xml
-// (redirects are followed, e.g. to /sitemap_index.xml), one level of child
-// sitemaps, and each <loc>'s origin replaced by BASE_URL. The sitemap may name
-// another origin (http://localhost:3000 in dev), and Souin keys on Host.
+// As sitemap_pages in bin/devops/k8s.sh: one level of child sitemaps, each <loc>'s origin replaced by BASE_URL.
 function toPath(loc) {
   return loc.replace(/^https?:\/\/[^/]+/i, '') || '/'
 }
@@ -294,16 +249,11 @@ export function setup() {
 }
 
 // ---------------------------------------------------------------------------
-// One visitor: a full page load (served from the page cache when warm, rendered
-// by SSR when cold), the /_nuxt files it pulls, reading time, then one click.
-// A click is client-side in CWA: the route and its resource manifest come from
-// /_api, which Souin caches, so no second SSR render happens.
+// One visitor: a page load and its /_nuxt files, reading time, then one client-side click (no second render).
 // ---------------------------------------------------------------------------
 
-// The resources a navigation loads: the manifest's IRIs (a tree, from the route
-// down to each component), fetched a depth at a time as the module does, up to
-// MAX_RESOURCES. The same cap on every site, so one with charts or long pages
-// isn't measured against a heavier mix than one without.
+// A navigation's resources: the manifest's IRIs, a depth at a time as the module does, capped at MAX_RESOURCES
+// so every site is measured on the same mix.
 function fetchResources(manifest) {
   if (!MAX_RESOURCES || !manifest || manifest.status !== 200 || typeof manifest.body !== 'string') return
   let level
@@ -385,8 +335,7 @@ export default function ({ pages }) {
 }
 
 // ---------------------------------------------------------------------------
-// Summary. This replaces k6's default end-of-test summary with the numbers that
-// matter here; SUMMARY_JSON=path.json also writes k6's full data to a file.
+// Summary, replacing k6's default; SUMMARY_JSON=path.json also writes k6's full data.
 // ---------------------------------------------------------------------------
 
 export function handleSummary(data) {

@@ -1,18 +1,6 @@
-// Summarises the Lighthouse CI reports that performance_audit (bin/devops/k8s.sh)
-// writes, one directory per form factor, each holding `lhci upload
-// --target=filesystem` output (a manifest.json plus the reports).
-//
+// Summarises performance_audit's reports: a table for the job log, summary.md and browser-performance.json.
 //   node bin/devops/lighthouse-summary.mjs <output-dir> [lighthouserc.json]
-//
-// For each page's representative (median) run it:
-// - prints an aligned table for the CI job log, marking every value outside its
-//   budget with ✗ (the budgets are read from the lighthouserc assertions, so the
-//   marks always match what `lhci assert` enforced);
-// - writes <output-dir>/summary.md, the same table as Markdown, for GitHub's step
-//   summary;
-// - writes <output-dir>/browser-performance.json in GitLab's browser_performance
-//   report format, so merge requests can compare the metrics between pipelines.
-// No dependencies: the CI images only guarantee node.
+// Budgets are read from lighthouserc's assertions. No dependencies: the CI images only guarantee node.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, isAbsolute, join } from 'node:path'
 

@@ -1,20 +1,6 @@
 #!/usr/bin/env bash
-# Exposes every GitHub variable (repository, organisation and environment) to the
-# job's later steps, the way GitLab exposes project variables to every job (#91).
-#
-# GitHub only passes the variables a job's `env:` names. Run this as the first
-# step after checkout:
-#
-#   - name: Expose repository variables to the scripts, as GitLab does
-#     env:
-#       VARS_JSON: ${{ toJSON(vars) }}
-#     run: bin/devops/github-export-vars.sh
-#
-# The JSON arrives through the environment, never interpolated into the script,
-# so a quote or `$` in a value can't break or inject anything. A name the job
-# already sets (an explicit `env:` mapping, or a secret mapped to that name) is
-# left alone, so explicit mappings always win. Secrets are not in `vars`: map
-# them explicitly, so GitHub masks them.
+# Exports every GitHub variable to the job's later steps, as GitLab does (#91); names the job already sets win.
+# Run first after checkout, with env VARS_JSON: ${{ toJSON(vars) }}. Secrets aren't in vars: map them explicitly.
 set -euo pipefail
 
 : "${GITHUB_ENV:?run this inside a GitHub Actions job}"

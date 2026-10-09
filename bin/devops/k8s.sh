@@ -156,11 +156,7 @@ run_test_functional() {
   # rebuilds the schema, so this needs the job's own database (setup_test_db_environment).
   # CI variables can carry the real site's TRUSTED_HOSTS; the test client's host is localhost.
   export TRUSTED_HOSTS='^(?:localhost|caddy(?:\.local)?|example\.com)$'
-  # Every CI variable is in this job's environment, and a real environment
-  # variable beats api/.env.test. A project's MAILER_DSN is its live mail relay,
-  # so a test that sends email (a contact form, a password reset) would deliver
-  # it for real on every pipeline. Unset, the tests get .env.test's null
-  # transport (built, never sent) and .env's MAILER_EMAIL.
+  # CI variables beat .env.test: a project's live mail relay would deliver test email. Unset, tests get null://null.
   unset MAILER_DSN MAILER_EMAIL
   # CI's JWT_* hold key contents for the deploy, not .env's paths (#130).
   unset JWT_SECRET_KEY JWT_PUBLIC_KEY JWT_PASSPHRASE
@@ -207,12 +203,8 @@ set_namespace() {
   fi
 }
 
-# A review environment is optional: a branch has one only once someone creates its
-# namespace, with its role bindings (ensure_namespace explains why CI can't). So a
-# review job for a branch without one ends with this exit code, which the GitLab
-# review job allows to fail: the pipeline shows orange ("passed with warnings")
-# instead of red, and any other failure is still red (#4). Keep it in sync with
-# `allow_failure: exit_codes` on the review job in .gitlab-ci.yml.
+# Exit code of a review job whose branch has no namespace: GitLab shows it orange, not red (#4).
+# Keep it in sync with the review job's `allow_failure: exit_codes` in .gitlab-ci.yml.
 REVIEW_NO_NAMESPACE_EXIT_CODE=3
 
 # Prints present, missing or error for $KUBE_NAMESPACE (call set_namespace first).
@@ -242,10 +234,7 @@ skip_review_without_namespace() {
 	esac
 }
 
-# The jobs that follow the review job (fixtures, warm, audit, stop) still run or
-# are offered after an orange review, because GitLab treats an allowed failure as
-# success for `needs` (#99). The review job uploads environment_url.txt only when
-# it deployed, so without it these stop the same way, saying why.
+# Follow-on review jobs still run after an orange review (#99); environment_url.txt exists only if it deployed.
 skip_unless_review_deployed() {
 	if [ ! -f environment_url.txt ]; then
 		echo "The review job didn't deploy (this branch has no namespace), so there is no review environment to use."
@@ -320,10 +309,7 @@ ingress_rate_limit_annotations() {
   fi
 }
 
-# The chart's `cwa.fullname` for a release, which names its main ingress: the release name
-# alone if it already contains the chart name, otherwise `<release>-cwa`, cut to 63
-# characters with any trailing '-' dropped. k8s.sh never sets fullnameOverride or
-# nameOverride, so those branches of the helper don't apply.
+# The chart's `cwa.fullname` for a release (which names its main ingress); k8s.sh sets no name overrides.
 cwa_fullname() {
   local full
   case "$1" in
@@ -333,24 +319,7 @@ cwa_fullname() {
   printf '%s' "$full" | cut -c1-63 | sed 's/-*$//'
 }
 
-# Picks the TLS secret for the stable ingress, and makes sure it already holds a valid
-# certificate for every hostname before helm points the ingress at it (#86).
-#
-# Changing the host list (adding an alias, retiring a preview hostname) used to change the
-# certificate behind the live site in place. cert-manager then replaces the secret's contents
-# with a temporary self-signed certificate while the new order runs: minutes at best, and up
-# to an hour of back-off if a challenge fails. With HSTS, that is a hard outage for every
-# hostname on the ingress, the live one included.
-#
-# So a changed host list gets a new secret, named from a hash of the list. Its Certificate
-# is created and waited on here, while the ingress still serves the old one, and the switch
-# is from one valid certificate to another. If it cannot be issued (DNS not pointing at the
-# cluster yet, say) the deploy stops before helm runs and the live site is untouched.
-#
-# When the list is unchanged, the secret the ingress already uses is kept, so existing sites
-# are not reissued. Stable track only: the other tracks serve one hostname that never changes
-# for the life of their release.
-#
+# Picks the stable ingress's TLS secret; a changed host list gets a new one, issued before helm switches to it (#86).
 # Sets TLS_SECRET_NAME, and TLS_PREVIOUS_SECRET_NAME for cleanup_tls_certificates.
 ensure_tls_certificate() {
   local track="${1-stable}" release_name="$2" base="$3"
@@ -369,12 +338,7 @@ ensure_tls_certificate() {
   names=$( { echo "$DOMAIN"; generate_alias_tls_yaml "$track" | sed 's/^ *- *//'; } \
     | tr 'A-Z' 'a-z' | sed '/^$/d' | sort -u )
 
-  # Read the chart's own ingress by name, not the first one a label selector returns. A
-  # site can carry other ingresses with the same chart labels, such as a redirect ingress
-  # for a retired hostname (srnte has one). Comparing against its certificate would never
-  # match, so every deploy would issue a new certificate and soon hit Let's Encrypt's limit
-  # of 5 identical name sets a week. Not by host either: at a launch DOMAIN itself changes,
-  # and no ingress serves the new one yet.
+  # The chart's own ingress by name: not by label (a redirect ingress shares them) or host (DOMAIN changes at launch).
   current=$(kubectl get ingress "$(cwa_fullname "$release_name")" -n "$KUBE_NAMESPACE" \
     -o jsonpath='{.spec.tls[0].secretName}' 2>/dev/null || true)
   if [ -z "$current" ]; then
@@ -453,11 +417,7 @@ cleanup_tls_certificates() {
   done
 }
 
-# Souin reads the first argument of every `cdn` directive without checking there
-# is one, so a line left without a value (`api_key` after a CI variable expanded
-# to nothing) panics on parse and php crash-loops, while helm still reports the
-# release deployed (#116). A value that is still `$NAME` is a reference CI didn't
-# expand. Either fails here, before anything is rolled out.
+# Souin panics on a `cdn` line with no value while helm says deployed (#116); an unexpanded $NAME fails here too.
 check_cdn_config() {
   local line directive value bad=""
   while IFS= read -r line; do
@@ -559,10 +519,8 @@ SITE_ENV_RESERVED_PWA="
   NUXT_PUBLIC_CWA_ENVIRONMENT
 "
 
-# Site settings (#125): NUXT_PUBLIC_* to the PWA's ConfigMap, other NUXT_* to its
-# Secret, CWA_API_<NAME> to the API's Secret as <NAME>, all through envFrom.
-# Prints a values file with base64 values. Values are read by name (multi-line
-# safe) and never printed. Fails on a reserved or unusable name.
+# Site settings (#125): NUXT_PUBLIC_* to the PWA's ConfigMap, other NUXT_* to its Secret, CWA_API_<NAME> to the API's
+# Secret as <NAME>. Prints a base64 values file; values are never printed. Fails on a reserved or unusable name.
 site_env_values() {
   local environment="$1" names name target kind key value isset b64
   local pwa="" pwa_secret="" api_secret="" bad="" summary=""
@@ -796,18 +754,10 @@ deploy() {
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
   CURRENT_DATE=$(date)
 
-  # Per-track sizing. Review apps and staging exist to be correct, not fast, and
-  # there are many of them at once, so they must not inherit production's pod
-  # floor or its reservations. Staging in particular keeps a full copy running
-  # from each push to main until the next production deploy deletes it.
-  # Requests are what the scheduler reserves; the limits, and so the OOM
-  # ceilings, are the same on every track. Anything set explicitly in CI still
-  # wins - these only fill the gap.
+  # Per-track sizing defaults (requests only; limits are the same on every track). A CI variable still wins.
   case "$track" in
     stable|canary)
-      # Production keeps two SSR pods so a rolling deploy or a lost node never
-      # leaves the site with none. A canary runs beside production, which keeps
-      # serving, so one is enough (#124).
+      # Production keeps two SSR pods; a canary runs beside it, so one is enough (#124).
       if [ "$track" = "stable" ]; then pwa_min_default="2"; else pwa_min_default="1"; fi
       pwa_max_default="6"
       pwa_cpu_request_default="100m"
@@ -999,17 +949,8 @@ load_fixtures() {
   echo "Waiting for PHP deployment to be ready..."
   kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  # CWA_CI_FIXTURES_PURGE empties every table before loading, for an early project
-  # whose database should be rebuilt from its fixtures. Only this job reads it, so a
-  # deploy or pod restart can never purge, and it depends on the track:
-  # - review: "true" (or "force").
-  # - stable (production): only "force", so a project-wide "true" meant for review
-  #   apps can never empty production.
-  # Staging has no fixture job (Daniel, 2026-09-25): it runs under the production
-  # environment, so it gets production's DATABASE_URL whenever one is set, and a
-  # load there would write to production. Any other track appends.
-  # Otherwise the load appends (#74): since bundle 2.0.0-alpha.5 the scaffold
-  # creates only what's missing and keeps everything that exists.
+  # CWA_CI_FIXTURES_PURGE empties every table first: review on "true" or "force", production only on "force".
+  # Otherwise the load appends (#74). Staging has no fixture job: it would write to production's database.
   local append="--append"
   case "$track:${CWA_CI_FIXTURES_PURGE:-false}" in
     review:true|review:force|stable:force)
@@ -1027,33 +968,14 @@ load_fixtures() {
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
     -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
 
-  # The load changes the database underneath whatever Souin has cached since the
-  # deploy's purge, and a purge load deletes rows with plain SQL, so nothing purges
-  # the old content. In production it would be served for up to a year. So flush
-  # the whole HTTP cache, API responses and pages. `exec deploy/...` reaches one
-  # pod, which is enough while the API runs a single replica (see
-  # purge_rendered_html).
+  # The load changes data under Souin's cache, so flush all of it; one pod is enough while the API has one replica.
   echo "Flushing the HTTP cache..."
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
     -- php bin/console silverback:api-components:purge-http-cache
 }
 
-# Drops every cached rendered page (the `cwa-html` surrogate key) once a deploy
-# has finished. A new front-end build changes the /_nuxt asset hashes on every page
-# without changing any API resource, so nothing else purges the HTML; a cached page
-# from the old build would load scripts and styles that now 404.
-#
-# Order matters. Wait for the PWA rollout first: until the old PWA pods are gone
-# they can still render old-build HTML into the cache, including into a freshly
-# restarted API pod's empty store. Then wait for the API so the exec does not land
-# on a pod that is terminating.
-#
-# The two deployments are selected by their exact name labels - `cwa` is the API,
-# `cwa-pwa` is the front end (label selectors never prefix-match).
-#
-# `kubectl exec deploy/...` reaches one pod. That is complete only because the API
-# is capped at one replica: Souin's store is per pod, so raising that cap means
-# running this against every API pod.
+# Drops every cached page (`cwa-html`) after a deploy, or old HTML loads /_nuxt files that now 404 (#71).
+# Waits for the PWA, then the API. `exec deploy/...` reaches one pod: complete only while the API has one replica.
 purge_rendered_html() {
   local track="${1-stable}"
   local release_name="$RELEASE"
@@ -1079,13 +1001,8 @@ purge_rendered_html() {
   echo "Waiting for the API rollout..."
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  # With Cloudflare edge caching (#108) the edge also holds /_api responses, which
-  # the rendered-HTML tag doesn't cover, so a release that changed API output
-  # would leave them stale there for up to a year. A full flush reaches
-  # Cloudflare as a purge everything (Destruct in the Souin Cloudflare patch);
-  # the API pod restart has already emptied Souin, so it costs nothing at the
-  # origin. Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone
-  # too, as its tag purges already do: the edge just refills.
+  # With Cloudflare (#108) the edge also holds /_api responses, so flush everything, which purges the whole zone.
+  # Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone too.
   case "${CADDY_CACHE_CDN_CONFIG:-}" in
     *"provider cloudflare"*)
       echo "Cloudflare is configured: flushing the HTTP cache, which also purges everything at Cloudflare..."
@@ -1100,47 +1017,8 @@ purge_rendered_html() {
   esac
 }
 
-# Refills the page cache that purge_rendered_html has just emptied (#80). Without
-# this, the first visitor to every page after a deploy waits for an SSR render,
-# and that post-deploy burst is the one realistic spike of uncached renders.
-# It also replaces the old sitespeed `performance` job as the per-deploy speed
-# check: every page's status and time to first byte (TTFB) is printed.
-#
-#   warm_cache [base_url]    base_url defaults to CI_ENVIRONMENT_URL
-#
-# Returns non-zero if the sitemap cannot be read, lists no pages, or any page
-# answers anything other than 200. The deploy steps decide what to do with that;
-# see the comment where it is called in .gitlab-ci.yml.
-#
-# How it works, and why:
-# - It reads /sitemap.xml, following redirects (@nuxtjs/sitemap redirects it to
-#   /sitemap_index.xml). A <sitemapindex> is followed one level into its child
-#   sitemaps; a plain <urlset> is used as it is.
-# - The XML is parsed with grep/sed only, pulling out each <loc>. jq and xmllint
-#   are not on the CI images (GitLab's Alpine image, GitHub's ubuntu-latest),
-#   and a sitemap is flat enough that <loc>...</loc> is all we need. <image:loc>
-#   and xhtml:link alternates do not match. Only &amp; is decoded.
-# - Every <loc> has its origin replaced with base_url. Souin keys on the Host, so
-#   the cache is only filled for the host visitors use, and the sitemap's own
-#   origin is not trustworthy for that (in dev it says http://localhost:3000).
-# - Page requests are anonymous: curl sends no cookies unless told to, and no
-#   Authorization is set. A request carrying an `api_component` cookie or an
-#   Authorization header bypasses the shared cache, so it would warm nothing.
-# - Redirects are NOT followed for pages. A sitemap should list final URLs, so a
-#   3xx is reported as a failure like any other non-200.
-# - Concurrency is modest (CWA_CI_WARM_CACHE_CONCURRENCY, default 3). The point is
-#   to spare the SSR pods a burst, not to create one.
-# - Each page is stored once whatever the browser's Accept or Accept-Encoding
-#   (#79), so one warm request per page fills the cache for every visitor.
-# - CWA_CI_WARM_CACHE_INSECURE=true skips TLS verification. It exists for testing
-#   against the local stack's self-signed certificate; never set it in CI.
-# - The public URL reaches whichever API pod the ingress picks. That is the whole
-#   store while the API is capped at one replica (see purge_rendered_html). For
-#   canary, it is whichever of the stable and canary pods answers.
-#
-# Portability: GitLab sources this file into busybox ash before `bash` exists, so
-# no arrays, `wait -n` or process substitution. Parallelism is `xargs -0 -P`,
-# which busybox supports.
+# Refills the page cache after purge_rendered_html (#80): warm_cache [base_url]. Fails on any page that isn't 200.
+# GitLab sources this into busybox ash: no arrays, `wait -n` or process substitution, and no jq or xmllint.
 warm_cache() {
   local base="${1:-$CI_ENVIRONMENT_URL}"
   local concurrency="${CWA_CI_WARM_CACHE_CONCURRENCY:-3}"
@@ -1211,11 +1089,7 @@ warm_cache() {
   rm -rf "$tmp"
 }
 
-# Writes the page URLs a site's sitemap lists to <out>, one per line, de-duplicated
-# and in sitemap order, with each URL's origin replaced by <base_url>. Shared by
-# warm_cache and performance_audit; see warm_cache's comment for how the sitemap is
-# read and why the origin is replaced. <label> prefixes the failure banner.
-#
+# Writes the sitemap's page URLs to <out>, de-duplicated, origins replaced by <base_url>, for warm_cache and audits.
 #   sitemap_pages <base_url> <out> <curl_tls_opt> <label>
 sitemap_pages() {
   local base="$1" out="$2" tls_opt="$3" label="$4"
@@ -1258,38 +1132,8 @@ sitemap_pages() {
   rm -rf "$tmp"
 }
 
-# Audits a few pages with Lighthouse CI after a deploy and its cache warm (#87), so a
-# regression in what a visitor experiences (LCP, CLS, TBT, page weight) shows up in
-# CI. warm_cache's timings only say how quickly the server answered.
-#
-#   performance_audit [base_url]    base_url defaults to CI_ENVIRONMENT_URL
-#
-# Pages: CWA_CI_PERFORMANCE_AUDIT_URLS if set (comma or space separated; a path such
-# as /form is joined to base_url), otherwise the first
-# CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES (default 3) pages of the sitemap, read the same
-# way as warm_cache.
-#
-# - Runs after the warm, so pages come from the cache: the audit measures what
-#   visitors get, not a cold SSR render. Lighthouse loads each page anonymously,
-#   and sends no query string, so it neither bypasses nor splits the cache.
-# - CWA_CI_PERFORMANCE_AUDIT_FORM_FACTORS: "mobile" (default, Lighthouse's
-#   throttled mobile profile), "desktop", or "mobile,desktop".
-# - CWA_CI_PERFORMANCE_AUDIT_THROTTLING: "devtools" (default, real throttling) or
-#   "simulate".
-# - CWA_CI_PERFORMANCE_AUDIT_RUNS (default 5) runs per page; budgets use the median
-#   run, so one slow run on a shared CI runner can't flip the result.
-# - Budgets are in bin/devops/lighthouserc.json, or CWA_CI_PERFORMANCE_AUDIT_CONFIG.
-#   A missed budget returns 1. The CI jobs allow that to fail, so it shows as a
-#   warning and never fails a deploy that is already live.
-# - Writes the reports to CWA_CI_PERFORMANCE_AUDIT_OUTPUT (default
-#   performance-report/): Lighthouse's HTML and JSON per page and form factor,
-#   assertion results, a Markdown summary (also added to the GitHub step summary)
-#   and browser-performance.json in GitLab's browser_performance report format.
-# - Needs node, npx and Chrome: GitHub's ubuntu-latest has them, and the GitLab
-#   jobs use CWA_CI_PERFORMANCE_AUDIT_IMAGE. @lhci/cli is pinned by
-#   CWA_CI_PERFORMANCE_AUDIT_LHCI_VERSION.
-# - CWA_CI_PERFORMANCE_AUDIT_INSECURE=true skips TLS verification, for testing
-#   against the local stack only.
+# Lighthouse CI audit of a few cached pages (#87): performance_audit [base_url]. Settings are the locals below.
+# A missed budget returns 1; the CI jobs allow it to fail, so it never fails a live deploy.
 performance_audit() {
   local base="${1:-$CI_ENVIRONMENT_URL}"
   local max="${CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES:-3}"
@@ -1299,9 +1143,7 @@ performance_audit() {
   local out="${CWA_CI_PERFORMANCE_AUDIT_OUTPUT:-performance-report}"
   local lhci="npx --yes @lhci/cli@${CWA_CI_PERFORMANCE_AUDIT_LHCI_VERSION:-0.15.1}"
   local chrome_flags="--headless=new --no-sandbox --disable-dev-shm-usage"
-  # devtools (real) throttling by default: Lighthouse's simulated throttling gave
-  # bimodal scores on shared CI runners (0.60-0.96 for the same page and deploy), while
-  # real throttled loads matched what devices see. "simulate" is still available.
+  # Real throttling by default: simulated scores are bimodal on shared CI runners.
   local throttling="${CWA_CI_PERFORMANCE_AUDIT_THROTTLING:-devtools}"
   local tls_opt="" status=0 ff preset page tmp
 
@@ -1366,10 +1208,7 @@ performance_audit() {
 
     echo "--- ${ff}"
     rm -rf .lighthouseci
-    # All collect settings go on the command line: any --collect.settings.* option
-    # REPLACES the config file's whole `settings` block rather than merging with it,
-    # so settings in lighthouserc.json were silently ignored. The file keeps only
-    # the budgets (`assert`), which are read separately.
+    # Every collect setting goes on the command line: any --collect.settings.* replaces lighthouserc.json's whole block.
     if ! $lhci collect --config="$config" --collect.numberOfRuns="$runs" \
         --collect.settings.chromeFlags="$chrome_flags" \
         --collect.settings.onlyCategories=performance \
@@ -1421,13 +1260,5 @@ function delete() {
       -l "app.kubernetes.io/instance=$name,app.kubernetes.io/name=postgresql" || true
   fi
 
-  # If we delete the namespace, when we create it we also need to recreate role bindings - no permissions for this
-  # We should see if that will be possible, or manually clean up empty namespaces when they are no longer needed
-	#if [[ ${CI_ENVIRONMENT_SLUG:0:6} == "review" ]]; then
-	#  echo "Deleting namespace $KUBE_NAMESPACE"
-  #  kubectl delete namespace $KUBE_NAMESPACE --grace-period=0 || EXIT_CODE=$? && true
-  #  echo ${EXIT_CODE}
-	#else
-	#  echo "Skipping namespace delete for slug $CI_ENVIRONMENT_SLUG and namespace $KUBE_NAMESPACE"
-	#fi
+  # Namespaces are never deleted: CI can't recreate their role bindings (see ensure_namespace).
 }
