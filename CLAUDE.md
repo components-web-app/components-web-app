@@ -244,6 +244,13 @@ The template's own switches and deploy tuning are `CWA_CI_<NAME>`; the old names
 - **`CWA_ENVIRONMENT` / `NUXT_PUBLIC_CWA_ENVIRONMENT`** come from the track (`production`, `staging`, `canary`, `review`), not GitLab's environment. A `CWA_ENVIRONMENT` CI variable overrides it.
 - **GitHub:** `github-export-secrets.sh` exports `NUXT_*`/`CWA_API_*` secrets, masked, in deploy jobs only, after the setup actions.
 
+### Project hooks: keep `setup.sh` and `k8s.sh` the template's (2026-10-10)
+
+Projects copy `bin/devops/setup.sh`, `k8s.sh` and the chart, and cwa-deployment-statuses tracks them by exact content, so a project that edits them can't take later releases as plain file copies. Project-specific deploy logic goes in **`bin/devops/project.sh`** (optional; `setup.sh` sources it in every job), never in the template's files:
+- It can set `DOMAIN` (e.g. which of several sites a job deploys); `setup.sh` falls back to the environment url's host, and `check_kube_domain` / `persist_environment_url` work from `DOMAIN`. `persist_environment_url` also writes `environment_url.env` (`SITE_ENVIRONMENT_URL`) for a job whose url is worked out in the job.
+- It can export site settings for the passthrough (`CWA_API_*`, `NUXT_*`), and define **`project_values <track>`**, whose YAML `deploy` applies last: values for a template the project adds to `helm/cwa/templates`.
+When a project needs something these can't do, add a hook here rather than letting it edit the shared file.
+
 ### The API is capped at one replica, on purpose
 
 - `autoscaling.maxReplicas: 1` and `CWA_CI_API_AUTOSCALE_MAX` default 1. Souin's `otter` store is in-memory and purged via `localhost:2019`, so a write on a second pod never purges the first pod's cache (and with a year-long `s-maxage` that is permanent). Mercure's `bolt` transport is pod-local too. One pod served ~974 req/s cached. **Raise it only alongside a shared cache store and a clustered Mercure hub** (#85); and then every `kubectl exec deploy/…` purge must loop over every API pod.

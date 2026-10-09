@@ -172,10 +172,10 @@ run_test_functional() {
 }
 
 check_kube_domain() {
-  if [[ -z ${CI_ENVIRONMENT_URL+x} ]]; then
-    echo "In order to deploy or use Review Apps, CI_ENVIRONMENT_URL variable must be set"
-    echo "You can do it in Auto DevOps project settings or defining a variable at group or project level"
-    echo "You can also manually add it in .gitlab-ci.yml"
+  if [[ -z "$DOMAIN" ]]; then
+    echo "No domain to deploy to. setup.sh takes DOMAIN from the job's environment"
+    echo "url (CI_ENVIRONMENT_URL), unless bin/devops/project.sh sets it: set the job's"
+    echo "environment url, or the variable it uses (e.g. KUBE_INGRESS_BASE_DOMAIN)."
     false
   else
     true
@@ -913,6 +913,15 @@ EOF
   # Holds secrets: removed after helm.
   printf '%s\n' "$site_env_yaml" > values.site-env.tmp.yaml
 
+  # A project's own chart values (optional): project_values, defined in
+  # bin/devops/project.sh, prints YAML for this track, e.g. the settings of a
+  # template the project adds to helm/cwa/templates. Applied last.
+  local project_values_args=()
+  if declare -F project_values >/dev/null; then
+    project_values "$track" > values.project.tmp.yaml || return 1
+    project_values_args=(-f values.project.tmp.yaml)
+  fi
+
   helm upgrade --install \
     --reset-values \
     --namespace="$KUBE_NAMESPACE" \
@@ -922,16 +931,23 @@ EOF
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \
     --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
   	-f values.tmp.yaml \
-  	-f values.site-env.tmp.yaml || { rm -f values.site-env.tmp.yaml; return 1; }
-  rm -f values.site-env.tmp.yaml
+  	-f values.site-env.tmp.yaml \
+  	"${project_values_args[@]}" || { rm -f values.site-env.tmp.yaml values.project.tmp.yaml; return 1; }
+  rm -f values.site-env.tmp.yaml values.project.tmp.yaml
 
   if [ -n "$TLS_PREVIOUS_SECRET_NAME" ]; then
     cleanup_tls_certificates "$name" "$TLS_SECRET_NAME" "$TLS_PREVIOUS_SECRET_NAME"
   fi
 }
 
+# The URL this deploy went to: environment_url.txt (the artifact), and
+# environment_url.env, a dotenv report a job can use as its environment url
+# (`url: $SITE_ENVIRONMENT_URL` with `artifacts: reports: dotenv:`) when the
+# domain is worked out in the job (bin/devops/project.sh) rather than known
+# up front.
 persist_environment_url() {
-	echo $CI_ENVIRONMENT_URL > environment_url.txt
+	echo "https://${DOMAIN}" > environment_url.txt
+	echo "SITE_ENVIRONMENT_URL=https://${DOMAIN}" > environment_url.env
 }
 
 load_fixtures() {

@@ -27,7 +27,16 @@ if [[ -z "$CI_ENVIRONMENT_URL" ]]; then
   export CI_ENVIRONMENT_URL="test-domain.com"
 fi
 
-export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
+# A project's own deploy settings (optional). bin/devops/project.sh is sourced
+# here, in every job, so a project can work out its own DOMAIN (e.g. one of
+# several sites built from one codebase), KUBE_INGRESS_ALIAS_DOMAINS and site
+# settings (CWA_API_*, NUXT_*), and define project_values for helm (see deploy in
+# k8s.sh), without editing this file or k8s.sh. Projects without one are unchanged.
+if [[ -f ./bin/devops/project.sh ]]; then
+  . ./bin/devops/project.sh
+fi
+
+export DOMAIN="${DOMAIN:-$(basename ${CI_ENVIRONMENT_URL})}"
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export PHP_REPOSITORY_CACHE="${DOCKER_REPOSITORY}/php-cache"
