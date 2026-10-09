@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d4572e68d52c2d45d487ec2f135c9a99",
+    "content-hash": "dfc1ad786bfb7cc9da5c61d910226a31",
     "packages": [
         {
             "name": "api-platform/core",
@@ -362,16 +362,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.9",
+            "version": "2.0.0-alpha.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "e67d6072e5bc1db8afbaa267a7440093692a082c"
+                "reference": "4acbaaf3b03b2b8053f8ca508e0004e2ac689fbd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/e67d6072e5bc1db8afbaa267a7440093692a082c",
-                "reference": "e67d6072e5bc1db8afbaa267a7440093692a082c",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/4acbaaf3b03b2b8053f8ca508e0004e2ac689fbd",
+                "reference": "4acbaaf3b03b2b8053f8ca508e0004e2ac689fbd",
                 "shasum": ""
             },
             "require": {
@@ -405,8 +405,8 @@
                 "symfony/form": "^7.4 || ^8.1",
                 "symfony/framework-bundle": "^7.4 || ^8.1",
                 "symfony/mailer": "^7.4 || ^8.1",
-                "symfony/mercure": "^0.8",
-                "symfony/mercure-bundle": "^0.5",
+                "symfony/mercure": "^0.8 || ^0.9",
+                "symfony/mercure-bundle": "^0.5 || ^0.6",
                 "symfony/property-access": "^7.4 || ^8.1",
                 "symfony/property-info": "^7.4 || ^8.1",
                 "symfony/security-bundle": "^7.4 || ^8.1",
@@ -498,9 +498,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.9"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.10"
             },
-            "time": "2026-10-08T12:06:32+00:00"
+            "time": "2026-10-09T23:28:44+00:00"
         },
         {
             "name": "composer/semver",
@@ -6917,16 +6917,16 @@
         },
         {
             "name": "symfony/mercure",
-            "version": "v0.8.0",
+            "version": "v0.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/mercure.git",
-                "reference": "920f08c73793f37e94981e5d9fc1a84351ec8c6c"
+                "reference": "d0dca3c654858ada61dcecbaee058c72f05de61e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/mercure/zipball/920f08c73793f37e94981e5d9fc1a84351ec8c6c",
-                "reference": "920f08c73793f37e94981e5d9fc1a84351ec8c6c",
+                "url": "https://api.github.com/repos/symfony/mercure/zipball/d0dca3c654858ada61dcecbaee058c72f05de61e",
+                "reference": "d0dca3c654858ada61dcecbaee058c72f05de61e",
                 "shasum": ""
             },
             "require": {
@@ -6956,7 +6956,7 @@
                     "name": "dunglas/mercure"
                 },
                 "branch-alias": {
-                    "dev-main": "0.8.x-dev"
+                    "dev-main": "0.9.x-dev"
                 }
             },
             "autoload": {
@@ -6988,7 +6988,7 @@
             ],
             "support": {
                 "issues": "https://github.com/symfony/mercure/issues",
-                "source": "https://github.com/symfony/mercure/tree/v0.8.0"
+                "source": "https://github.com/symfony/mercure/tree/v0.9.0"
             },
             "funding": [
                 {
@@ -7000,20 +7000,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-11T07:23:36+00:00"
+            "time": "2026-10-07T21:19:29+00:00"
         },
         {
             "name": "symfony/mercure-bundle",
-            "version": "v0.5.0",
+            "version": "v0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/mercure-bundle.git",
-                "reference": "84143afcd5225bbc3cc5e05b9218a05f2ae4a566"
+                "reference": "e86e8ef6fd01b5742553d6c0f2d838db84c947d8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/mercure-bundle/zipball/84143afcd5225bbc3cc5e05b9218a05f2ae4a566",
-                "reference": "84143afcd5225bbc3cc5e05b9218a05f2ae4a566",
+                "url": "https://api.github.com/repos/symfony/mercure-bundle/zipball/e86e8ef6fd01b5742553d6c0f2d838db84c947d8",
+                "reference": "e86e8ef6fd01b5742553d6c0f2d838db84c947d8",
                 "shasum": ""
             },
             "require": {
@@ -7022,7 +7022,7 @@
                 "symfony/config": "^6.4|^7.3|^8.0",
                 "symfony/dependency-injection": "^6.4|^7.3|^8.0",
                 "symfony/http-kernel": "^6.4|^7.3|^8.0",
-                "symfony/mercure": "^0.8",
+                "symfony/mercure": "^0.8|^0.9",
                 "symfony/web-link": "^6.4|^7.3|^8.0"
             },
             "require-dev": {
@@ -7039,7 +7039,7 @@
             "type": "symfony-bundle",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "0.5.x-dev"
+                    "dev-main": "0.6.x-dev"
                 }
             },
             "autoload": {
@@ -7071,7 +7071,7 @@
             ],
             "support": {
                 "issues": "https://github.com/symfony/mercure-bundle/issues",
-                "source": "https://github.com/symfony/mercure-bundle/tree/v0.5.0"
+                "source": "https://github.com/symfony/mercure-bundle/tree/v0.6.0"
             },
             "funding": [
                 {
@@ -7083,7 +7083,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-11T11:25:49+00:00"
+            "time": "2026-10-07T21:20:38+00:00"
         },
         {
             "name": "symfony/mime",

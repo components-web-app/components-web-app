@@ -7,6 +7,8 @@ mercure:
       # Mercure 1.0: OAuth 2.0 access tokens with authorization_details. `aud`
       # defaults to public_url, which the Caddyfile pins as resource_identifier.
       protocol_version: '1.0'
+      # The hub's name; mercure-bundle 0.6 would drop `__Secure-` when kernel.debug is on.
+      cookie_name: '__Secure-mercure_access_token'
       url: '%env(MERCURE_URL)%'
       public_url: '%env(MERCURE_PUBLIC_URL)%'
       jwt:
