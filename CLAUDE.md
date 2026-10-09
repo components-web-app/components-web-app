@@ -249,6 +249,7 @@ The template's own switches and deploy tuning are `CWA_CI_<NAME>`; the old names
 Projects copy `bin/devops/setup.sh`, `k8s.sh` and the chart, and cwa-deployment-statuses tracks them by exact content, so a project that edits them can't take later releases as plain file copies. Project-specific deploy logic goes in **`bin/devops/project.sh`** (optional; `setup.sh` sources it in every job), never in the template's files:
 - It can set `DOMAIN` (e.g. which of several sites a job deploys); `setup.sh` falls back to the environment url's host, and `check_kube_domain` / `persist_environment_url` work from `DOMAIN`. `persist_environment_url` also writes `environment_url.env` (`SITE_ENVIRONMENT_URL`) for a job whose url is worked out in the job.
 - It can export site settings for the passthrough (`CWA_API_*`, `NUXT_*`), and define **`project_values <track>`**, whose YAML `deploy` applies last: values for a template the project adds to `helm/cwa/templates`.
+- **`k8s.sh` runs under busybox ash on GitLab:** keep the hooks POSIX (no arrays, `declare` or `[[`-only logic in `k8s.sh`). A `DOMAIN` already set when `setup.sh` runs (by `project.sh` or a CI variable) wins over the environment url.
 When a project needs something these can't do, add a hook here rather than letting it edit the shared file.
 
 ### The API is capped at one replica, on purpose

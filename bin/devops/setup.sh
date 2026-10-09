@@ -27,11 +27,7 @@ if [[ -z "$CI_ENVIRONMENT_URL" ]]; then
   export CI_ENVIRONMENT_URL="test-domain.com"
 fi
 
-# A project's own deploy settings (optional). bin/devops/project.sh is sourced
-# here, in every job, so a project can work out its own DOMAIN (e.g. one of
-# several sites built from one codebase), KUBE_INGRESS_ALIAS_DOMAINS and site
-# settings (CWA_API_*, NUXT_*), and define project_values for helm (see deploy in
-# k8s.sh), without editing this file or k8s.sh. Projects without one are unchanged.
+# Project-specific deploy settings (DOMAIN, aliases, site settings, project_values).
 if [[ -f ./bin/devops/project.sh ]]; then
   . ./bin/devops/project.sh
 fi

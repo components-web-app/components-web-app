@@ -913,13 +913,10 @@ EOF
   # Holds secrets: removed after helm.
   printf '%s\n' "$site_env_yaml" > values.site-env.tmp.yaml
 
-  # A project's own chart values (optional): project_values, defined in
-  # bin/devops/project.sh, prints YAML for this track, e.g. the settings of a
-  # template the project adds to helm/cwa/templates. Applied last.
-  local project_values_args=()
-  if declare -F project_values >/dev/null; then
-    project_values "$track" > values.project.tmp.yaml || return 1
-    project_values_args=(-f values.project.tmp.yaml)
+  # A project's chart values (project_values in bin/devops/project.sh), applied last.
+  printf '{}\n' > values.project.tmp.yaml
+  if command -v project_values >/dev/null 2>&1; then
+    project_values "$track" > values.project.tmp.yaml || { rm -f values.site-env.tmp.yaml values.project.tmp.yaml; return 1; }
   fi
 
   helm upgrade --install \
@@ -932,7 +929,7 @@ EOF
     --set mercure.jwtKey.publisher.key="${MERCURE_JWT_SECRET}" \
   	-f values.tmp.yaml \
   	-f values.site-env.tmp.yaml \
-  	"${project_values_args[@]}" || { rm -f values.site-env.tmp.yaml values.project.tmp.yaml; return 1; }
+  	-f values.project.tmp.yaml || { rm -f values.site-env.tmp.yaml values.project.tmp.yaml; return 1; }
   rm -f values.site-env.tmp.yaml values.project.tmp.yaml
 
   if [ -n "$TLS_PREVIOUS_SECRET_NAME" ]; then
@@ -940,11 +937,7 @@ EOF
   fi
 }
 
-# The URL this deploy went to: environment_url.txt (the artifact), and
-# environment_url.env, a dotenv report a job can use as its environment url
-# (`url: $SITE_ENVIRONMENT_URL` with `artifacts: reports: dotenv:`) when the
-# domain is worked out in the job (bin/devops/project.sh) rather than known
-# up front.
+# environment_url.txt, plus a dotenv report (SITE_ENVIRONMENT_URL) for a job's `url:`.
 persist_environment_url() {
 	echo "https://${DOMAIN}" > environment_url.txt
 	echo "SITE_ENVIRONMENT_URL=https://${DOMAIN}" > environment_url.env
