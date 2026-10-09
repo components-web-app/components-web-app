@@ -17,7 +17,7 @@ class CoreScaffoldPart implements ScaffoldPartInterface
 
     public function build(CwaFixtureBuilder $cwa, ScaffoldState $state): void
     {
-        $state->navGroup = $cwa->layout('main', 'CwaLayoutPrimary')
+        $state->navGroup = $cwa->layout('main', 'Primary')
             ->group('top');
 
         $title = new Title();
