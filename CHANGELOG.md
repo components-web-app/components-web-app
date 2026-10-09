@@ -17,6 +17,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Added
 - Load test: `page_views` (a page load or a client-side navigation), the resource manifest's resources fetched on each navigation (`MAX_RESOURCES`, default 20), a Cloudflare `cf-cache-status` line, `RANDOM_SEED` for repeatable runs, and `ORIGIN_IP` to measure the origin without the CDN. ([!13](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/13))
+- Deploy hooks, so a project keeps `bin/devops/setup.sh` and `k8s.sh` unedited: an optional `bin/devops/project.sh` (sourced by `setup.sh`; it can set `DOMAIN` and site settings) and its `project_values <track>` (chart values, applied last). `check_kube_domain` and `persist_environment_url` work from `DOMAIN`, and the latter also writes `environment_url.env` (`SITE_ENVIRONMENT_URL`). ([!14](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/14))
 
 ## [2.0.0-alpha.17](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.17) - 2026-10-09
 
