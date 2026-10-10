@@ -21,6 +21,9 @@ data:
   # the load balancer; the Caddyfile's @internal still gives IRIs the public hostname.
   api-url: {{ .Values.pwa.apiUrl | default (printf "http://%s/_api" (include "cwa.fullname" .)) | quote }}
   api-url-browser: {{ .Values.pwa.apiUrlBrowser | default (printf "https://%s/_api" (include "cwa.fullname" .)) | quote }}
+  {{- with .Values.pwa.siteUrl }}
+  site-url: {{ . | quote }}
+  {{- end }}
   mailer-email: {{ .Values.php.mailer.email | quote }}
   gcloud-bucket: {{ .Values.php.gcloud.bucket | quote }}
   gcloud-public-url: {{ .Values.php.gcloud.publicUrl | quote }}

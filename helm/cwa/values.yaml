@@ -61,6 +61,8 @@ pwa:
   # balancer; k8s.sh sets apiUrlBrowser to the public URL.
   apiUrl: ~
   apiUrlBrowser: ~
+  # Canonical site URL for nuxt-site-config (#140); k8s.sh sets it from DOMAIN.
+  siteUrl: ~
   image:
     repository: "chart-example.local/cwa/pwa"
     pullPolicy: IfNotPresent

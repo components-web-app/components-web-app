@@ -59,6 +59,13 @@ spec:
                 configMapKeyRef:
                   name: {{ include "cwa.fullname" . }}
                   key: api-url-browser
+            {{- if .Values.pwa.siteUrl }}
+            - name: NUXT_SITE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cwa.fullname" . }}
+                  key: site-url
+            {{- end }}
             - name: NODE_ENV
               value: production
             {{- with .Values.cwaEnvironment }}

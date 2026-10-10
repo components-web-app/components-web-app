@@ -516,7 +516,7 @@ SITE_ENV_RESERVED_API="
   MERCURE_URL RESET_DATABASE SERVER_NAME TRUSTED_HOSTS TRUSTED_PROXIES
 "
 SITE_ENV_RESERVED_PWA="
-  NUXT_CWA_API_URL NUXT_PUBLIC_CWA_API_URL NUXT_PUBLIC_CWA_API_URL_BROWSER
+  NUXT_CWA_API_URL NUXT_PUBLIC_CWA_API_URL NUXT_PUBLIC_CWA_API_URL_BROWSER NUXT_SITE_URL
   NUXT_PUBLIC_CWA_ENVIRONMENT
 "
 
@@ -758,6 +758,7 @@ deploy() {
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
+  NUXT_SITE_URL="https://${DOMAIN}"
   CURRENT_DATE=$(date)
 
   # Per-track sizing defaults (requests only; limits are the same on every track). A CI variable still wins.
@@ -801,6 +802,7 @@ pwa:
   # TLS for each API call it makes. Only the browser needs the public URL.
   apiUrl: ~
   apiUrlBrowser: ${NUXT_PUBLIC_CWA_API_URL_BROWSER}
+  siteUrl: ${NUXT_SITE_URL}
   replicaCount: ${CWA_CI_PWA_REPLICA_COUNT:-"1"}
   autoscaling:
     enabled: ${CWA_CI_PWA_AUTOSCALE:-"true"}
