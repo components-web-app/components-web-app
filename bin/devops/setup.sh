@@ -27,7 +27,12 @@ if [[ -z "$CI_ENVIRONMENT_URL" ]]; then
   export CI_ENVIRONMENT_URL="test-domain.com"
 fi
 
-export DOMAIN=$(basename ${CI_ENVIRONMENT_URL})
+# Project-specific deploy settings (DOMAIN, aliases, site settings, project_values).
+if [[ -f ./bin/devops/project.sh ]]; then
+  . ./bin/devops/project.sh
+fi
+
+export DOMAIN="${DOMAIN:-$(basename ${CI_ENVIRONMENT_URL})}"
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export PHP_REPOSITORY_CACHE="${DOCKER_REPOSITORY}/php-cache"
