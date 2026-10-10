@@ -27,14 +27,14 @@ class Image extends AbstractComponent
 
     #[Silverback\UploadableField(adapter: 'gcloud', urlGenerator: 'public', imagineFilters: ['thumbnail'])]
     #[Assert\File(maxSize: '20M')]
-    // 20 MP is what the imagine budget (320M) can thumbnail (#136); bigger gets a 422, not a skipped filter.
+    // 30 MP is what the imagine budget (320M) can thumbnail with vips (#136, #141); bigger gets a 422, not a skipped filter.
     // SVG is exempt: it has no pixel dimensions, and Assert\Image would reject it outright.
     #[Assert\When(
         expression: 'value !== null && value.getMimeType() !== "image/svg+xml"',
         constraints: [
             new Assert\Image(
-                maxPixels: 20_000_000,
-                maxPixelsMessage: 'This image is too large ({{ pixels }} pixels). Please resize it to at most {{ max_pixels }} pixels (about 5500 x 3650) and upload it again.',
+                maxPixels: 30_000_000,
+                maxPixelsMessage: 'This image is too large ({{ pixels }} pixels). Please resize it to at most {{ max_pixels }} pixels (about 6700 x 4470) and upload it again.',
             ),
         ],
     )]
