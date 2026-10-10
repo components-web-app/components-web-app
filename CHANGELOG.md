@@ -16,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - `bin/devops/project.sh` can add reserved names (ones its own chart values set) with `SITE_ENV_RESERVED_API_EXTRA` / `SITE_ENV_RESERVED_PWA_EXTRA`. ([#133](https://github.com/components-web-app/components-web-app/issues/133), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
 
 ### Fixed
+- `.gitlab-ci.yml` loses comments the comment trim left pointing at nothing. ([a628710](https://github.com/components-web-app/components-web-app/commit/a6287100e0c3b9dee2330c6590c07c5f6d2cee7c))
 - The warm cache and performance audit use `https://$DOMAIN`, so they follow a `DOMAIN` set in `project.sh`. ([#132](https://github.com/components-web-app/components-web-app/issues/132), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
 - `check_kube_domain` can fail: no `test-domain.com` fallback, and an empty `DOMAIN` or one with a leading or trailing dot (an empty `KUBE_INGRESS_BASE_DOMAIN`) stops the deploy. ([#134](https://github.com/components-web-app/components-web-app/issues/134), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
 
