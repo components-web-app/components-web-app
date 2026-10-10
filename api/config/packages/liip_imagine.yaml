@@ -3,11 +3,20 @@ liip_imagine:
   driver: vips
   data_loader: silverback.api_components.liip_imagine.binary.loader
   cache: in_memory_cache_resolver
+  # Under 90, vips JPEGs are chroma-subsampled; PNG level 9 is lossless (#143).
   filter_sets:
     thumbnail:
-      jpeg_quality: 90
-      png_compression_level: 0
+      jpeg_quality: 82
+      png_compression_level: 9
       filters:
         thumbnail:
           size: [ 500, 500 ]
+          mode: inset
+    # Display size: the layout's widest content column (max-w-7xl less padding) is 1216 px (#143).
+    general:
+      jpeg_quality: 82
+      png_compression_level: 9
+      filters:
+        thumbnail:
+          size: [ 1200, 1200 ]
           mode: inset

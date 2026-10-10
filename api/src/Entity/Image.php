@@ -25,7 +25,8 @@ class Image extends AbstractComponent
     use PublishableTrait;
     use UploadableTrait;
 
-    #[Silverback\UploadableField(adapter: 'gcloud', urlGenerator: 'public', imagineFilters: ['thumbnail'])]
+    // `general` is the display size the front end renders, `thumbnail` is for listings and admin (#143).
+    #[Silverback\UploadableField(adapter: 'gcloud', urlGenerator: 'public', imagineFilters: ['thumbnail', 'general'], requiredOnPublish: true)]
     #[Assert\File(maxSize: '20M')]
     // 30 MP is what the imagine budget (320M) can thumbnail with vips (#136, #141); bigger gets a 422, not a skipped filter.
     // SVG is exempt: it has no pixel dimensions, and Assert\Image would reject it outright.

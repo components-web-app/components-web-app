@@ -2,7 +2,7 @@
   <div class="w-full relative my-5">
     <div
       v-if="files.file?.displayMedia"
-      class="relative flex overflow-hidden max-w-[300px]"
+      class="relative flex overflow-hidden max-w-full w-fit"
     >
       <NuxtImg
         ref="file"
@@ -35,6 +35,7 @@ import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaComponent, withFile } from '#imports'
 
 const props = defineProps<IriProp>()
-const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'thumbnail' })])
+// The display filter; without it (SVG, or skipped over the memory budget) the module serves the original (#143).
+const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'general' })])
 defineExpose(exposeMeta)
 </script>
