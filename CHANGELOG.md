@@ -7,10 +7,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
+- Delete any `NUXT_SITE_URL` CI variable: deploys now set it to `https://$DOMAIN` and refuse a CI variable of that name. ([#140](https://github.com/components-web-app/components-web-app/issues/140), [45a3794](https://github.com/components-web-app/components-web-app/commit/45a379404852fc164b15f706d0aac3479c61b6ab))
 - Copy `api/frankenphp/souin/v1.7.9-singleflight-5xx.patch` with its `COPY` and `patch` lines in `api/Dockerfile` (after the singleflight patch), and `bin/test/souin-coalesced-5xx.sh` with its line in the unit-tests job. ([#137](https://github.com/components-web-app/components-web-app/issues/137), [6df1b15](https://github.com/components-web-app/components-web-app/commit/6df1b15050970bbc45e8348d10d0a9787477365c))
 - The per-visitor rate limit needs the ingress to keep the client address (`externalTrafficPolicy: Local`); the GKE cluster's controller now does, with 2 replicas and a PDB. A project on another cluster must set the same, or the limit never applies. ([#135](https://github.com/components-web-app/components-web-app/issues/135), [85f9c28](https://github.com/components-web-app/components-web-app/commit/85f9c286d7fc0da9610a3764623baa4f51c28800))
 
 ### Fixed
+- Cached pages' canonical URL and `og:url` use the site's host, not whichever host rendered the page: deploys set `NUXT_SITE_URL` from `DOMAIN` (so `project.sh` sites and staging get their own). ([#140](https://github.com/components-web-app/components-web-app/issues/140), [45a3794](https://github.com/components-web-app/components-web-app/commit/45a379404852fc164b15f706d0aac3479c61b6ab))
 - `PURGE`/`BAN` sent to the site return 405 instead of a misleading 200 (they never purged anything; the `CACHE_ACL` clause they passed through was unreachable and is gone). Purge one page by tag through Souin's admin API; see CLAUDE.md. ([#138](https://github.com/components-web-app/components-web-app/issues/138), [1c87cc0](https://github.com/components-web-app/components-web-app/commit/1c87cc0e0ea92b26c16bb846df36b5e659ca8f93))
 - Requests Souin coalesces onto an upstream 5xx get that 5xx instead of an empty 200 (a new Souin patch, `v1.7.9-singleflight-5xx.patch`). ([#137](https://github.com/components-web-app/components-web-app/issues/137), [6df1b15](https://github.com/components-web-app/components-web-app/commit/6df1b15050970bbc45e8348d10d0a9787477365c))
 
