@@ -1,0 +1,162 @@
+diff --git a/pkg/middleware/middleware.go b/pkg/middleware/middleware.go
+index 8317f3f..548ee24 100644
+--- a/pkg/middleware/middleware.go
++++ b/pkg/middleware/middleware.go
+@@ -643,7 +643,9 @@ func (s *SouinBaseHandler) Upstream(
+ 		singleflightCacheKey += uuid.NewString()
+ 	}
+ 	var recoveredFromCallback interface{} = nil
++	isLeader := false
+ 	singleflightChan := s.singleflightPool.DoChan(singleflightCacheKey, func() (interface{}, error) {
++		isLeader = true
+ 		// With DoChan the callback doesn't run in the caller goroutine anymore,
+ 		// so the panic has to be caught here and rethrown below, otherwise
+ 		// singleflight rethrows it in a goroutine nobody can recover from.
+@@ -669,7 +671,18 @@ func (s *SouinBaseHandler) Upstream(
+ 
+ 			switch statusCode {
+ 			case 500, 502, 503, 504:
+-				return nil, Upstream50xError
++				// Hand the response to the coalesced requests too: with nil they sent an empty 200.
++				_, cacheControl := s.SurrogateKeyStorer.GetSurrogateControl(customWriter.Header())
++				bodySnapshot := make([]byte, customWriter.Buf.Len())
++				copy(bodySnapshot, customWriter.Buf.Bytes())
++
++				return singleflightValue{
++					body:              bodySnapshot,
++					headers:           customWriter.Header().Clone(),
++					requestHeaders:    rq.Header.Clone(),
++					code:              statusCode,
++					disableCoalescing: strings.Contains(cacheControl, "private") || customWriter.Header().Get("Set-Cookie") != "",
++				}, Upstream50xError
+ 			}
+ 		}
+ 
+@@ -720,7 +733,9 @@ func (s *SouinBaseHandler) Upstream(
+ 	if recoveredFromErr != nil {
+ 		panic(recoveredFromErr)
+ 	}
+-	if err != nil {
++	// A follower of a 5xx leader replays its response below, then returns the error like the leader.
++	followerOf5xx := err == Upstream50xError && !isLeader
++	if err != nil && !followerOf5xx {
+ 		return err
+ 	}
+ 
+@@ -750,7 +765,7 @@ func (s *SouinBaseHandler) Upstream(
+ 		customWriter.WriteHeader(sfWriter.code)
+ 	}
+ 
+-	return nil
++	return err
+ }
+ 
+ func (s *SouinBaseHandler) Revalidate(validator *core.Revalidator, next handlerFunc, customWriter *CustomWriter, rq *http.Request, requestCc *cacheobject.RequestCacheDirectives, cachedKey string, uri string) error {
+diff --git a/pkg/middleware/singleflight_5xx_test.go b/pkg/middleware/singleflight_5xx_test.go
+new file mode 100644
+index 0000000..55e7078
+--- /dev/null
++++ b/pkg/middleware/singleflight_5xx_test.go
+@@ -0,0 +1,102 @@
++package middleware
++
++import (
++	"net/http"
++	"net/http/httptest"
++	"sync"
++	"sync/atomic"
++	"testing"
++	"time"
++)
++
++type coalescedResult struct {
++	code int
++	body string
++	ct   string
++	err  error
++}
++
++// serveConcurrently sends n requests for one URL while the upstream is still answering the first.
++func serveConcurrently(t *testing.T, handler *SouinBaseHandler, url string, n int, next handlerFunc) []coalescedResult {
++	t.Helper()
++
++	results := make([]coalescedResult, n)
++	var wg sync.WaitGroup
++	for i := 0; i < n; i++ {
++		wg.Add(1)
++		go func(idx int) {
++			defer wg.Done()
++			// Stagger so request 0 leads and the others join its call.
++			time.Sleep(time.Duration(idx) * 5 * time.Millisecond)
++			rec := httptest.NewRecorder()
++			err := handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, url, nil), next)
++			results[idx] = coalescedResult{rec.Code, rec.Body.String(), rec.Header().Get("Content-Type"), err}
++		}(i)
++	}
++	wg.Wait()
++
++	return results
++}
++
++func slowStatus(calls *atomic.Int32, code int, body string, header http.Header) handlerFunc {
++	return func(w http.ResponseWriter, r *http.Request) error {
++		calls.Add(1)
++		select {
++		case <-time.After(200 * time.Millisecond):
++		case <-r.Context().Done():
++			return r.Context().Err()
++		}
++		for k, v := range header {
++			w.Header()[k] = v
++		}
++		w.WriteHeader(code)
++		_, _ = w.Write([]byte(body))
++		return nil
++	}
++}
++
++// Followers of a coalesced 5xx get the leader's status and body, never an empty 200 (#137).
++func TestCoalescedFollowersOf5xxGetTheError(t *testing.T) {
++	for _, code := range []int{500, 502, 503, 504} {
++		handler, _ := newTestHandler(t)
++		var calls atomic.Int32
++		next := slowStatus(&calls, code, "UPSTREAM_ERROR", http.Header{"Content-Type": {"application/problem+json"}})
++
++		results := serveConcurrently(t, handler, "http://example.com/test-coalesced-5xx", 5, next)
++
++		if got := calls.Load(); got != 1 {
++			t.Errorf("%d: upstream called %d times, want 1 (requests not coalesced)", code, got)
++		}
++		for i, r := range results {
++			if r.err != nil {
++				t.Errorf("%d: request %d returned error %v", code, i, r.err)
++			}
++			if r.code != code || r.body != "UPSTREAM_ERROR" || r.ct != "application/problem+json" {
++				t.Errorf("%d: request %d got %d %q (Content-Type %q), want %d %q", code, i, r.code, r.body, r.ct, code, "UPSTREAM_ERROR")
++			}
++		}
++	}
++}
++
++// A 5xx that sets a cookie or is private isn't shared: each follower makes its own request.
++func TestCoalescedFollowersOfPrivate5xxRequestThemselves(t *testing.T) {
++	for _, header := range []http.Header{
++		{"Set-Cookie": {"session=leader"}},
++		{"Cache-Control": {"private, no-store"}},
++	} {
++		handler, _ := newTestHandler(t)
++		var calls atomic.Int32
++		next := slowStatus(&calls, http.StatusInternalServerError, "UPSTREAM_ERROR", header)
++
++		results := serveConcurrently(t, handler, "http://example.com/test-coalesced-private-5xx", 3, next)
++
++		if got := calls.Load(); got != 3 {
++			t.Errorf("%v: upstream called %d times, want 3 (one per request)", header, got)
++		}
++		for i, r := range results {
++			if r.err != nil || r.code != http.StatusInternalServerError || r.body != "UPSTREAM_ERROR" {
++				t.Errorf("%v: request %d got %d %q (err %v), want 500 %q", header, i, r.code, r.body, r.err, "UPSTREAM_ERROR")
++			}
++		}
++	}
++}

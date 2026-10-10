@@ -126,6 +126,8 @@ jobs:
         run: sh bin/test/souin-purge-isolation.sh
       - name: Check a full flush leaves every Souin storage usable (#114)
         run: sh bin/test/souin-flush-storage.sh
+      - name: Check coalesced requests all get an upstream 5xx (#137)
+        run: sh bin/test/souin-coalesced-5xx.sh
       - name: Check the Caddyfile provisions for helm and compose (#113)
         run: sh bin/test/caddy-validate.sh
 
