@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+- Cached pages are stored compressed: the cache sits outside `encode` and keys on `Accept-Encoding` normalised to br, gzip or none, so a hit is never recompressed (brotli capped a php pod at ~110 page views/s); zstd is no longer offered (#145). [3add461](https://github.com/components-web-app/components-web-app/commit/3add4619edd1e7949b3baadc09e3a8abbe9a942a)
+
 ## [2.0.0-alpha.21](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.21) - 2026-10-10
 
 ### Upgrade notes
