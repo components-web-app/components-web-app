@@ -130,6 +130,8 @@ jobs:
         run: sh bin/test/souin-coalesced-5xx.sh
       - name: Check the Caddyfile provisions for helm and compose (#113)
         run: sh bin/test/caddy-validate.sh
+      - name: Check pages are cached compressed, one entry per encoding (#145)
+        run: sh bin/test/cache-encoding.sh
 
   functional-tests:
     name: Functional Tests

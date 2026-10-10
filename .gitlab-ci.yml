@@ -88,6 +88,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-flush-storage.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-coalesced-5xx.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/caddy-validate.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/cache-encoding.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml

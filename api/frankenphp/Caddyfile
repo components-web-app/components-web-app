@@ -7,8 +7,8 @@
         origins localhost:2019 127.0.0.1:2019 [::1]:2019 php.local:2019
     }
 
-    # Cache inside encode: one stored copy per page, compressed per client (#79).
-    order cache after encode
+    # Cache outside encode: hits are stored compressed, one entry per normalised Accept-Encoding (#145).
+    order cache before encode
 
     cache {
         mode strict
@@ -21,10 +21,10 @@
 			{$CADDY_CACHE_CDN_CONFIG:strategy hard}
 		}
 
-		# Accept is in the key for /_api only, and Host is the one php sees: see the `vars` in the site block (#79).
+		# Accept is in the key for /_api only, Host is the one php sees, and the encoding is normalised: see the `vars` in the site block (#79, #145).
 		key {
 		    hide
-			template "{http.request.method}-{http.vars.cwa_cache_host}-{http.request.uri.path}-{http.request.uri.query}-{http.vars.cwa_cache_accept}-{http.request.cookie.api_component}-{http.request.header.Authorization}"
+			template "{http.request.method}-{http.vars.cwa_cache_host}-{http.request.uri.path}-{http.request.uri.query}-{http.vars.cwa_cache_accept}-{http.vars.cwa_cache_encoding}-{http.request.cookie.api_component}-{http.request.header.Authorization}"
 		}
 
 		# default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
@@ -73,6 +73,19 @@
 	# Don't drop Accept from the key in favour of Vary; Souin's cache_keys and Caddy's map can't do this (#79).
 	@cache_accept path /_api*
 	vars @cache_accept cwa_cache_accept {http.request.header.accept}
+
+	# Accept-Encoding becomes br, gzip or nothing, so encode and the cache key agree: three entries per page at most (#145).
+	@encoding_br header_regexp Accept-Encoding (?i)(^|[\s,])br\s*(,|;|$)
+	@encoding_gzip {
+		not header_regexp Accept-Encoding (?i)(^|[\s,])br\s*(,|;|$)
+		header_regexp Accept-Encoding (?i)(^|[\s,])gzip\s*(,|;|$)
+	}
+	@encoding_none not header_regexp Accept-Encoding (?i)(^|[\s,])(br|gzip)\s*(,|;|$)
+	vars @encoding_br cwa_cache_encoding br
+	vars @encoding_gzip cwa_cache_encoding gzip
+	request_header @encoding_br Accept-Encoding br
+	request_header @encoding_gzip Accept-Encoding gzip
+	request_header @encoding_none -Accept-Encoding
 
 	# Key on the Host php sees, so SSR (internal hostname) and browsers share API entries.
 	# Exact complements; the anchored regex never matches a public (dotted) host.
@@ -175,7 +188,6 @@
 	query_allowlist @page_query {$CACHE_QUERY_ALLOWLIST:page search order}
 
 	encode {
-		zstd
 		br
 		gzip
 
