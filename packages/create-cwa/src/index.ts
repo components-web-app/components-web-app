@@ -238,11 +238,13 @@ docker compose exec php bin/console doctrine:fixtures:load --append
 `
     : `## Admin account
 
-The database starts empty. Create an admin once the API container is healthy:
+No sample content is bundled. Create the admin (\`ADMIN_USERNAME\` / \`ADMIN_PASSWORD\` / \`ADMIN_EMAIL\`, default \`admin\` / \`admin\`) once the API container is healthy:
 
 \`\`\`bash
-docker compose exec php bin/console silverback:api-components:user:create --admin
+docker compose exec php bin/console doctrine:fixtures:load --append
 \`\`\`
+
+Or create one by hand: \`docker compose exec php bin/console silverback:api-components:user:create --admin\`.
 `
 
   const readme = `# ${answers.projectName}
@@ -336,7 +338,8 @@ async function main(): Promise<void> {
     }
 
     if (!answers.fixtures) {
-      await removeExcluded(tempDir, ['api/src/DataFixtures/'])
+      // Sample content only: UsersFixture stays, so the admin is still created from ADMIN_* (#142).
+      await removeExcluded(tempDir, ['api/src/DataFixtures/AppScaffold.php', 'api/src/DataFixtures/Parts/'])
     }
 
     await processNuxtConfig(tempDir, answers.features)
@@ -424,8 +427,8 @@ async function main(): Promise<void> {
     outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load --append')
   } else {
     outroLines.push('')
-    outroLines.push('Create an admin (once the API container is healthy):')
-    outroLines.push('  docker compose exec php bin/console silverback:api-components:user:create --admin')
+    outroLines.push('Create the admin from ADMIN_* (once the API container is healthy):')
+    outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load --append')
   }
 
   outro(outroLines.join('\n'))

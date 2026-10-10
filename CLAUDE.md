@@ -449,7 +449,7 @@ Throttled email requests (api-components-bundle#331) return 429 with `Retry-Afte
 
 ## `create-cwa` CLI
 
-`packages/create-cwa/` (`npx create-cwa my-project`, GitHub #56). Prompts for name, CI/CD (GitHub Actions / GitLab CI / none), features and fixtures; downloads the template tag matching its own version (`--ref` overrides) via `giget`, removes unselected feature files (and all of `api/src/DataFixtures/` when fixtures are declined, so nothing outside it may name a fixture class), strips `@cwa-if:feature` blocks from `nuxt.config.ts`, writes a README, and offers `docker compose up -d` and `pnpm install` (host install defaults to **No**; it's editor types only). `cwa-manifest.json` is the contract, read from the same tag. `alwaysExclude` covers `packages/`, `CHANGELOG.md` and `publish-create-cwa.yml`. `engines.node` is `>=22.13.0`.
+`packages/create-cwa/` (`npx create-cwa my-project`, GitHub #56). Prompts for name, CI/CD (GitHub Actions / GitLab CI / none), features and fixtures; downloads the template tag matching its own version (`--ref` overrides) via `giget`, removes unselected feature files (and `AppScaffold.php` plus `Parts/` when fixtures are declined; `UsersFixture.php` stays, so the admin is still created from `ADMIN_*` (#142), and nothing outside those may name a scaffold class), strips `@cwa-if:feature` blocks from `nuxt.config.ts`, writes a README, and offers `docker compose up -d` and `pnpm install` (host install defaults to **No**; it's editor types only). `cwa-manifest.json` is the contract, read from the same tag. `alwaysExclude` covers `packages/`, `CHANGELOG.md` and `publish-create-cwa.yml`. `engines.node` is `>=22.13.0`.
 
 ## Decided against
 
