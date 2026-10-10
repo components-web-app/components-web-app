@@ -48,7 +48,6 @@ build api:
     DOCKER_DRIVER: overlay2
   script:
     - install_dependencies
-    - generate_jwt_keys
     - setup_docker_environment
     - build_api
   cache:
@@ -137,7 +136,6 @@ review:
   script:
     - check_kube_domain
     - install_dependencies
-    - generate_jwt_keys
     - helm_init
     - apply_kube_context
     # Ends with exit code 3 when this branch has no namespace (see k8s.sh), which
@@ -184,7 +182,6 @@ staging:
   script:
     - check_kube_domain
     - install_dependencies
-    - generate_jwt_keys
     - helm_init
     - apply_kube_context
     - ensure_namespace
@@ -217,7 +214,6 @@ production:
   script:
     - check_kube_domain
     - install_dependencies
-    - generate_jwt_keys
     - helm_init
     - apply_kube_context
     - ensure_namespace
@@ -495,7 +491,6 @@ canary:
   script:
     - check_kube_domain
     - install_dependencies
-    - generate_jwt_keys
     - ensure_namespace
     - helm_init
     - apply_kube_context

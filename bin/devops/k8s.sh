@@ -27,7 +27,42 @@ install_dependencies() {
   kubectl version --client
 }
 
-generate_jwt_keys() {
+# One key of the release's live Secret, decoded; empty when there is none.
+deployed_value() {
+  local value
+  value=$(kubectl get secret "$1" -n "$KUBE_NAMESPACE" -o go-template="{{ index .data \"$2\" }}" 2>/dev/null) || return 0
+  case "$value" in ""|"<no value>") return 0 ;; esac
+  printf '%s' "$value" | base64 -d
+}
+
+# APP_SECRET, the JWT key pair and MERCURE_JWT_SECRET: a CI variable, else the deployed value, else a new one (#144).
+deploy_secrets() {
+	local full
+	full=$(cwa_fullname "$1")
+	if [ -z "${APP_SECRET}" ]; then
+		APP_SECRET=$(deployed_value "$full" php-app-secret)
+		[ -n "${APP_SECRET}" ] || { echo "Generate APP_SECRET..."; APP_SECRET="$(rand_str)"; }
+		export APP_SECRET
+	fi
+	if [ -z "${MERCURE_JWT_SECRET}" ]; then
+		MERCURE_JWT_SECRET=$(deployed_value "$full" mercure-publisher-jwt-key)
+		[ -n "${MERCURE_JWT_SECRET}" ] || { echo "Generate MERCURE_JWT_SECRET..."; MERCURE_JWT_SECRET="$(rand_str)"; }
+		export MERCURE_JWT_SECRET
+	fi
+	if [ -z "${JWT_SECRET_KEY}" ]; then
+		local key passphrase
+		key=$(deployed_value "$full" jwt-secret)
+		passphrase=$(deployed_value "$full" jwt-passphrase)
+		# The deployed key with its own passphrase; the public key is derived below.
+		if [ -n "$key" ] && [ -n "$passphrase" ]; then
+			export JWT_SECRET_KEY="$key" JWT_PASSPHRASE="$passphrase"
+			unset JWT_PUBLIC_KEY
+		fi
+	fi
+	ensure_jwt_keys
+}
+
+ensure_jwt_keys() {
 	# A key supplied without its passphrase can't be decrypted, and a random
 	# passphrase would never match it: login would fail at runtime with a
 	# decryption error. So that is a deploy error, not something to fill in.
@@ -64,11 +99,6 @@ generate_jwt_keys() {
 		export JWT_PUBLIC_KEY
 	fi
 
-  # Generate random key & jwt for Mercure if not set
-  if [[ -z ${MERCURE_JWT_SECRET} ]]; then
-  	echo "Generating MERCURE_JWT_SECRET..."
-    export MERCURE_JWT_SECRET="$(rand_str)"
-  fi
 }
 
 # For Kubernetes environment gitlab runner use the localhost for DIND - see https://docs.gitlab.com/runner/executors/kubernetes.html#using-dockerdind
@@ -166,7 +196,7 @@ run_test_functional() {
   composer install -o --prefer-dist --no-scripts --ignore-platform-reqs
   # A test that signs in needs a keypair matching .env's JWT_PASSPHRASE. The
   # .pem files are git-ignored, so they aren't in the image, and this job doesn't
-  # run generate_jwt_keys. --skip-if-exists leaves a working local checkout alone.
+  # run ensure_jwt_keys. --skip-if-exists leaves a working local checkout alone.
   APP_ENV=test php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
   APP_ENV=test vendor/bin/phpunit tests/Functional --log-junit build/logs/phpunit/functional.xml
 }
@@ -788,6 +818,7 @@ deploy() {
   fi
 
   check_postgres_persistence "$name" || return 1
+  deploy_secrets "$name" || return 1
   ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
@@ -982,6 +1013,7 @@ EOF
     --reset-values \
     --namespace="$KUBE_NAMESPACE" \
     "$name" ./helm/cwa \
+    --set php.appSecret="${APP_SECRET}" \
     --set php.jwt.secret="${JWT_SECRET_KEY}" \
     --set php.jwt.public="${JWT_PUBLIC_KEY}" \
     --set mercure.jwtKey.subscriber.key="${MERCURE_JWT_SECRET}" \

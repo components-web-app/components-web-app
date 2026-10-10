@@ -43,6 +43,7 @@ jobs:
       JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
       MERCURE_JWT_SECRET: ${{ secrets.MERCURE_JWT_SECRET }}
+      APP_SECRET: ${{ secrets.APP_SECRET }}
       CORS_ALLOW_ORIGIN: ${{ vars.CORS_ALLOW_ORIGIN }}
       TRUSTED_HOSTS: ${{ vars.TRUSTED_HOSTS }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -96,7 +97,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           check_kube_domain
-          generate_jwt_keys
           ensure_namespace
           helm_init
           apply_kube_context
@@ -117,7 +117,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           check_kube_domain
-          generate_jwt_keys
           helm_init
           apply_kube_context
           ensure_namespace
