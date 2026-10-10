@@ -259,10 +259,6 @@
                 {path} == "/_api/_/site_config_parameters.jsonld" &&
                 {http.request.header.User-Agent}.startsWith("kube-probe/")
             )
-        ) &&
-        (
-            !method('BAN', 'PURGE') ||
-            client_ip({$CACHE_ACL:"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1"})
         )
     `
 
@@ -300,6 +296,12 @@
     @api_handle expression `
         {path}.startsWith("/_api") || {path}.startsWith("/uploads/") || {path}.startsWith("/bundles/")
     `
+
+    # PURGE/BAN on the site purge nothing: purge by tag through Souin's admin API (#138).
+    @purge_method method PURGE BAN
+    handle @purge_method {
+        respond 405
+    }
 
     handle @api_handle {
         # we need the docs header to be accurate even if it was a server side load with php.local or caddy.local etc.
