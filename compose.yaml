@@ -10,6 +10,7 @@ services:
       SERVER_NAME: ${SERVER_NAME:-localhost}, php.local:80, php.local:443
       # Will be needed for Server-side/internal loads to generate the doc headers
       BROWSER_SERVER_NAME: ${BROWSER_SERVER_NAME:-localhost}
+      WEBSITE_NAME:
       # CHANGES TO ENV TO MAP CADDY_MERCURE_JWT_SECRET NOW INSTEAD OF MERCURE_PUBLISHER_JWT_KEY
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
       # CHANGES TO ENV TO MAP CADDY_MERCURE_JWT_SECRET NOW INSTEAD OF MERCURE_SUBSCRIBER_JWT_KEY

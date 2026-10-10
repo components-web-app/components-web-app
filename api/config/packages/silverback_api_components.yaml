@@ -1,5 +1,5 @@
 silverback_api_components:
-    website_name: New Website
+    website_name: '%env(WEBSITE_NAME)%'
     refresh_token:
         handler_id: silverback.api_components.refresh_token.storage.doctrine
         options:
