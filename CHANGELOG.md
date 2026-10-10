@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+- The bundle's `website_name` (the name in emails) comes from `WEBSITE_NAME`, default `New Website` in `api/.env`; set `CWA_API_WEBSITE_NAME` on deploys, or export it per site from `bin/devops/project.sh`. ([GitLab #6](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/issues/6), [c1a3201](https://github.com/components-web-app/components-web-app/commit/c1a3201e24378ef54e7bd64393110bb6b1a0cfce))
+
 ## [2.0.0-alpha.18](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.18) - 2026-10-10
 
 ### Changed
