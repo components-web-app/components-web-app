@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.21](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.21) - 2026-10-10
+
 ### Upgrade notes
 - Remove every `generate_jwt_keys` line from your `.gitlab-ci.yml` and GitHub workflows: `deploy` now handles the secrets itself, and the function is gone. On GitHub, map an optional `APP_SECRET` secret into the deploy jobs as the template does. [816997e](https://github.com/components-web-app/components-web-app/commit/816997eaebb7cfb167172e38065042ee5a42f710)
 
