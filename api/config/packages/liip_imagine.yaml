@@ -20,3 +20,11 @@ liip_imagine:
         thumbnail:
           size: [ 1200, 1200 ]
           mode: inset
+    # general at 2x, so a retina screen's srcset doesn't fall through to the original upload.
+    large:
+      jpeg_quality: 82
+      png_compression_level: 9
+      filters:
+        thumbnail:
+          size: [ 2400, 2400 ]
+          mode: inset

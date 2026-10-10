@@ -4,9 +4,11 @@
       v-if="files.file?.displayMedia"
       class="relative flex overflow-hidden max-w-full w-fit"
     >
-      <NuxtImg
+      <img
         ref="file"
         :src="files.file.contentUrl"
+        :srcset="files.file.srcset"
+        :sizes="sizes"
         :width="files.file.displayMedia?.width"
         :height="files.file.displayMedia?.height"
         class="max-w-full h-auto"
@@ -32,10 +34,16 @@
 
 <script setup lang="ts">
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import { computed } from 'vue'
 import { useCwaComponent, withFile } from '#imports'
 
 const props = defineProps<IriProp>()
 // The display filter; without it (SVG, or skipped over the memory budget) the module serves the original (#143).
 const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'general' })])
+// Shown at general's width, or the viewport's when narrower; a plain <img>, as NuxtImg reads `sizes` as its own spec.
+const sizes = computed(() => {
+  const width = files.file?.displayMedia?.width
+  return width ? `(max-width: ${width}px) 100vw, ${width}px` : undefined
+})
 defineExpose(exposeMeta)
 </script>
