@@ -7,7 +7,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
-- Update @cwa/nuxt to 2.0.0-alpha.10 and api-components-bundle to 2.0.0-alpha.13 in the same deploy: the module's "Publish now" sends `publishedAt: "now"`, which older bundles refuse. [1af82fa](https://github.com/components-web-app/components-web-app/commit/1af82fafc23b07ef40aa82c349e56e73e6c09500)
+- Update @cwa/nuxt to 2.0.0-alpha.10 and api-components-bundle to 2.0.0-alpha.13 in the same deploy: the module's "Publish now" sends `publishedAt: "now"`, which older bundles refuse. [5766b27](https://github.com/components-web-app/components-web-app/commit/5766b27554c931f0a2c4ccda27c1799dff52f369)
 - The new `large` imagine filter is generated for each existing image the first time it's read without one, so expect a burst of generation after the deploy. A project with its own image fields adds `'large'` to their `imagineFilters` to get the same `srcset`. [1af82fa](https://github.com/components-web-app/components-web-app/commit/1af82fafc23b07ef40aa82c349e56e73e6c09500)
 
 ### Added
