@@ -9,6 +9,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Upgrade notes
 - The per-visitor rate limit needs the ingress to keep the client address (`externalTrafficPolicy: Local`); the GKE cluster's controller now does, with 2 replicas and a PDB. A project on another cluster must set the same, or the limit never applies. ([#135](https://github.com/components-web-app/components-web-app/issues/135), [85f9c28](https://github.com/components-web-app/components-web-app/commit/85f9c286d7fc0da9610a3764623baa4f51c28800))
 
+### Fixed
+- `PURGE`/`BAN` sent to the site return 405 instead of a misleading 200 (they never purged anything; the `CACHE_ACL` clause they passed through was unreachable and is gone). Purge one page by tag through Souin's admin API; see CLAUDE.md. ([#138](https://github.com/components-web-app/components-web-app/issues/138), [1c87cc0](https://github.com/components-web-app/components-web-app/commit/1c87cc0e0ea92b26c16bb846df36b5e659ca8f93))
+
 ## [2.0.0-alpha.19](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.19) - 2026-10-10
 
 ### Upgrade notes
