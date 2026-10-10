@@ -171,15 +171,16 @@ run_test_functional() {
   APP_ENV=test vendor/bin/phpunit tests/Functional --log-junit build/logs/phpunit/functional.xml
 }
 
+# A leading or trailing dot means the url's variable (e.g. KUBE_INGRESS_BASE_DOMAIN) was empty.
 check_kube_domain() {
-  if [[ -z "$DOMAIN" ]]; then
-    echo "No domain to deploy to. setup.sh takes DOMAIN from the job's environment"
-    echo "url (CI_ENVIRONMENT_URL), unless bin/devops/project.sh sets it: set the job's"
-    echo "environment url, or the variable it uses (e.g. KUBE_INGRESS_BASE_DOMAIN)."
-    false
-  else
-    true
-  fi
+  case "$DOMAIN" in
+    ''|.*|*.)
+      echo "No domain to deploy to ('$DOMAIN'). setup.sh takes DOMAIN from the job's environment"
+      echo "url (CI_ENVIRONMENT_URL), unless bin/devops/project.sh sets it: set the job's"
+      echo "environment url, or the variable it uses (e.g. KUBE_INGRESS_BASE_DOMAIN)."
+      return 1
+      ;;
+  esac
 }
 
 helm_init() {
@@ -587,7 +588,12 @@ site_env_values() {
 
 site_env_reserved() {
   local list
-  if [ "$1" = api ]; then list="$SITE_ENV_RESERVED_API"; else list="$SITE_ENV_RESERVED_PWA"; fi
+  # project.sh adds the names its own chart values set: SITE_ENV_RESERVED_API_EXTRA / _PWA_EXTRA (#133).
+  if [ "$1" = api ]; then
+    list="$SITE_ENV_RESERVED_API ${SITE_ENV_RESERVED_API_EXTRA:-}"
+  else
+    list="$SITE_ENV_RESERVED_PWA ${SITE_ENV_RESERVED_PWA_EXTRA:-}"
+  fi
   # Space-padded, so only whole names match.
   # shellcheck disable=SC2086,SC2116
   list=" $(echo $list) "
@@ -1026,10 +1032,10 @@ purge_rendered_html() {
   esac
 }
 
-# Refills the page cache after purge_rendered_html (#80): warm_cache [base_url]. Fails on any page that isn't 200.
+# Refills the page cache after purge_rendered_html (#80): warm_cache [base_url, default https://$DOMAIN]. Fails on any page that isn't 200.
 # GitLab sources this into busybox ash: no arrays, `wait -n` or process substitution, and no jq or xmllint.
 warm_cache() {
-  local base="${1:-$CI_ENVIRONMENT_URL}"
+  local base="${1:-${DOMAIN:+https://$DOMAIN}}"
   local concurrency="${CWA_CI_WARM_CACHE_CONCURRENCY:-3}"
   local tls_opt=""
   if [[ "$CWA_CI_WARM_CACHE_INSECURE" == "true" ]]; then
@@ -1037,7 +1043,7 @@ warm_cache() {
   fi
 
   if [[ -z "$base" ]]; then
-    echo "!!!! CACHE WARM FAILED: no base URL (set CI_ENVIRONMENT_URL) !!!!"
+    echo "!!!! CACHE WARM FAILED: no base URL (DOMAIN is empty) !!!!"
     return 1
   fi
   case "$base" in
@@ -1141,10 +1147,10 @@ sitemap_pages() {
   rm -rf "$tmp"
 }
 
-# Lighthouse CI audit of a few cached pages (#87): performance_audit [base_url]. Settings are the locals below.
+# Lighthouse CI audit of a few cached pages (#87): performance_audit [base_url, default https://$DOMAIN]. Settings are the locals below.
 # A missed budget returns 1; the CI jobs allow it to fail, so it never fails a live deploy.
 performance_audit() {
-  local base="${1:-$CI_ENVIRONMENT_URL}"
+  local base="${1:-${DOMAIN:+https://$DOMAIN}}"
   local max="${CWA_CI_PERFORMANCE_AUDIT_MAX_PAGES:-3}"
   local runs="${CWA_CI_PERFORMANCE_AUDIT_RUNS:-5}"
   local form_factors="${CWA_CI_PERFORMANCE_AUDIT_FORM_FACTORS:-mobile}"
@@ -1161,7 +1167,7 @@ performance_audit() {
     chrome_flags="$chrome_flags --ignore-certificate-errors"
   fi
   if [ -z "$base" ]; then
-    echo "!!!! PERFORMANCE AUDIT FAILED: no base URL (set CI_ENVIRONMENT_URL) !!!!"
+    echo "!!!! PERFORMANCE AUDIT FAILED: no base URL (DOMAIN is empty) !!!!"
     return 1
   fi
   case "$base" in

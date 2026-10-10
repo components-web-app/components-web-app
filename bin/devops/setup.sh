@@ -23,16 +23,18 @@ fi
 if [[ -z "$CWA_CI_TLS_SECRET_NAME" ]]; then
   export CWA_CI_TLS_SECRET_NAME="letsencrypt-cert"
 fi
-if [[ -z "$CI_ENVIRONMENT_URL" ]]; then
-  export CI_ENVIRONMENT_URL="test-domain.com"
-fi
 
 # Project-specific deploy settings (DOMAIN, aliases, site settings, project_values).
 if [[ -f ./bin/devops/project.sh ]]; then
   . ./bin/devops/project.sh
 fi
 
-export DOMAIN="${DOMAIN:-$(basename ${CI_ENVIRONMENT_URL})}"
+# DOMAIN: project.sh's, else the environment url's host; empty without either, which check_kube_domain refuses (#134).
+if [[ -z "$DOMAIN" ]]; then
+  DOMAIN="${CI_ENVIRONMENT_URL#*://}"
+  DOMAIN="${DOMAIN%%/*}"
+fi
+export DOMAIN
 export DOCKER_REPOSITORY=${CI_REGISTRY_IMAGE}
 export PHP_REPOSITORY="${DOCKER_REPOSITORY}/php"
 export PHP_REPOSITORY_CACHE="${DOCKER_REPOSITORY}/php-cache"

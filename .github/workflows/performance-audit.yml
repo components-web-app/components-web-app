@@ -68,16 +68,18 @@ jobs:
               url="https://${slug}-review.${KUBE_INGRESS_BASE_DOMAIN}"
               ;;
           esac
-          echo "Auditing ${url}"
           echo "url=${url}" >> "$GITHUB_OUTPUT"
+      # Through setup.sh, so a DOMAIN from bin/devops/project.sh wins over this URL (#132).
+      # Unset repository variables arrive as empty strings, which performance_audit treats as unset.
       - name: Performance audit
         env:
-          AUDIT_URL: ${{ steps.url.outputs.url }}
-        # Unset repository variables arrive as empty strings, which performance_audit
-        # treats as unset, so its defaults apply.
+          CI_ENVIRONMENT_URL: ${{ steps.url.outputs.url }}
+          CI_COMMIT_REF_NAME: ${{ github.ref_name }}
         run: |
+          source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
-          performance_audit "$AUDIT_URL"
+          echo "Auditing https://${DOMAIN}"
+          performance_audit
       - name: Upload the performance report
         if: always()
         uses: actions/upload-artifact@v4
