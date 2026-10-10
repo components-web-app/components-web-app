@@ -11,6 +11,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 - `PURGE`/`BAN` sent to the site return 405 instead of a misleading 200 (they never purged anything; the `CACHE_ACL` clause they passed through was unreachable and is gone). Purge one page by tag through Souin's admin API; see CLAUDE.md. ([#138](https://github.com/components-web-app/components-web-app/issues/138), [1c87cc0](https://github.com/components-web-app/components-web-app/commit/1c87cc0e0ea92b26c16bb846df36b5e659ca8f93))
+- Requests Souin coalesces onto an upstream 5xx get that 5xx instead of an empty 200 (a new Souin patch, `v1.7.9-singleflight-5xx.patch`). ([#137](https://github.com/components-web-app/components-web-app/issues/137), [6df1b15](https://github.com/components-web-app/components-web-app/commit/6df1b15050970bbc45e8348d10d0a9787477365c))
 
 ## [2.0.0-alpha.19](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.19) - 2026-10-10
 
