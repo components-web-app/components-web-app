@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.20](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.20) - 2026-10-10
+
 ### Upgrade notes
 - Copy `liip_imagine.yaml`, `api/src/Entity/Image.php` and the `Image` component (`app/app/cwa/components/Image/Image.vue`). No regenerate step: each existing image gets its `general` file on the first read after the deploy (about 0.2 s for 12 MP, up to 1 s for a 30 MP PNG, within the imagine budget), and the deploy's cache warm usually does that. Existing thumbnails keep their old, bigger encoding; delete the bucket's `cache/thumbnail/` folder to have them re-encoded the same way. A published image with no file is left as it is until it is next published or edited. ([#143](https://github.com/components-web-app/components-web-app/issues/143), [de6075a](https://github.com/components-web-app/components-web-app/commit/de6075a46ec1c1d81f6dce7dff349b919f8cc465))
 - **Lower your image upload caps to fit the memory budget:** set `Assert\Image(maxPixels: …)` on `Image::$file`, and on any other uploadable image field your project adds, to **30 MP** with the vips driver or **20 MP** if you stay on GD (was 40 MP). Larger images no longer fit the 320M imagine budget: they'd be stored with no thumbnails (the original served, a warning logged). The module downscales above 20 MP in the browser, so this mainly affects direct API uploads. ([#136](https://github.com/components-web-app/components-web-app/issues/136), [#141](https://github.com/components-web-app/components-web-app/issues/141))
