@@ -7,6 +7,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Changed
+- @cwa/nuxt 2.0.0-alpha.10: "Publish now" publishes by the API's clock (needs bundle 2.0.0-alpha.13, so update both together), `srcset` on `useCwaFile`/`withFile`/`useCwaFileField`, and admin fixes. [5766b27](https://github.com/components-web-app/components-web-app/commit/5766b27554c931f0a2c4ccda27c1799dff52f369)
 - api-components-bundle 2.0.0-alpha.13: imagine variants with a `format` get that format's extension, an upload is stored with its content's extension, `publishedAt: "now"` publishes by the server's clock, and `liip:imagine:cache:remove` no longer throws. [82ae211](https://github.com/components-web-app/components-web-app/commit/82ae211d18d27cd8d08fb9eb892d3ccaeed5004b)
 - Cached pages are stored compressed: the cache sits outside `encode` and keys on `Accept-Encoding` normalised to br, gzip or none, so a hit is never recompressed (brotli capped a php pod at ~110 page views/s); zstd is no longer offered (#145). [3add461](https://github.com/components-web-app/components-web-app/commit/3add4619edd1e7949b3baadc09e3a8abbe9a942a)
 
