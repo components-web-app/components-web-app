@@ -362,16 +362,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.10",
+            "version": "2.0.0-alpha.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "4acbaaf3b03b2b8053f8ca508e0004e2ac689fbd"
+                "reference": "c1cdaefba0cdd05a5a5352cf518b56f99d26626a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/4acbaaf3b03b2b8053f8ca508e0004e2ac689fbd",
-                "reference": "4acbaaf3b03b2b8053f8ca508e0004e2ac689fbd",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/c1cdaefba0cdd05a5a5352cf518b56f99d26626a",
+                "reference": "c1cdaefba0cdd05a5a5352cf518b56f99d26626a",
                 "shasum": ""
             },
             "require": {
@@ -498,9 +498,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.10"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.11"
             },
-            "time": "2026-10-09T23:28:44+00:00"
+            "time": "2026-10-10T12:54:52+00:00"
         },
         {
             "name": "composer/semver",
@@ -2961,16 +2961,16 @@
         },
         {
             "name": "lcobucci/jwt",
-            "version": "5.6.0",
+            "version": "5.6.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lcobucci/jwt.git",
-                "reference": "bb3e9f21e4196e8afc41def81ef649c164bca25e"
+                "reference": "482760068e5a55a9045feddb3e2fc3f878cbd577"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lcobucci/jwt/zipball/bb3e9f21e4196e8afc41def81ef649c164bca25e",
-                "reference": "bb3e9f21e4196e8afc41def81ef649c164bca25e",
+                "url": "https://api.github.com/repos/lcobucci/jwt/zipball/482760068e5a55a9045feddb3e2fc3f878cbd577",
+                "reference": "482760068e5a55a9045feddb3e2fc3f878cbd577",
                 "shasum": ""
             },
             "require": {
@@ -3018,7 +3018,7 @@
             ],
             "support": {
                 "issues": "https://github.com/lcobucci/jwt/issues",
-                "source": "https://github.com/lcobucci/jwt/tree/5.6.0"
+                "source": "https://github.com/lcobucci/jwt/tree/5.6.1"
             },
             "funding": [
                 {
@@ -3030,7 +3030,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2025-10-17T11:30:53+00:00"
+            "time": "2026-10-10T09:42:14+00:00"
         },
         {
             "name": "league/flysystem",
