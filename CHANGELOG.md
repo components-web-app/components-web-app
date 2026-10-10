@@ -7,6 +7,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Changed
+- api-components-bundle 2.0.0-alpha.13: imagine variants with a `format` get that format's extension, an upload is stored with its content's extension, `publishedAt: "now"` publishes by the server's clock, and `liip:imagine:cache:remove` no longer throws. [82ae211](https://github.com/components-web-app/components-web-app/commit/82ae211d18d27cd8d08fb9eb892d3ccaeed5004b)
 - Cached pages are stored compressed: the cache sits outside `encode` and keys on `Accept-Encoding` normalised to br, gzip or none, so a hit is never recompressed (brotli capped a php pod at ~110 page views/s); zstd is no longer offered (#145). [3add461](https://github.com/components-web-app/components-web-app/commit/3add4619edd1e7949b3baadc09e3a8abbe9a942a)
 
 ## [2.0.0-alpha.21](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.21) - 2026-10-10
