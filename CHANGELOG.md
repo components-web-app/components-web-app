@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.19](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.19) - 2026-10-10
+
 ### Upgrade notes
 - Copy `bin/devops/setup.sh`, `k8s.sh`, the warm cache and performance audit jobs in `.gitlab-ci.yml` (they pass no URL now) and, on GitHub, `performance-audit.yml`. A deploy job with neither an environment url nor a `DOMAIN` now fails instead of deploying to `test-domain.com`. ([#132](https://github.com/components-web-app/components-web-app/issues/132), [#134](https://github.com/components-web-app/components-web-app/issues/134), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
 
