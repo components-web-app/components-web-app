@@ -44,3 +44,6 @@ silverback_api_components:
     orphaned_resources:
         notify:
             recipients: '%env(string:default::MAILER_EMAIL)%'
+    # The php memory budget's imagineMemoryLimit (helm/cwa/values.yaml, #136): change both together.
+    imagine:
+        memory_limit: 320M

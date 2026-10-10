@@ -51,6 +51,11 @@ spec:
             # "true", and the orphan scan CronJob must never do that (#103).
             - name: RESET_DATABASE
               value: {{ .Values.php.resetDatabase | quote }}
+            # The php memory budget (#136); also reserved names for siteEnv in k8s.sh.
+            - name: FRANKENPHP_WORKER_NUM
+              value: {{ .Values.php.workers | quote }}
+            - name: FRANKENPHP_MEMORY_LIMIT
+              value: {{ include "cwa.php.memoryLimit" . | quote }}
             {{- with include "cwa.php.goMemLimit" . }}
             - name: GOMEMLIMIT
               value: {{ . | quote }}

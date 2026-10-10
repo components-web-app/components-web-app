@@ -33,6 +33,8 @@
 	}
 
 	frankenphp {
+		# Each request's memory_limit; the bundle raises it only to generate imagine filters (#136). Console commands use 10-app.ini.
+		php_ini memory_limit {$FRANKENPHP_MEMORY_LIMIT:128M}
 		{$FRANKENPHP_CONFIG}
 	}
 

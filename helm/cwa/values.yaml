@@ -47,13 +47,20 @@ php:
   resources:
     limits:
       # No CPU limit on purpose: Caddy serves cached responses and should burst (#69).
-      # Memory: 4 workers plus one large upload at memory_limit 512M fit in 1Gi. The request stays low on purpose.
+      # Memory: the budget below must fit it (#136). The request stays low on purpose.
       memory: 1Gi
     requests:
       # A floor and the scheduler's reservation. Never remove it: it sets php's share of a busy node (#69).
       cpu: 100m
       memory: 350Mi
-  # GOMEMLIMIT for Caddy, Souin and Mercure: empty is 80% of the memory limit (#117). A Go value overrides; "off" unsets.
+  # Budget (#136): workers × memoryLimit + (imagineMemoryLimit − memoryLimit) + reservedMemory + Go ≤ the memory limit;
+  # 4 × 128 + 192 + 160 leaves Go 160Mi of 1Gi. imagineMemoryLimit mirrors the bundle's imagine.memory_limit.
+  workers: 4
+  memoryLimit: 128Mi
+  imagineMemoryLimit: 320Mi
+  # opcache, APCu, the binaries and an exec'd console command.
+  reservedMemory: 160Mi
+  # GOMEMLIMIT for Caddy, Souin and Mercure: empty is what the budget leaves Go, at least 64MiB. A Go value overrides; "off" unsets.
   goMemLimit: ""
 
 pwa:

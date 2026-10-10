@@ -508,7 +508,8 @@ SITE_ENV_RESERVED_API="
   ADMIN_EMAIL ADMIN_PASSWORD ADMIN_USERNAME APP_DEBUG APP_ENV APP_SECRET APP_UPSTREAM
   BROWSER_SERVER_NAME CACHE_URL CADDY_CACHE_CDN_CONFIG CADDY_CACHE_EXTRA_CONFIG
   CORS_ALLOW_ORIGIN CWA_ENVIRONMENT DATABASE_CA_CERT DATABASE_CLIENT_CERT
-  DATABASE_CLIENT_KEY DATABASE_SSL_MODE DATABASE_URL FRANKENPHP_CONFIG GCLOUD_BUCKET
+  DATABASE_CLIENT_KEY DATABASE_SSL_MODE DATABASE_URL FRANKENPHP_CONFIG FRANKENPHP_MEMORY_LIMIT
+  FRANKENPHP_WORKER_NUM GCLOUD_BUCKET
   GCLOUD_JSON GCLOUD_PUBLIC_URL GOMEMLIMIT JWT_PASSPHRASE JWT_PUBLIC_KEY JWT_SECRET_KEY
   MAILER_DSN MAILER_EMAIL MERCURE_CORS_ORIGIN MERCURE_EXTRA_DIRECTIVES
   MERCURE_JWT_SECRET MERCURE_PUBLIC_URL MERCURE_PUBLISHER_JWT_ALG
@@ -720,6 +721,50 @@ EOF
   fi
 }
 
+# A Mi/Gi quantity in MiB; nothing for any other form.
+memory_mib() {
+  local n="${1%[MG]i}"
+  case "$n" in '' | *[!0-9]*) return 0 ;; esac
+  case "$1" in
+    *Gi) echo $(( n * 1024 )) ;;
+    *Mi) echo "$n" ;;
+  esac
+}
+
+# Fails when php's worst case leaves Go under 64Mi of the API's memory limit (#136): the same sum as cwa.php.goMemLimit.
+check_php_memory_budget() {
+  local limit workers worker imagine reserved headroom php go
+  limit=$(memory_mib "${CWA_CI_API_MEMORY_LIMIT:-1Gi}")
+  workers="${CWA_CI_API_WORKERS:-4}"
+  worker=$(memory_mib "${CWA_CI_API_PHP_MEMORY_LIMIT:-128Mi}")
+  imagine=$(memory_mib "${CWA_CI_API_IMAGINE_MEMORY_LIMIT:-320Mi}")
+  reserved=$(memory_mib "${CWA_CI_API_RESERVED_MEMORY:-160Mi}")
+  case "$workers" in
+    '' | *[!0-9]* | 0)
+      echo "CWA_CI_API_WORKERS must be a positive whole number, got '$workers'." >&2
+      return 1
+      ;;
+  esac
+  if [ -z "$worker" ] || [ -z "$imagine" ] || [ -z "$reserved" ]; then
+    echo "CWA_CI_API_PHP_MEMORY_LIMIT, CWA_CI_API_IMAGINE_MEMORY_LIMIT and CWA_CI_API_RESERVED_MEMORY must be Mi or Gi quantities, like 128Mi." >&2
+    return 1
+  fi
+  if [ -z "$limit" ]; then
+    echo "Not checking the php memory budget: CWA_CI_API_MEMORY_LIMIT (${CWA_CI_API_MEMORY_LIMIT}) isn't Mi or Gi, so GOMEMLIMIT is left unset unless CWA_CI_API_GOMEMLIMIT sets it." >&2
+    return 0
+  fi
+  headroom=$(( imagine > worker ? imagine - worker : 0 ))
+  php=$(( workers * worker + headroom + reserved ))
+  go=$(( limit - php ))
+  if [ "$go" -lt 64 ]; then
+    echo "The php memory budget doesn't fit the API's ${limit}Mi memory limit (CWA_CI_API_MEMORY_LIMIT):" >&2
+    echo "  ${workers} workers x ${worker}Mi + ${headroom}Mi imagine headroom + ${reserved}Mi reserved = ${php}Mi, leaving Go ${go}Mi (at least 64Mi)." >&2
+    echo "Lower CWA_CI_API_WORKERS, CWA_CI_API_PHP_MEMORY_LIMIT or CWA_CI_API_IMAGINE_MEMORY_LIMIT (with the bundle's imagine.memory_limit), or raise CWA_CI_API_MEMORY_LIMIT." >&2
+    return 1
+  fi
+  echo "php memory budget: ${workers} x ${worker}Mi + ${headroom}Mi imagine + ${reserved}Mi reserved = ${php}Mi of ${limit}Mi; Go gets ${go}Mi."
+}
+
 deploy() {
 	local track="${1-stable}" environment_name site_env_yaml pwa_min_default pwa_max_default
 	local pwa_cpu_request_default pwa_memory_request_default api_cpu_request_default
@@ -729,6 +774,7 @@ deploy() {
 	# Before anything changes in the cluster, so a bad name stops the deploy cold.
 	environment_name=$(cwa_environment_name "$track") || return 1
 	site_env_yaml=$(site_env_values "$environment_name") || return 1
+	check_php_memory_budget || return 1
 	name="$RELEASE"
 	TLS_SECRET_NAME_SCOPED="$CWA_CI_TLS_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
@@ -836,7 +882,12 @@ php:
     requests:
       cpu: ${CWA_CI_API_CPU_REQUEST:-$api_cpu_request_default}
       memory: ${CWA_CI_API_MEMORY_REQUEST:-$api_memory_request_default}
-  # Empty: 80% of the memory limit above (helm/cwa/values.yaml, #117).
+  # The php memory budget (#136, helm/cwa/values.yaml), checked by check_php_memory_budget.
+  workers: ${CWA_CI_API_WORKERS:-4}
+  memoryLimit: ${CWA_CI_API_PHP_MEMORY_LIMIT:-"128Mi"}
+  imagineMemoryLimit: ${CWA_CI_API_IMAGINE_MEMORY_LIMIT:-"320Mi"}
+  reservedMemory: ${CWA_CI_API_RESERVED_MEMORY:-"160Mi"}
+  # Empty: what the budget leaves Go.
   goMemLimit: "${CWA_CI_API_GOMEMLIMIT:-}"
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}

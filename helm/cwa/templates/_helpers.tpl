@@ -295,8 +295,32 @@ envFrom:
 {{- end }}
 
 {{/*
-GOMEMLIMIT (#117): php.goMemLimit, else 80% of a Mi/Gi memory limit; nothing for "off" or
-another form. Deployment only, not cwa.phpEnv.
+A Mi/Gi quantity in MiB; 0 for any other form.
+*/}}
+{{- define "cwa.mib" -}}
+{{- $q := toString . -}}
+{{- if regexMatch "^[0-9]+Gi$" $q -}}
+{{- mul (atoi (trimSuffix "Gi" $q)) 1024 -}}
+{{- else if regexMatch "^[0-9]+Mi$" $q -}}
+{{- atoi (trimSuffix "Mi" $q) -}}
+{{- else -}}
+0
+{{- end -}}
+{{- end -}}
+
+{{/*
+php.memoryLimit as PHP shorthand (128Mi -> 128M); fails on any other form.
+*/}}
+{{- define "cwa.php.memoryLimit" -}}
+{{- if not (regexMatch "^[0-9]+[MG]i$" (toString .Values.php.memoryLimit)) -}}
+{{- fail (printf "php.memoryLimit must be Mi or Gi, got %v" .Values.php.memoryLimit) -}}
+{{- end -}}
+{{- trimSuffix "i" (toString .Values.php.memoryLimit) -}}
+{{- end -}}
+
+{{/*
+GOMEMLIMIT (#117, #136): php.goMemLimit, else what the php budget leaves of a Mi/Gi memory limit, at least 64MiB;
+nothing for "off" or another form. Deployment only, not cwa.phpEnv.
 */}}
 {{- define "cwa.php.goMemLimit" -}}
 {{- $set := toString (.Values.php.goMemLimit | default "") -}}
@@ -304,15 +328,12 @@ another form. Deployment only, not cwa.phpEnv.
 {{- else if $set -}}
 {{- $set -}}
 {{- else -}}
-{{- $limit := toString (dig "limits" "memory" "" .Values.php.resources) -}}
-{{- $mib := 0 -}}
-{{- if regexMatch "^[0-9]+Gi$" $limit -}}
-{{- $mib = mul (atoi (trimSuffix "Gi" $limit)) 1024 -}}
-{{- else if regexMatch "^[0-9]+Mi$" $limit -}}
-{{- $mib = atoi (trimSuffix "Mi" $limit) -}}
-{{- end -}}
-{{- if gt (int $mib) 0 -}}
-{{- div (mul $mib 8) 10 }}MiB
+{{- $limit := atoi (include "cwa.mib" (dig "limits" "memory" "" .Values.php.resources)) -}}
+{{- if gt $limit 0 -}}
+{{- $worker := atoi (include "cwa.mib" .Values.php.memoryLimit) -}}
+{{- $imagine := atoi (include "cwa.mib" .Values.php.imagineMemoryLimit) -}}
+{{- $go := sub (sub (sub $limit (mul (int .Values.php.workers) $worker)) (max 0 (sub $imagine $worker))) (atoi (include "cwa.mib" .Values.php.reservedMemory)) -}}
+{{- max 64 $go }}MiB
 {{- end -}}
 {{- end -}}
 {{- end -}}
