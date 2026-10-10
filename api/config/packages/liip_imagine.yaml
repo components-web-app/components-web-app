@@ -1,4 +1,6 @@
 liip_imagine:
+  # libvips (#141); gd is the fallback and stays installed.
+  driver: vips
   data_loader: silverback.api_components.liip_imagine.binary.loader
   cache: in_memory_cache_resolver
   filter_sets:

@@ -68,6 +68,7 @@ RUN apt-get clean && apt-get update && apt-get install --no-install-recommends -
 	file \
 	gettext \
 	git \
+	libvips42t64 \
 	&& rm -rf /var/lib/apt/lists/*
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
@@ -83,7 +84,12 @@ RUN set -eux; \
 		exif \
 		xsl \
 		gd \
+		ffi \
 	;
+
+# libvips, the imagine driver (#141): no ImageMagick, PDF or SVG loaders for uploads, two threads per image,
+# and glibc settings that hand freed image buffers back to the OS. All overridable at runtime.
+ENV VIPS_BLOCK_UNTRUSTED=1 VIPS_CONCURRENCY=2 MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=1048576
 
 ###> recipes ###
 ###> doctrine/doctrine-bundle ###
