@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Remove every `generate_jwt_keys` line from your `.gitlab-ci.yml` and GitHub workflows: `deploy` now handles the secrets itself, and the function is gone. On GitHub, map an optional `APP_SECRET` secret into the deploy jobs as the template does. [816997e](https://github.com/components-web-app/components-web-app/commit/816997eaebb7cfb167172e38065042ee5a42f710)
+
+### Fixed
+- Deploys keep `APP_SECRET`, `MERCURE_JWT_SECRET` and the JWT key pair from the live Secret instead of generating new ones, so logins, signed URLs and Mercure cookies survive a deploy; `APP_SECRET` can now be set as a CI variable (#144). [816997e](https://github.com/components-web-app/components-web-app/commit/816997eaebb7cfb167172e38065042ee5a42f710)
+
 ## [2.0.0-alpha.20](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.20) - 2026-10-10
 
 ### Upgrade notes
