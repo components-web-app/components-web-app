@@ -6,6 +6,13 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Update @cwa/nuxt to 2.0.0-alpha.10 and api-components-bundle to 2.0.0-alpha.13 in the same deploy: the module's "Publish now" sends `publishedAt: "now"`, which older bundles refuse. [1af82fa](https://github.com/components-web-app/components-web-app/commit/1af82fafc23b07ef40aa82c349e56e73e6c09500)
+- The new `large` imagine filter is generated for each existing image the first time it's read without one, so expect a burst of generation after the deploy. A project with its own image fields adds `'large'` to their `imagineFilters` to get the same `srcset`. [1af82fa](https://github.com/components-web-app/components-web-app/commit/1af82fafc23b07ef40aa82c349e56e73e6c09500)
+
+### Added
+- The `Image` component serves a responsive `srcset` (the module's, from 2.0.0-alpha.10) with `sizes`, and a `large` filter (2400 px) so retina screens don't fetch the original upload. [1af82fa](https://github.com/components-web-app/components-web-app/commit/1af82fafc23b07ef40aa82c349e56e73e6c09500)
+
 ### Changed
 - @cwa/nuxt 2.0.0-alpha.10: "Publish now" publishes by the API's clock (needs bundle 2.0.0-alpha.13, so update both together), `srcset` on `useCwaFile`/`withFile`/`useCwaFileField`, and admin fixes. [5766b27](https://github.com/components-web-app/components-web-app/commit/5766b27554c931f0a2c4ccda27c1799dff52f369)
 - api-components-bundle 2.0.0-alpha.13: imagine variants with a `format` get that format's extension, an upload is stored with its content's extension, `publishedAt: "now"` publishes by the server's clock, and `liip:imagine:cache:remove` no longer throws. [82ae211](https://github.com/components-web-app/components-web-app/commit/82ae211d18d27cd8d08fb9eb892d3ccaeed5004b)
