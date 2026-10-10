@@ -1,3 +1,15 @@
 node_modules
 .nuxt
 .output
+# Local env files can hold real keys, and `nuxt build` reads .env (#139); CI never has them.
+.env
+.env.local
+.env.*.local
+.pnpm-store/
+**/*.log
+**/.DS_Store
+**/Thumbs.db
+Dockerfile
+.dockerignore
+compose*.yaml
+node-compile-cache/
