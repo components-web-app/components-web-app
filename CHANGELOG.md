@@ -6,8 +6,18 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Copy `bin/devops/setup.sh`, `k8s.sh`, the warm cache and performance audit jobs in `.gitlab-ci.yml` (they pass no URL now) and, on GitHub, `performance-audit.yml`. A deploy job with neither an environment url nor a `DOMAIN` now fails instead of deploying to `test-domain.com`. ([#132](https://github.com/components-web-app/components-web-app/issues/132), [#134](https://github.com/components-web-app/components-web-app/issues/134), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
+
 ### Changed
 - The bundle's `website_name` (the name in emails) comes from `WEBSITE_NAME`, default `New Website` in `api/.env`; set `CWA_API_WEBSITE_NAME` on deploys, or export it per site from `bin/devops/project.sh`. ([GitLab #6](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/issues/6), [c1a3201](https://github.com/components-web-app/components-web-app/commit/c1a3201e24378ef54e7bd64393110bb6b1a0cfce))
+
+### Added
+- `bin/devops/project.sh` can add reserved names (ones its own chart values set) with `SITE_ENV_RESERVED_API_EXTRA` / `SITE_ENV_RESERVED_PWA_EXTRA`. ([#133](https://github.com/components-web-app/components-web-app/issues/133), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
+
+### Fixed
+- The warm cache and performance audit use `https://$DOMAIN`, so they follow a `DOMAIN` set in `project.sh`. ([#132](https://github.com/components-web-app/components-web-app/issues/132), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
+- `check_kube_domain` can fail: no `test-domain.com` fallback, and an empty `DOMAIN` or one with a leading or trailing dot (an empty `KUBE_INGRESS_BASE_DOMAIN`) stops the deploy. ([#134](https://github.com/components-web-app/components-web-app/issues/134), [7b26140](https://github.com/components-web-app/components-web-app/commit/7b26140895c524ad5083e48470883bffd99d3410))
 
 ## [2.0.0-alpha.18](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.18) - 2026-10-10
 
