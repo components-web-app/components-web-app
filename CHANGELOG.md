@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- The per-visitor rate limit needs the ingress to keep the client address (`externalTrafficPolicy: Local`); the GKE cluster's controller now does, with 2 replicas and a PDB. A project on another cluster must set the same, or the limit never applies. ([#135](https://github.com/components-web-app/components-web-app/issues/135), [85f9c28](https://github.com/components-web-app/components-web-app/commit/85f9c286d7fc0da9610a3764623baa4f51c28800))
+
 ## [2.0.0-alpha.19](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.19) - 2026-10-10
 
 ### Upgrade notes
