@@ -24,6 +24,14 @@ RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-flush-no-close.patch && \
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-cloudflare-purge.patch
 
+# Patched storages go-redis v0.0.20: atomic tag sets across pods (#85, darkweak/storages#65).
+# Remove with its replace once a storages release has it (bin/test/souin-redis-shared-purge.sh must pass).
+COPY --link frankenphp/storages/go-redis-v0.0.20-atomic-sets.patch /tmp/storages-go-redis.patch
+RUN GO_REDIS_DIR=$(go mod download -json github.com/darkweak/storages/go-redis@v0.0.20 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
+	cp -r "$GO_REDIS_DIR" /tmp/storages-go-redis && \
+	chmod -R u+w /tmp/storages-go-redis && \
+	patch -d /tmp/storages-go-redis -p1 --forward < /tmp/storages-go-redis.patch
+
 # The template's own Caddy handler: keeps only the allowlisted query parameters on
 # pages (`query_allowlist` in the Caddyfile, #106).
 COPY --link frankenphp/caddy/queryallowlist /tmp/queryallowlist
@@ -44,10 +52,12 @@ RUN CGO_ENABLED=1 \
 	--with github.com/darkweak/storages/otter/caddy \
 	--with github.com/darkweak/storages/badger/caddy \
 	--with github.com/darkweak/storages/nuts/caddy \
+	# Shared store for scaled mode (#85); only one of go-redis/caddy and redis/caddy can be built.
+	--with github.com/darkweak/storages/go-redis/caddy \
+	--with github.com/darkweak/storages/go-redis=/tmp/storages-go-redis \
 	# Per-visitor rate limit on cache misses (`rate_limit` in the Caddyfile, #106).
 	--with github.com/mholt/caddy-ratelimit \
 	--with github.com/components-web-app/components-web-app/api/frankenphp/caddy/queryallowlist=/tmp/queryallowlist
-	# --with github.com/darkweak/storages/go-redis/caddy \
 
 FROM dunglas/frankenphp:latest AS frankenphp_upstream
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp

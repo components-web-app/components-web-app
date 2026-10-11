@@ -82,11 +82,15 @@ build app:
 unit tests:
   image: $CI_REGISTRY_IMAGE/php:$CI_COMMIT_REF_SLUG
   stage: test
+  # For souin-redis-shared-purge.sh (#85), at redis:6379.
+  services:
+    - redis:8.4.0
   script:
     - run_test_phpunit
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-purge-isolation.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-flush-storage.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-coalesced-5xx.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/souin-redis-shared-purge.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/caddy-validate.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/cache-encoding.sh
   artifacts:

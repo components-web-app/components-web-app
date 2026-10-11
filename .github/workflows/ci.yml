@@ -107,6 +107,10 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    # For souin-redis-shared-purge.sh (#85), at redis:6379.
+    services:
+      redis:
+        image: redis:8.4.0
     steps:
       - uses: actions/checkout@v4
       - name: Expose repository variables to the scripts, as GitLab does
@@ -128,6 +132,8 @@ jobs:
         run: sh bin/test/souin-flush-storage.sh
       - name: Check coalesced requests all get an upstream 5xx (#137)
         run: sh bin/test/souin-coalesced-5xx.sh
+      - name: Check two Souin instances on one Redis purge every page under a shared tag (#85)
+        run: sh bin/test/souin-redis-shared-purge.sh
       - name: Check the Caddyfile provisions for helm and compose (#113)
         run: sh bin/test/caddy-validate.sh
       - name: Check pages are cached compressed, one entry per encoding (#145)

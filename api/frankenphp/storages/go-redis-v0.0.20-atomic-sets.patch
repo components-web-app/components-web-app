@@ -1,0 +1,289 @@
+diff --git a/go-redis.go b/go-redis.go
+index f1eb131..1560dab 100644
+--- a/go-redis.go
++++ b/go-redis.go
+@@ -192,6 +192,31 @@ func (provider *Redis) MapKeys(prefix string) map[string]string {
+ 
+ const mappingBatchSize = 100
+ 
++// addToSetScript atomically migrates a legacy comma-joined string value to a
++// native set, adds the members and extends the lifetime. ARGV[1] is the
++// lifetime in milliseconds (ignored when not positive), the members follow.
++var addToSetScript = redis.NewScript(`
++local key = KEYS[1]
++local members = {}
++if redis.call('TYPE', key).ok == 'string' then
++	for member in string.gmatch(redis.call('GET', key), '[^,]+') do
++		members[#members + 1] = member
++	end
++	redis.call('DEL', key)
++end
++for i = 2, #ARGV do
++	members[#members + 1] = ARGV[i]
++end
++for _, member in ipairs(members) do
++	redis.call('SADD', key, member)
++end
++local ttl = tonumber(ARGV[1])
++if ttl > 0 and redis.call('PTTL', key) < ttl then
++	redis.call('PEXPIRE', key, ttl)
++end
++return 1
++`)
++
+ // WalkMappings streams the keys matching the prefix and their values in
+ // bounded batches so the whole mapping index is never loaded in memory at
+ // once. The walk stops early when walkFn returns false.
+@@ -258,6 +283,8 @@ func (provider *Redis) WalkMappings(prefix string, walkFn func(key string, value
+ // AddToSet stores members in the native set at key, migrating any legacy
+ // string value first. A positive duration extends the set lifetime without
+ // ever shortening a longer remaining one, and bounds legacy unbounded keys.
++// The whole update runs as one script so concurrent writers, including other
++// instances sharing the same Redis, never overwrite each other's members.
+ func (provider *Redis) AddToSet(key string, members []string, duration time.Duration) error {
+ 	if provider.reconnecting {
+ 		provider.logger.Error("Impossible to add to the redis set while reconnecting.")
+@@ -265,43 +292,21 @@ func (provider *Redis) AddToSet(key string, members []string, duration time.Dura
+ 		return errors.New("reconnecting error")
+ 	}
+ 
+-	legacy := provider.legacySetMembers(key)
++	args := make([]interface{}, 0, len(members)+1)
++	args = append(args, duration.Milliseconds())
+ 
+-	values := make([]interface{}, 0, len(members)+len(legacy))
+ 	for _, member := range members {
+-		values = append(values, member)
+-	}
+-
+-	for _, member := range legacy {
+-		values = append(values, member)
+-	}
+-
+-	expire := time.Duration(0)
+-
+-	if duration > 0 {
+-		if remaining := provider.inClient.TTL(provider.ctx, key).Val(); remaining < duration {
+-			expire = duration
+-		}
++		args = append(args, member)
+ 	}
+ 
+-	_, err := provider.inClient.TxPipelined(provider.ctx, func(pipe redis.Pipeliner) error {
+-		if len(legacy) > 0 {
+-			pipe.Del(provider.ctx, key)
+-		}
+-
+-		pipe.SAdd(provider.ctx, key, values...)
+-
+-		if expire > 0 {
+-			pipe.Expire(provider.ctx, key, expire)
+-		}
+-
+-		return nil
+-	})
+-	if err != nil {
++	err := addToSetScript.Run(provider.ctx, provider.inClient, []string{key}, args...).Err()
++	if err != nil && !errors.Is(err, redis.Nil) {
+ 		provider.logger.Errorf("Impossible to add members to the set %s into Redis, %v", key, err)
++
++		return err
+ 	}
+ 
+-	return err
++	return nil
+ }
+ 
+ // GetSet returns all members of the set stored at key, supporting sets that
+@@ -468,6 +473,8 @@ func (provider *Redis) SetMultiLevel(baseKey, variedKey string, value []byte, va
+ }
+ 
+ // Get method returns the populated response if exists, empty response then.
++// A mapping stored as a hash is returned as an encoded core.StorageMapper,
++// the format callers such as Souin's purge expect from a mapping key.
+ func (provider *Redis) Get(key string) (item []byte) {
+ 	if provider.reconnecting {
+ 		provider.logger.Error("Impossible to get the redis key while reconnecting.")
+@@ -477,7 +484,11 @@ func (provider *Redis) Get(key string) (item []byte) {
+ 
+ 	result, err := provider.inClient.Get(provider.ctx, key).Result()
+ 	if err != nil {
+-		if !errors.Is(err, redis.Nil) && !provider.reconnecting {
++		if redis.HasErrorPrefix(err, "WRONGTYPE") {
++			return provider.hashMapping(key)
++		}
++
++		if !errors.Is(err, redis.Nil) && !isServerError(err) && !provider.reconnecting {
+ 			go provider.Reconnect()
+ 		}
+ 
+@@ -598,6 +609,41 @@ func (provider *Redis) Reconnect() {
+ 	}
+ }
+ 
++// hashMapping encodes the per-variant hash stored at key as a StorageMapper.
++// It returns nil when key doesn't hold a hash, e.g. a surrogate set.
++func (provider *Redis) hashMapping(key string) []byte {
++	fields, err := provider.inClient.HGetAll(provider.ctx, key).Result()
++	if err != nil || len(fields) == 0 {
++		return nil
++	}
++
++	mapping := &core.StorageMapper{Mapping: make(map[string]*core.KeyIndex, len(fields))}
++
++	for name, raw := range fields {
++		keyItem := &core.KeyIndex{}
++		if proto.Unmarshal([]byte(raw), keyItem) != nil {
++			continue
++		}
++
++		mapping.Mapping[name] = keyItem
++	}
++
++	item, err := proto.Marshal(mapping)
++	if err != nil {
++		return nil
++	}
++
++	return item
++}
++
++// isServerError reports whether Redis answered with an error reply, which
++// means the connection itself is healthy.
++func isServerError(err error) bool {
++	var redisErr redis.Error
++
++	return errors.As(err, &redisErr) && !errors.Is(err, redis.Nil)
++}
++
+ // legacySetMembers returns the members of a set that is still stored in the
+ // legacy format: a single comma-joined string value.
+ func (provider *Redis) legacySetMembers(key string) []string {
+diff --git a/go-redis_test.go b/go-redis_test.go
+index 01686a6..852d2fd 100644
+--- a/go-redis_test.go
++++ b/go-redis_test.go
+@@ -7,6 +7,7 @@ import (
+ 	"net/http"
+ 	"net/http/httptest"
+ 	"strings"
++	"sync"
+ 	"testing"
+ 	"time"
+ 
+@@ -593,3 +594,115 @@ func TestRedis_MultiLevel_OversizedLegacyBlob(t *testing.T) {
+ 
+ 	client.DeleteMany(".*")
+ }
++
++// Several Souin instances share one Redis and add members to the same
++// surrogate set at the same time, including while that set is still stored in
++// the legacy comma-joined format. No member may be lost.
++func TestRedis_Sets_ConcurrentInstances(t *testing.T) {
++	first, _ := getRedisInstance()
++	second, _ := getRedisInstance()
++
++	first.DeleteMany(".*")
++	t.Cleanup(func() { first.DeleteMany(".*") })
++
++	instances := []core.SetStorer{first.(core.SetStorer), second.(core.SetStorer)}
++
++	const (
++		rounds    = 20
++		perRound  = 40
++		legacyLen = 2
++	)
++
++	for round := range rounds {
++		key := fmt.Sprintf("SURROGATE_concurrent_%d", round)
++
++		// Legacy format, as written by the previous string-based versions.
++		if err := first.Set(key, []byte("legacy1,legacy2"), -1); err != nil {
++			t.Fatalf("Impossible to store the legacy value, %v given", err)
++		}
++
++		start := make(chan struct{})
++
++		var waitGroup sync.WaitGroup
++
++		for index := range perRound {
++			waitGroup.Add(1)
++
++			go func(index int) {
++				defer waitGroup.Done()
++
++				<-start
++
++				_ = instances[index%len(instances)].AddToSet(key, []string{fmt.Sprintf("member%d", index)}, time.Minute)
++			}(index)
++		}
++
++		close(start)
++		waitGroup.Wait()
++
++		if members := instances[0].GetSet(key); len(members) != perRound+legacyLen {
++			t.Fatalf("Round %d: the set should contain %d members, %d given", round, perRound+legacyLen, len(members))
++		}
++	}
++}
++
++// Souin reads mappings through Get when it purges a key (SouinAPI.BulkDelete).
++// Get must expose a hash mapping as an encoded StorageMapper instead of
++// failing with WRONGTYPE, and the failure must not put the storer into
++// reconnection, which makes the following deletions no-ops.
++func TestRedis_Get_HashMapping(t *testing.T) {
++	client, _ := getRedisInstance()
++	client.DeleteMany(".*")
++	t.Cleanup(func() { client.DeleteMany(".*") })
++
++	inspector := baseRedis.NewClient(&baseRedis.Options{Addr: redisAddr})
++
++	defer func() {
++		_ = inspector.Close()
++	}()
++
++	ctx := context.Background()
++
++	for _, varied := range []string{"varied-1", "varied-2"} {
++		if err := client.SetMultiLevel("base", varied, []byte(dumpedResponse), http.Header{}, "", time.Minute, varied); err != nil {
++			t.Fatalf("Impossible to store the value, %v given", err)
++		}
++	}
++
++	mapping, err := core.DecodeMapping(client.Get(core.MappingKeyPrefix + "base"))
++	if err != nil {
++		t.Fatalf("The mapping should decode, %v given", err)
++	}
++
++	if len(mapping.GetMapping()) != 2 {
++		t.Fatalf("The mapping should expose 2 entries, %d given", len(mapping.GetMapping()))
++	}
++
++	// The purge sequence of SouinAPI.BulkDelete.
++	for varied, entry := range mapping.GetMapping() {
++		if entry.GetRealKey() != varied {
++			t.Errorf("The entry %s should keep its real key, %s given", varied, entry.GetRealKey())
++		}
++
++		client.Delete(varied)
++	}
++
++	client.Delete(core.MappingKeyPrefix + "base")
++
++	if exists := inspector.Exists(ctx, "varied-1", "varied-2", core.MappingKeyPrefix+"base").Val(); exists != 0 {
++		t.Errorf("Every purged key should be deleted, %d left", exists)
++	}
++
++	// A set is not a mapping: Get returns nothing, without reconnecting.
++	_ = client.(core.SetStorer).AddToSet("SURROGATE_tag", []string{"varied-1"}, time.Minute)
++
++	if value := client.Get("SURROGATE_tag"); len(value) != 0 {
++		t.Errorf("Get on a set should return nothing, %q given", value)
++	}
++
++	client.Delete("SURROGATE_tag")
++
++	if exists := inspector.Exists(ctx, "SURROGATE_tag").Val(); exists != 0 {
++		t.Error("The set should be deleted right after a WRONGTYPE Get")
++	}
++}
