@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.23](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.23) - 2026-10-11
+
 ### Upgrade notes
 - Update api-components-bundle to 2.0.0-alpha.14 (`composer update components-web-app/api-components-bundle`, or copy `api/composer.lock`); no migration. Only a site with AVIF, HEIC or HEIF uploads is affected: their variants are generated again as WebP on first read, and the old `.avif`/`.heic`/`.heif` variant files are left in the bucket unused. To delete them, run `bin/console liip:imagine:cache:remove` in the API pod, which removes every filter's variants, so each image is regenerated on its next read (expect a burst, as after the `large` filter in alpha.22). Leaving them costs only storage. [f238cbe](https://github.com/components-web-app/components-web-app/commit/f238cbe17964c8f667c627217b0afee14d55b19a)
 
