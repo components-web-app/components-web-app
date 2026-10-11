@@ -2044,6 +2044,12 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     imagine?: array{
  *         memory_limit?: scalar|Param|null, // The PHP memory limit an imagine filter is generated under, raised only for the generation and restored after it, in PHP shorthand (e.g. "512M"). A filter whose estimated cost does not fit under it is skipped and logged. A higher memory_limit is kept; null generates under the current limit. // Default: "320M"
  *     },
+ *     uploadable?: array{
+ *         cache_control?: array{ // The Cache-Control written on stored files, on Google Cloud Storage and S3 adapters only. A field overrides either value with `cacheControl:` or `imagineCacheControl:` on its #[UploadableField], and `false` there writes none. null writes none.
+ *             original?: scalar|Param|null, // For an uploaded file. A stored name is never reused, so it can be immutable. // Default: "public, max-age=31536000, immutable"
+ *             imagine?: scalar|Param|null, // For an imagine variant, which is rewritten at the same path when its filter is regenerated. // Default: "public, max-age=2592000"
+ *         },
+ *     },
  * }
  * @psalm-type LiipImagineConfig = array{
  *     resolvers?: array<string, array{ // Default: []
