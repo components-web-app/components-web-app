@@ -34,12 +34,14 @@
 
 <script setup lang="ts">
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { useCwaComponent, withFile } from '#imports'
 
 const props = defineProps<IriProp>()
 // The display filter; without it (SVG, or skipped over the memory budget) the module serves the original (#143).
-const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'general' })])
+// imageRef lets the module mark an image loaded before hydration as loaded, so the placeholder fades (#146).
+const fileRef = useTemplateRef('file')
+const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'general', imageRef: fileRef })])
 // Shown at general's width, or the viewport's when narrower; a plain <img>, as NuxtImg reads `sizes` as its own spec.
 const sizes = computed(() => {
   const width = files.file?.displayMedia?.width
