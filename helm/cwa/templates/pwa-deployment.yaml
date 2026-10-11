@@ -79,6 +79,11 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          # Keeps serving while the Service drops the pod's endpoint; Nitro closes its listener on SIGTERM (#148).
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
           # check often but allow more failures to give startup time
           startupProbe:
             tcpSocket:

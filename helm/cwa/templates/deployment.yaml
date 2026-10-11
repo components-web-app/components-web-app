@@ -67,10 +67,11 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
+          # Keeps serving while the ingress drops the pod's endpoint, then stops Caddy (#148).
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "/bin/sleep 1; kill -QUIT 1"]
+                command: ["/bin/sh", "-c", "/bin/sleep 5; kill -QUIT 1"]
           # The whole boot (database wait, migrations, ANALYZE): 60 x 5s. Readiness and liveness wait for it.
           startupProbe:
             tcpSocket:
