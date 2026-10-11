@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Added
+- The API image also builds Souin's Redis store (go-redis, patched with darkweak/storages#65 so pods sharing Redis purge every page under a tag), ready for scaled mode; nothing uses it yet, and `bin/test/souin-redis-shared-purge.sh` runs in the unit-tests job with a Redis service (#85). [70943ad](https://github.com/components-web-app/components-web-app/commit/70943ad3d95e7fc9eda84708ec3a1d6b0bdd9084)
+
+### Fixed
+- The `Image` placeholder fades for an image that loaded before hydration, instead of covering it (#146). [fc67690](https://github.com/components-web-app/components-web-app/commit/fc67690a353c7ceee6b8184eedf92b8e29f37f80)
+
 ## [2.0.0-alpha.22](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.22) - 2026-10-11
 
 ### Upgrade notes
