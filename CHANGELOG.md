@@ -6,6 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.24](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.24) - 2026-10-11
+
+### Upgrade notes
+- Copy `helm/cwa/templates/pwa-deployment.yaml` and `helm/cwa/templates/deployment.yaml` (or just their `lifecycle.preStop` blocks) and deploy, to stop 502s during deploys. The first deploy with them still rolls the old pods without the fix; every deploy after it is clean. [4932989](https://github.com/components-web-app/components-web-app/commit/4932989bca167be2102adce72655f14e4523417d)
+
 ### Fixed
 - Deploys no longer give 502s while pods roll: the PWA holds 5s in a preStop before Nitro closes its listener, and the API's preStop waits 5s instead of 1s, so neither stops serving while it is still an endpoint (#148). [4932989](https://github.com/components-web-app/components-web-app/commit/4932989bca167be2102adce72655f14e4523417d)
 
