@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Copy `app/nuxt.config.ts`'s `precompressBuildAssets` helper and the module that calls it, and delete `compressPublicAssets` from its `nitro` block: `/_nuxt` assets are still precompressed, but files in `public/` no longer are, so a large file there no longer adds minutes to every app build (#155). [c9da319](https://github.com/components-web-app/components-web-app/commit/c9da31999e01bd848cd179d03ecd8aa9ac2b186f)
+
+### Fixed
+- App builds no longer brotli-compress everything in `public/`: only `/_nuxt` assets are precompressed. A 178 MB PDF in `public/` had made a downstream site's app build take ~7 minutes instead of about one (#155). [c9da319](https://github.com/components-web-app/components-web-app/commit/c9da31999e01bd848cd179d03ecd8aa9ac2b186f)
+
 ## [2.0.0-alpha.27](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.27) - 2026-10-12
 
 ### Upgrade notes
