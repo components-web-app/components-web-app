@@ -126,6 +126,15 @@ setup_test_db_environment() {
   echo "Test database: ${DATABASE_URL}"
 }
 
+# --cache-from for the default branch's build cache, so a new branch's first build starts warm; nothing on that branch itself.
+default_branch_cache_from() {
+  local slug
+  slug=$(printf '%s' "${CI_DEFAULT_BRANCH:-main}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//' | cut -c1-63)
+  if [[ -n "$slug" && "$slug" != "$TAG" ]]; then
+    printf -- '--cache-from type=registry,ref=%s:%s' "$1" "$slug"
+  fi
+}
+
 build_api() {
   # https://gitlab.com/help/ci/variables/predefined_variables.md
   if [[ -n "$CI_REGISTRY_USER" ]]; then
@@ -143,8 +152,9 @@ build_api() {
   # image; empty is fine, the Dockerfile only uses it when it has content.
   docker buildx build --push \
   	--secret id=composer_auth,env=COMPOSER_AUTH \
-  	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
+  	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG,mode=max \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
+  	$(default_branch_cache_from "$PHP_REPOSITORY_CACHE") \
   	--tag $PHP_REPOSITORY:$TAG \
   	--target frankenphp_prod \
   	"api"
@@ -163,11 +173,13 @@ build_app() {
   docker buildx create builder --driver=docker-container --use
 
   # Site settings are runtime env: never pass one as a --build-arg or --secret.
+  # mode=max caches the builder stage too (pnpm fetch, base setup), not only the final image's layers.
   docker buildx build \
     --build-arg CI=true \
     --push \
-    --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
+    --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG,mode=max \
     --cache-from type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
+    $(default_branch_cache_from "$APP_REPOSITORY_CACHE") \
   	--tag $APP_REPOSITORY:$TAG \
   	--target prod \
   	"app"
