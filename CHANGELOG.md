@@ -7,9 +7,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
+- Update api-components-bundle to 2.0.0-alpha.17 (`composer update components-web-app/api-components-bundle`, or copy `api/composer.lock`). No migration. Variant file info written before it can be stale (for example after alpha.25's switch to WebP): run `DELETE FROM _acb_imagine_cached_file_metadata WHERE filter <> '';`, then `bin/console silverback:api-components:purge-http-cache`, and each row is read again from its stored variant on the next render. [c754732](https://github.com/components-web-app/components-web-app/commit/c754732709ae8e6b81967715cdbb93a075a5fcf7)
 - Copy `app/nuxt.config.ts`'s `precompressBuildAssets` helper and the module that calls it, and delete `compressPublicAssets` from its `nitro` block: `/_nuxt` assets are still precompressed, but files in `public/` no longer are, so a large file there no longer adds minutes to every app build (#155). [c9da319](https://github.com/components-web-app/components-web-app/commit/c9da31999e01bd848cd179d03ecd8aa9ac2b186f)
 
 ### Fixed
+- api-components-bundle 2.0.0-alpha.17: storing an imagine variant again replaces its file info, so `_metadata.mediaObjects` reports the variant actually stored (api-components-bundle#421). [c754732](https://github.com/components-web-app/components-web-app/commit/c754732709ae8e6b81967715cdbb93a075a5fcf7)
 - App builds no longer brotli-compress everything in `public/`: only `/_nuxt` assets are precompressed. A 178 MB PDF in `public/` had made a downstream site's app build take ~7 minutes instead of about one (#155). [c9da319](https://github.com/components-web-app/components-web-app/commit/c9da31999e01bd848cd179d03ecd8aa9ac2b186f)
 
 ## [2.0.0-alpha.27](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.27) - 2026-10-12
