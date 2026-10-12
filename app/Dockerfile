@@ -13,9 +13,13 @@ FROM node_upstream AS base
 ARG PNPM_VERSION=12.9.1
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+# apk has no network timeout, so a stalled mirror hung builds until the job limit: time-limit and retry, then try another mirror.
 # hadolint ignore=DL3018
-RUN apk update && \
-    apk add --no-cache libc6-compat git
+RUN for attempt in 1 2 3; do \
+      timeout 90 apk add --no-cache libc6-compat git && exit 0; \
+      echo "apk add attempt ${attempt} failed"; \
+      sed -i 's#https\?://dl-cdn.alpinelinux.org#https://mirrors.edge.kernel.org#' /etc/apk/repositories; \
+    done; exit 1
 
 WORKDIR /srv/app
 
