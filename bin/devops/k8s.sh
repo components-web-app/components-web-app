@@ -1130,6 +1130,7 @@ purge_rendered_html() {
 }
 
 # Creates every image variant not stored yet, in the API pod, then purges the HTTP cache if it made any (#152).
+# It shares the serving pod's memory: large originals can run it out of memory and 503 the site (#153), so it's opt-in.
 # Its own job after the deploy, so a failure never fails a live deploy. `exec deploy/...` reaches one pod.
 generate_image_variants() {
   local track="${1-stable}"
@@ -1165,7 +1166,10 @@ generate_image_variants() {
   fi
 
   if [[ "$status" -ne 0 ]]; then
-    echo "!!!! IMAGE VARIANTS FAILED: imagine:generate exited ${status} (1: a variant failed, listed above; 2: an unknown --filter or --class) !!!!"
+    case "$status" in
+      137) echo "!!!! IMAGE VARIANTS FAILED: imagine:generate was killed (exit 137): the API pod ran out of memory, which also affects visitors (#153) !!!!" ;;
+      *) echo "!!!! IMAGE VARIANTS FAILED: imagine:generate exited ${status} (1: a variant failed, listed above; 2: an unknown --filter or --class) !!!!" ;;
+    esac
     if [[ "$GITHUB_ACTIONS" == "true" ]]; then
       echo "::error title=Image variants failed::imagine:generate exited ${status} - see the step log"
     fi

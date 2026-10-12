@@ -256,7 +256,7 @@ production:
     variables:
       - $CWA_CI_PRODUCTION_DISABLED == "true"
 
-# Generate missing image variants after deploys (#152): production by default, the others opt-in.
+# Generate missing image variants after deploys (#152): opt-in on every track; it runs in the serving API pod (#153).
 # Before the warm, which needs it; allow_failure, so a failure never marks a live deploy failed.
 image variants review:
   stage: review
@@ -316,7 +316,7 @@ image variants production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_IMAGE_VARIANTS_PRODUCTION != "false"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_IMAGE_VARIANTS_PRODUCTION == "true"'
   script:
     - install_dependencies
     - apply_kube_context
