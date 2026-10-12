@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- **On a site with many images, set `CWA_CI_WARM_CACHE_PRODUCTION="false"` for the deploy that switches variants to WebP (alpha.25 or later), or that adds any filter.** With the image variants job off, the cache warm makes the serving pod generate every page's missing variants at once, straight after the deploy. On one site that set off Caddy's load shedding: 503s for real visitors and the admin for about 5 minutes. With the warm off, first reads spread over normal traffic. Turn it back on for the next deploy. This corrects alpha.26's "generated on their first read, as before" ([#153](https://github.com/components-web-app/components-web-app/issues/153)).
+
 ## [2.0.0-alpha.26](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.26) - 2026-10-12
 
 ### Upgrade notes
