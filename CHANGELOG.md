@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.26](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.26) - 2026-10-12
+
 ### Upgrade notes
 - Update api-components-bundle to 2.0.0-alpha.16 (`composer update components-web-app/api-components-bundle`, or copy `api/composer.lock`). No migration, no config change. [30673ac](https://github.com/components-web-app/components-web-app/commit/30673ac2e83a57176a09551c59de415994ec2d07)
 - **The `image variants` job is now opt-in on production** (`CWA_CI_IMAGE_VARIANTS_PRODUCTION="true"`). Its first production run ran out of memory in the serving API pod and the site returned 503s (#153). Leave it off on a site with many or large images until it runs as its own Kubernetes Job. Copy `bin/devops/k8s.sh`, `.gitlab-ci.yml` and `.github/workflows/production.yml`. If alpha.25's job already failed on your site there's nothing to undo: missing variants are generated on their first read, as before. [ab86132](https://github.com/components-web-app/components-web-app/commit/ab86132f6f5a0400330ec2ef007e4f0db04ae816)
