@@ -1,4 +1,26 @@
+import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { promisify } from 'node:util'
+import { brotliCompress, constants as zlib, gzip } from 'node:zlib'
 import tailwindcss from '@tailwindcss/vite'
+
+// Writes .br/.gz beside each compressible build asset, with Nitro's compressPublicAssets settings, but only under /_nuxt (#117, #155).
+const precompressBuildAssets = async (dir: string) => {
+  const files = (await readdir(dir, { recursive: true })).filter(file => /\.(?:js|mjs|css|svg|json|html|txt|xml|ttf|otf)$/.test(file))
+  for (let i = 0; i < files.length; i += 10) {
+    await Promise.all(files.slice(i, i + 10).map(async (file) => {
+      const path = join(dir, file)
+      const contents = await readFile(path)
+      if (contents.length < 1024) {
+        return
+      }
+      await writeFile(`${path}.gz`, await promisify(gzip)(contents, { level: zlib.Z_BEST_COMPRESSION }))
+      await writeFile(`${path}.br`, await promisify(brotliCompress)(contents, {
+        params: { [zlib.BROTLI_PARAM_QUALITY]: zlib.BROTLI_MAX_QUALITY, [zlib.BROTLI_PARAM_SIZE_HINT]: contents.length }
+      }))
+    }))
+  }
+}
 
 // Admin-only chunks (the TipTap editor, /_cwa pages), kept out of the SW precache by source via the build manifest,
 // as hashed names defeat globIgnores. The module keeps them out of prefetch hints but ships no service worker.
@@ -159,14 +181,15 @@ export default defineNuxtConfig({
         }
       })
     },
+    // Precompressed .br/.gz for /_nuxt, served by Accept-Encoding; php's Caddy passes them through. Don't remove (#117).
+    // Not Nitro's compressPublicAssets: it also compresses everything in public/, minutes per build for a large PDF (#155).
+    (_options, nuxt) => {
+      nuxt.hook('nitro:build:public-assets', nitro => precompressBuildAssets(join(nitro.options.output.publicDir, nuxt.options.app.buildAssetsDir)))
+    },
   ],
   typescript: {
     typeCheck: true,
     strict: false
-  },
-  nitro: {
-    // Precompressed .br/.gz for /_nuxt, served by Accept-Encoding; php's Caddy passes them through. Don't remove (#117).
-    compressPublicAssets: { brotli: true, gzip: true },
   },
   pwa: {
     // 'prompt': a new worker waits, and plugins/pwa-update.client.ts applies it on the next navigation unless editing (#73).
