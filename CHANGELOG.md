@@ -7,8 +7,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
+- Update api-components-bundle to 2.0.0-alpha.16 (`composer update components-web-app/api-components-bundle`, or copy `api/composer.lock`). No migration, no config change. [30673ac](https://github.com/components-web-app/components-web-app/commit/30673ac2e83a57176a09551c59de415994ec2d07)
 - **The `image variants` job is now opt-in on production** (`CWA_CI_IMAGE_VARIANTS_PRODUCTION="true"`). Its first production run ran out of memory in the serving API pod and the site returned 503s (#153). Leave it off on a site with many or large images until it runs as its own Kubernetes Job. Copy `bin/devops/k8s.sh`, `.gitlab-ci.yml` and `.github/workflows/production.yml`. If alpha.25's job already failed on your site there's nothing to undo: missing variants are generated on their first read, as before. [ab86132](https://github.com/components-web-app/components-web-app/commit/ab86132f6f5a0400330ec2ef007e4f0db04ae816)
 - **Corrections to alpha.25's upgrade notes:** don't run `imagine:generate` by hand in the API pod of a site with many or large images either (the same out-of-memory risk). And to delete the old variants, remove every file under the bucket's `cache/` folder that doesn't end in `.webp`, which also covers stored names without an extension: `gcloud storage ls "gs://<bucket>/cache/**" | grep -v '\.webp$' | gcloud storage rm -I`. Do it after the alpha.25 deploy, whose purge makes pages render with the WebP variants (#153). [ab86132](https://github.com/components-web-app/components-web-app/commit/ab86132f6f5a0400330ec2ef007e4f0db04ae816)
+
+### Changed
+- api-components-bundle 2.0.0-alpha.16: `imagine:generate --limit` and `--max-memory` stop a run with exit 3 while variants are still missing, so it can be re-run in fresh processes until done; `--max-memory` counts libvips's native memory (#153). [30673ac](https://github.com/components-web-app/components-web-app/commit/30673ac2e83a57176a09551c59de415994ec2d07)
 
 ### Fixed
 - The `image variants` job reports an out-of-memory kill (exit 137) as such, instead of as a failed variant (#153). [ab86132](https://github.com/components-web-app/components-web-app/commit/ab86132f6f5a0400330ec2ef007e4f0db04ae816)
