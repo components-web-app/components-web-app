@@ -1117,6 +1117,50 @@ purge_rendered_html() {
   esac
 }
 
+# Creates every image variant not stored yet, in the API pod, then purges the HTTP cache if it made any (#152).
+# Its own job after the deploy, so a failure never fails a live deploy. `exec deploy/...` reaches one pod.
+generate_image_variants() {
+  local track="${1-stable}"
+  local release_name="$RELEASE"
+  if [[ "$track" != "stable" ]]; then
+    release_name="$release_name-$track"
+  fi
+
+  local api_deploy
+  api_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
+    -o name | sed -n 1p)
+  if [[ -z "$api_deploy" ]]; then
+    echo "!!!! IMAGE VARIANTS NOT GENERATED: no API deployment for release '$release_name' !!!!"
+    return 1
+  fi
+  kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
+
+  local out status=0 generated
+  out=$(mktemp)
+  echo "Generating missing image variants, one image at a time..."
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+    -- php bin/console silverback:api-components:imagine:generate -v > "$out" 2>&1 || status=$?
+  # -v lists every variant; leave out the ones already stored.
+  grep -v '^  stored: ' "$out" || true
+  generated=$(sed -n 's/^Generated: \([0-9][0-9]*\)$/\1/p' "$out")
+  rm -f "$out"
+
+  if [[ "${generated:-0}" -gt 0 ]]; then
+    echo "Purging the HTTP cache, so cached API responses list the new variants..."
+    kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+      -- php bin/console silverback:api-components:purge-http-cache
+  fi
+
+  if [[ "$status" -ne 0 ]]; then
+    echo "!!!! IMAGE VARIANTS FAILED: imagine:generate exited ${status} (1: a variant failed, listed above; 2: an unknown --filter or --class) !!!!"
+    if [[ "$GITHUB_ACTIONS" == "true" ]]; then
+      echo "::error title=Image variants failed::imagine:generate exited ${status} - see the step log"
+    fi
+    return "$status"
+  fi
+}
+
 # Refills the page cache after purge_rendered_html (#80): warm_cache [base_url, default https://$DOMAIN]. Fails on any page that isn't 200.
 # GitLab sources this into busybox ash: no arrays, `wait -n` or process substitution, and no jq or xmllint.
 warm_cache() {

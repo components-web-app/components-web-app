@@ -256,11 +256,81 @@ production:
     variables:
       - $CWA_CI_PRODUCTION_DISABLED == "true"
 
+# Generate missing image variants after deploys (#152): production by default, the others opt-in.
+# Before the warm, which needs it; allow_failure, so a failure never marks a live deploy failed.
+image variants review:
+  stage: review
+  needs: ['review']
+  allow_failure: true
+  environment:
+    name: review/$CI_COMMIT_REF_NAME
+    url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
+    action: verify
+  rules:
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_IMAGE_VARIANTS_REVIEW == "true"'
+  script:
+    - skip_unless_review_deployed
+    - install_dependencies
+    - apply_kube_context
+    - set_namespace
+    - generate_image_variants review
+
+image variants staging:
+  stage: staging
+  needs: ['staging']
+  allow_failure: true
+  environment:
+    name: production
+    url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
+    action: verify
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_IMAGE_VARIANTS_STAGING == "true"'
+  script:
+    - install_dependencies
+    - apply_kube_context
+    - set_namespace
+    - generate_image_variants staging
+
+image variants canary:
+  stage: canary
+  needs: ['canary']
+  allow_failure: true
+  environment:
+    name: production
+    url: https://$KUBE_INGRESS_BASE_DOMAIN
+    action: verify
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_IMAGE_VARIANTS_CANARY == "true"'
+  script:
+    - install_dependencies
+    - apply_kube_context
+    - set_namespace
+    - generate_image_variants canary
+
+image variants production:
+  stage: production
+  needs: ['production']
+  allow_failure: true
+  environment:
+    name: production
+    url: https://$KUBE_INGRESS_BASE_DOMAIN
+    action: verify
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_IMAGE_VARIANTS_PRODUCTION != "false"'
+  script:
+    - install_dependencies
+    - apply_kube_context
+    - set_namespace
+    - generate_image_variants
+
 # Warm https://$DOMAIN after deploys (#80, #132): production by default, the others opt-in.
 # allow_failure, so a failed page never marks a live deploy failed.
 warm cache review:
   stage: review
-  needs: ['review']
+  needs:
+    - job: 'review'
+    - job: 'image variants review'
+      optional: true
   allow_failure: true
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -276,7 +346,10 @@ warm cache review:
 
 warm cache staging:
   stage: staging
-  needs: ['staging']
+  needs:
+    - job: 'staging'
+    - job: 'image variants staging'
+      optional: true
   allow_failure: true
   environment:
     name: production
@@ -291,7 +364,10 @@ warm cache staging:
 
 warm cache canary:
   stage: canary
-  needs: ['canary']
+  needs:
+    - job: 'canary'
+    - job: 'image variants canary'
+      optional: true
   allow_failure: true
   environment:
     name: production
@@ -306,7 +382,10 @@ warm cache canary:
 
 warm cache production:
   stage: production
-  needs: ['production']
+  needs:
+    - job: 'production'
+    - job: 'image variants production'
+      optional: true
   allow_failure: true
   environment:
     name: production

@@ -302,6 +302,15 @@ jobs:
           source ./bin/devops/k8s.sh
           apply_kube_context
           load_fixtures review
+      # Generate missing image variants (#152). A failure never fails the live deploy.
+      - name: Generate image variants
+        if: steps.namespace.outputs.state == 'present' && vars.CWA_CI_IMAGE_VARIANTS_REVIEW == 'true'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          generate_image_variants review
       # Refill the page cache (#80). A failed page never fails the live deploy.
       - name: Warm the page cache
         if: steps.namespace.outputs.state == 'present' && vars.CWA_CI_WARM_CACHE_REVIEW == 'true'
@@ -404,6 +413,15 @@ jobs:
           create_docker_pull_secret
           deploy staging
           purge_rendered_html staging
+      # Generate missing image variants (#152). A failure never fails the live deploy.
+      - name: Generate image variants
+        if: vars.CWA_CI_IMAGE_VARIANTS_STAGING == 'true'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          generate_image_variants staging
       # Refill the page cache (#80). A failed page never fails the live deploy.
       - name: Warm the page cache
         if: vars.CWA_CI_WARM_CACHE_STAGING == 'true'

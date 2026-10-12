@@ -103,6 +103,15 @@ jobs:
           create_docker_pull_secret
           deploy canary
           purge_rendered_html canary
+      # Generate missing image variants (#152). A failure never fails the live deploy.
+      - name: Generate image variants
+        if: inputs.action == 'canary' && vars.CWA_CI_IMAGE_VARIANTS_CANARY == 'true'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          generate_image_variants canary
       # Refill the page cache (#80). A failed page never fails the live deploy.
       - name: Warm the page cache
         if: inputs.action == 'canary' && vars.CWA_CI_WARM_CACHE_CANARY == 'true'
@@ -136,6 +145,15 @@ jobs:
           source ./bin/devops/k8s.sh
           apply_kube_context
           load_fixtures
+      # Generate missing image variants (#152). A failure never fails the live deploy.
+      - name: Generate image variants
+        if: inputs.action == 'production' && vars.CWA_CI_IMAGE_VARIANTS_PRODUCTION != 'false'
+        continue-on-error: true
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          apply_kube_context
+          generate_image_variants
       # Refill the page cache (#80). A failed page never fails the live deploy.
       - name: Warm the page cache
         if: inputs.action == 'production' && vars.CWA_CI_WARM_CACHE_PRODUCTION != 'false'
