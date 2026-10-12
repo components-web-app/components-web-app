@@ -238,3 +238,14 @@ cronjobs:
         memory: 128Mi
       limits:
         memory: 512Mi
+  # Template for the post-deploy image variants Jobs (#153); never scheduled. vips memory is native, so --max-memory checks
+  # resident memory and stays well under the limit; exit 3 makes generate_image_variants run another Job.
+  imageVariants:
+    maxMemory: "1G"
+    activeDeadlineSeconds: 1800
+    resources:
+      requests:
+        cpu: 100m
+        memory: 1536Mi
+      limits:
+        memory: 1536Mi

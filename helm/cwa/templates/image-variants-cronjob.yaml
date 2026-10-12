@@ -1,0 +1,61 @@
+# Never scheduled: the template `generate_image_variants` (bin/devops/k8s.sh) creates one-off Jobs from, with their own memory limit (#153).
+# Its pods get their own name label so the API Service never selects them.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cwa.fullname" . }}-image-variants
+  labels:
+    helm.sh/chart: {{ include "cwa.chart" . }}
+    app.kubernetes.io/name: {{ include "cwa.name" . }}-image-variants
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  schedule: "0 0 1 1 *"
+  suspend: true
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: {{ .Values.cronjobs.imageVariants.activeDeadlineSeconds }}
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "cwa.name" . }}-image-variants
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: Never
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "cwa.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}-image-variants
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.php.image.pullPolicy }}
+              # Through the image's entrypoint, like the orphan scan; exit 3 means stopped at --max-memory with variants still missing.
+              args: ["bin/console", "silverback:api-components:imagine:generate", "-v", "--max-memory={{ .Values.cronjobs.imageVariants.maxMemory }}"]
+              env:
+                {{- include "cwa.phpEnv" . | nindent 16 }}
+              {{- with include "cwa.siteEnvFrom" (dict "ctx" . "side" "api") }}
+              {{- . | nindent 14 }}
+              {{- end }}
+              resources:
+                {{- toYaml .Values.cronjobs.imageVariants.resources | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

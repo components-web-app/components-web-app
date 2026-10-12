@@ -1010,6 +1010,14 @@ cronjobs:
     enabled: ${CWA_CI_ORPHAN_SCAN:-$orphan_scan_default}
     schedule: "${CWA_CI_ORPHAN_SCAN_SCHEDULE:-0 3 * * *}"
     timeZone: "${CWA_CI_ORPHAN_SCAN_TIMEZONE:-Europe/London}"
+  imageVariants:
+    maxMemory: "${CWA_CI_IMAGE_VARIANTS_MAX_MEMORY:-1G}"
+    resources:
+      requests:
+        cpu: 100m
+        memory: "${CWA_CI_IMAGE_VARIANTS_MEMORY:-1536Mi}"
+      limits:
+        memory: "${CWA_CI_IMAGE_VARIANTS_MEMORY:-1536Mi}"
 EOF
 
   # Holds secrets: removed after helm.
@@ -1129,9 +1137,8 @@ purge_rendered_html() {
   esac
 }
 
-# Creates every image variant not stored yet, in the API pod, then purges the HTTP cache if it made any (#152).
-# It shares the serving pod's memory: large originals can run it out of memory and 503 the site (#153), so it's opt-in.
-# Its own job after the deploy, so a failure never fails a live deploy. `exec deploy/...` reaches one pod.
+# Creates every image variant not stored yet in one-off Jobs with their own memory limit, never in the serving pod (#153),
+# repeating in a fresh Job while one stops at --max-memory (exit 3), then purges the HTTP cache in the API pod if any were made.
 generate_image_variants() {
   local track="${1-stable}"
   local release_name="$RELEASE"
@@ -1139,27 +1146,55 @@ generate_image_variants() {
     release_name="$release_name-$track"
   fi
 
-  local api_deploy
+  local api_deploy template
   api_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
     -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$release_name" \
     -o name | sed -n 1p)
-  if [[ -z "$api_deploy" ]]; then
-    echo "!!!! IMAGE VARIANTS NOT GENERATED: no API deployment for release '$release_name' !!!!"
+  template=$(kubectl get cronjob -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa-image-variants,app.kubernetes.io/instance=$release_name" \
+    -o name | sed -n 1p)
+  if [[ -z "$api_deploy" || -z "$template" ]]; then
+    echo "!!!! IMAGE VARIANTS NOT GENERATED: release '$release_name' has no API deployment ('${api_deploy}') or image-variants CronJob ('${template}'): deploy with this chart first !!!!"
     return 1
   fi
+  # The Jobs use the release's image, so wait for the API's rollout.
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
-  local out status=0 generated
+  local runs=0 max_runs="${CWA_CI_IMAGE_VARIANTS_MAX_RUNS:-50}" total=0 status=0
+  local job out state generated waited
   out=$(mktemp)
-  echo "Generating missing image variants, one image at a time..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
-    -- php bin/console silverback:api-components:imagine:generate -v > "$out" 2>&1 || status=$?
-  # -v lists every variant; leave out the ones already stored.
-  grep -v '^  stored: ' "$out" || true
-  generated=$(sed -n 's/^Generated: \([0-9][0-9]*\)$/\1/p' "$out")
+  while :; do
+    runs=$(( runs + 1 ))
+    job="$(printf '%s' "$release_name" | cut -c1-36)-image-variants-$(date +%s)-${runs}"
+    echo "Image variants run ${runs}: Job ${job}..."
+    kubectl create job -n "$KUBE_NAMESPACE" "$job" --from="cronjob/${template#*/}" >/dev/null
+    state="" waited=0
+    while [[ -z "$state" && "$waited" -lt "${CWA_CI_IMAGE_VARIANTS_TIMEOUT:-1900}" ]]; do
+      sleep 5
+      waited=$(( waited + 5 ))
+      state=$(kubectl get job -n "$KUBE_NAMESPACE" "$job" -o jsonpath='{.status.succeeded}{.status.failed}' 2>/dev/null || true)
+    done
+    kubectl logs -n "$KUBE_NAMESPACE" "job/$job" > "$out" 2>&1 || true
+    # -v lists every variant; leave out the ones already stored.
+    grep -v '^  stored: ' "$out" || true
+    status=$(kubectl get pods -n "$KUBE_NAMESPACE" -l "job-name=$job" \
+      -o jsonpath='{.items[0].status.containerStatuses[0].state.terminated.exitCode}' 2>/dev/null || true)
+    [[ -z "$status" ]] && status=124
+    generated=$(sed -n 's/^Generated: \([0-9][0-9]*\)$/\1/p' "$out")
+    total=$(( total + ${generated:-0} ))
+    if [[ "$status" -eq 0 ]]; then
+      kubectl delete job -n "$KUBE_NAMESPACE" "$job" --wait=false >/dev/null 2>&1 || true
+    fi
+    if [[ "$status" -eq 3 && "$runs" -lt "$max_runs" ]]; then
+      kubectl delete job -n "$KUBE_NAMESPACE" "$job" --wait=false >/dev/null 2>&1 || true
+      continue
+    fi
+    break
+  done
   rm -f "$out"
 
-  if [[ "${generated:-0}" -gt 0 ]]; then
+  echo "Generated ${total} image variants in ${runs} Job(s)."
+  if [[ "$total" -gt 0 ]]; then
     echo "Purging the HTTP cache, so cached API responses list the new variants..."
     kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
       -- php bin/console silverback:api-components:purge-http-cache
@@ -1167,11 +1202,13 @@ generate_image_variants() {
 
   if [[ "$status" -ne 0 ]]; then
     case "$status" in
-      137) echo "!!!! IMAGE VARIANTS FAILED: imagine:generate was killed (exit 137): the API pod ran out of memory, which also affects visitors (#153) !!!!" ;;
+      3) echo "!!!! IMAGE VARIANTS NOT FINISHED: still missing after ${runs} Jobs (CWA_CI_IMAGE_VARIANTS_MAX_RUNS); the next deploy continues !!!!" ;;
+      137) echo "!!!! IMAGE VARIANTS FAILED: the Job ran out of memory (exit 137): raise CWA_CI_IMAGE_VARIANTS_MEMORY or lower CWA_CI_IMAGE_VARIANTS_MAX_MEMORY; visitors were not affected !!!!" ;;
+      124) echo "!!!! IMAGE VARIANTS FAILED: Job ${job} did not finish (not scheduled, or past its deadline); see kubectl describe job !!!!" ;;
       *) echo "!!!! IMAGE VARIANTS FAILED: imagine:generate exited ${status} (1: a variant failed, listed above; 2: an unknown --filter or --class) !!!!" ;;
     esac
     if [[ "$GITHUB_ACTIONS" == "true" ]]; then
-      echo "::error title=Image variants failed::imagine:generate exited ${status} - see the step log"
+      echo "::error title=Image variants failed::imagine:generate ended with ${status} - see the step log"
     fi
     return "$status"
   fi
