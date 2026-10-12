@@ -147,7 +147,7 @@ jobs:
           load_fixtures
       # Generate missing image variants (#152). A failure never fails the live deploy.
       - name: Generate image variants
-        if: inputs.action == 'production' && vars.CWA_CI_IMAGE_VARIANTS_PRODUCTION == 'true'
+        if: inputs.action == 'production' && vars.CWA_CI_IMAGE_VARIANTS_PRODUCTION != 'false'
         continue-on-error: true
         run: |
           source ./bin/devops/setup.sh
