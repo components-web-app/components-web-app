@@ -11,8 +11,9 @@ metadata:
 spec:
   schedule: "0 0 1 1 *"
   suspend: true
-  successfulJobsHistoryLimit: 0
-  failedJobsHistoryLimit: 1
+  # Jobs created --from this CronJob are owned by it: a limit of 0 deleted each one before generate_image_variants read it.
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
       backoffLimit: 0
