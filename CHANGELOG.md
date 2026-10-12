@@ -21,6 +21,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - api-components-bundle 2.0.0-alpha.15: uploads and image variants in the bucket get a long `Cache-Control` (a year for originals, 30 days for variants), and `silverback:api-components:imagine:generate` builds missing variants ahead of time (#151). [5e91c95](https://github.com/components-web-app/components-web-app/commit/5e91c95c93f320341f2c8c6e61457054c38b8d2b)
 - Every image variant (`thumbnail`, `general`, `large`) is WebP, whatever the upload's format, so PNG logos and screenshots are no longer served as PNG (a 128 KB logo variant is now 41.5 KB) (#149). [4d36b95](https://github.com/components-web-app/components-web-app/commit/4d36b95cd2d5b55b95d2d44fde65e5bfd4dc2e6a)
 
+### Fixed
+- App image builds no longer hang when Alpine's package mirror stalls: `apk add` is time-limited and retried, with a fallback mirror (copy `app/Dockerfile`). [265fa3b](https://github.com/components-web-app/components-web-app/commit/265fa3bc7efd16d0cff924247d9bd157e0cf7af7)
+
 ## [2.0.0-alpha.24](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.24) - 2026-10-11
 
 ### Upgrade notes
