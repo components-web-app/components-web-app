@@ -7,7 +7,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
-- Copy `helm/cwa/templates/image-variants-cronjob.yaml`, the `cronjobs.imageVariants` block of `helm/cwa/values.yaml` and `bin/devops/k8s.sh`: the image variants job now generates in its own Kubernetes Jobs (#153). Still opt-in with `CWA_CI_IMAGE_VARIANTS_PRODUCTION="true"`. [1c4b9f6](https://github.com/components-web-app/components-web-app/commit/1c4b9f6a89ff9a032b41a5548e331b7076d90c8f) [d400d1e](https://github.com/components-web-app/components-web-app/commit/d400d1ea431cf94f80b679c19a2da465ac7c99da)
+- Copy `helm/cwa/templates/image-variants-cronjob.yaml`, the `cronjobs.imageVariants` block of `helm/cwa/values.yaml` and `bin/devops/k8s.sh`: the image variants job now generates in its own Kubernetes Jobs (#153). It runs on production by default again; set `CWA_CI_IMAGE_VARIANTS_PRODUCTION="false"` to turn it off, and delete a `"true"` you set for alpha.26. [1c4b9f6](https://github.com/components-web-app/components-web-app/commit/1c4b9f6a89ff9a032b41a5548e331b7076d90c8f) [d400d1e](https://github.com/components-web-app/components-web-app/commit/d400d1ea431cf94f80b679c19a2da465ac7c99da) [27141f0](https://github.com/components-web-app/components-web-app/commit/27141f017e7a0348fc721617e8b769930fd8be12)
 
 ### Changed
 - The image variants job generates in one-off Kubernetes Jobs with their own memory limit (`CWA_CI_IMAGE_VARIANTS_MEMORY`, default 1536Mi), repeating with `--max-memory` until nothing is missing, so it can no longer run the serving API pod out of memory (#153). [1c4b9f6](https://github.com/components-web-app/components-web-app/commit/1c4b9f6a89ff9a032b41a5548e331b7076d90c8f)
