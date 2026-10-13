@@ -15,7 +15,6 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Changed
 - `@cwa/nuxt` 2.0.0-alpha.15: a server-side redirect no longer fetches the target page's resources in the background (cwa-nuxt-module#389, #160); the admin's parent page, template, layout and parent page data selects list every item, not just the first 30; a link can pre-fill the add page data form (`?parentPage=`, `?parentPageData=`, `?template=`). [131ef26](https://github.com/components-web-app/components-web-app/commit/131ef26b3429c83cd223a2737fb08b53b5e7a6b0)
 
-
 ## [2.0.0-alpha.31](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.31) - 2026-10-13
 
 ### Upgrade notes
