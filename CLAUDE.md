@@ -68,6 +68,13 @@ grep -nE '^  vue@3\.5\.[0-9]+:' app/pnpm-lock.yaml   # must print exactly one li
 grep -nE '^  typescript@' app/pnpm-lock.yaml         # must be 6.0.3 only
 ```
 
+### ⚠ Upstream to watch: API Platform's genid map leaks in worker mode (#161)
+
+**Check on every dependency update and at the start of any API work** (Daniel, 2026-10-13). API Platform's `SkolemIriConverter` (`/.well-known/genid/…` IRIs) isn't tagged `kernel.reset`, so a FrankenPHP worker keeps every embedded object it has generated an IRI for: [api-platform/core#8680](https://github.com/api-platform/core/issues/8680), fix [#8681](https://github.com/api-platform/core/pull/8681) (against 4.4). The template's forms and navigation links produce such IRIs.
+- **Hotfix:** `App\DependencyInjection\SkolemIriConverterResetPass`, added in `Kernel::build()` at the default priority. **It must run before `ResettableServicePass` (-32):** as `Kernel::process()` (-10000) the tag showed in `debug:container` but the resetter never called it. `tests/Unit/SkolemIriConverterResetTest.php` fails without it.
+- **Remove when** an API Platform 5.x release includes #8681: `gh pr view 8681 -R api-platform/core`, then check the release notes of the version we lock. Delete the pass and the `build()` method, keep the test, and add a CHANGELOG line.
+- **The bundle half is needed too:** `ResourceMetadataProvider::$metadatas` is never cleared ([api-components-bundle#448](https://github.com/components-web-app/api-components-bundle/issues/448)). Each map keeps the other's objects alive. Measured: a form component 41 → 125 MB over 300 worker requests with neither fixed, still 127 MB with only the skolem map reset, and flat only with both. Workers restart every 500 requests (`FRANKENPHP_LOOP_MAX`), which hides most of it. Low risk for our sites; it matters for downstream projects with heavier embedded output.
+
 ### ⚠ TypeScript is pinned to exact `6.0.3`
 
 - Do **not** bump to 7.x. TS 7 is the native (Go) rewrite; `vue-tsc` (3.3.11) still resolves `typescript/lib/tsc` and fails with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. Revisit only once `vue-tsc` officially supports TS 7.
