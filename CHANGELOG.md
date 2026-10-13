@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Security
+- `PUT /_api/users/{id}` is removed (now 405; use `PATCH`): under API Platform 5 a standard PUT reset server-managed user state, un-verifying the email and resetting `createdAt`, and an admin PUT without `@id` blanked the password hash ([api-components-bundle#426](https://github.com/components-web-app/api-components-bundle/issues/426)). [cd556b1](https://github.com/components-web-app/components-web-app/commit/cd556b1dc6303ba75c98748c193996884ebbf3af)
+
 ### Fixed
 - `NavigationLink::getUrl()`'s `#[Groups]` is read again: it imported `Symfony\Component\Serializer\Annotation\Groups`, which Symfony 8 removed, so the attribute was silently ignored (`url` was still serialized through the bundle's default group) (#156). [f80d489](https://github.com/components-web-app/components-web-app/commit/f80d489461a895079ce6204f46cc07b149a39d7b)
 
