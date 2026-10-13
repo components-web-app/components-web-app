@@ -11,6 +11,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - Optional: delete `import tailwindcss from '@tailwindcss/vite'` and `tailwindcss()` in `vite.plugins` from `app/nuxt.config.ts`; `@nuxt/ui` registers the plugin itself. A project without `@nuxt/ui` keeps both (#159). [e78d6f4](https://github.com/components-web-app/components-web-app/commit/e78d6f44c3f2e2bf49e15e9ef54b07c58c457633)
 
 ### Changed
+- `@cwa/nuxt` 2.0.0-alpha.13: page titles skip the old `Unnamed Page` default and untitled page data falls back to its page's title (cwa-nuxt-module#388); the admin manager panel stays fixed to the bottom of the viewport whatever the app's CSS (cwa-nuxt-module#387). [b138d14](https://github.com/components-web-app/components-web-app/commit/b138d14c59f506fa3db69399977287be12b2ac48)
 - api-components-bundle 2.0.0-alpha.19: page and page data titles default to `null`; renaming a route whose path is 254 or 255 characters no longer 500s; `nested()` fixture content is saved on an `--append` load where nothing else is new. [e5aaa47](https://github.com/components-web-app/components-web-app/commit/e5aaa47c866994c99a47c11789b99a3e971f9879)
 - Tailwind's Vite plugin is registered once, by `@nuxt/ui`, not again by the template; the built CSS is unchanged (#159). [e78d6f4](https://github.com/components-web-app/components-web-app/commit/e78d6f44c3f2e2bf49e15e9ef54b07c58c457633)
 
