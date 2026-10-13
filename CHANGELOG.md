@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+- `NavigationLink::getUrl()`'s `#[Groups]` is read again: it imported `Symfony\Component\Serializer\Annotation\Groups`, which Symfony 8 removed, so the attribute was silently ignored (`url` was still serialized through the bundle's default group) (#156). [f80d489](https://github.com/components-web-app/components-web-app/commit/f80d489461a895079ce6204f46cc07b149a39d7b)
+
 ## [2.0.0-alpha.28](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.28) - 2026-10-12
 
 ### Upgrade notes
