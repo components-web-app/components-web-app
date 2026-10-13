@@ -6,7 +6,7 @@ namespace App\Tests\Unit;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
-// The services resetter must clear API Platform's genid map between worker requests (#161, api-platform/core#8680).
+// The services resetter must clear API Platform's genid map between worker requests (#161); the bundle tags it until core#8681 ships.
 class SkolemIriConverterResetTest extends KernelTestCase
 {
     public function test_the_services_resetter_clears_the_genid_map(): void
