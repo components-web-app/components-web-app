@@ -2,7 +2,6 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { brotliCompress, constants as zlib, gzip } from 'node:zlib'
-import tailwindcss from '@tailwindcss/vite'
 
 // Writes .br/.gz beside each compressible build asset, with Nitro's compressPublicAssets settings, but only under /_nuxt (#117, #155).
 const precompressBuildAssets = async (dir: string) => {
@@ -270,9 +269,6 @@ export default defineNuxtConfig({
     autoImportPath: './assets/svg/',
   },
   vite: {
-    plugins: [
-      tailwindcss(),
-    ],
     server: {
       watch: {
         ignored: ['!**/node_modules/@cwa/**'],
