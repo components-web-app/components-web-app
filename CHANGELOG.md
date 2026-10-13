@@ -7,9 +7,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
-- api-components-bundle 2.0.0-alpha.18 stores a page's `uiComponent` as the full `CwaPage<Name>`. Migration `Version20261013020000` prefixes existing pages, so run migrations as usual (the bundle's `prefix-page-ui-components` command does the same and is then a no-op). The page admin's template select matches the stored value again once `@cwa/nuxt` has cwa-nuxt-module#384. [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6)
+- api-components-bundle 2.0.0-alpha.18 stores a page's `uiComponent` as the full `CwaPage<Name>`. Migration `Version20261013020000` prefixes existing pages, so run migrations as usual (the bundle's `prefix-page-ui-components` command does the same and is then a no-op). The page admin's template select matches the stored value again with `@cwa/nuxt` 2.0.0-alpha.12 (cwa-nuxt-module#384), which this release includes. [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6)
 
 ### Changed
+- `@cwa/nuxt` 2.0.0-alpha.12: the page admin saves and selects the full `CwaPage<Name>` UI component (cwa-nuxt-module#384), password-manager logins survive hydration, Nuxt 4.6.1 and `@vueuse/core` 15 (drops Node.js 20). [197bce2](https://github.com/components-web-app/components-web-app/commit/197bce2108426f9658d272866e5e146f0b3e6e9b)
+- phpunit 13.4.2 and symfony/mercure-bundle 0.6.1 (publisher tokens' `aud` now includes the internal hub URL; the Caddyfile's `resource_identifier` pin is kept). [9405377](https://github.com/components-web-app/components-web-app/commit/9405377774c061a74ca961ecd513ed2efdf46f40)
 - api-components-bundle 2.0.0-alpha.18: an over-long value in any writable `VARCHAR(255)` column, or a generated or cascaded route path over 255 characters, is a 422 instead of a 500; a `PUT` on a user merges into the stored user; `nested()` groups in fixtures are created. [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6)
 
 ### Security
