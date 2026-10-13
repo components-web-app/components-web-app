@@ -1286,6 +1286,34 @@ warm_cache() {
   rm -rf "$tmp"
 }
 
+# Image variants, then the warm, in one GitLab job so the warm doesn't wait for another runner (#160). Each keeps its switch:
+#   image_variants_and_warm <track>: production on unless "false", other tracks off unless "true"; a failed half doesn't skip the other.
+image_variants_and_warm() {
+  local track="${1:-stable}" name variants warm status=0
+  case "$track" in
+    stable) name=PRODUCTION ;;
+    *) name=$(printf '%s' "$track" | tr '[:lower:]' '[:upper:]') ;;
+  esac
+  eval "variants=\${CWA_CI_IMAGE_VARIANTS_${name}-}"
+  eval "warm=\${CWA_CI_WARM_CACHE_${name}-}"
+  if post_deploy_step_enabled "$track" "$variants"; then
+    generate_image_variants "$track" || status=$?
+  fi
+  if post_deploy_step_enabled "$track" "$warm"; then
+    warm_cache || status=$?
+  fi
+  return "$status"
+}
+
+# post_deploy_step_enabled <track> <switch>: production's post-deploy steps are on unless "false", the other tracks' off unless "true".
+post_deploy_step_enabled() {
+  if [ "$1" = "stable" ]; then
+    [ "$2" != "false" ]
+  else
+    [ "$2" = "true" ]
+  fi
+}
+
 # Writes the sitemap's page URLs to <out>, de-duplicated, origins replaced by <base_url>, for warm_cache and audits.
 #   sitemap_pages <base_url> <out> <curl_tls_opt> <label>
 sitemap_pages() {

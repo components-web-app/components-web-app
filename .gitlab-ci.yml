@@ -256,9 +256,9 @@ production:
     variables:
       - $CWA_CI_PRODUCTION_DISABLED == "true"
 
-# Generate missing image variants after deploys (#152, #153), in their own Jobs: production by default, the others opt-in.
-# Before the warm, which needs it; allow_failure, so a failure never marks a live deploy failed.
-image variants review:
+# After each deploy: generate missing image variants in their own Jobs (#152, #153), then warm https://$DOMAIN (#80, #132).
+# One job, so the warm doesn't wait for another runner (#160); each half keeps its own switch. allow_failure: never fails a live deploy.
+image variants and warm review:
   stage: review
   needs: ['review']
   allow_failure: true
@@ -267,15 +267,15 @@ image variants review:
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_IMAGE_VARIANTS_REVIEW == "true"'
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && ($CWA_CI_IMAGE_VARIANTS_REVIEW == "true" || $CWA_CI_WARM_CACHE_REVIEW == "true")'
   script:
     - skip_unless_review_deployed
     - install_dependencies
     - apply_kube_context
     - set_namespace
-    - generate_image_variants review
+    - image_variants_and_warm review
 
-image variants staging:
+image variants and warm staging:
   stage: staging
   needs: ['staging']
   allow_failure: true
@@ -284,14 +284,14 @@ image variants staging:
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_IMAGE_VARIANTS_STAGING == "true"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && ($CWA_CI_IMAGE_VARIANTS_STAGING == "true" || $CWA_CI_WARM_CACHE_STAGING == "true")'
   script:
     - install_dependencies
     - apply_kube_context
     - set_namespace
-    - generate_image_variants staging
+    - image_variants_and_warm staging
 
-image variants canary:
+image variants and warm canary:
   stage: canary
   needs: ['canary']
   allow_failure: true
@@ -300,14 +300,14 @@ image variants canary:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_IMAGE_VARIANTS_CANARY == "true"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && ($CWA_CI_IMAGE_VARIANTS_CANARY == "true" || $CWA_CI_WARM_CACHE_CANARY == "true")'
   script:
     - install_dependencies
     - apply_kube_context
     - set_namespace
-    - generate_image_variants canary
+    - image_variants_and_warm canary
 
-image variants production:
+image variants and warm production:
   stage: production
   needs: ['production']
   allow_failure: true
@@ -316,87 +316,12 @@ image variants production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_IMAGE_VARIANTS_PRODUCTION != "false"'
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && ($CWA_CI_IMAGE_VARIANTS_PRODUCTION != "false" || $CWA_CI_WARM_CACHE_PRODUCTION != "false")'
   script:
     - install_dependencies
     - apply_kube_context
     - set_namespace
-    - generate_image_variants
-
-# Warm https://$DOMAIN after deploys (#80, #132): production by default, the others opt-in.
-# allow_failure, so a failed page never marks a live deploy failed.
-warm cache review:
-  stage: review
-  needs:
-    - job: 'review'
-    - job: 'image variants review'
-      optional: true
-  allow_failure: true
-  environment:
-    name: review/$CI_COMMIT_REF_NAME
-    url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
-    action: verify
-  rules:
-    # The review job's conditions, plus opt-in.
-    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_WARM_CACHE_REVIEW == "true"'
-  script:
-    - skip_unless_review_deployed
-    - apk add --no-cache curl >/dev/null
-    - warm_cache
-
-warm cache staging:
-  stage: staging
-  needs:
-    - job: 'staging'
-    - job: 'image variants staging'
-      optional: true
-  allow_failure: true
-  environment:
-    name: production
-    url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
-    action: verify
-  rules:
-    # The staging job's conditions, plus opt-in.
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_WARM_CACHE_STAGING == "true"'
-  script:
-    - apk add --no-cache curl >/dev/null
-    - warm_cache
-
-warm cache canary:
-  stage: canary
-  needs:
-    - job: 'canary'
-    - job: 'image variants canary'
-      optional: true
-  allow_failure: true
-  environment:
-    name: production
-    url: https://$KUBE_INGRESS_BASE_DOMAIN
-    action: verify
-  rules:
-    # The canary job's conditions, plus opt-in.
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_WARM_CACHE_CANARY == "true"'
-  script:
-    - apk add --no-cache curl >/dev/null
-    - warm_cache
-
-warm cache production:
-  stage: production
-  needs:
-    - job: 'production'
-    - job: 'image variants production'
-      optional: true
-  allow_failure: true
-  environment:
-    name: production
-    url: https://$KUBE_INGRESS_BASE_DOMAIN
-    action: verify
-  rules:
-    # The production job's conditions; on unless "false".
-    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_WARM_CACHE_PRODUCTION != "false"'
-  script:
-    - apk add --no-cache curl >/dev/null
-    - warm_cache
+    - image_variants_and_warm stable
 
 # Lighthouse CI audit (#87): manual, after the deploy and its warm. Canary is opt-in
 # (it shares production's hostname). A missed budget never fails a deploy.
@@ -405,7 +330,7 @@ performance audit review:
   image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'review'
-    - job: 'warm cache review'
+    - job: 'image variants and warm review'
       optional: true
   allow_failure: true
   environment:
@@ -432,7 +357,7 @@ performance audit staging:
   image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'staging'
-    - job: 'warm cache staging'
+    - job: 'image variants and warm staging'
       optional: true
   allow_failure: true
   environment:
@@ -458,7 +383,7 @@ performance audit canary:
   image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'canary'
-    - job: 'warm cache canary'
+    - job: 'image variants and warm canary'
       optional: true
   allow_failure: true
   environment:
@@ -484,7 +409,7 @@ performance audit production:
   image: $CWA_CI_PERFORMANCE_AUDIT_IMAGE
   needs:
     - job: 'production'
-    - job: 'warm cache production'
+    - job: 'image variants and warm production'
       optional: true
   allow_failure: true
   environment:
