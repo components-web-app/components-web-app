@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+- `@tailwindcss/vite` is declared in the app's devDependencies: `nuxt.config.ts` imports it, but it was installed only through `@nuxt/ui`, so a project without `@nuxt/ui` failed with a missing module (#158). [67eebe5](https://github.com/components-web-app/components-web-app/commit/67eebe53541fb6f57d7a6d7a30874cb691357bc2)
+
 ## [2.0.0-alpha.29](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.29) - 2026-10-13
 
 ### Upgrade notes
