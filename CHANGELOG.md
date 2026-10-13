@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Optional: delete `import tailwindcss from '@tailwindcss/vite'` and `tailwindcss()` in `vite.plugins` from `app/nuxt.config.ts`; `@nuxt/ui` registers the plugin itself. A project without `@nuxt/ui` keeps both (#159). [e78d6f4](https://github.com/components-web-app/components-web-app/commit/e78d6f44c3f2e2bf49e15e9ef54b07c58c457633)
+
+### Changed
+- Tailwind's Vite plugin is registered once, by `@nuxt/ui`, not again by the template; the built CSS is unchanged (#159). [e78d6f4](https://github.com/components-web-app/components-web-app/commit/e78d6f44c3f2e2bf49e15e9ef54b07c58c457633)
+
 ### Fixed
 - `@tailwindcss/vite` is declared in the app's devDependencies: `nuxt.config.ts` imports it, but it was installed only through `@nuxt/ui`, so a project without `@nuxt/ui` failed with a missing module (#158). [67eebe5](https://github.com/components-web-app/components-web-app/commit/67eebe53541fb6f57d7a6d7a30874cb691357bc2)
 
