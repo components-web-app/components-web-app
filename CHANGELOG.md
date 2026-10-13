@@ -6,8 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.29](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.29) - 2026-10-13
+
 ### Upgrade notes
-- api-components-bundle 2.0.0-alpha.18 stores a page's `uiComponent` as the full `CwaPage<Name>`. Migration `Version20261013020000` prefixes existing pages, so run migrations as usual (the bundle's `prefix-page-ui-components` command does the same and is then a no-op). The page admin's template select matches the stored value again with `@cwa/nuxt` 2.0.0-alpha.12 (cwa-nuxt-module#384), which this release includes. [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6)
+- Update api-components-bundle to 2.0.0-alpha.18 and `@cwa/nuxt` to 2.0.0-alpha.12 in the same deploy (copy `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml`), and copy the migration `Version20261013020000`. The bundle now stores a page's `uiComponent` as the full `CwaPage<Name>`; the migration prefixes existing pages (as the bundle's `prefix-page-ui-components` does, which is then a no-op), and module alpha.12's page admin selects and saves that form (cwa-nuxt-module#384). [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6) [197bce2](https://github.com/components-web-app/components-web-app/commit/197bce2108426f9658d272866e5e146f0b3e6e9b)
+- Optional: delete `new Put(...)` and its `use` from `api/src/Entity/User.php`. Nothing in CWA sends it, and bundle alpha.18 already makes a user `PUT` merge instead of replacing. [cd556b1](https://github.com/components-web-app/components-web-app/commit/cd556b1dc6303ba75c98748c193996884ebbf3af)
 
 ### Changed
 - `@cwa/nuxt` 2.0.0-alpha.12: the page admin saves and selects the full `CwaPage<Name>` UI component (cwa-nuxt-module#384), password-manager logins survive hydration, Nuxt 4.6.1 and `@vueuse/core` 15 (drops Node.js 20). [197bce2](https://github.com/components-web-app/components-web-app/commit/197bce2108426f9658d272866e5e146f0b3e6e9b)
