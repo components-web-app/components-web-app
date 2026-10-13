@@ -7,9 +7,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ## Unreleased
 
 ### Upgrade notes
+- Update api-components-bundle to 2.0.0-alpha.20 (copy `api/composer.lock`); no migration. [6f0c756](https://github.com/components-web-app/components-web-app/commit/6f0c756026f57df58a9eaa64358ffadf4248fd5f)
+- Copy `helm/cwa/templates/deployment.yaml`, `helm/cwa/values.yaml` and `bin/devops/k8s.sh` (with the bundle update, which adds the command): a new php pod now warms its `/_api` cache before it takes traffic. `CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME` (seconds, default 60) bounds it; `0` turns it off. No resource requests change (#160). [81c1f35](https://github.com/components-web-app/components-web-app/commit/81c1f355f676c23fb5614e30c0c687f26ec2d7a2)
 - GitLab: copy `.gitlab-ci.yml` and `bin/devops/k8s.sh`. The `image variants <track>` and `warm cache <track>` jobs are now one `image variants and warm <track>` job; the `CWA_CI_IMAGE_VARIANTS_*` and `CWA_CI_WARM_CACHE_*` switches are unchanged. A project job that `needs:` either old name must use the new one (#160). [5f987be](https://github.com/components-web-app/components-web-app/commit/5f987be09ccf7ecfda261be61662020f7d72ea67)
 
+### Added
+- A new php pod warms the API cache before its probes start: a `postStart` hook waits for Caddy, then runs `warm-http-cache` for up to 60s (`CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME`), never failing the container. With one replica the old pod keeps serving meanwhile, so visitors and monitors no longer meet a cold pod after a deploy or restart (#160). [81c1f35](https://github.com/components-web-app/components-web-app/commit/81c1f355f676c23fb5614e30c0c687f26ec2d7a2)
+
 ### Changed
+- api-components-bundle 2.0.0-alpha.20: adds `warm-http-cache`; a redirecting route's `resource_manifest` no longer lists its `redirectPath`, so rendering a redirect no longer requests it from the API and gets a 404 (api-components-bundle#444). [6f0c756](https://github.com/components-web-app/components-web-app/commit/6f0c756026f57df58a9eaa64358ffadf4248fd5f)
 - `@cwa/nuxt` 2.0.0-alpha.14: a route redirect rendered on the server sends its 308 at once, instead of loading the whole target page first (cwa-nuxt-module#389, #160). [91b583f](https://github.com/components-web-app/components-web-app/commit/91b583f32a1932112d54ba4a147de33351437084)
 - GitLab runs the cache warm in the same job as the image variants, straight after them, so new pods are warmed about 50 s sooner after each deploy (a separate job waited for a runner). The order is unchanged: variants first (#153) (#160). [5f987be](https://github.com/components-web-app/components-web-app/commit/5f987be09ccf7ecfda261be61662020f7d72ea67)
 
