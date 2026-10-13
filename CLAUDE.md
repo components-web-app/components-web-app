@@ -78,7 +78,7 @@ grep -nE '^  typescript@' app/pnpm-lock.yaml         # must be 6.0.3 only
 
 ### ⚠ TypeScript is pinned to exact `6.0.3`
 
-- Do **not** bump to 7.x. TS 7 is the native (Go) rewrite; `vue-tsc` (3.3.11) still resolves `typescript/lib/tsc` and fails with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. Revisit only once `vue-tsc` officially supports TS 7.
+- Do **not** bump to 7.x. TS 7 is the native (Go) rewrite; `vue-tsc` (3.3.13) still resolves `typescript/lib/tsc` and fails with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. **Re-check on every dependency update** (Daniel, 2026-10-13). On 2026-10-13: 3.3.13 only adds support for aliasing `typescript` to `@typescript/typescript6`, and the maintainers point to `typescript-native-bridge` until TypeScript 7.1's plugin interface (vuejs/language-tools#6156).
 - **`pnpm up --latest` DOES rewrite the exact pin to 7.x.** An exact pin is not protection. After it, manually revert to `6.0.3` and reinstall. Prefer `pnpm dedupe`, which doesn't touch it.
 
 ### ⚠ Duplicate `vue` copies
