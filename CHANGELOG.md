@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+- Dependency updates: TipTap 3.32, `satori` 0.56 (OG images checked), vue 3.5.44, vite 8.3.4, `vue-tsc` 3.3.13, `@nuxt/devtools` 4.0.0-beta.5, `nuxt-og-image` 6.10.4, `@nuxtjs/sitemap` 8.6.2; composer: doctrine/persistence 4.2.1, google/cloud-storage 2.6.0. Copy `app/package.json`, `app/pnpm-lock.yaml` and `api/composer.lock`. TypeScript stays 6.0.3 (no TS 7 support in `vue-tsc` yet); `@nuxtjs/sitemap` 9 needs the module first. [e5cc3cc](https://github.com/components-web-app/components-web-app/commit/e5cc3cc13ae5b6020fcdc993ad4773ffe8be59cd)
+
 ## [2.0.0-alpha.32](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.32) - 2026-10-13
 
 ### Upgrade notes
