@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- api-components-bundle 2.0.0-alpha.18 stores a page's `uiComponent` as the full `CwaPage<Name>`. Migration `Version20261013020000` prefixes existing pages, so run migrations as usual (the bundle's `prefix-page-ui-components` command does the same and is then a no-op). The page admin's template select matches the stored value again once `@cwa/nuxt` has cwa-nuxt-module#384. [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6)
+
+### Changed
+- api-components-bundle 2.0.0-alpha.18: an over-long value in any writable `VARCHAR(255)` column, or a generated or cascaded route path over 255 characters, is a 422 instead of a 500; a `PUT` on a user merges into the stored user; `nested()` groups in fixtures are created. [33b5410](https://github.com/components-web-app/components-web-app/commit/33b5410ef7fffd0ca4aaff0ac9b03a218804c5c6)
+
 ### Security
 - `PUT /_api/users/{id}` is removed (now 405; use `PATCH`): under API Platform 5 a standard PUT reset server-managed user state, un-verifying the email and resetting `createdAt`, and an admin PUT without `@id` blanked the password hash ([api-components-bundle#426](https://github.com/components-web-app/api-components-bundle/issues/426)). [cd556b1](https://github.com/components-web-app/components-web-app/commit/cd556b1dc6303ba75c98748c193996884ebbf3af)
 
