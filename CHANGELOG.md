@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.30](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.30) - 2026-10-13
+
 ### Upgrade notes
 - Update api-components-bundle to 2.0.0-alpha.19 (copy `api/composer.lock`) and copy the migration `Version20261013121254`: it makes page data's `title` nullable and clears the old `'Unnamed Page'` default from pages and page data. A page or page data with no title now gets no generated route (`POST /_/routes/generate` is a 422), and a fixture page with no title and no `route:` is left without one ([api-components-bundle#440](https://github.com/components-web-app/api-components-bundle/pull/440)). [e5aaa47](https://github.com/components-web-app/components-web-app/commit/e5aaa47c866994c99a47c11789b99a3e971f9879)
 - Optional: delete `import tailwindcss from '@tailwindcss/vite'` and `tailwindcss()` in `vite.plugins` from `app/nuxt.config.ts`; `@nuxt/ui` registers the plugin itself. A project without `@nuxt/ui` keeps both (#159). [e78d6f4](https://github.com/components-web-app/components-web-app/commit/e78d6f44c3f2e2bf49e15e9ef54b07c58c457633)
