@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- GitLab: copy `.gitlab-ci.yml` and `bin/devops/k8s.sh`. The `image variants <track>` and `warm cache <track>` jobs are now one `image variants and warm <track>` job; the `CWA_CI_IMAGE_VARIANTS_*` and `CWA_CI_WARM_CACHE_*` switches are unchanged. A project job that `needs:` either old name must use the new one (#160). [5f987be](https://github.com/components-web-app/components-web-app/commit/5f987be09ccf7ecfda261be61662020f7d72ea67)
+
+### Changed
+- GitLab runs the cache warm in the same job as the image variants, straight after them, so new pods are warmed about 50 s sooner after each deploy (a separate job waited for a runner). The order is unchanged: variants first (#153) (#160). [5f987be](https://github.com/components-web-app/components-web-app/commit/5f987be09ccf7ecfda261be61662020f7d72ea67)
+
 ## [2.0.0-alpha.30](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.30) - 2026-10-13
 
 ### Upgrade notes
