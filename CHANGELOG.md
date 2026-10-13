@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.31](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.31) - 2026-10-13
+
 ### Upgrade notes
 - Update api-components-bundle to 2.0.0-alpha.20 (copy `api/composer.lock`); no migration. [6f0c756](https://github.com/components-web-app/components-web-app/commit/6f0c756026f57df58a9eaa64358ffadf4248fd5f)
 - Copy `helm/cwa/templates/deployment.yaml`, `helm/cwa/values.yaml` and `bin/devops/k8s.sh` (with the bundle update, which adds the command): a new php pod now warms its `/_api` cache before it takes traffic. `CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME` (seconds, default 60) bounds it; `0` turns it off. No resource requests change (#160). [81c1f35](https://github.com/components-web-app/components-web-app/commit/81c1f355f676c23fb5614e30c0c687f26ec2d7a2)
