@@ -12,6 +12,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Fixed
 - API Platform's genid IRI map (`/.well-known/genid/…`) is cleared between FrankenPHP worker requests. Before, a worker kept every embedded object it generated an IRI for until it restarted ([api-platform/core#8680](https://github.com/api-platform/core/issues/8680)); this hotfix stays until an API Platform release has the fix. The bundle's own metadata map needs fixing too for memory to stay flat ([api-components-bundle#448](https://github.com/components-web-app/api-components-bundle/issues/448)) (#161). [32c6a7c](https://github.com/components-web-app/components-web-app/commit/32c6a7ceaa6a9ca53b0905313c45de24c5497a35)
 
+### Changed
+- `@cwa/nuxt` 2.0.0-alpha.15: a server-side redirect no longer fetches the target page's resources in the background (cwa-nuxt-module#389, #160); the admin's parent page, template, layout and parent page data selects list every item, not just the first 30; a link can pre-fill the add page data form (`?parentPage=`, `?parentPageData=`, `?template=`). [131ef26](https://github.com/components-web-app/components-web-app/commit/131ef26b3429c83cd223a2737fb08b53b5e7a6b0)
+
+
 ## [2.0.0-alpha.31](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.31) - 2026-10-13
 
 ### Upgrade notes
