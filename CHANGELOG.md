@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Copy `api/src/Kernel.php`, `api/src/DependencyInjection/SkolemIriConverterResetPass.php` and `api/tests/Unit/SkolemIriConverterResetTest.php` (a project with its own `Kernel::build()` adds the pass there). It's a temporary hotfix, which a later release removes (#161). [32c6a7c](https://github.com/components-web-app/components-web-app/commit/32c6a7ceaa6a9ca53b0905313c45de24c5497a35)
+
+### Fixed
+- API Platform's genid IRI map (`/.well-known/genid/…`) is cleared between FrankenPHP worker requests. Before, a worker kept every embedded object it generated an IRI for until it restarted ([api-platform/core#8680](https://github.com/api-platform/core/issues/8680)); this hotfix stays until an API Platform release has the fix. The bundle's own metadata map needs fixing too for memory to stay flat ([api-components-bundle#448](https://github.com/components-web-app/api-components-bundle/issues/448)) (#161). [32c6a7c](https://github.com/components-web-app/components-web-app/commit/32c6a7ceaa6a9ca53b0905313c45de24c5497a35)
+
 ## [2.0.0-alpha.31](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.31) - 2026-10-13
 
 ### Upgrade notes
