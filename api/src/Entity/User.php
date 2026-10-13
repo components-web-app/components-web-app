@@ -14,7 +14,6 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\QueryParameter;
 use Doctrine\ORM\Mapping as ORM;
 use Silverback\ApiComponentsBundle\Entity\User\AbstractUser;
@@ -27,7 +26,6 @@ use Silverback\ApiComponentsBundle\Entity\User\AbstractUser;
         new GetCollection( order: ['createdAt' => 'DESC'], security: "is_granted('ROLE_SUPER_ADMIN')"),
         new Post( security: "is_granted('ROLE_SUPER_ADMIN')" ),
         new Get( security: "is_granted('ROLE_SUPER_ADMIN') or object.getId() == user.getId()" ),
-        new Put( security: "is_granted('ROLE_SUPER_ADMIN') or object.getId() == user.getId()" ),
         new Patch( security: "is_granted('ROLE_SUPER_ADMIN') or object.getId() == user.getId()" ),
         new Delete( security: "is_granted('ROLE_SUPER_ADMIN')" )
     ],
