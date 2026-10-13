@@ -69,10 +69,17 @@ spec:
               protocol: TCP
           # Keeps serving while the ingress drops the pod's endpoint, then stops Caddy (#148).
           lifecycle:
+            {{- $warmMaxTime := int .Values.php.warmHttpCacheMaxTime }}
+            {{- if gt $warmMaxTime 0 }}
+            # Warms /_api before the probes start (#160): waits for Caddy, then warms; at most maxTime + 270s, never fails the container.
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "timeout {{ add $warmMaxTime 270 }} sh -c 'until curl -fs -o /dev/null http://localhost/_api/_/site_config_parameters.jsonld; do sleep 2; done; php bin/console silverback:api-components:warm-http-cache --max-time={{ $warmMaxTime }} --no-interaction' >/proc/1/fd/1 2>&1 || true"]
+            {{- end }}
             preStop:
               exec:
                 command: ["/bin/sh", "-c", "/bin/sleep 5; kill -QUIT 1"]
-          # The whole boot (database wait, migrations, ANALYZE): 60 x 5s. Readiness and liveness wait for it.
+          # The whole boot (database wait, migrations, ANALYZE): 60 x 5s, from when postStart returns. Readiness and liveness wait for it.
           startupProbe:
             tcpSocket:
               port: http

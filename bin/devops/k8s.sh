@@ -932,6 +932,7 @@ php:
   reservedMemory: ${CWA_CI_API_RESERVED_MEMORY:-"160Mi"}
   # Empty: what the budget leaves Go.
   goMemLimit: "${CWA_CI_API_GOMEMLIMIT:-}"
+  warmHttpCacheMaxTime: ${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${CWA_CI_RESET_DATABASE:-false}"

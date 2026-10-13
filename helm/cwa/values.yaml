@@ -62,6 +62,8 @@ php:
   reservedMemory: 160Mi
   # GOMEMLIMIT for Caddy, Souin and Mercure: empty is what the budget leaves Go, at least 64MiB. A Go value overrides; "off" unsets.
   goMemLimit: ""
+  # Seconds a new pod spends warming the /_api cache before it reports ready (#160): postStart, after Caddy answers. 0 turns it off.
+  warmHttpCacheMaxTime: 60
 
 pwa:
   # Both default to the in-cluster service (configmap.yaml). Leave apiUrl unset, or SSR hairpins through the load
