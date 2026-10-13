@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.32](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.32) - 2026-10-13
+
 ### Upgrade notes
 - Update api-components-bundle to 2.0.0-alpha.21 (copy `api/composer.lock`); no migration. Optionally copy `api/tests/Unit/SkolemIriConverterResetTest.php`. A project that read `ResourceMetadataProvider::$metadatas` or `getMetadatas()` must stop: both are removed ([api-components-bundle#449](https://github.com/components-web-app/api-components-bundle/pull/449)). [09f55bd](https://github.com/components-web-app/components-web-app/commit/09f55bd51d63c536443710468ebbdd46dfbc064f) [32c6a7c](https://github.com/components-web-app/components-web-app/commit/32c6a7ceaa6a9ca53b0905313c45de24c5497a35)
 
