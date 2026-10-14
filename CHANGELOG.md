@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Optional browser tests (#157): copy `e2e/`, `.gitlab-ci.yml` (or `.github/workflows/ci.yml`, `production.yml` and the new `browser-tests.yml`), `bin/devops/k8s.sh`, `api/config/services.php` and `api/src/Flysystem/GoogleCloudStorageFactory.php`. Nothing runs until you set the CI variable `CWA_CI_E2E_ENABLED="true"`; then review, staging, canary and production wait for the tests. Add project-specific flows under `e2e/tests/` (see `e2e/README.md`). [3fd2c01](https://github.com/components-web-app/components-web-app/commit/3fd2c01237578dd0f009de10699402b257f5bf7c) [8c36f8c](https://github.com/components-web-app/components-web-app/commit/8c36f8c89f9176495fc02f8f9480531c71eb4613)
+
+### Added
+- Opt-in Playwright browser tests that gate deploys (#157). They run this commit's production images in a throwaway stack (Postgres on tmpfs, a Cloud Storage emulator, Mailpit) and cover: public pages hydrate, the page cache, the redirect, log in and out, editing and publishing text, uploading and publishing an image, and the password-reset email link. A fixture fails any test whose API write gets a 405, 406 or 415, timeouts are bounded, and the run fails unless every listed test ran. The Playwright report, traces and videos are kept for 14 days. `GoogleCloudStorageFactory` takes an optional `GCLOUD_API_ENDPOINT` (an emulator); empty is unchanged. [3fd2c01](https://github.com/components-web-app/components-web-app/commit/3fd2c01237578dd0f009de10699402b257f5bf7c) [8c36f8c](https://github.com/components-web-app/components-web-app/commit/8c36f8c89f9176495fc02f8f9480531c71eb4613)
+
 ## [2.0.0-alpha.33](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.33) - 2026-10-14
 
 ### Changed
