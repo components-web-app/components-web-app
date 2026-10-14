@@ -16,16 +16,17 @@ async function selectComponent(page: Page, content: Locator) {
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
 }
 
-// Resolves once no API write has been in flight for a second: typing saves on every pause.
+// Resolves once no API write has been in flight for a second: typing saves on each pause.
+// Tracks the requests themselves, so a write already in flight when it starts can't unbalance it.
 async function savesSettled(page: Page) {
-  let pending = 0
+  const inFlight = new Set<import('@playwright/test').Request>()
   let last = Date.now()
   const isWrite = (r: import('@playwright/test').Request) => r.method() !== 'GET' && r.url().includes('/_api/')
-  page.on('request', r => { if (isWrite(r)) { pending++; last = Date.now() } })
-  const done = (r: import('@playwright/test').Request) => { if (isWrite(r)) { pending--; last = Date.now() } }
+  page.on('request', r => { if (isWrite(r)) { inFlight.add(r); last = Date.now() } })
+  const done = (r: import('@playwright/test').Request) => { if (inFlight.delete(r)) last = Date.now() }
   page.on('requestfinished', done)
   page.on('requestfailed', done)
-  return async () => expect.poll(() => pending === 0 && Date.now() - last > 1000, { timeout: 20_000 }).toBe(true)
+  return async () => expect.poll(() => inFlight.size === 0 && Date.now() - last > 1000, { timeout: 20_000 }).toBe(true)
 }
 
 async function publish(page: Page) {
