@@ -23,6 +23,8 @@ return static function (ContainerConfigurator $configurator) {
         // Public base URL for media (a CDN in front of the bucket), with a trailing slash. Empty falls back to the
         // bucket's own public URL (#68).
         ->set('env(GCLOUD_PUBLIC_URL)', '')
+        // A Cloud Storage emulator (e.g. http://gcs:4443) instead of Google, for the browser tests (#157). Empty uses Google.
+        ->set('env(GCLOUD_API_ENDPOINT)', '')
         ->set('app.gcloud_bucket_public_url', 'https://storage.googleapis.com/%env(GCLOUD_BUCKET)%/')
         ->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%')
         // Origin for links in user emails; the bundle refuses those emails without one. Defaults to the public host.
@@ -80,7 +82,8 @@ return static function (ContainerConfigurator $configurator) {
             ->set(GoogleCloudStorageFactory::class)
             ->args([
                 '%env(json:GCLOUD_JSON)%',
-                '%env(GCLOUD_BUCKET)%'
+                '%env(GCLOUD_BUCKET)%',
+                '%env(GCLOUD_API_ENDPOINT)%',
             ])
         ;
         $services

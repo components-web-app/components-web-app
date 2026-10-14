@@ -1,0 +1,73 @@
+# The browser-test stack (#157): this commit's production images, a throwaway database, a Cloud Storage
+# emulator and a mail catcher. Started by e2e/run.sh; never used for anything else.
+name: cwa-e2e
+
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: e2e
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "app", "-U", "app"]
+      interval: 2s
+      retries: 30
+
+  gcs:
+    image: fsouza/fake-gcs-server:1.56.1
+    # HTTPS for the browser (the page is HTTPS, so http:// images would be upgraded and fail), plain HTTP for php.
+    command: ["-scheme", "both", "-port", "4443", "-port-http", "8000", "-public-host", "gcs:4443", "-external-url", "https://gcs:4443"]
+
+  mailpit:
+    image: axllent/mailpit:v1.31.5
+
+  php:
+    image: ${E2E_PHP_IMAGE:?set E2E_PHP_IMAGE}
+    depends_on:
+      database: { condition: service_healthy }
+    environment:
+      # HTTPS for the browser (https://localhost, Caddy's internal certificate): the Secure login cookie and the
+      # __Secure- Mercure cookie need it. Plain HTTP for SSR on php:80, as on Kubernetes.
+      SERVER_NAME: "localhost, php:80"
+      APP_UPSTREAM: app:3000
+      BROWSER_SERVER_NAME: localhost
+      EMAIL_LINK_DEFAULT_ORIGIN: https://localhost
+      TRUSTED_HOSTS: ^(?:localhost|php)$$
+      CORS_ALLOW_ORIGIN: ^https://localhost$$
+      APP_SECRET: ${E2E_APP_SECRET:?}
+      DATABASE_URL: postgresql://app:e2e@database:5432/app?serverVersion=16&charset=utf8
+      JWT_SECRET_KEY: ${E2E_JWT_SECRET_KEY:?}
+      JWT_PUBLIC_KEY: ${E2E_JWT_PUBLIC_KEY:?}
+      JWT_PASSPHRASE: ${E2E_JWT_PASSPHRASE:?}
+      MERCURE_PUBLISHER_JWT_KEY: ${E2E_MERCURE_JWT_SECRET:?}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${E2E_MERCURE_JWT_SECRET:?}
+      MERCURE_JWT_SECRET: ${E2E_MERCURE_JWT_SECRET:?}
+      MERCURE_URL: http://php/.well-known/mercure
+      MERCURE_PUBLIC_URL: https://localhost/.well-known/mercure
+      MERCURE_CORS_ORIGIN: https://localhost
+      MAILER_DSN: smtp://mailpit:1025
+      MAILER_EMAIL: CWA Tests <tests@cwa.test>
+      GCLOUD_BUCKET: cwa-e2e
+      GCLOUD_API_ENDPOINT: http://gcs:8000
+      GCLOUD_PUBLIC_URL: https://gcs:4443/cwa-e2e/
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: ${E2E_ADMIN_PASSWORD:?}
+      ADMIN_EMAIL: admin@cwa.test
+
+  app:
+    image: ${E2E_APP_IMAGE:?set E2E_APP_IMAGE}
+    environment:
+      NUXT_CWA_API_URL: http://php/_api
+      NUXT_PUBLIC_CWA_API_URL_BROWSER: https://localhost/_api
+      NUXT_SITE_URL: https://localhost
+
+  tests:
+    build: .
+    profiles: [tests]
+    environment:
+      E2E_BASE_URL: https://localhost
+      E2E_ADMIN_PASSWORD: ${E2E_ADMIN_PASSWORD:?}
+      E2E_MAILPIT_URL: http://mailpit:8025
+      CI: ${CI:-}

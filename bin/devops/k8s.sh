@@ -213,6 +213,14 @@ run_test_functional() {
   APP_ENV=test vendor/bin/phpunit tests/Functional --log-junit build/logs/phpunit/functional.xml
 }
 
+# Browser tests (#157): this ref's php and app images in a throwaway stack (e2e/run.sh). Opt-in: CWA_CI_E2E_ENABLED.
+run_browser_tests() {
+  if [ -n "$CI_REGISTRY_USER" ]; then
+    echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  fi
+  E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" sh ./e2e/run.sh
+}
+
 # A leading or trailing dot means the url's variable (e.g. KUBE_INGRESS_BASE_DOMAIN) was empty.
 check_kube_domain() {
   case "$DOMAIN" in

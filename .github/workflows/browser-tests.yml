@@ -1,0 +1,54 @@
+name: Browser tests
+
+# Browser tests (#157): a ref's php and app images in a throwaway stack (e2e/run.sh).
+# Called by ci.yml (before review and staging) and production.yml (before the deploy) when vars.CWA_CI_E2E_ENABLED is "true".
+on:
+  workflow_call:
+    inputs:
+      ref_slug:
+        description: The image tag (the ref's slug) to test
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  browser-tests:
+    name: Browser tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
+      - name: Run the browser tests
+        env:
+          CI_REGISTRY: ghcr.io
+          CI_REGISTRY_USER: ${{ github.actor }}
+          CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+          CI_COMMIT_REF_SLUG: ${{ inputs.ref_slug }}
+          CI_COMMIT_SHA: ${{ github.sha }}
+          CI_COMMIT_REF_NAME: ${{ github.ref_name }}
+          KUBE_INGRESS_BASE_DOMAIN: ${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          run_browser_tests
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-tests-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14
+          if-no-files-found: ignore

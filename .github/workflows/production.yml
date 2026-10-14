@@ -16,8 +16,21 @@ defaults:
     shell: bash
 
 jobs:
+  # Tests main's images before they are deployed (#157), when vars.CWA_CI_E2E_ENABLED is "true".
+  browser-tests:
+    name: Browser tests
+    if: vars.CWA_CI_E2E_ENABLED == 'true' && vars.CWA_CI_TEST_DISABLED != 'true'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/browser-tests.yml
+    with:
+      ref_slug: main
+
   deploy:
     name: Deploy ${{ inputs.action }}
+    needs: [browser-tests]
+    if: always() && needs.browser-tests.result != 'failure' && needs.browser-tests.result != 'cancelled'
     runs-on: ubuntu-latest
     environment:
       name: production

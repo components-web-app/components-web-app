@@ -183,10 +183,27 @@ jobs:
           name: functional-results
           path: api/build/logs/phpunit/functional.xml
 
+  browser-tests:
+    name: Browser tests
+    needs: [setup, build-api, build-app]
+    if: |
+      always() &&
+      needs.setup.result == 'success' &&
+      vars.CWA_CI_E2E_ENABLED == 'true' &&
+      vars.CWA_CI_TEST_DISABLED != 'true' &&
+      needs.build-api.result != 'failure' &&
+      needs.build-app.result != 'failure'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/browser-tests.yml
+    with:
+      ref_slug: ${{ needs.setup.outputs.ref_slug }}
+
   review:
     name: Deploy Review
     runs-on: ubuntu-latest
-    needs: [setup, build-api, build-app, unit-tests, functional-tests]
+    needs: [setup, build-api, build-app, unit-tests, functional-tests, browser-tests]
     if: |
       always() &&
       needs.setup.result == 'success' &&
@@ -195,7 +212,8 @@ jobs:
       needs.build-api.result != 'failure' &&
       needs.build-app.result != 'failure' &&
       needs.unit-tests.result != 'failure' &&
-      needs.functional-tests.result != 'failure'
+      needs.functional-tests.result != 'failure' &&
+      needs.browser-tests.result != 'failure'
     environment:
       name: review/${{ github.ref_name }}
       url: https://${{ needs.setup.outputs.ref_slug }}-review.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
@@ -323,7 +341,7 @@ jobs:
   staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
-    needs: [setup, build-api, build-app, unit-tests, functional-tests]
+    needs: [setup, build-api, build-app, unit-tests, functional-tests, browser-tests]
     if: |
       always() &&
       needs.setup.result == 'success' &&
@@ -332,7 +350,8 @@ jobs:
       needs.build-api.result != 'failure' &&
       needs.build-app.result != 'failure' &&
       needs.unit-tests.result != 'failure' &&
-      needs.functional-tests.result != 'failure'
+      needs.functional-tests.result != 'failure' &&
+      needs.browser-tests.result != 'failure'
     environment:
       name: staging
       url: https://staging.${{ vars.KUBE_INGRESS_BASE_DOMAIN }}
