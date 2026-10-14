@@ -8,14 +8,118 @@ monolog:
       excluded_http_codes: [ 404, 405 ]
       buffer_size: 50 # How many messages should be saved? Prevent memory leaks
     nested:
+      # stderr, not a file (#162): a file inside the container is lost on every restart, and the
+      # cluster's logging agent ships stdout and stderr (GKE: Cloud Logging). JSON in Google's
+      # structured logging shape, so severity, channel and context are queryable fields.
       type: stream
-      path: "%kernel.logs_dir%/%kernel.environment%.log"
+      path: php://stderr
       level: debug
+      formatter: app.monolog.formatter.redacting
     console:
       type: console
       process_psr_3_messages: false
       channels: [ "!event", "!doctrine" ]
-    deprecation:
-      type: stream
-      channels: [ deprecation ]
-      path: "%kernel.logs_dir%/%kernel.environment%.deprecations.log"
+    # No deprecation file handler: it was an unread file inside the container, lost on every restart.
+    # Deprecations still reach the buffered context of any request that fails, through `main`.
+
+    # Per-incident developer alert (#162): one message the first time a 5xx happens. Off unless ERROR_MAIL_TO is set.
+    error_mail:
+      type: fingers_crossed
+      # critical, not error: Symfony's ErrorListener logs a 4xx at error and only a 5xx or an
+      # uncaught non-HTTP exception at critical, so error would mail every 404 and rejected form.
+      action_level: critical
+      handler: error_mail_deduplicated
+      # One email per request: the flush hands the whole buffer to the handler in one batch.
+      buffer_size: 50
+      # A failed send is logged at error on this channel, which would trigger another send.
+      # App\Monolog\ErrorMailHandler swallows the failure as well.
+      channels: [ "!mailer" ]
+    error_mail_deduplicated:
+      type: deduplication
+      handler: error_mail_message
+      deduplication_level: critical
+      # One email per unique error per hour. The store is a file in the container, so the window is
+      # per pod and a restart or deploy resets it; the API runs one replica.
+      time: 3600
+      store: '%kernel.cache_dir%/monolog-error-mail-dedup.log'
+    error_mail_message:
+      type: service
+      id: app.monolog.handler.error_mail
+
+services:
+  app.monolog.handler.error_mail:
+    class: App\Monolog\ErrorMailHandler
+    arguments:
+      $mailer: '@mailer.mailer'
+      # Empty means no error mail (deploys: CI variable CWA_API_ERROR_MAIL_TO). An alert is not a
+      # correctness requirement, so a missing value must never fail a boot.
+      $toEmailAddress: '%env(string:default::ERROR_MAIL_TO)%'
+      $fromEmailAddress: '%env(string:default::MAILER_EMAIL)%'
+      $subject: '%env(WEBSITE_NAME)% API error'
+      # The stderr formatter, not a second one: mail is forwarded and archived, so it must be redacted
+      # at least as much as the log. It masks email addresses, so the alert cannot name the user.
+      $formatter: '@app.monolog.formatter.redacting'
+      $level: critical
+
+  app.monolog.formatter.google_cloud_logging:
+    class: Monolog\Formatter\GoogleCloudLoggingFormatter
+
+  # A formatter rather than a processor, because it runs last and sees the normalised output: a
+  # secret copied into an exception message, which no processor can reach, is swept out too.
+  app.monolog.formatter.redacting:
+    class: Monolog\Formatter\RedactingFormatter
+    arguments:
+      $formatter: '@app.monolog.formatter.google_cloud_logging'
+      $sensitiveKeys:
+        - password
+        - passwd
+        - pwd
+        - plainPassword
+        - oldPassword
+        - newPassword
+        - secret
+        - passphrase
+        - token
+        - jwt
+        - refresh_token
+        - refreshToken
+        - access_token
+        - passwordConfirmationToken
+        - usernameConfirmationToken
+        - passwordResetConfirmationToken
+        - newEmailConfirmationToken
+        - emailAddressVerifyToken
+        - api_key
+        - apikey
+        - authorization
+        - auth
+        - x-auth-token
+        - cookie
+        - set-cookie
+        - credentials
+        # The account identifier can be an email address, and it reaches the log as a route
+        # parameter on the password reset, email verification and email change routes.
+        - username
+        - newUsername
+        - new_username
+        - email
+        - emailAddress
+        - newEmailAddress
+        - new_email
+      $patterns:
+        # Email addresses anywhere in the line, raw and percent-encoded (as inside request_uri).
+        - '#[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}#'
+        - '#[A-Za-z0-9._+-]+%40[A-Za-z0-9.-]+\.[A-Za-z]{2,}#'
+        # JWTs, and Authorization style header values.
+        - '#eyJ[A-Za-z0-9_=-]{8,}\.[A-Za-z0-9_=-]+\.[A-Za-z0-9_=-]*#'
+        - '#\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}#i'
+        # Credentials in a DSN, e.g. the mailer or database URL in a connection exception.
+        - '#\b[a-z][a-z0-9+.-]*://[^\s:@/"]+:[^\s@/"]+@#'
+        # Anything handed over in a query string or form body under a telling name.
+        - '#[\w.-]*(?:token|api[_-]?key|auth|password|passwd|secret|passphrase)=[^&"\s]+#i'
+        # Username and token path segments of the email links, on the API routes
+        # (/_api/verify-email/{username}/{token}, /_api/confirm-email/{username}/{emailAddress}/{token},
+        # /_api/password/reset/request/{username}) and the front-end pages they link to.
+        - '#(?<=/verify-email/|/confirm-email/|/confirm-new-email/|/reset-password/|/password/reset/request/)[^?\s"]+#'
+        # A bcrypt hash, which a failing insert on the user table puts into the driver exception message.
+        - '#\$2[aby]?\$\d{2}\$[./A-Za-z0-9]{53}#'

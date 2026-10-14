@@ -49,6 +49,8 @@ services:
       MERCURE_CORS_ORIGIN: https://localhost
       MAILER_DSN: smtp://mailpit:1025
       MAILER_EMAIL: CWA Tests <tests@cwa.test>
+      # Any 5xx during the run mails here; run.sh fails the run if one arrives (#162).
+      ERROR_MAIL_TO: errors@cwa.test
       GCLOUD_BUCKET: cwa-e2e
       GCLOUD_API_ENDPOINT: http://gcs:8000
       GCLOUD_PUBLIC_URL: https://gcs:4443/cwa-e2e/

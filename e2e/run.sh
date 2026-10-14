@@ -77,4 +77,11 @@ set -e
 docker cp cwa-e2e-tests:/e2e/playwright-report ./playwright-report >/dev/null 2>&1 || true
 docker cp cwa-e2e-tests:/e2e/test-results ./test-results >/dev/null 2>&1 || true
 docker rm -f cwa-e2e-tests >/dev/null 2>&1 || true
+
+# A 5xx the UI hid still sends the production error mail (#162).
+error_mails=$(compose exec -T php curl -fs 'http://mailpit:8025/api/v1/search?query=to:errors@cwa.test' | sed -n 's/.*"messages_count":\([0-9]*\).*/\1/p')
+if [ "${error_mails:-0}" != "0" ]; then
+  echo "The API answered with a server error during the run: $error_mails error mail(s). See the php log above or in the stack." >&2
+  tests_status=1
+fi
 exit "$tests_status"

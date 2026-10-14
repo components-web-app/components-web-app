@@ -456,6 +456,19 @@ The module ships no service worker; the template carries the reference config in
 
 Throttled email requests (api-components-bundle#331) return 429 with `Retry-After`, and the module's resend link counts down from it (cwa-nuxt-module#353). Browsers only let cross-origin JavaScript read CORS-safelisted headers plus those in `Access-Control-Expose-Headers`, so `nelmio_cors.yaml` exposes `Retry-After` alongside `Link`. The template's own browser calls are same-origin `/_api`, so this only matters for a site that serves the API from another origin. Don't drop it from `expose_headers`.
 
+## Production logging and the error mail (#162)
+
+Ported from bcio (`api/config/packages/prod/monolog.yaml`, `App\Monolog\ErrorMailHandler`, `tests/Unit/Monolog/`).
+- **prod logs to stderr as JSON, not a file.** A file inside the container is lost on every restart, and the cluster's logging agent ships stderr (GKE: Cloud Logging). It's Google's structured shape, so severity, channel and context are queryable. There's no `var/log/prod.log` any more: read `kubectl logs`, or the cluster's log explorer. `fingers_crossed` still writes only on an error, so a quiet request logs nothing.
+- **Redaction is a formatter** (Monolog's `RedactingFormatter`, around `GoogleCloudLoggingFormatter`), so it also reaches secrets copied into exception messages. It masks emails, JWTs, DSN credentials, bcrypt hashes and the username and token segments of the email-link paths. `ProdLogRedactionTest` reads the keys and patterns from the YAML, so loosening it fails. **A new field or URL that carries a secret or an email address needs a key or pattern there, and a test.**
+- **Error mail:**
+  - One email per unique 5xx per hour to `ERROR_MAIL_TO` (deploys: `CWA_API_ERROR_MAIL_TO`, through the passthrough; empty sends none and never fails boot).
+  - It triggers at `critical`, which is what Symfony logs 5xx at (4xx is `error`).
+  - It's one email per request, deduplicated per pod and reset by a restart. The `mailer` channel is excluded, and a failed send is swallowed.
+  - The subject is `WEBSITE_NAME` + " API error" and must never carry the record (the parent formats it unredacted).
+- **The browser tests fail the run on any error mail** (`e2e/run.sh`, `ERROR_MAIL_TO: errors@cwa.test`), so a 5xx the UI hides still fails CI.
+- **Proven in the prod image** (2026-10-14, e2e stack with the database stopped): two 500s sent one mail, and neither the mail nor the stderr JSON contained the email address or token from the URL.
+
 ## Security and secrets
 
 - **Deploy secrets keep their values (#144).** `deploy_secrets` (in `deploy`, after the kube context) takes `APP_SECRET`, `MERCURE_JWT_SECRET` and the JWT key pair from a CI variable, else from the release's live Secret, else generates them, so a rollout's old and new pods agree and logins, signed URLs and Mercure cookies survive a deploy. Jobs no longer call `generate_jwt_keys` themselves: a call before `deploy` would generate before the live values are read. The chart's own random `php.appSecret` default is only for a bare `helm install`.
