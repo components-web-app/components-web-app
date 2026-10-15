@@ -266,6 +266,16 @@ Projects copy `bin/devops/setup.sh`, `k8s.sh` and the chart, and cwa-deployment-
 - **`k8s.sh` runs under busybox ash on GitLab:** keep the hooks POSIX (no arrays, `declare` or `[[`-only logic in `k8s.sh`). A `DOMAIN` already set when `setup.sh` runs (by `project.sh` or a CI variable) wins over the environment url.
 When a project needs something these can't do, add a hook here rather than letting it edit the shared file.
 
+### Deployed images are pinned and promoted (#164)
+
+Builds push only the branch tag (`php:main`, `app:main`). A deploy never runs a moving tag. Before this, pods ran `:main` with `pullPolicy: Always`, so any restart, eviction, scale-up or the 03:00 orphan scan started (and migrated with) a build nobody had deployed. bcio's database was migrated that way by a node rotation.
+- **Build:** `--metadata-file` records the pushed digest. `save_image_digest` writes `image_digest.env`: a dotenv artifact on GitLab (`CWA_CI_PHP_IMAGE_DIGEST`, `CWA_CI_APP_IMAGE_DIGEST`), a step output on GitHub.
+- **Deploy:** `promote_images <track>` (in `deploy`, before helm). Staging, canary and production copy this pipeline's build to their own tag (`:staging`, `:canary`, `:production`) through the registry API: no pull, no new layers. Helm gets `<tag>@<digest>` with `IfNotPresent`. Review keeps its branch tag, pinned by digest.
+- **The track tag is what keeps the registry from garbage-collecting a deployed image** once `:main` moves on. The digest makes it exact, and changes the pod spec so every new build rolls out. The registry holds a fixed set of tags: `main`, `staging`, `canary`, `production`, plus review branches.
+- **No digest** (a build skipped with `CWA_CI_BUILD_DISABLED`, or GitHub's `production.yml`, which builds nothing): the deploy pins `:$TAG`'s digest at deploy time. A registry error fails the deploy before helm.
+- **Rollback:** re-run the older pipeline's deploy job, which promotes its own digest again. `helm rollback` also works, because each revision records its digest.
+- Auth comes from the registry's `WWW-Authenticate` challenge, with `CI_REGISTRY_USER`/`CI_REGISTRY_PASSWORD`. On GitHub the deploy jobs need `packages: write`. `REGISTRY_SCHEME=http` exists only for testing against a local `registry:2`.
+
 ### The API is capped at one replica, on purpose
 
 - `autoscaling.maxReplicas: 1` and `CWA_CI_API_AUTOSCALE_MAX` default 1. Souin's `otter` store is in-memory and purged via `localhost:2019`, so a write on a second pod never purges the first pod's cache (and with a year-long `s-maxage` that is permanent). Mercure's `bolt` transport is pod-local too. One pod served ~974 req/s cached. **Raise it only alongside a shared cache store and a clustered Mercure hub** (#85); and then every `kubectl exec deploy/…` purge must loop over every API pod.

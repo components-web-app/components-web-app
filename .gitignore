@@ -8,3 +8,6 @@
 
 # Downloaded by `helm dependency build/update`; the pin lives in Chart.lock.
 /helm/cwa/charts/
+# Build outputs read by CI (#164)
+/build-metadata.json
+/image_digest.env

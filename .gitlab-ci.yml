@@ -50,6 +50,10 @@ build api:
     - install_dependencies
     - setup_docker_environment
     - build_api
+  # The pushed digest, which the deploys pin and promote (#164).
+  artifacts:
+    reports:
+      dotenv: image_digest.env
   cache:
     - key:
         files:
@@ -73,6 +77,10 @@ build app:
     - install_dependencies
     - setup_docker_environment
     - build_app
+  # The pushed digest, which the deploys pin and promote (#164).
+  artifacts:
+    reports:
+      dotenv: image_digest.env
   only:
     - branches
   except:

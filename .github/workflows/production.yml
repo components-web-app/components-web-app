@@ -32,6 +32,10 @@ jobs:
     needs: [browser-tests]
     if: always() && needs.browser-tests.result != 'failure' && needs.browser-tests.result != 'cancelled'
     runs-on: ubuntu-latest
+    # packages: write tags the deployed images; with no build here, promote_images pins :main's current digest (#164).
+    permissions:
+      contents: read
+      packages: write
     environment:
       name: production
       url: https://${{ vars.KUBE_INGRESS_BASE_DOMAIN }}

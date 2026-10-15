@@ -166,8 +166,10 @@ build_api() {
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	$(default_branch_cache_from "$PHP_REPOSITORY_CACHE") \
   	--tag $PHP_REPOSITORY:$TAG \
+  	--metadata-file build-metadata.json \
   	--target frankenphp_prod \
-  	"api"
+  	"api" || return 1
+  save_image_digest PHP
 }
 
 build_app() {
@@ -191,8 +193,91 @@ build_app() {
     --cache-from type=registry,ref=$APP_REPOSITORY_CACHE:$TAG \
     $(default_branch_cache_from "$APP_REPOSITORY_CACHE") \
   	--tag $APP_REPOSITORY:$TAG \
+  	--metadata-file build-metadata.json \
   	--target prod \
-  	"app"
+  	"app" || return 1
+  save_image_digest APP
+}
+
+# The pushed image's digest, for the deploys (#164): GitLab reads image_digest.env (a dotenv artifact), GitHub a step output.
+save_image_digest() {
+  local digest
+  digest=$(sed -n 's/.*"containerimage.digest": *"\(sha256:[0-9a-f]*\)".*/\1/p' build-metadata.json | head -1)
+  [ -n "$digest" ] || { echo "❌ No image digest in build-metadata.json" >&2; return 1; }
+  echo "Pushed $1 image digest: $digest"
+  echo "CWA_CI_$1_IMAGE_DIGEST=$digest" > image_digest.env
+  if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "digest=$digest" >> "$GITHUB_OUTPUT"; fi
+}
+
+REGISTRY_MANIFEST_TYPES="application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json"
+
+# curl against the registry, with REGISTRY_TOKEN when there is one.
+registry_curl() {
+  if [ -n "${REGISTRY_TOKEN:-}" ]; then
+    curl -sSf -H "Authorization: Bearer $REGISTRY_TOKEN" "$@"
+  else
+    curl -sSf "$@"
+  fi
+}
+
+# Sets REGISTRY_TOKEN for repository path $2 on host $1, from the registry's WWW-Authenticate challenge.
+registry_login() {
+  local challenge realm service
+  REGISTRY_TOKEN=""
+  challenge=$(curl -sS -o /dev/null -D - "${REGISTRY_SCHEME:-https}://$1/v2/" | tr -d '\r' | sed -n 's/^[Ww][Ww][Ww]-[Aa]uthenticate: *Bearer *//p')
+  realm=$(printf '%s' "$challenge" | sed -n 's/.*realm="\([^"]*\)".*/\1/p')
+  service=$(printf '%s' "$challenge" | sed -n 's/.*service="\([^"]*\)".*/\1/p')
+  [ -n "$realm" ] || return 0
+  if [ -n "${CI_REGISTRY_USER:-}" ]; then
+    set -- -u "$CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD" -G "$realm" --data-urlencode "service=$service" --data-urlencode "scope=repository:$2:pull,push"
+  else
+    set -- -G "$realm" --data-urlencode "service=$service" --data-urlencode "scope=repository:$2:pull"
+  fi
+  REGISTRY_TOKEN=$(curl -sSf "$@" | sed -n 's/.*"token" *: *"\([^"]*\)".*/\1/p') || return 1
+  [ -n "$REGISTRY_TOKEN" ] || { echo "❌ The registry gave no token for $2" >&2; return 1; }
+}
+
+# Prints the image tag the deploy uses for repository $1 (#164): <tag>@<digest>, so every pod, CronJob and Job
+# started later runs exactly this build. Staging, canary and production first copy it to their own tag ($3),
+# moved only by a deploy; the registry keeps it tagged. $2: this pipeline's build digest, or empty for :$TAG's.
+promote_image() {
+  local repo="$1" digest="$2" target="$3" host path body type
+  host=${repo%%/*}
+  path=${repo#*/}
+  registry_login "$host" "$path" || return 1
+  if [ -z "$digest" ]; then
+    digest=$(registry_curl -I -H "Accept: $REGISTRY_MANIFEST_TYPES" "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$TAG" \
+      | tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *//p') || return 1
+  fi
+  case "$digest" in
+    sha256:*) ;;
+    *) echo "❌ No digest for $repo:$TAG" >&2; return 1 ;;
+  esac
+  if [ -n "$target" ]; then
+    body=$(mktemp)
+    type=$(registry_curl -H "Accept: $REGISTRY_MANIFEST_TYPES" -D - -o "$body" "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$digest" \
+      | tr -d '\r' | sed -n 's/^[Cc]ontent-[Tt]ype: *//p' | tail -1) || { rm -f "$body"; return 1; }
+    registry_curl -X PUT -H "Content-Type: $type" --data-binary "@$body" -o /dev/null \
+      "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$target" || { rm -f "$body"; echo "❌ Couldn't tag $repo@$digest as $target" >&2; return 1; }
+    rm -f "$body"
+    echo "Tagged $repo@$digest as $target" >&2
+  fi
+  printf '%s@%s' "${target:-$TAG}" "$digest"
+}
+
+# Sets PHP_IMAGE_TAG and APP_IMAGE_TAG for the deploy of track $1 (#164).
+promote_images() {
+  local target
+  case "${1:-stable}" in
+    stable) target=production ;;
+    staging|canary) target="$1" ;;
+    *) target="" ;;
+  esac
+  PHP_IMAGE_TAG=$(promote_image "$PHP_REPOSITORY" "${CWA_CI_PHP_IMAGE_DIGEST:-}" "$target") || return 1
+  APP_IMAGE_TAG=$(promote_image "$APP_REPOSITORY" "${CWA_CI_APP_IMAGE_DIGEST:-}" "$target") || return 1
+  export PHP_IMAGE_TAG APP_IMAGE_TAG
+  echo "Deploying php $PHP_REPOSITORY:$PHP_IMAGE_TAG"
+  echo "Deploying app $APP_REPOSITORY:$APP_IMAGE_TAG"
 }
 
 run_test_phpunit() {
@@ -851,6 +936,7 @@ deploy() {
   deploy_secrets "$name" || return 1
   # Again, now that deploy_secrets has set NUXT_APP_SECRET; the first run already reported.
   site_env_yaml=$(site_env_values "$environment_name" 2>/dev/null) || return 1
+  promote_images "$track" || return 1
   ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
@@ -904,8 +990,9 @@ imagePullSecrets:
 pwa:
   image:
     repository: ${APP_REPOSITORY}
-    tag: ${TAG}
-    pullPolicy: Always
+    # <tag>@<digest> from promote_images (#164): never a moving tag, so restarts can't change the build.
+    tag: ${APP_IMAGE_TAG}
+    pullPolicy: IfNotPresent
   # Left null so the chart's in-cluster default applies. Setting it to the public
   # URL sends every server-side render out to the load balancer and back in over
   # TLS for each API call it makes. Only the browser needs the public URL.
@@ -929,8 +1016,8 @@ pwa:
 php:
   image:
     repository: ${PHP_REPOSITORY}
-    tag: ${TAG}
-    pullPolicy: Always
+    tag: ${PHP_IMAGE_TAG}
+    pullPolicy: IfNotPresent
   admin:
     username: ${ADMIN_USERNAME:-"admin"}
     password: ${ADMIN_PASSWORD:-"admin"}
