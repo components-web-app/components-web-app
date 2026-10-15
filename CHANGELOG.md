@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.35](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.35) - 2026-10-15
+
 ### Upgrade notes
 - Pinned deploys (#164): copy `bin/devops/k8s.sh`, `.gitlab-ci.yml` (or `.github/workflows/ci.yml` and `production.yml`) and `.gitignore`. The first deploy of each track creates its `:staging`, `:canary` or `:production` tag in your registry and rolls every pod onto the pinned image. On GitHub the deploy jobs now ask for `packages: write`. [e5b2a29](https://github.com/components-web-app/components-web-app/commit/e5b2a291f7702d1723e5891026944c0fc9ee080e)
 
