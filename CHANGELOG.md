@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.34](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.34) - 2026-10-15
+
 ### Upgrade notes
 - @cwa/nuxt 2.0.0-alpha.16 (#163): bump `@cwa/nuxt` and `@nuxtjs/sitemap` (to `^9.1.0`) in `app/package.json`, and move any other Nuxt SEO module you list yourself to its v6-family major (cwa-nuxt-module#392). Put `<CwaLoadingIndicator />` in `app/app/app.vue`, and remove `CwaUiProgressBar` and its `percent` computeds from your layouts, or two bars show. Copy `bin/devops/k8s.sh`: OG images are now signed with `NUXT_APP_SECRET` and return 500 without it. The deploy keeps one for you (generated on the first deploy, then read back from the live PWA Secret); set a CI variable of at least 32 characters only if you want to choose it. `compose.prod.yaml` now requires it. [f93a7fa](https://github.com/components-web-app/components-web-app/commit/f93a7fa12333aa5ac0fcbfefba0866218e2e6386)
 - Logging (#162): copy `api/config/packages/prod/monolog.yaml`, `api/src/Monolog/ErrorMailHandler.php`, `api/tests/Unit/Monolog/`, and the `ERROR_MAIL_TO` line of `api/.env`. prod no longer writes `var/log/prod.log`; read the logs with `kubectl logs` or the cluster's log explorer. For an email on each new 5xx, set the CI variable `CWA_API_ERROR_MAIL_TO` (and a working `MAILER_DSN`). [59929e3](https://github.com/components-web-app/components-web-app/commit/59929e36166dca7543dfeab19234f32f9c4abbf9)
