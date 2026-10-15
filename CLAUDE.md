@@ -393,6 +393,7 @@ Opt-in Playwright suite in `e2e/` (`CWA_CI_E2E_ENABLED="true"`). It runs this re
   - The manager's action **Publish** is the last button of that name; the tab comes first.
   - The admin menu toggle is an `<a>` with screen-reader text "Menu".
 - **The editing test publishes straight after the last keystroke**, which is the regression check for cwa-nuxt-module#394 (fixed in module alpha.16). Don't add a wait for saves back.
+- **The tests are type-checked** (strict `e2e/tsconfig.json`, `typescript` 6.0.3 and `@types/node` in `e2e/package.json`): the runner's CMD runs `tsc` before Playwright, which strips types without checking them. The suite is the example for downstream sites, so keep it strict.
 - **The OG image test** fetches a page's `og:image`: it fails with a 500 when `NUXT_APP_SECRET` is missing.
 
 ## API

@@ -1,13 +1,14 @@
-import { expect, isHydrated, test } from './fixtures'
+import type { APIRequestContext } from '@playwright/test'
+import { expect, hydrationFinished, isHydrated, test } from './fixtures'
+
+const locs = (xml: string) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, loc]) => loc!)
 
 // Every page the sitemap lists, as an anonymous visitor would see it.
-async function sitemapPaths(request: import('@playwright/test').APIRequestContext) {
-  const index = await (await request.get('/sitemap.xml')).text()
-  const sitemaps = [...index.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1])
+async function sitemapPaths(request: APIRequestContext) {
+  const sitemaps = locs(await (await request.get('/sitemap.xml')).text())
   const urls: string[] = []
   for (const sitemap of sitemaps.filter(url => url.endsWith('.xml'))) {
-    const xml = await (await request.get(new URL(sitemap).pathname)).text()
-    urls.push(...[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]))
+    urls.push(...locs(await (await request.get(new URL(sitemap).pathname)).text()))
   }
   urls.push(...sitemaps.filter(url => !url.endsWith('.xml')))
   return [...new Set(urls.map(url => new URL(url).pathname))]
@@ -40,10 +41,7 @@ test('a redirecting route answers with a 308 before rendering its target', async
 
 test('the loading bar shows while a CWA page loads after a client-side navigation', async ({ page }) => {
   await page.goto('/')
-  await isHydrated(page)
-  // Nuxt ignores the indicator until hydration has finished, which is after the app mounts.
-  await page.waitForFunction(() => (document.querySelector('#__nuxt') as HTMLElement & { __vue_app__?: { $nuxt: { isHydrating?: boolean } } })
-    .__vue_app__?.$nuxt.isHydrating === false)
+  await hydrationFinished(page)
   // Slows the API so the CWA page load outlasts the indicator's throttle (cwa-nuxt-module#396).
   await page.route('**/_api/**', async (route) => {
     await new Promise(resolve => setTimeout(resolve, 800))

@@ -30,9 +30,15 @@ The stack publishes no ports, so it runs beside the dev stack.
 
 ## Writing tests
 
-- Import `test` and `expect` from `tests/fixtures.ts`, never from `@playwright/test`. Its `page` fails a test whose
-  API write gets a 405, 406 or 415, or that throws an uncaught error in the page.
+- Import `test` and `expect` from `tests/fixtures.ts`, never from `@playwright/test` (types are fine). Its `page` fails a
+  test whose API write gets a 405, 406 or 415, or that throws an uncaught error in the page.
+- Use the `visitor` fixture to see a page as an anonymous visitor beside a signed-in `page`. It has its own browser
+  context, checked the same way and closed after the test.
+- Find elements the way a person does: `getByRole`, `getByLabel`, `getByText`, with exact names. Fall back to CSS only
+  where the markup gives nothing better, and say why in a comment.
 - `logIn(page)` signs in as the admin. The password is generated per run and loaded with the fixtures.
 - Tests share one database and run one at a time. A test that edits content uses its own unique text.
 - `check-all-ran.mjs` fails the run unless every listed test ran and passed.
+- The tests are type-checked (`npm run typecheck`, strict `tsconfig.json`). Playwright only strips types, so the runner
+  runs `tsc` before the tests, and a type error fails the job. Run `npm ci` here for your editor's types.
 - Keep `Dockerfile`'s Playwright image and `@playwright/test` on the same version.

@@ -4,9 +4,12 @@
   "description": "Browser tests for the CWA template (#157), run by e2e/run.sh against production images.",
   "type": "module",
   "scripts": {
+    "typecheck": "tsc",
     "test": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.0"
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3"
   }
 }

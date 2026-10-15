@@ -1,12 +1,5 @@
-import type { Browser, Locator, Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { expect, isHydrated, logIn, test } from './fixtures'
-
-async function visitorPage(browser: Browser, path: string) {
-  const page = await (await browser.newContext({ ignoreHTTPSErrors: true })).newPage()
-  await page.goto(path)
-  await isHydrated(page)
-  return page
-}
 
 // The element over a component takes the click that selects it; the component's own content may not.
 async function selectComponent(page: Page, content: Locator) {
@@ -32,7 +25,7 @@ test('an admin can log in and out', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Sign In' })).toBeVisible()
 })
 
-test('an admin can edit and publish a text component, and visitors see it', async ({ page, browser }) => {
+test('an admin can edit and publish a text component, and visitors see it', async ({ page, visitor }) => {
   const marker = `E2E text ${Date.now()}`
   await logIn(page)
   await page.goto('/')
@@ -46,11 +39,12 @@ test('an admin can edit and publish a text component, and visitors see it', asyn
   await page.keyboard.type(` ${marker}`)
   await publish(page)
 
-  const visitor = await visitorPage(browser, '/')
+  await visitor.goto('/')
+  await isHydrated(visitor)
   await expect(visitor.getByText(marker).first()).toBeVisible()
 })
 
-test('an admin can upload and publish an image, and visitors see it', async ({ page, browser }) => {
+test('an admin can upload and publish an image, and visitors see it', async ({ page, visitor }) => {
   await logIn(page)
   await page.goto('/')
   await page.getByRole('button', { name: 'Edit' }).click()
@@ -63,7 +57,8 @@ test('an admin can upload and publish an image, and visitors see it', async ({ p
   await publish(page)
 
   // The image loads from storage for a visitor: it has real pixels, not a broken or empty element.
-  const visitor = await visitorPage(browser, '/')
+  await visitor.goto('/')
+  await isHydrated(visitor)
   const image = visitor.locator('main img, article img, img[src*="cwa-e2e"]').first()
   await expect(image).toBeVisible()
   await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBeGreaterThan(0)
