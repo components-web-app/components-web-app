@@ -6,9 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Pinned deploys (#164): copy `bin/devops/k8s.sh`, `.gitlab-ci.yml` (or `.github/workflows/ci.yml` and `production.yml`) and `.gitignore`. The first deploy of each track creates its `:staging`, `:canary` or `:production` tag in your registry and rolls every pod onto the pinned image. On GitHub the deploy jobs now ask for `packages: write`. [e5b2a29](https://github.com/components-web-app/components-web-app/commit/e5b2a291f7702d1723e5891026944c0fc9ee080e)
+
 ### Changed
 - @cwa/nuxt 2.0.0-alpha.17: `<CwaLoadingIndicator>`'s bar no longer goes back when the page load finds more resources (cwa-nuxt-module#397). Copy `app/package.json` and `app/pnpm-lock.yaml`. [303fa05](https://github.com/components-web-app/components-web-app/commit/303fa05c9424916eb4d5657d13892a00cd610a1c)
 
+### Fixed
+- Production pods no longer run the moving `:main` tag with `pullPolicy: Always` (#164). A restart, eviction or scale-up, or the nightly orphan scan (which migrates on start), could run an undeployed build against the live database. Deploys now run `<track tag>@<digest>` of the pipeline's own build: staging, canary and production each get one tag, moved only by a deploy, so no per-commit tags pile up. [e5b2a29](https://github.com/components-web-app/components-web-app/commit/e5b2a291f7702d1723e5891026944c0fc9ee080e)
 ## [2.0.0-alpha.34](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.34) - 2026-10-15
 
 ### Upgrade notes
