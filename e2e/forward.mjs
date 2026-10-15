@@ -5,10 +5,13 @@ import { spawn } from 'node:child_process'
 import net from 'node:net'
 
 const host = process.env.E2E_SITE_HOST ?? 'php'
-const forward = port => new Promise(resolve => net.createServer(client => {
+const forward = port => new Promise(resolve => net.createServer((client) => {
   const upstream = net.connect(port, host)
   client.pipe(upstream).pipe(client)
-  const close = () => { client.destroy(); upstream.destroy() }
+  const close = () => {
+    client.destroy()
+    upstream.destroy()
+  }
   client.on('error', close)
   upstream.on('error', close)
 }).listen(port, resolve))

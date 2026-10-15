@@ -39,6 +39,11 @@ The stack publishes no ports, so it runs beside the dev stack.
 - `logIn(page)` signs in as the admin. The password is generated per run and loaded with the fixtures.
 - Tests share one database and run one at a time. A test that edits content uses its own unique text.
 - `check-all-ran.mjs` fails the run unless every listed test ran and passed.
-- The tests are type-checked (`npm run typecheck`, strict `tsconfig.json`). Playwright only strips types, so the runner
-  runs `tsc` before the tests, and a type error fails the job. Run `npm ci` here for your editor's types.
+- Every Playwright call and every helper that returns a promise is awaited, and assertions use the retrying form
+  (`await expect(locator).toBeVisible()`, not `expect(await locator.isVisible())`). No fixed waits
+  (`waitForTimeout`) and no `force: true`: wait for the response, URL or element the test is about.
+- The tests are type-checked (`npm run typecheck`, strict `tsconfig.json`) and linted (`npm run lint`, `lint:fix`):
+  the module's style (`@nuxt/eslint-config`), Playwright's rules and typescript-eslint's `no-floating-promises`, all as
+  errors. Playwright only strips types, so the runner runs both before the tests, and either failing fails the job.
+  Run `npm ci` here for your editor's types and lint.
 - Keep `Dockerfile`'s Playwright image and `@playwright/test` on the same version.

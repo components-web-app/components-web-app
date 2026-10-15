@@ -7,5 +7,5 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 
 # forward.mjs makes http://localhost the site, as the browser must see it (a secure context).
-# Playwright strips types without checking them, so tsc runs first.
-CMD ["node", "forward.mjs", "npx tsc && npx playwright test && node check-all-ran.mjs"]
+# Playwright strips types without checking them, so tsc and ESLint run first.
+CMD ["node", "forward.mjs", "npx tsc && npx eslint . && npx playwright test && node check-all-ran.mjs"]

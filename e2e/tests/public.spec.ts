@@ -26,7 +26,7 @@ test('every sitemap page renders and hydrates', async ({ page, request }) => {
 })
 
 test('a public page is served from the cache on its second request', async ({ request }) => {
-  const headers = { Accept: 'text/html', 'Accept-Encoding': 'gzip' }
+  const headers = { 'Accept': 'text/html', 'Accept-Encoding': 'gzip' }
   await request.get('/blog-articles', { headers })
   const second = await request.get('/blog-articles', { headers })
   expect(second.status()).toBe(200)
@@ -47,13 +47,11 @@ test('the loading bar shows while a CWA page loads after a client-side navigatio
     await new Promise(resolve => setTimeout(resolve, 800))
     await route.continue()
   })
-  await page.locator('header a[href="/blog-articles"]').first().click()
-  await page.waitForFunction(() => {
-    const bar = document.querySelector<HTMLElement>('.nuxt-loading-indicator')
-    return !!bar && getComputedStyle(bar).opacity === '1'
-  })
+  const bar = page.locator('.nuxt-loading-indicator')
+  await page.locator('header').getByRole('link', { name: 'Blog', exact: true }).click()
+  await expect(bar).toHaveCSS('opacity', '1')
   await page.waitForURL('**/blog-articles')
-  await page.waitForFunction(() => getComputedStyle(document.querySelector<HTMLElement>('.nuxt-loading-indicator')!).opacity === '0')
+  await expect(bar).toHaveCSS('opacity', '0')
 })
 
 test('a page\'s OG image renders', async ({ request }) => {
