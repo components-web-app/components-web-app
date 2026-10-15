@@ -23,8 +23,10 @@ docker build --target prod -t cwa-e2e-app:local app
 E2E_PHP_IMAGE=cwa-e2e-php:local E2E_APP_IMAGE=cwa-e2e-app:local sh e2e/run.sh
 ```
 
-- `E2E_ARGS="tests/admin.spec.ts"` (or `--grep …`) runs part of the suite.
-- `E2E_KEEP_STACK=true` leaves the stack running afterwards.
+- `E2E_ARGS="tests/admin.spec.ts"` (or `--grep …`) runs part of the suite. The check that every test ran is skipped then.
+- `E2E_KEEP_STACK=true` leaves the stack running afterwards. Stop it with `docker compose -f e2e/compose.yaml down -v`.
+- Reports land in `playwright-report/` and `test-results/`.
+- The registry's images are amd64 only. On an ARM Mac, run them with `DOCKER_DEFAULT_PLATFORM=linux/amd64`.
 
 The stack publishes no ports, so it runs beside the dev stack.
 

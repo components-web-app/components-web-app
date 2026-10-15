@@ -1,8 +1,6 @@
 #!/bin/sh
-# Runs the browser tests (#157) against production images: E2E_PHP_IMAGE and E2E_APP_IMAGE.
-# Needs docker (with compose) and openssl. Reports land in e2e/playwright-report and e2e/test-results.
-# E2E_ARGS passes Playwright arguments (a spec file, --grep …); the every-test-ran check is skipped then.
-# E2E_KEEP_STACK=true leaves the stack running afterwards (docker compose -f e2e/compose.yaml down -v to stop it).
+# Runs the browser tests (#157) against the E2E_PHP_IMAGE and E2E_APP_IMAGE production images.
+# Options (E2E_ARGS, E2E_KEEP_STACK) are in e2e/README.md.
 set -eu
 
 cd "$(dirname "$0")"

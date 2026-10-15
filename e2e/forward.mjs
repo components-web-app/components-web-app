@@ -1,6 +1,5 @@
-// Forwards localhost:80 and :443 to the site (E2E_SITE_HOST, default php), so the browser and API requests both use
-// https://localhost, the host Caddy serves and the cookies are set for (#157).
-// Then runs the command it was given and exits with its status: node forward.mjs <command…>.
+// Sends localhost:80 and :443 to the site (E2E_SITE_HOST), so the browser and API both use https://localhost (#157).
+// Then runs its arguments as a command and exits with its status.
 import { spawn } from 'node:child_process'
 import net from 'node:net'
 
