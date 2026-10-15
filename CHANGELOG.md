@@ -6,6 +6,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+- @cwa/nuxt 2.0.0-alpha.17: `<CwaLoadingIndicator>`'s bar no longer goes back when the page load finds more resources (cwa-nuxt-module#397). Copy `app/package.json` and `app/pnpm-lock.yaml`. [303fa05](https://github.com/components-web-app/components-web-app/commit/303fa05c9424916eb4d5657d13892a00cd610a1c)
+
 ## [2.0.0-alpha.34](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.34) - 2026-10-15
 
 ### Upgrade notes
