@@ -9,6 +9,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Changed
 
 - The browser tests are type-checked before they run (strict `e2e/tsconfig.json`), use a `visitor` fixture that closes its own context, and find fields by label ([43ece66d7a6a2c6e478904d45b2312a248fd634b](https://github.com/components-web-app/components-web-app/commit/43ece66d7a6a2c6e478904d45b2312a248fd634b)).
+- The browser tests are linted before they run: the module's style, eslint-plugin-playwright and typescript-eslint's `no-floating-promises`, all as errors ([08b40db59ffd6f41fbdb3c716d5190bbbcd0a871](https://github.com/components-web-app/components-web-app/commit/08b40db59ffd6f41fbdb3c716d5190bbbcd0a871)).
 
 ## [2.0.0-alpha.35](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.35) - 2026-10-15
 
