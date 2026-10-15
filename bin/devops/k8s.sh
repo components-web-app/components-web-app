@@ -35,7 +35,7 @@ deployed_value() {
   printf '%s' "$value" | base64 -d
 }
 
-# APP_SECRET, the JWT key pair and MERCURE_JWT_SECRET: a CI variable, else the deployed value, else a new one (#144).
+# APP_SECRET, NUXT_APP_SECRET, the JWT key pair and MERCURE_JWT_SECRET: a CI variable, else the deployed value, else a new one (#144).
 deploy_secrets() {
 	local full
 	full=$(cwa_fullname "$1")
@@ -58,6 +58,16 @@ deploy_secrets() {
 			export JWT_SECRET_KEY="$key" JWT_PASSPHRASE="$passphrase"
 			unset JWT_PUBLIC_KEY
 		fi
+	fi
+	# Nuxt's appSecret signs OG image URLs: every SSR pod needs the same one, at least 32 characters.
+	if [ -z "${NUXT_APP_SECRET}" ]; then
+		NUXT_APP_SECRET=$(deployed_value "$full-pwa-env" NUXT_APP_SECRET)
+		[ -n "${NUXT_APP_SECRET}" ] || { echo "Generate NUXT_APP_SECRET..."; NUXT_APP_SECRET="$(rand_str)"; }
+		export NUXT_APP_SECRET
+	fi
+	if [ "${#NUXT_APP_SECRET}" -lt 32 ]; then
+		echo "!!!! NUXT_APP_SECRET must be at least 32 characters, or OG images return 500. !!!!"
+		return 1
 	fi
 	ensure_jwt_keys
 }
@@ -839,6 +849,8 @@ deploy() {
 
   check_postgres_persistence "$name" || return 1
   deploy_secrets "$name" || return 1
+  # Again, now that deploy_secrets has set NUXT_APP_SECRET; the first run already reported.
+  site_env_yaml=$(site_env_values "$environment_name" 2>/dev/null) || return 1
   ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)

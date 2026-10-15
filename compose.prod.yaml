@@ -37,6 +37,8 @@ services:
       NUXT_PUBLIC_CWA_API_URL_BROWSER: https://${SERVER_NAME:?set SERVER_NAME to the site's domain}/_api
       # HTTPS, because the warm sends the public Host: plain HTTP gets Caddy's 308 (cwa-nuxt-module#343).
       NUXT_CWA_PAGE_CACHE_WARM_ORIGIN: https://php.local
+      # Signs OG image URLs (nuxt-og-image 7): at least 32 characters, e.g. `openssl rand -base64 32`.
+      NUXT_APP_SECRET: ${NUXT_APP_SECRET:?set NUXT_APP_SECRET}
 
   database:
     environment:

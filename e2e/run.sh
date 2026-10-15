@@ -12,6 +12,7 @@ cd "$(dirname "$0")"
 # Throwaway secrets: this stack only lives for one run.
 rand() { openssl rand -hex 24; }
 E2E_APP_SECRET=$(rand)
+E2E_NUXT_APP_SECRET=$(rand)
 E2E_MERCURE_JWT_SECRET=$(rand)
 E2E_JWT_PASSPHRASE=$(rand)
 E2E_ADMIN_PASSWORD=$(rand)
@@ -23,7 +24,7 @@ openssl pkey -in "$keydir/plain.pem" -aes256 -passout "pass:$E2E_JWT_PASSPHRASE"
 E2E_JWT_SECRET_KEY=$(cat "$keydir/private.pem")
 E2E_JWT_PUBLIC_KEY=$(cat "$keydir/public.pem")
 rm -rf "$keydir"
-export E2E_APP_SECRET E2E_MERCURE_JWT_SECRET E2E_JWT_PASSPHRASE E2E_ADMIN_PASSWORD E2E_JWT_SECRET_KEY E2E_JWT_PUBLIC_KEY
+export E2E_APP_SECRET E2E_NUXT_APP_SECRET E2E_MERCURE_JWT_SECRET E2E_JWT_PASSPHRASE E2E_ADMIN_PASSWORD E2E_JWT_SECRET_KEY E2E_JWT_PUBLIC_KEY
 
 compose() { docker compose -f compose.yaml "$@"; }
 cleanup() {

@@ -16,19 +16,6 @@ async function selectComponent(page: Page, content: Locator) {
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
 }
 
-// Resolves once no API write has been in flight for a second: typing saves on each pause.
-// Tracks the requests themselves, so a write already in flight when it starts can't unbalance it.
-async function savesSettled(page: Page) {
-  const inFlight = new Set<import('@playwright/test').Request>()
-  let last = Date.now()
-  const isWrite = (r: import('@playwright/test').Request) => r.method() !== 'GET' && r.url().includes('/_api/')
-  page.on('request', r => { if (isWrite(r)) { inFlight.add(r); last = Date.now() } })
-  const done = (r: import('@playwright/test').Request) => { if (inFlight.delete(r)) last = Date.now() }
-  page.on('requestfinished', done)
-  page.on('requestfailed', done)
-  return async () => expect.poll(() => inFlight.size === 0 && Date.now() - last > 1000, { timeout: 20_000 }).toBe(true)
-}
-
 async function publish(page: Page) {
   const published = page.waitForResponse(r => r.request().method() !== 'GET' && r.url().includes('/_api/') && r.ok())
   // The manager's action button, after its tab of the same name.
@@ -55,11 +42,8 @@ test('an admin can edit and publish a text component, and visitors see it', asyn
   const editor = page.locator('[contenteditable=true]').first()
   await editor.click()
   await page.keyboard.press('Control+End')
-  const settled = await savesSettled(page)
-  const saved = page.waitForResponse(r => r.request().method() === 'PATCH' && r.url().includes('/_api/component/html_contents/') && r.ok())
+  // Publishes straight after the last keystroke: Publish must send the waiting save first (cwa-nuxt-module#394).
   await page.keyboard.type(` ${marker}`)
-  await saved
-  await settled()
   await publish(page)
 
   const visitor = await visitorPage(browser, '/')

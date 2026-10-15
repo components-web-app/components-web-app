@@ -11,12 +11,12 @@
     "generate-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
-    "@cwa/nuxt": "^2.0.0-alpha.15",
+    "@cwa/nuxt": "^2.0.0-alpha.16",
     "@headlessui/vue": "^1.7.23",
     "@heroicons/vue": "^2.2.0",
     "@nuxt/image": "^2.1.0",
     "@nuxt/ui": "^4.11.3",
-    "@nuxtjs/sitemap": "^8.6.2",
+    "@nuxtjs/sitemap": "^9.1.0",
     "@resvg/resvg-js": "^2.6.2",
     "@tiptap/core": "^3.32.0",
     "@tiptap/extension-link": "^3.32.0",

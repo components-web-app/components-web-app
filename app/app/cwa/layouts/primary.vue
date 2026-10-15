@@ -1,10 +1,5 @@
 <template>
   <div class="relative grow flex flex-col">
-    <CwaUiProgressBar
-      :show="showPageLoadBar"
-      :percent="percent"
-      class="page-progress-bar fixed left-0 top-0 z-200"
-    />
     <Spinner
       :show="$cwa.resources.isLoading.value"
       class="absolute top-4 right-4 z-50"
@@ -69,16 +64,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import Spinner from '#cwa/templates/components/utils/Spinner.vue'
 import { useCwa, useCwaLayout } from '#imports'
 import { useHead } from '#app'
 
 const $cwa = useCwa()
 useCwaLayout()
-
-const percent = computed(() => $cwa.resources.pageLoadProgress.value.percent || 3)
-const showPageLoadBar = computed(() => percent.value < 100)
 
 useHead({
   htmlAttrs: {

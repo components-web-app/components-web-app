@@ -64,6 +64,7 @@ services:
       NUXT_CWA_API_URL: http://php/_api
       NUXT_PUBLIC_CWA_API_URL_BROWSER: https://localhost/_api
       NUXT_SITE_URL: https://localhost
+      NUXT_APP_SECRET: ${E2E_NUXT_APP_SECRET:?}
 
   tests:
     build: .
