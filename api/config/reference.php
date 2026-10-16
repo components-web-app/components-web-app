@@ -2049,6 +2049,16 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             original?: scalar|Param|null, // For an uploaded file. A stored name is never reused, so it can be immutable. // Default: "public, max-age=31536000, immutable"
  *             imagine?: scalar|Param|null, // For an imagine variant, which is rewritten at the same path when its filter is regenerated. // Default: "public, max-age=2592000"
  *         },
+ *         image_max_pixels?: scalar|Param|null, // The pixel limit of a #[UploadedImage] constraint that sets no maxPixels, on upload and in the orphaned files report. 30 megapixels fits the default imagine memory_limit. null sets no limit. // Default: 30000000
+ *     },
+ *     fixtures?: array{
+ *         assets?: bool|array{ // Where generate-fixtures stores uploaded files by content hash and where a scaffold loads them from. Unset, generate-fixtures writes readable copies beside the scaffold.
+ *             enabled?: bool|Param, // Default: false
+ *             store?: scalar|Param|null, // local (a folder) or flysystem (one of the application's filesystem adapters). // Default: "local"
+ *             path?: scalar|Param|null, // The local store's folder. Null is an assets folder beside the scaffold class. // Default: null
+ *             adapter?: scalar|Param|null, // The flysystem store's filesystem adapter alias. // Default: null
+ *             prefix?: scalar|Param|null, // The flysystem store's folder within the adapter. // Default: ""
+ *         },
  *     },
  * }
  * @psalm-type LiipImagineConfig = array{
