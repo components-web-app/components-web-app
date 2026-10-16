@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.37](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.37) - 2026-10-17
+
 ### Upgrade notes
 
 - Bundle 2.0.0-alpha.24 and `@cwa/nuxt` 2.0.0-alpha.19 must be deployed together (api-components-bundle#480, cwa-nuxt-module#400): the API now orders component positions and ignores a `sortValue` in a request, which is how older modules reorder. Copy `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml`, or run `composer update components-web-app/api-components-bundle` in the php container and set `@cwa/nuxt` to `^2.0.0-alpha.19`. [da2f00a](https://github.com/components-web-app/components-web-app/commit/da2f00a750b8f41b8b389798c9abffe119c98d34)
