@@ -251,6 +251,11 @@ Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the 
     configMapKeyRef:
       name: {{ $fullName }}
       key: gcloud-public-url
+- name: GCLOUD_PATH_PREFIX
+  valueFrom:
+    configMapKeyRef:
+      name: {{ $fullName }}
+      key: gcloud-path-prefix
 - name: ADMIN_USERNAME
   valueFrom:
     secretKeyRef:

@@ -83,4 +83,14 @@ if [ "${error_mails:-0}" != "0" ]; then
   echo "The API answered with a server error during the run: $error_mails error mail(s). See the php log above or in the stack." >&2
   tests_status=1
 fi
+
+# Every object stays under GCLOUD_PATH_PREFIX, and the stop-review delete empties it (#166).
+objects() { compose exec -T php curl -fs "http://gcs:8000/storage/v1/b/cwa-e2e/o$1" | grep -o '"name": *"[^"]*"' | wc -l | tr -d ' '; }
+outside=$(( $(objects '') - $(objects '?prefix=review/e2e/') ))
+compose exec -T php sh -c 'exec php bin/console silverback:api-components:delete-stored-files gcloud --all --only-if-value="$GCLOUD_PATH_PREFIX" --matching="~(^|/)review/[^/]+/\$~"'
+left=$(objects '')
+if [ "$outside" != "0" ] || [ "$left" != "0" ]; then
+  echo "Storage prefix: $outside object(s) outside review/e2e/, $left left after delete-stored-files." >&2
+  tests_status=1
+fi
 exit "$tests_status"
