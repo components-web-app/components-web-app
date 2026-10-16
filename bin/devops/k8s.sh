@@ -1591,12 +1591,15 @@ performance_audit() {
   fi
 }
 
+# Runs in the pod, so the guard checks the prefix the pod really has: an app deployed before #166 has none.
+DELETE_REVIEW_STORAGE='exec php bin/console silverback:api-components:delete-stored-files gcloud --all --only-if-value="$GCLOUD_PATH_PREFIX" --matching="~(^|/)review/[^/]+/\$~"'
+
 delete_review_storage() {
   local deploy
   deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
     -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" -o name | sed -n 1p)
   [ -n "$deploy" ] || return 1
-  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" -- php bin/console app:storage:delete-review-files
+  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" -- sh -c "$DELETE_REVIEW_STORAGE"
 }
 
 function delete() {
