@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+
+- Selecting a component edited with `TipTapHtmlEditor` no longer saves TipTap's re-serialised HTML as a draft (#167). [9c91f6e](https://github.com/components-web-app/components-web-app/commit/9c91f6ebb6c20b719f862996d9414198f42bfd54)
+
 ## [2.0.0-alpha.36](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.36) - 2026-10-16
 
 ### Upgrade notes
