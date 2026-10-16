@@ -446,7 +446,11 @@ The module ships no service worker; the template carries the reference config in
 ## Media and uploads
 
 - **`GCLOUD_PUBLIC_URL`** (#68) sets `app.media_public_url` for the GCS adapter's `public_url` and `FlysystemCacheResolver`. Unset or empty falls back to `https://storage.googleapis.com/<GCLOUD_BUCKET>/` (Symfony's `default:` treats empty as missing), resolved at runtime, not compile time. Wired: `api/.env` → `php.gcloud.publicUrl` → configmap `gcloud-public-url` → env, and `k8s.sh`. This template's deploy sets `https://cdn.cwa.rocks/` as a GitLab variable.
-- Objects are written to the **bucket root**. The old `'prefix' => '_preview'` tag config was dead (Flysystem never reads it). A real prefix must go to the adapter constructor in `GoogleCloudStorageFactory`, and moves every existing media URL.
+- **`GCLOUD_PATH_PREFIX` (#166)** puts an app's objects in one path of the bucket (unset: the bucket root, as before). `%env(storage_prefix:…)%` (`PathPrefixEnvVarProcessor`) normalises it to `a/b/`; it goes to the adapter's constructor (the tag config's `prefix` is never read) **and is appended to `app.media_public_url`**, because Flysystem's `public_url` generator and `FlysystemCacheResolver` both build URLs from the unprefixed path. The orphaned-file scan lists the adapter's root, so it stays inside the prefix: **apps sharing a bucket need a prefix each**, or each one's scan sees the others' files as orphans and "delete all" removes them.
+  - **Review apps always get `<GCLOUD_PATH_PREFIX>review/<slug>/`** (`gcloud_path_prefix` in `k8s.sh`), so a project-wide prefix can't put them in production's path. `delete review` runs `app:storage:delete-review-files` in the API pod before `helm uninstall`; the command refuses any prefix not ending in `review/<slug>/`. A failure only warns: a bucket lifecycle rule on `review/` is the backstop.
+  - **Changing an existing app's prefix moves every media URL**: database paths are relative to the adapter, so move the objects under the new prefix first.
+  - The browser tests run with `review/e2e/`: the image must load from under it, and `run.sh` fails on any object outside it or left after the delete command.
+  - Dev's local adapter ignores it.
 - In dev the local adapter has no `public_url`, so media falls back to the API URL.
 - **Upload sizing:** `upload_max_filesize = 20M`, `post_max_size = 21M` (`10-app.ini`), `Assert\File(maxSize: '20M')` on `Image::$file`. The ingress allows 30m.
 - **Two `memory_limit`s (#136).** Requests run under `FRANKENPHP_MEMORY_LIMIT` (`php_ini` in the Caddyfile's `frankenphp` block, default `128M`); console commands under `10-app.ini`'s `256M` (fixture load ~60 MB, `cache:clear` ~100 MB, the PHPUnit suite ~110 MB). A worker request with opcache measured ~14 MB. **In worker mode an `ini_set('memory_limit')` outlives the request**, so anything that raises it must restore it.
@@ -520,7 +524,6 @@ Ported from bcio (`api/config/packages/prod/monolog.yaml`, `App\Monolog\ErrorMai
 - **A build-time fixtures hook in `nuxt.config.ts`** (the old `LOAD_FIXTURES` `listen()` hook). It never ran and would have purged every table. Don't reintroduce one.
 - **Probing a path Souin doesn't cache** for php readiness. Uncached `/_api` paths are excluded because they're auth-varying, so they either expose something or don't answer 200 anonymously. (The bundle's `/_api/_/health` could work only after excluding it from `@use_cache`.)
 - **A redirect ingress for retired hostnames** (#86). Take the old hostname offline via `KUBE_INGRESS_ALIAS_DOMAINS`; the TLS rotation makes that safe. A site that needs one can take the snippet from #86.
-- **Parameterising the GCS `prefix`** (#68). It would be a variable that does nothing.
 - **A PDB on the single API pod, or `minAvailable: 1` on SSR** (#78). Both block node drains.
 - **A PWA `postStart` hook or helm `post-upgrade` Job for the deploy purge** (#71). The hook fires on every HPA scale-up; the Job is Kubernetes-only.
 - **An update notice for the service worker.** Replaced by the silent update on navigation.

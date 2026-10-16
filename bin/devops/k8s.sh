@@ -655,7 +655,7 @@ SITE_ENV_RESERVED_API="
   CORS_ALLOW_ORIGIN CWA_ENVIRONMENT DATABASE_CA_CERT DATABASE_CLIENT_CERT
   DATABASE_CLIENT_KEY DATABASE_SSL_MODE DATABASE_URL FRANKENPHP_CONFIG FRANKENPHP_MEMORY_LIMIT
   FRANKENPHP_WORKER_NUM GCLOUD_BUCKET
-  GCLOUD_JSON GCLOUD_PUBLIC_URL GOMEMLIMIT JWT_PASSPHRASE JWT_PUBLIC_KEY JWT_SECRET_KEY
+  GCLOUD_JSON GCLOUD_PATH_PREFIX GCLOUD_PUBLIC_URL GOMEMLIMIT JWT_PASSPHRASE JWT_PUBLIC_KEY JWT_SECRET_KEY
   MAILER_DSN MAILER_EMAIL MERCURE_CORS_ORIGIN MERCURE_EXTRA_DIRECTIVES
   MERCURE_JWT_SECRET MERCURE_PUBLIC_URL MERCURE_PUBLISHER_JWT_ALG
   MERCURE_PUBLISHER_JWT_KEY MERCURE_SUBSCRIBER_JWT_ALG MERCURE_SUBSCRIBER_JWT_KEY
@@ -910,16 +910,31 @@ check_php_memory_budget() {
   echo "php memory budget: ${workers} x ${worker}Mi + ${headroom}Mi imagine + ${reserved}Mi reserved = ${php}Mi of ${limit}Mi; Go gets ${go}Mi."
 }
 
+# A review app stores under <GCLOUD_PATH_PREFIX>review/<slug>/, never in another app's path of a shared bucket (#166).
+gcloud_path_prefix() {
+  local prefix="${GCLOUD_PATH_PREFIX#/}"
+  if [ -n "$prefix" ]; then prefix="${prefix%/}/"; fi
+  if [ "${1-stable}" = "review" ]; then
+    if [ -z "$CI_ENVIRONMENT_SLUG" ]; then
+      echo "A review app needs CI_ENVIRONMENT_SLUG for its storage path prefix (#166)." >&2
+      return 1
+    fi
+    prefix="${prefix}review/${CI_ENVIRONMENT_SLUG}/"
+  fi
+  printf '%s' "$prefix"
+}
+
 deploy() {
 	local track="${1-stable}" environment_name site_env_yaml pwa_min_default pwa_max_default
 	local pwa_cpu_request_default pwa_memory_request_default api_cpu_request_default
-	local api_memory_request_default orphan_scan_default
+	local api_memory_request_default orphan_scan_default gcloud_prefix
 	check_cdn_config || return 1
 	apply_site_defaults "$track"
 	# Before anything changes in the cluster, so a bad name stops the deploy cold.
 	environment_name=$(cwa_environment_name "$track") || return 1
 	site_env_yaml=$(site_env_values "$environment_name") || return 1
 	check_php_memory_budget || return 1
+	gcloud_prefix=$(gcloud_path_prefix "$track") || return 1
 	name="$RELEASE"
 	TLS_SECRET_NAME_SCOPED="$CWA_CI_TLS_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
@@ -1026,6 +1041,7 @@ php:
     jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}
     publicUrl: "${GCLOUD_PUBLIC_URL:-}"
+    pathPrefix: "${gcloud_prefix}"
   resources:
     limits:
       memory: ${CWA_CI_API_MEMORY_LIMIT:-"1Gi"}
@@ -1575,6 +1591,14 @@ performance_audit() {
   fi
 }
 
+delete_review_storage() {
+  local deploy
+  deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" -o name | sed -n 1p)
+  [ -n "$deploy" ] || return 1
+  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" -- php bin/console app:storage:delete-review-files
+}
+
 function delete() {
 	track="${1-stable}"
 	name="$RELEASE"
@@ -1582,6 +1606,11 @@ function delete() {
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
+
+  # A review app's stored files go with it (#166). Needs the API pod, so before the uninstall; a failure only warns.
+  if [ "$track" = "review" ]; then
+    delete_review_storage "$name" || echo "WARNING: could not delete $name's stored files; a bucket lifecycle rule on review/ is the backstop." >&2
+  fi
 
   # soft fail the uninstall in case of failed permissions
 	helm uninstall --namespace="$KUBE_NAMESPACE" "$name" || EXIT_CODE=$? && true

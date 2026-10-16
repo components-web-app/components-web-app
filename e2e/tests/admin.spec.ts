@@ -56,10 +56,10 @@ test('an admin can upload and publish an image, and visitors see it', async ({ p
   await expect(page.getByText('No Image')).toHaveCount(0)
   await publish(page)
 
-  // The image loads from storage for a visitor: it has real pixels, not a broken or empty element.
+  // The image loads from storage, under the app's path prefix (#166), with real pixels.
   await visitor.goto('/')
   await isHydrated(visitor)
-  const image = visitor.locator('main img, article img, img[src*="cwa-e2e"]').first()
+  const image = visitor.locator('img[src*="/cwa-e2e/review/e2e/"]').first()
   await expect(image).toBeVisible()
   await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBeGreaterThan(0)
 })

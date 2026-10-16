@@ -25,8 +25,12 @@ return static function (ContainerConfigurator $configurator) {
         ->set('env(GCLOUD_PUBLIC_URL)', '')
         // A Cloud Storage emulator (e.g. http://gcs:4443) instead of Google, for the browser tests (#157). Empty uses Google.
         ->set('env(GCLOUD_API_ENDPOINT)', '')
+        // Path inside the bucket for this app's objects, e.g. review/<slug>/ (#166). Empty stores at the bucket root.
+        ->set('env(GCLOUD_PATH_PREFIX)', '')
         ->set('app.gcloud_bucket_public_url', 'https://storage.googleapis.com/%env(GCLOUD_BUCKET)%/')
-        ->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%')
+        ->set('app.storage_path_prefix', '%env(storage_prefix:GCLOUD_PATH_PREFIX)%')
+        // public_url bypasses the adapter's prefix, so media URLs add it here, once (#166).
+        ->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%%app.storage_path_prefix%')
         // Origin for links in user emails; the bundle refuses those emails without one. Defaults to the public host.
         ->set('env(EMAIL_LINK_DEFAULT_ORIGIN)', '')
         ->set('app.browser_origin', 'https://%env(BROWSER_SERVER_NAME)%')
@@ -84,13 +88,13 @@ return static function (ContainerConfigurator $configurator) {
                 '%env(json:GCLOUD_JSON)%',
                 '%env(GCLOUD_BUCKET)%',
                 '%env(GCLOUD_API_ENDPOINT)%',
+                '%app.storage_path_prefix%',
             ])
         ;
         $services
             ->set(GoogleCloudStorageAdapter::class)
             ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
-            // Flysystem reads only public_url from this config; a bucket prefix goes to the adapter's constructor
-            // (App\Flysystem\GoogleCloudStorageFactory).
+            // Flysystem reads only public_url from this config; the path prefix goes to the adapter's constructor (#166).
             ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => '%app.media_public_url%' ] ]);
         $services
             ->set(FlysystemCacheResolver::class)

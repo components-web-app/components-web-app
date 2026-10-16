@@ -12,6 +12,8 @@ php:
     bucket: "no-gcloud-bucket"
     # Public base URL for media, with a trailing slash. Empty falls back to https://storage.googleapis.com/<bucket>/ (#68).
     publicUrl: ""
+    # Path inside the bucket for this app's objects (#166). Empty stores at the bucket root; k8s.sh gives review apps review/<slug>/.
+    pathPrefix: ""
   image:
     repository: "chart-example.local/cwa/php"
     pullPolicy: IfNotPresent

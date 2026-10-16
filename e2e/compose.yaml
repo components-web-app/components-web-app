@@ -54,6 +54,8 @@ services:
       GCLOUD_BUCKET: cwa-e2e
       GCLOUD_API_ENDPOINT: http://gcs:8000
       GCLOUD_PUBLIC_URL: https://gcs:4443/cwa-e2e/
+      # A review app's prefix, so uploads, variants and the stop-review delete run under one (#166).
+      GCLOUD_PATH_PREFIX: review/e2e/
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: ${E2E_ADMIN_PASSWORD:?}
       ADMIN_EMAIL: admin@cwa.test

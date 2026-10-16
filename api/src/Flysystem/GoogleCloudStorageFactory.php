@@ -9,7 +9,7 @@ use League\Flysystem\GoogleCloudStorage\UniformBucketLevelAccessVisibility;
 
 class GoogleCloudStorageFactory
 {
-    public function __construct(private readonly array $keyFile, private readonly string $bucket, private readonly string $apiEndpoint = '')
+    public function __construct(private readonly array $keyFile, private readonly string $bucket, private readonly string $apiEndpoint = '', private readonly string $pathPrefix = '')
     {}
 
     public function __invoke(): GoogleCloudStorageAdapter
@@ -26,6 +26,6 @@ class GoogleCloudStorageFactory
         $storageClient = new StorageClient($clientOptions);
         $bucket = $storageClient->bucket($this->bucket);
 
-        return new GoogleCloudStorageAdapter(bucket: $bucket, visibilityHandler: new UniformBucketLevelAccessVisibility());
+        return new GoogleCloudStorageAdapter(bucket: $bucket, prefix: $this->pathPrefix, visibilityHandler: new UniformBucketLevelAccessVisibility());
     }
 }
