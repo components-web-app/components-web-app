@@ -6,7 +6,18 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+- Bundle 2.0.0-alpha.22 (api-components-bundle#453): copy `api/composer.lock`, or run `composer update components-web-app/api-components-bundle` in the php container. No migration. Its three breaking changes are in the fixture builder; the template's scaffold needs none of these changes, but check your own scaffold and fixtures code. Run a fresh load and a second `--append` on a throwaway database and compare row counts with the previous bundle. [1b348c3](https://github.com/components-web-app/components-web-app/commit/1b348c3482c788b9177bfb60155efe1549dbfaf8)
+  - **`nested()` on a page or page data adds a closure instead of replacing the last one.** If one builder calls `nested()` more than once (a later call meant to override an earlier one), every closure now runs, and the children of each are created. Keep one call per builder. `PageBuilder::nested()` now returns the builder, so it can be chained.
+  - **Persist order changed.** A component builder with no groups and a draft is persisted with the positions, not in the first phase. A component builder with groups is persisted after the `nested()` closures whenever the scaffold has one. Code that reads a component's id, IRI or route in an earlier callback (between the first phase and the positions) may now see it unpersisted. Use `linkIri()`/`linkRoute()`, or read it in `onRoutesCreated()`.
+  - **`GenerateFixturesCommand` takes the `ScaffoldGenerator` service** (`silverback.api_components.fixture.scaffold_generator`) instead of its six old collaborators. Only a project that decorates, extends or builds the command by hand must change; inject the generator instead.
+  - Optional: re-run `generate-fixtures` for the new readable output, which uses named methods and variables, `linkRoute()`, `publish()` and `draft()`. A previously generated scaffold still loads.
+
+### Security
+- symfony/expression-language 8.1.9 (CVE-2026-109449: unbounded nesting in the expression parser could crash the process). Copy `api/composer.lock`. [1b348c3](https://github.com/components-web-app/components-web-app/commit/1b348c3482c788b9177bfb60155efe1549dbfaf8)
+
 ### Changed
+- Bundle 2.0.0-alpha.22: `generate-fixtures` writes a scaffold you could maintain by hand; adds `linkIri()`, `linkRoute()`, `publish()`, `draft()` and `reachableWithoutRoute()`; fixes `--append` duplicates and a `nested()` inside a nested closure that never ran (api-components-bundle#453). The template's scaffold loads identically. [1b348c3](https://github.com/components-web-app/components-web-app/commit/1b348c3482c788b9177bfb60155efe1549dbfaf8)
 
 - The browser tests are type-checked before they run (strict `e2e/tsconfig.json`), use a `visitor` fixture that closes its own context, and find fields by label ([43ece66d7a6a2c6e478904d45b2312a248fd634b](https://github.com/components-web-app/components-web-app/commit/43ece66d7a6a2c6e478904d45b2312a248fd634b)).
 - The browser tests are linted before they run: the module's style, eslint-plugin-playwright and typescript-eslint's `no-floating-promises`, all as errors ([08b40db59ffd6f41fbdb3c716d5190bbbcd0a871](https://github.com/components-web-app/components-web-app/commit/08b40db59ffd6f41fbdb3c716d5190bbbcd0a871)).
