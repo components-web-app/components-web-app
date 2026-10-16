@@ -220,7 +220,8 @@ watch(disabledRef, () => {
     return
   }
   const editable = !disabledRef.value
-  editor.value.setEditable(editable)
+  // emitUpdate: false, or selecting a component saves TipTap's re-serialised HTML as a draft (#167).
+  editor.value.setEditable(editable, false)
   if (editable) {
     editor.value.chain().focus(null, { scrollIntoView: false }).run()
   }
