@@ -6,6 +6,16 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- Bundle 2.0.0-alpha.24 and `@cwa/nuxt` 2.0.0-alpha.19 must be deployed together (api-components-bundle#480, cwa-nuxt-module#400): the API now orders component positions and ignores a `sortValue` in a request, which is how older modules reorder. Copy `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml`, or run `composer update components-web-app/api-components-bundle` in the php container and set `@cwa/nuxt` to `^2.0.0-alpha.19`. [da2f00a](https://github.com/components-web-app/components-web-app/commit/da2f00a750b8f41b8b389798c9abffe119c98d34)
+- Migration: bundle 2.0.0-alpha.23 adds `max_components` to `_acb_component_group` (api-components-bundle#467). Copy `api/migrations/Version20261016233432.php`, or generate your own with `doctrine:migrations:diff` (delete its `down()`). [da2f00a](https://github.com/components-web-app/components-web-app/commit/da2f00a750b8f41b8b389798c9abffe119c98d34)
+- Bundle breaking changes, none of which the template uses; check your own code: `sortValue` is read-only on the API (`after`/`before` anchors and `PATCH <group>/order` replace it); `ComponentPositionSortValueHelper` and `ComponentPosition::getSortCollection()` are removed; `UploadedDataUriFile`, `OrphanedFileDetector`, `ComponentPositionValidator`, `ComponentGroupNormalizer`, `ComponentPositionNormalizer` and `GenerateFixturesCommand` take different constructor arguments. `CwaFixtureBuilder` now numbers sort values 0, 1, 2… instead of 10, 20, 30…: only scaffold code that relies on the old numbers needs a change. [da2f00a](https://github.com/components-web-app/components-web-app/commit/da2f00a750b8f41b8b389798c9abffe119c98d34)
+
+### Changed
+
+- Bundle 2.0.0-alpha.24 and `@cwa/nuxt` 2.0.0-alpha.19: the server places added and moved components, a reorder is one request, and a component group can take a `max-components` limit; plus `delete-stored-files`, fixture asset stores and `#[UploadedImage]` (bundle alpha.23 and alpha.24 release notes). [da2f00a](https://github.com/components-web-app/components-web-app/commit/da2f00a750b8f41b8b389798c9abffe119c98d34)
+
 ### Fixed
 
 - Selecting a component edited with `TipTapHtmlEditor` no longer saves TipTap's re-serialised HTML as a draft (#167). [9c91f6e](https://github.com/components-web-app/components-web-app/commit/9c91f6ebb6c20b719f862996d9414198f42bfd54)
