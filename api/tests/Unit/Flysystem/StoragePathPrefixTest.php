@@ -23,7 +23,7 @@ class StoragePathPrefixTest extends TestCase
         yield 'leading and doubled slashes' => ['/review//my-branch/', 'review/my-branch/'];
         // The deploy's gcloud_path_prefix must agree with every case: bin/test/storage-prefix-parity.sh (#168).
         yield 'doubled trailing slash' => ['site-a//', 'site-a/'];
-        yield 'surrounding whitespace' => [' site-a/ ','site-a/'];
+        yield 'surrounding whitespace' => [' site-a/ ', 'site-a/'];
         yield 'surrounding control whitespace' => ["\t\r\v\nsite-a/\n", 'site-a/'];
         yield 'inner space' => ['a b/c', 'a b/c/'];
         yield 'three dots' => ['...', '.../'];
