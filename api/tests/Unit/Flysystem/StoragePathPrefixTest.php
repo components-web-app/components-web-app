@@ -21,6 +21,14 @@ class StoragePathPrefixTest extends TestCase
         yield 'slashes only' => ['//', ''];
         yield 'bare' => ['review/my-branch', 'review/my-branch/'];
         yield 'leading and doubled slashes' => ['/review//my-branch/', 'review/my-branch/'];
+        // The deploy's gcloud_path_prefix must agree with every case: bin/test/storage-prefix-parity.sh (#168).
+        yield 'doubled trailing slash' => ['site-a//', 'site-a/'];
+        yield 'surrounding whitespace' => [' site-a/ ','site-a/'];
+        yield 'surrounding control whitespace' => ["\t\r\v\nsite-a/\n", 'site-a/'];
+        yield 'inner space' => ['a b/c', 'a b/c/'];
+        yield 'three dots' => ['...', '.../'];
+        yield 'dots inside a segment' => ['a..b', 'a..b/'];
+        yield 'hidden segment' => ['.hidden', '.hidden/'];
     }
 
     #[DataProvider('prefixes')]
@@ -29,10 +37,20 @@ class StoragePathPrefixTest extends TestCase
         self::assertSame($expected, PathPrefixEnvVarProcessor::normalise($value));
     }
 
-    public function test_a_prefix_cannot_climb_out_of_its_path(): void
+    public static function refusedPrefixes(): iterable
+    {
+        yield 'climbing out' => ['review/../site', '..'];
+        yield 'parent' => ['..', '..'];
+        yield 'current' => ['.', '.'];
+        yield 'inner current' => ['a/./b', '.'];
+    }
+
+    #[DataProvider('refusedPrefixes')]
+    public function test_a_prefix_cannot_climb_out_of_its_path(string $value, string $segment): void
     {
         $this->expectException(RuntimeException::class);
-        PathPrefixEnvVarProcessor::normalise('review/../site');
+        $this->expectExceptionMessage(sprintf('A storage path prefix cannot contain "%s": "%s".', $segment, $value));
+        PathPrefixEnvVarProcessor::normalise($value);
     }
 
     public function test_the_adapter_stores_under_the_prefix(): void

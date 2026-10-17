@@ -911,9 +911,31 @@ check_php_memory_budget() {
 }
 
 # A review app stores under <GCLOUD_PATH_PREFIX>review/<slug>/, never in another app's path of a shared bucket (#166).
+# Tidies GCLOUD_PATH_PREFIX exactly as php's PathPrefixEnvVarProcessor::normalise; bin/test/storage-prefix-parity.sh checks it (#168).
 gcloud_path_prefix() {
-  local prefix="${GCLOUD_PATH_PREFIX#/}"
-  if [ -n "$prefix" ]; then prefix="${prefix%/}/"; fi
+  local prefix="${GCLOUD_PATH_PREFIX-}" ws rest segment
+  ws=" $(printf '\t\r\v')
+"
+  while :; do case "$prefix" in ["$ws"]*) prefix="${prefix#?}" ;; *) break ;; esac; done
+  while :; do case "$prefix" in *["$ws"]) prefix="${prefix%?}" ;; *) break ;; esac; done
+  prefix=$(printf '%s.' "$prefix" | tr -s '/'); prefix="${prefix%.}"
+  prefix="${prefix#/}"; prefix="${prefix%/}"
+  rest="$prefix/"
+  while [ -n "$prefix" ] && [ -n "$rest" ]; do
+    segment="${rest%%/*}"; rest="${rest#*/}"
+    case "$segment" in
+      .|..)
+        echo "A storage path prefix cannot contain \"$segment\": \"${GCLOUD_PATH_PREFIX-}\" (GCLOUD_PATH_PREFIX)." >&2
+        return 1 ;;
+    esac
+  done
+  if [ -n "$prefix" ]; then prefix="$prefix/"; fi
+  # review/ is where review apps store, and its lifecycle rule would delete a project's uploads there (#168).
+  case "/$prefix" in
+    */review/*)
+      echo "GCLOUD_PATH_PREFIX can't contain a 'review' segment: review apps store under <GCLOUD_PATH_PREFIX>review/<slug>/ (#168)." >&2
+      return 1 ;;
+  esac
   if [ "${1-stable}" = "review" ]; then
     if [ -z "$CI_ENVIRONMENT_SLUG" ]; then
       echo "A review app needs CI_ENVIRONMENT_SLUG for its storage path prefix (#166)." >&2
