@@ -2029,6 +2029,14 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         personalised_resource_classes?: list<scalar|Param|null>,
  *         scheduled_expiry_resource_classes?: list<scalar|Param|null>,
  *         purge_rendered_html_classes?: list<scalar|Param|null>,
+ *         warm_after_flush?: bool|array{ // After a successful flush of the whole HTTP cache (the purge endpoint with no body, `purge-http-cache` with no options, a fixture load), dispatch a bounded warm of the public routes, shortest first, once with `Accept-Encoding: gzip` and once with `br`, as `Silverback\ApiComponentsBundle\Message\WarmHttpCacheMessage` messages on `messenger.default_bus`. Route that message to an async transport: without one the warm runs inside the request or command that flushed.
+ *             enabled?: bool|Param, // Default: false
+ *             base_url?: scalar|Param|null, // The URL of the HTTP cache in front of the API, as `warm-http-cache --base-url`. // Default: "http://localhost"
+ *             max_time?: float|Param, // Seconds after which each warm stops starting requests. // Default: 60.0
+ *             concurrency?: int|Param, // The most warm requests in flight at once. // Default: 2
+ *             timeout?: float|Param, // The most seconds one warm request may take. // Default: 30.0
+ *             limit?: int|Param, // Warm at most this many routes, shortest paths first; null warms every public route until the maximum time. // Default: null
+ *         },
  *     },
  *     orphaned_resources?: array{
  *         notify?: array{ // Emails sent by `silverback:api-components:scan-orphaned` when its result differs from the last stored report. No recipients means no emails.
