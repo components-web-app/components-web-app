@@ -983,7 +983,8 @@ gcloud_path_prefix() {
       echo "A review app needs CI_ENVIRONMENT_SLUG for its storage path prefix (#166)." >&2
       return 1
     fi
-    prefix="${prefix}review/${CI_ENVIRONMENT_SLUG}/"
+    # The slug already starts with review- on GitLab and GitHub; don't say it twice (#173).
+    prefix="${prefix}review/${CI_ENVIRONMENT_SLUG#review-}/"
   fi
   printf '%s' "$prefix"
 }
@@ -1684,7 +1685,7 @@ function delete() {
     if ! delete_review_storage "$name"; then
       # Names the app's real path, e.g. site-a/review/<slug>/, so the operator checks the right lifecycle rule (#169).
       local review_path
-      review_path=$(gcloud_path_prefix review 2>/dev/null) || review_path="<GCLOUD_PATH_PREFIX>review/${CI_ENVIRONMENT_SLUG:-<slug>}/"
+      review_path=$(gcloud_path_prefix review 2>/dev/null) || review_path="<GCLOUD_PATH_PREFIX>review/<slug>/"
       echo "WARNING: could not delete $name's stored files under $review_path; a bucket lifecycle rule on ${review_path%/*/}/ is the backstop." >&2
     fi
   fi

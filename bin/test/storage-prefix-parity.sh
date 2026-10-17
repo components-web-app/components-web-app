@@ -72,7 +72,7 @@ php_result() {
 }
 
 k8s_result() {
-  GCLOUD_PATH_PREFIX="$1" CI_ENVIRONMENT_SLUG=slug $K8S_SHELL -c '
+  GCLOUD_PATH_PREFIX="$1" CI_ENVIRONMENT_SLUG="${SLUG:-review-slug}" $K8S_SHELL -c '
     . "$1" >/dev/null
     err=$(mktemp)
     if out=$(gcloud_path_prefix "$2" 2>"$err"); then printf "ok:%s" "$out"; else printf "refused:"; cat "$err"; fi
@@ -120,6 +120,10 @@ while IFS= read -r line; do
 done <<EOF
 $CASES
 EOF
+
+# A slug without the review- its platforms give it is used as it is (#173).
+got=$(SLUG=other k8s_result site-a review)
+check site-a review "ok:site-a/review/other/" "$got"
 
 if [ "$failures" -ne 0 ]; then
   echo "storage-prefix-parity: $failures of $count checks differ from php (#168)." >&2
