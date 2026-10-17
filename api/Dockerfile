@@ -95,6 +95,8 @@ RUN set -eux; \
 		xsl \
 		gd \
 		ffi \
+		# warm-http-cache --accept-encoding=br decodes br with it, or warms only the routes (#175).
+		brotli \
 	;
 
 # libvips, the imagine driver (#141): no ImageMagick, PDF or SVG loaders for uploads, two threads per image,
