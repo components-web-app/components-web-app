@@ -154,7 +154,7 @@ passed to the origin.
   - *Static* is Nuxt serving the build's `/_nuxt` files (not cached by Souin).
 - **Souin cache** counts the `Cache-Status` header of each response: `hit`,
   `miss` (`fwd=uri-miss`), `bypass` (Souin gave up, e.g. `DEADLINE-EXCEEDED`, a
-  render slower than its 10s backend timeout) and `no header` (the request never
+  render slower than its 30s backend timeout) and `no header` (the request never
   went through the cache: an excluded path, a cookie, or no Souin in front). The
   `=>` line says whether the page numbers measured the cache or SSR.
 - **Thresholds**: pages p95 under `PAGE_P95_MS`, 99% of pages 200, API and
