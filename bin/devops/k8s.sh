@@ -1322,6 +1322,8 @@ purge_rendered_html() {
       echo "Cloudflare is configured: flushing the HTTP cache, which also purges everything at Cloudflare..."
       kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
         -- php bin/console silverback:api-components:purge-http-cache
+      # The flush empties the new pod's postStart warm, so a visitor's first page would miss on every /_api fetch (#175).
+      warm_api_cache "$api_deploy"
       ;;
     *)
       echo "Purging rendered HTML..."
@@ -1329,6 +1331,22 @@ purge_rendered_html() {
         -- php bin/console silverback:api-components:purge-rendered-html
       ;;
   esac
+}
+
+# Warms /_api in the API pod after a full flush, as its postStart does: gzip for SSR, then br for browsers (#175).
+# Each pass stops at CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME seconds (0 skips it); a failure only warns.
+warm_api_cache() {
+  local api_deploy="$1" max_time="${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}"
+  if [ "$max_time" = "0" ]; then
+    return 0
+  fi
+  echo "Warming /_api in the API pod (gzip, then br; at most ${max_time}s each)..."
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+    -- php bin/console silverback:api-components:warm-http-cache --max-time="$max_time" --no-interaction \
+    || echo "WARNING: the gzip /_api warm failed; visitors' first requests render cold." >&2
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+    -- php bin/console silverback:api-components:warm-http-cache --accept-encoding=br --max-time="$max_time" --no-interaction \
+    || echo "WARNING: the br /_api warm failed; visitors' first requests render cold." >&2
 }
 
 # Creates every image variant not stored yet in one-off Jobs with their own memory limit, never in the serving pod (#153),
@@ -1392,6 +1410,7 @@ generate_image_variants() {
     echo "Purging the HTTP cache, so cached API responses list the new variants..."
     kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
       -- php bin/console silverback:api-components:purge-http-cache
+    warm_api_cache "$api_deploy"
   fi
 
   if [[ "$status" -ne 0 ]]; then
