@@ -71,10 +71,10 @@ spec:
           lifecycle:
             {{- $warmMaxTime := int .Values.php.warmHttpCacheMaxTime }}
             {{- if gt $warmMaxTime 0 }}
-            # Warms /_api before the probes start (#160): waits for Caddy, then warms; at most maxTime + 270s, never fails the container.
+            # Warms /_api before the probes start (#160): SSR's gzip keys, then browsers' and Cloudflare's br (#170); at most 2 x maxTime + 270s, never fails the container.
             postStart:
               exec:
-                command: ["/bin/sh", "-c", "timeout {{ add $warmMaxTime 270 }} sh -c 'until curl -fs -o /dev/null http://localhost/_api/_/site_config_parameters.jsonld; do sleep 2; done; php bin/console silverback:api-components:warm-http-cache --max-time={{ $warmMaxTime }} --no-interaction' >/proc/1/fd/1 2>&1 || true"]
+                command: ["/bin/sh", "-c", "timeout {{ add (mul $warmMaxTime 2) 270 }} sh -c 'until curl -fs -o /dev/null http://localhost/_api/_/site_config_parameters.jsonld; do sleep 2; done; php bin/console silverback:api-components:warm-http-cache --max-time={{ $warmMaxTime }} --no-interaction; php bin/console silverback:api-components:warm-http-cache --accept-encoding=br --max-time={{ $warmMaxTime }} --no-interaction' >/proc/1/fd/1 2>&1 || true"]
             {{- end }}
             preStop:
               exec:
