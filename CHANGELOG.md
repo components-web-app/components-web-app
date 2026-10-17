@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.39](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.39) - 2026-10-17
+
 ### Upgrade notes
 
 - Copy `api/Dockerfile` and `api/tests/Unit/BrotliExtensionTest.php`: the php image gets the `brotli` extension, without which the postStart `br` warm only warmed route responses, never their manifests or components (#175). [c52bb7a](https://github.com/components-web-app/components-web-app/commit/c52bb7a95a52dd6a90668456f4b08e031221990b)
