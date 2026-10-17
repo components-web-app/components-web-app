@@ -6,6 +6,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- Copy `api/Dockerfile` and `api/tests/Unit/BrotliExtensionTest.php`: the php image gets the `brotli` extension, without which the postStart `br` warm only warmed route responses, never their manifests or components (#175). [c52bb7a](https://github.com/components-web-app/components-web-app/commit/c52bb7a95a52dd6a90668456f4b08e031221990b)
+- Copy `bin/devops/k8s.sh`: after a deploy's full flush (sites with `provider cloudflare` in `CADDY_CACHE_CDN_CONFIG`, and after new image variants) the API pod's `/_api` is warmed again, gzip then br, so those jobs take up to 2 x `CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME` (60 s) longer (#175). A large site may need a higher value: on cymru-kitchens (111 routes) 60 s didn't cover one pass. [1818110](https://github.com/components-web-app/components-web-app/commit/18181102a41d844bda3240cdc83fd1b46f4c7b9b)
+
+### Fixed
+
+- The deploy's Cloudflare flush emptied a new php pod's warm cache moments before visitors arrived, so the first visitor's component requests were load-shed (#175). [1818110](https://github.com/components-web-app/components-web-app/commit/18181102a41d844bda3240cdc83fd1b46f4c7b9b)
+
 ## [2.0.0-alpha.38](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.38) - 2026-10-17
 
 ### Upgrade notes
