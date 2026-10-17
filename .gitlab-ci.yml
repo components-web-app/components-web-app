@@ -517,6 +517,17 @@ load fixtures production:
 
 stop review:
   stage: cleanup
+  # The branch may be deleted on merge, so no checkout: bin/devops comes from the default branch (#165).
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - apk add --no-cache git
+    - rm -rf .cwa-default-branch bin
+    - git clone --depth 1 --filter=blob:none --sparse --branch "$CI_DEFAULT_BRANCH" "$CI_REPOSITORY_URL" .cwa-default-branch
+    - git -C .cwa-default-branch sparse-checkout set bin/devops
+    - cp -R .cwa-default-branch/bin ./bin
+    - source ./bin/devops/setup.sh
+    - source ./bin/devops/k8s.sh
   script:
     - skip_unless_review_deployed
     - install_dependencies
