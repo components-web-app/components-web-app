@@ -1634,7 +1634,12 @@ function delete() {
 
   # A review app's stored files go with it (#166). Needs the API pod, so before the uninstall; a failure only warns.
   if [ "$track" = "review" ]; then
-    delete_review_storage "$name" || echo "WARNING: could not delete $name's stored files; a bucket lifecycle rule on review/ is the backstop." >&2
+    if ! delete_review_storage "$name"; then
+      # Names the app's real path, e.g. site-a/review/<slug>/, so the operator checks the right lifecycle rule (#169).
+      local review_path
+      review_path=$(gcloud_path_prefix review 2>/dev/null) || review_path="<GCLOUD_PATH_PREFIX>review/${CI_ENVIRONMENT_SLUG:-<slug>}/"
+      echo "WARNING: could not delete $name's stored files under $review_path; a bucket lifecycle rule on ${review_path%/*/}/ is the backstop." >&2
+    fi
   fi
 
   # soft fail the uninstall in case of failed permissions
