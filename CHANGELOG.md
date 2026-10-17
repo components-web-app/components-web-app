@@ -6,6 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- GitLab: copy the `stop review` job from `.gitlab-ci.yml` (#165). It no longer checks out its branch, so merging with *Delete source branch* stops the review app instead of leaving it running. It fetches `bin/devops` from your default branch, so the stop runs that branch's `k8s.sh` and `project.sh`. An environment already stuck in *stopping* still needs the manual cleanup in #165. [e3286b4](https://github.com/components-web-app/components-web-app/commit/e3286b4a9f8f2c12faa713c7e595506bfdd66c36)
+
+### Fixed
+
+- `stop review` failed in `get_sources` once its branch was deleted, leaving the review app, its database volume and stored files behind (#165). [e3286b4](https://github.com/components-web-app/components-web-app/commit/e3286b4a9f8f2c12faa713c7e595506bfdd66c36)
+
 ## [2.0.0-alpha.37](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.37) - 2026-10-17
 
 ### Upgrade notes
