@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.38](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.38) - 2026-10-17
+
 ### Upgrade notes
 
 - Update api-components-bundle to 2.0.0-alpha.25 and `@cwa/nuxt` to 2.0.0-alpha.20 together (`api/composer.lock`, `app/package.json`, `app/pnpm-lock.yaml`): the module's new "Purge this page" needs the bundle's scoped purge, and an older bundle would flush everything instead. No migration. [388425e](https://github.com/components-web-app/components-web-app/commit/388425e968d28f485c470efc1aed7a69f6d46911)
