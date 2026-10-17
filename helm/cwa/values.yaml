@@ -33,7 +33,8 @@ php:
   caddy:
     # Other php settings: siteEnv.apiSecret (CWA_API_<NAME> in CI).
     cdnConfig: ${CADDY_CACHE_CDN_CONFIG_B64}
-    storageConfig: ${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}
+    # Extra Souin directives, base64; the store is CADDY_CACHE_STORAGE, otter by default (#170).
+    extraConfig: ""
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}

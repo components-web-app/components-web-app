@@ -29,6 +29,14 @@
 
 		# default_cache_control "public, max-age=7200, stale-while-revalidate=604800, s-maxage=604800"
 
+		# Outlasts a cold CMS page render (~12s measured) but stays under ingress-nginx's 60s and Cloudflare's 100s (#170).
+		timeout {
+			backend {$CADDY_CACHE_BACKEND_TIMEOUT:30s}
+		}
+
+		# The store, otter everywhere; CADDY_CACHE_EXTRA_CONFIG is extra only and must not name a store or `timeout` (#170).
+		{$CADDY_CACHE_STORAGE:otter}
+
 		{$CADDY_CACHE_EXTRA_CONFIG}
 	}
 

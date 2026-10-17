@@ -597,6 +597,41 @@ EOF
   fi
 }
 
+# Souin silently lets a later store or `timeout` block in CADDY_CACHE_EXTRA_CONFIG replace the Caddyfile's (#170).
+check_cache_config() {
+  local line word bad="" timeout="${CWA_API_CADDY_CACHE_BACKEND_TIMEOUT:-}"
+  while IFS= read -r line; do
+    set -f
+    # shellcheck disable=SC2086
+    set -- $line
+    set +f
+    word="${1:-}"
+    case "$word" in
+      badger|etcd|nats|nuts|olric|otter|redis|simplefs|storers)
+        bad="${bad}  '$word' is a store: set CWA_API_CADDY_CACHE_STORAGE instead (default otter)
+" ;;
+      timeout)
+        bad="${bad}  'timeout' replaces the Caddyfile's whole timeout block: set CWA_API_CADDY_CACHE_BACKEND_TIMEOUT instead (default 30s)
+" ;;
+    esac
+  done <<EOF
+${CADDY_CACHE_EXTRA_CONFIG:-}
+EOF
+  # Souin ignores a duration it can't parse, and falls back to its own 10s.
+  if [ -n "$timeout" ] && ! printf '%s\n' "$timeout" | grep -Eq '^([0-9]+(\.[0-9]+)?(ns|us|ms|s|m|h))+$'; then
+    bad="${bad}  CWA_API_CADDY_CACHE_BACKEND_TIMEOUT is '$timeout', not a Go duration such as 30s or 1m
+"
+  fi
+  if [ -n "$bad" ]; then
+    echo "The Souin cache settings would be ignored or replaced:" >&2
+    printf '%s' "$bad" >&2
+    case "$bad" in
+      *CWA_API_CADDY_CACHE_STORAGE*|*"'timeout'"*) echo "CADDY_CACHE_EXTRA_CONFIG is for other Souin directives only; delete it if it only restated these." >&2 ;;
+    esac
+    return 1
+  fi
+}
+
 # The hostnames this deploy serves: DOMAIN, plus KUBE_INGRESS_ALIAS_DOMAINS on the
 # stable track (the only one that gets them), space-separated.
 site_hosts() {
@@ -690,8 +725,15 @@ site_env_values() {
         ;;
     esac
     if site_env_reserved "$target" "$key"; then
-      bad="${bad}  $name: $key is reserved on the $target container: the chart or its image sets it (use its own CI variable, if it has one, or delete this one)
-"
+      case "$key" in
+        # The chart writes these from the plain CI variables of the same name (#170).
+        CADDY_CACHE_CDN_CONFIG|CADDY_CACHE_EXTRA_CONFIG)
+          bad="${bad}  $name: $key is reserved on the $target container: set the CI variable $key instead
+" ;;
+        *)
+          bad="${bad}  $name: $key is reserved on the $target container: the chart or its image sets it (use its own CI variable, if it has one, or delete this one)
+" ;;
+      esac
       continue
     fi
     # Empty would replace a Caddyfile/Symfony default; Nuxt applies empty on purpose.
@@ -951,6 +993,7 @@ deploy() {
 	local pwa_cpu_request_default pwa_memory_request_default api_cpu_request_default
 	local api_memory_request_default orphan_scan_default gcloud_prefix
 	check_cdn_config || return 1
+	check_cache_config || return 1
 	apply_site_defaults "$track"
 	# Before anything changes in the cluster, so a bad name stops the deploy cold.
 	environment_name=$(cwa_environment_name "$track") || return 1
@@ -986,7 +1029,11 @@ deploy() {
   if [ -n "${CADDY_CACHE_CDN_CONFIG:-}" ]; then
     CADDY_CACHE_CDN_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_CDN_CONFIG" | base64 -w0)
   fi
-  CADDY_CACHE_EXTRA_CONFIG_B64=$(echo "${CADDY_CACHE_EXTRA_CONFIG:-"otter"}" | base64 -w0)
+  # Empty when unset, like the CDN config: the Caddyfile picks the store (#170).
+  CADDY_CACHE_EXTRA_CONFIG_B64=""
+  if [ -n "${CADDY_CACHE_EXTRA_CONFIG:-}" ]; then
+    CADDY_CACHE_EXTRA_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_EXTRA_CONFIG" | base64 -w0)
+  fi
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
@@ -1093,7 +1140,7 @@ php:
     mode: "${DATABASE_SSL_MODE:-"prefer"}"
   caddy:
     cdnConfig: "${CADDY_CACHE_CDN_CONFIG_B64}"
-    storageConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64:-"otter"}"
+    extraConfig: "${CADDY_CACHE_EXTRA_CONFIG_B64}"
     # The other php settings are CWA_API_* site settings.
 mercure:
   corsOrigin: '${MERCURE_CORS_ORIGIN:-"*"}'

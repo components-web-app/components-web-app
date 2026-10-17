@@ -31,7 +31,6 @@ env \
 	SERVER_NAME=":$PORT" \
 	BROWSER_SERVER_NAME=localhost \
 	APP_UPSTREAM="127.0.0.1:$UPSTREAM" \
-	CADDY_CACHE_EXTRA_CONFIG=otter \
 	MERCURE_PUBLISHER_JWT_KEY='!ChangeThisMercureHubJWTSecretKey!-test-only' \
 	MERCURE_SUBSCRIBER_JWT_KEY='!ChangeThisMercureHubJWTSecretKey!-test-only' \
 	MERCURE_PUBLIC_URL=https://localhost/.well-known/mercure \

@@ -32,6 +32,9 @@ services:
       CADDY_TRUSTED_PROXIES:
       CLOUDFLARE_IP_RANGES:
       FRANKENPHP_MAX_WAIT_TIME:
+      # Souin's store and backend timeout (#170), defaults otter and 30s; same pass-through rule.
+      CADDY_CACHE_STORAGE:
+      CADDY_CACHE_BACKEND_TIMEOUT:
       # Cloudflare purge pacing (#115), read by the patched Souin, which has its
       # own defaults; same pass-through rule.
       CLOUDFLARE_PURGE_PLAN:

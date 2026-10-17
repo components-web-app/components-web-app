@@ -1,6 +1,6 @@
 # Imported into the global `frankenphp` block (FRANKENPHP_CONFIG in the prod image).
 
-# Shed load (#106): a request that waits this long for a worker gets a 503, not Souin's 10s 504. 0 turns it off.
+# Shed load (#106): a request that waits this long for a worker gets a 503, not Souin's 30s 504 (#170). 0 turns it off.
 # FrankenPHP accepts it only here, in the global block, not inside `worker`.
 max_wait_time {$FRANKENPHP_MAX_WAIT_TIME:5s}
 

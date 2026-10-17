@@ -165,7 +165,8 @@ Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the 
   valueFrom:
     secretKeyRef:
       name: {{ include "cwa.fullname" . }}
-      key: caddy-cache-storage-config
+      key: caddy-cache-extra-config
+      optional: true
 - name: MERCURE_URL
   valueFrom:
     configMapKeyRef:
