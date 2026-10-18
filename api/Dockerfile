@@ -71,9 +71,11 @@ FROM frankenphp_upstream AS frankenphp_base
 
 WORKDIR /app
 
+# apt timeouts and retries apply to install-php-extensions' apt calls too: a stalled fetch hung builds until the job limit (#176).
 # persistent / runtime deps
 # hadolint ignore=DL3008
-RUN apt-get clean && apt-get update && apt-get install --no-install-recommends -y \
+RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' > /etc/apt/apt.conf.d/80-cwa-retries && \
+	apt-get clean && apt-get update && apt-get install --no-install-recommends -y \
 	acl \
 	file \
 	gettext \
@@ -84,20 +86,15 @@ RUN apt-get clean && apt-get update && apt-get install --no-install-recommends -
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-RUN set -eux; \
-	install-php-extensions \
-		@composer \
-		apcu \
-		intl \
-		opcache \
-		zip \
-		exif \
-		xsl \
-		gd \
-		ffi \
-		# warm-http-cache --accept-encoding=br decodes br with it, or warms only the routes (#175).
-		brotli \
-	;
+# Time-limited and retried (#176): a retry skips the extensions already installed. Uncached, it takes about 4 minutes.
+# brotli: warm-http-cache --accept-encoding=br decodes br with it, or warms only the routes (#175).
+RUN set -ux; \
+	for attempt in 1 2 3; do \
+		timeout 600 install-php-extensions @composer apcu intl opcache zip exif xsl gd ffi brotli && exit 0; \
+		echo "install-php-extensions attempt ${attempt} failed"; \
+		dpkg --configure -a || true; \
+	done; \
+	exit 1
 
 # libvips, the imagine driver (#141): no ImageMagick, PDF or SVG loaders for uploads, two threads per image,
 # and glibc settings that hand freed image buffers back to the OS. All overridable at runtime.
