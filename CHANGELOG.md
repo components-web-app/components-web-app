@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+
+- Bundle 2.0.0-alpha.26: a `br` warm without the brotli extension now fails instead of warming only routes, and a body it can't decode counts as failed (api-components-bundle#488, #175). Update `api/composer.lock`; no migration. [cb79664](https://github.com/components-web-app/components-web-app/commit/cb7966404fe4b6750eff8f03c424875a0d9f834b)
+
 ## [2.0.0-alpha.39](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.39) - 2026-10-17
 
 ### Upgrade notes
