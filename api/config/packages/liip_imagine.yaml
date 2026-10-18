@@ -1,5 +1,6 @@
 liip_imagine:
-  # libvips (#141); gd is the fallback and stays installed.
+  # libvips (#141), which reads AVIF through libheif. gd stays installed with AVIF (Debian's libavif), so switching needs no rebuild:
+  # driver: gd
   driver: vips
   data_loader: silverback.api_components.liip_imagine.binary.loader
   cache: in_memory_cache_resolver
