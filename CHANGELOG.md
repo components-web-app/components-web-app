@@ -6,12 +6,18 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- Behind Google Cloud CDN, set each media backend bucket's caps to a year, or the long `Cache-Control` from bundle 2.0.0-alpha.15's `uploadable.cache_control` (and alpha.25's back-fill) reaches browsers as `max-age=3600`: `gcloud compute backend-buckets update <backend-bucket> --max-ttl=31536000 --client-ttl=31536000`, then `gcloud compute url-maps invalidate-cdn-cache <url-map> --host <cdn host> --path "/*"`. New sites: create the bucket with both caps. [#154](https://github.com/components-web-app/components-web-app/issues/154)
+
 ### Fixed
 
 - php image: apt fetches retry with 30 s timeouts, and `install-php-extensions` gets three 600 s attempts. An uncached build of that step hung or was killed on GitLab SaaS small runners (#176). [841ea0f](https://github.com/components-web-app/components-web-app/commit/841ea0f6416e421253c11059f23cc2ec517b7c05)
 
 ### Changed
 
+- Helm chart: no API HPA while `autoscaling.maxReplicas` is 1 (the default); it couldn't scale and showed memory over target permanently. The next deploy removes it; raising the max brings it back. [7e0e4d2](https://github.com/components-web-app/components-web-app/commit/7e0e4d23ae5de5ea194e65c0533499ae3724f56f)
+- A fixture load's full flush is followed by the same `/_api` warm as a deploy's (`warm_api_cache`). [02f653d](https://github.com/components-web-app/components-web-app/commit/02f653d7d74f2a01ea08e687a383334faa41269c)
 - `liip_imagine.yaml` has a commented `driver: gd` line. gd keeps AVIF, as vips does through libheif, so switching needs no image rebuild. [4341396](https://github.com/components-web-app/components-web-app/commit/434139660c906afbc2a4a46474bef38e79fc2fa7)
 
 ## [2.0.0-alpha.41](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.41) - 2026-10-18
