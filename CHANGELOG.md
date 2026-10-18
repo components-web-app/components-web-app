@@ -12,7 +12,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
-- php image: apt fetches retry with 30 s timeouts, and `install-php-extensions` gets three 600 s attempts. An uncached build of that step hung or was killed on GitLab SaaS small runners (#176). [841ea0f](https://github.com/components-web-app/components-web-app/commit/841ea0f6416e421253c11059f23cc2ec517b7c05)
+- php image: every step that fetches from Debian (base packages, `install-php-extensions`) runs through `retry-fetch`, a hard time limit with up to three attempts that switches deb.debian.org to HTTPS after a failure; apt also retries with 30 s timeouts and no pipelining. Uncached builds hung until the 1 h job limit, or were killed, on GitLab SaaS small runners (#176). [841ea0f](https://github.com/components-web-app/components-web-app/commit/841ea0f6416e421253c11059f23cc2ec517b7c05), [7fc4ac5](https://github.com/components-web-app/components-web-app/commit/7fc4ac58a1cbef543d97886410fed8262d31b6b6)
 
 ### Changed
 
