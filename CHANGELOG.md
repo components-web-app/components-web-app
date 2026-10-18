@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.40](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.40) - 2026-10-18
+
 ### Upgrade notes
 
 - Bundle 2.0.0-alpha.29 and `@cwa/nuxt` 2.0.0-alpha.21 go together (alpha.27 and alpha.28 500 when publishing in functional tests): update `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml` in one deploy (no migration). Public Mercure updates are now the anonymous view, anonymous visitors get no Mercure cookie from `/me` (the template's hub already allows anonymous subscribers), and the subscriber cookie and its token expire after `refresh_token.ttl` instead of `mercure.default_cookie_lifetime`. A site routing `Symfony\Component\Mercure\Update` to an async transport must also route `Silverback\ApiComponentsBundle\Message\PublishMercureUpdatesMessage`. [0dab19c](https://github.com/components-web-app/components-web-app/commit/0dab19ca6f3ce8817614ca1f4b85ed8732745e52)
