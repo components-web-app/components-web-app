@@ -216,6 +216,7 @@ replicaCount: 1
 
 # The API (php) tier only; the PWA has its own block above. maxReplicas stays 1: Souin's otter store and Mercure's
 # bolt transport are per pod, so a second pod's cache is never purged. Raise it only with shared ones (#85).
+# At maxReplicas 1 no HPA is rendered and the deployment runs minReplicas (#172).
 autoscaling:
   enabled: true
   minReplicas: 1

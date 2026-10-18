@@ -282,7 +282,7 @@ Builds push only the branch tag (`php:main`, `app:main`). A deploy never runs a 
 
 ### The API is capped at one replica, on purpose
 
-- `autoscaling.maxReplicas: 1` and `CWA_CI_API_AUTOSCALE_MAX` default 1. Souin's `otter` store is in-memory and purged via `localhost:2019`, so a write on a second pod never purges the first pod's cache (and with a year-long `s-maxage` that is permanent). Mercure's `bolt` transport is pod-local too. One pod served ~974 req/s cached. **Raise it only alongside a shared cache store and a clustered Mercure hub** (#85); and then every `kubectl exec deploy/…` purge must loop over every API pod.
+- `autoscaling.maxReplicas: 1` and `CWA_CI_API_AUTOSCALE_MAX` default 1. At 1 the chart renders no API HPA (`cwa.hpaEnabled`, #172), since it couldn't act and showed memory over target for good; the deployment sets `replicas` to `minReplicas`. Raising the max brings the HPA back. Souin's `otter` store is in-memory and purged via `localhost:2019`, so a write on a second pod never purges the first pod's cache (and with a year-long `s-maxage` that is permanent). Mercure's `bolt` transport is pod-local too. One pod served ~974 req/s cached. **Raise it only alongside a shared cache store and a clustered Mercure hub** (#85); and then every `kubectl exec deploy/…` purge must loop over every API pod.
 - It also resolves the migration race between API pods.
 - **Eviction protection (#78)**, because one replica makes a single eviction an outage:
   - API pod: `cluster-autoscaler.kubernetes.io/safe-to-evict: "false"`. GKE node upgrades still drain it (a brief, unavoidable outage).

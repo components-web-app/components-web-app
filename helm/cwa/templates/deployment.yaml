@@ -7,8 +7,8 @@ metadata:
   labels:
     {{- include "cwa.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
+  {{- if not (include "cwa.hpaEnabled" .) }}
+  replicas: {{ ternary .Values.autoscaling.minReplicas .Values.replicaCount .Values.autoscaling.enabled }}
   {{- end }}
   strategy:
    type: RollingUpdate

@@ -84,6 +84,13 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+The API's HPA only when it can scale: at maxReplicas 1 it can't act and shows memory over target for good (#172).
+*/}}
+{{- define "cwa.hpaEnabled" -}}
+{{- if and .Values.autoscaling.enabled (gt (int .Values.autoscaling.maxReplicas) 1) }}true{{ end -}}
+{{- end }}
+
+{{/*
 The php container's env, shared by the API deployment and the orphan scan CronJob.
 Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the schema (#103).
 */}}
