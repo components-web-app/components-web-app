@@ -6,8 +6,13 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- Bundle 2.0.0-alpha.28 and `@cwa/nuxt` 2.0.0-alpha.21 go together: update `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml` in one deploy (no migration). Public Mercure updates are now the anonymous view, anonymous visitors get no Mercure cookie from `/me` (the template's hub already allows anonymous subscribers), and the subscriber cookie and its token expire after `refresh_token.ttl` instead of `mercure.default_cookie_lifetime`. A site routing `Symfony\Component\Mercure\Update` to an async transport must also route `Silverback\ApiComponentsBundle\Message\PublishMercureUpdatesMessage`. [0dab19c](https://github.com/components-web-app/components-web-app/commit/0dab19ca6f3ce8817614ca1f4b85ed8732745e52)
+
 ### Changed
 
+- Dependencies: API Platform 5.0.4 (includes the genid fix, api-platform/core#8681, #161), Symfony 8.1.9, Nuxt 4.6.2, `@nuxt/ui` 4.12.0, satori 0.62.0. [0dab19c](https://github.com/components-web-app/components-web-app/commit/0dab19ca6f3ce8817614ca1f4b85ed8732745e52)
 - Bundle 2.0.0-alpha.26: a `br` warm without the brotli extension now fails instead of warming only routes, and a body it can't decode counts as failed (api-components-bundle#488, #175). Update `api/composer.lock`; no migration. [cb79664](https://github.com/components-web-app/components-web-app/commit/cb7966404fe4b6750eff8f03c424875a0d9f834b)
 
 ## [2.0.0-alpha.39](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.39) - 2026-10-17
