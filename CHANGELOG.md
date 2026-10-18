@@ -10,6 +10,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - Bundle 2.0.0-alpha.30 (placing a component that would create a cycle is a 422, api-components-bundle#503) and `@cwa/nuxt` 2.0.0-alpha.22 (clone a component into other positions, cwa-nuxt-module#157; faster navigation with many cached pages, cwa-nuxt-module#259). Update `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml`; no migration. [52552d8](https://github.com/components-web-app/components-web-app/commit/52552d8a94849bca15b7e4962c7aa80e29be6d78)
 - Dependencies: pnpm 12.14.0 (`packageManager` and the app Dockerfile's `PNPM_VERSION`), Guzzle 8.3, the app's other in-range updates, and for tests Playwright 1.64.1 (`e2e/Dockerfile` image and package), eslint 10.13.0, redis 8.10.2 and mailpit v1.31.6. [52552d8](https://github.com/components-web-app/components-web-app/commit/52552d8a94849bca15b7e4962c7aa80e29be6d78)
+- CLAUDE.md: TypeScript stays pinned to 6.0.3 until vue-tsc supports TypeScript 7, now tracked by vuejs/language-tools#6170 (vue-tsc v4, a draft); every TypeScript 7 issue there is closed. [c3fc4d1](https://github.com/components-web-app/components-web-app/commit/c3fc4d14cc5dbb5568cfca438431d794448dc57b)
 
 ## [2.0.0-alpha.40](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.40) - 2026-10-18
 
