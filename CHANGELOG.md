@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.41](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.41) - 2026-10-18
+
 ### Changed
 
 - Bundle 2.0.0-alpha.30 (placing a component that would create a cycle is a 422, api-components-bundle#503) and `@cwa/nuxt` 2.0.0-alpha.22 (clone a component into other positions, cwa-nuxt-module#157; faster navigation with many cached pages, cwa-nuxt-module#259). Update `api/composer.lock`, `app/package.json` and `app/pnpm-lock.yaml`; no migration. [52552d8](https://github.com/components-web-app/components-web-app/commit/52552d8a94849bca15b7e4962c7aa80e29be6d78)
