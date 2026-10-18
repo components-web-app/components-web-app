@@ -1285,7 +1285,9 @@ load_fixtures() {
   # The load changes data under Souin's cache, so flush all of it; one pod is enough while the API has one replica.
   echo "Flushing the HTTP cache..."
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
-    -- php bin/console silverback:api-components:purge-http-cache
+    -- php bin/console silverback:api-components:purge-http-cache || return 1
+  # The flush emptied the API cache, so warm it as after a deploy's flush (#174).
+  warm_api_cache "$deploy"
 }
 
 # Drops every cached page (`cwa-html`) after a deploy, or old HTML loads /_nuxt files that now 404 (#71).
