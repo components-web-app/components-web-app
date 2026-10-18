@@ -71,30 +71,36 @@ FROM frankenphp_upstream AS frankenphp_base
 
 WORKDIR /app
 
-# apt timeouts and retries apply to install-php-extensions' apt calls too: a stalled fetch hung builds until the job limit (#176).
+# apt retries, timeouts and no pipelining for every apt call, install-php-extensions' too; retry-fetch bounds each step (#176).
+COPY --link --chmod=755 frankenphp/retry-fetch.sh /usr/local/bin/retry-fetch
+RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nAcquire::http::Pipeline-Depth "0";\n' > /etc/apt/apt.conf.d/80-cwa-retries
+
 # persistent / runtime deps
 # hadolint ignore=DL3008
-RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\n' > /etc/apt/apt.conf.d/80-cwa-retries && \
-	apt-get clean && apt-get update && apt-get install --no-install-recommends -y \
+RUN apt-get clean && retry-fetch 240 sh -c 'apt-get update && apt-get install --no-install-recommends -y \
 	acl \
 	file \
 	gettext \
 	git \
-	libvips42t64 \
+	libvips42t64' \
 	&& rm -rf /var/lib/apt/lists/*
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-# Time-limited and retried (#176): a retry skips the extensions already installed. Uncached, it takes about 4 minutes.
+# Uncached, about 4 minutes; a retry skips the extensions already installed.
 # brotli: warm-http-cache --accept-encoding=br decodes br with it, or warms only the routes (#175).
-RUN set -ux; \
-	for attempt in 1 2 3; do \
-		timeout 600 install-php-extensions @composer apcu intl opcache zip exif xsl gd ffi brotli && exit 0; \
-		echo "install-php-extensions attempt ${attempt} failed"; \
-		dpkg --configure -a || true; \
-	done; \
-	exit 1
+RUN retry-fetch 480 install-php-extensions \
+		@composer \
+		apcu \
+		intl \
+		opcache \
+		zip \
+		exif \
+		xsl \
+		gd \
+		ffi \
+		brotli
 
 # libvips, the imagine driver (#141): no ImageMagick, PDF or SVG loaders for uploads, two threads per image,
 # and glibc settings that hand freed image buffers back to the OS. All overridable at runtime.
@@ -102,8 +108,7 @@ ENV VIPS_BLOCK_UNTRUSTED=1 VIPS_CONCURRENCY=2 MALLOC_ARENA_MAX=2 MALLOC_MMAP_THR
 
 ###> recipes ###
 ###> doctrine/doctrine-bundle ###
-RUN set -eux; \
-	install-php-extensions pdo_pgsql
+RUN retry-fetch 120 install-php-extensions pdo_pgsql
 ###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
