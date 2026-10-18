@@ -77,7 +77,7 @@ API Platform's `SkolemIriConverter` (`/.well-known/genid/…` IRIs, produced by 
 
 ### ⚠ TypeScript is pinned to exact `6.0.3`
 
-- Do **not** bump to 7.x. TS 7 is the native (Go) rewrite; `vue-tsc` (3.3.13) still resolves `typescript/lib/tsc` and fails with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. **Re-check on every dependency update** (Daniel, 2026-10-13). On 2026-10-13: 3.3.13 only adds support for aliasing `typescript` to `@typescript/typescript6`, and the maintainers point to `typescript-native-bridge` until TypeScript 7.1's plugin interface (vuejs/language-tools#6156).
+- Do **not** bump to 7.x. TS 7 is the native (Go) rewrite; `vue-tsc` (3.3.13) still resolves `typescript/lib/tsc` and fails with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. **Re-check on every dependency update** (Daniel, 2026-10-13) by watching [vuejs/language-tools#6170](https://github.com/vuejs/language-tools/pull/6170) (content mapper, vue-tsc v4 alpha; a draft on 2026-10-18), the support upstream points to; every TS 7 issue there is closed (#6156, #6124, #5381) with `typescript-native-bridge` as the stopgap. 3.3.13 only adds support for aliasing `typescript` to `@typescript/typescript6`.
 - **`pnpm up --latest` DOES rewrite the exact pin to 7.x.** An exact pin is not protection. After it, manually revert to `6.0.3` and reinstall. Prefer `pnpm dedupe`, which doesn't touch it.
 
 ### ⚠ Duplicate `vue` copies
