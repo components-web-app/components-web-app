@@ -6,6 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+
+- php image: apt fetches retry with 30 s timeouts, and `install-php-extensions` gets three 600 s attempts. An uncached build of that step hung or was killed on GitLab SaaS small runners (#176). [841ea0f](https://github.com/components-web-app/components-web-app/commit/841ea0f6416e421253c11059f23cc2ec517b7c05)
+
+### Changed
+
+- `liip_imagine.yaml` has a commented `driver: gd` line. gd keeps AVIF, as vips does through libheif, so switching needs no image rebuild. [4341396](https://github.com/components-web-app/components-web-app/commit/434139660c906afbc2a4a46474bef38e79fc2fa7)
+
 ## [2.0.0-alpha.41](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.41) - 2026-10-18
 
 ### Changed
