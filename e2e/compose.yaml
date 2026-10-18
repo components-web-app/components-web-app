@@ -21,7 +21,7 @@ services:
     command: ["-scheme", "both", "-port", "4443", "-port-http", "8000", "-public-host", "gcs:4443", "-external-url", "https://gcs:4443"]
 
   mailpit:
-    image: axllent/mailpit:v1.31.5
+    image: axllent/mailpit:v1.31.6
 
   php:
     image: ${E2E_PHP_IMAGE:?set E2E_PHP_IMAGE}

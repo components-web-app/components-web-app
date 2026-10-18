@@ -118,7 +118,7 @@ jobs:
     # For souin-redis-shared-purge.sh (#85), at redis:6379.
     services:
       redis:
-        image: redis:8.4.0
+        image: redis:8.10.2
     steps:
       - uses: actions/checkout@v4
       - name: Expose repository variables to the scripts, as GitLab does

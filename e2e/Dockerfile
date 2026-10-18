@@ -1,5 +1,5 @@
 # The browser-test runner (#157). Keep the image tag and @playwright/test in package.json on the same version.
-FROM mcr.microsoft.com/playwright:v1.64.0-noble
+FROM mcr.microsoft.com/playwright:v1.64.1-noble
 
 WORKDIR /e2e
 COPY package.json package-lock.json ./

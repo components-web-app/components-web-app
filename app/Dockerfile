@@ -10,7 +10,7 @@ ENV NODE_OPTIONS=--max-http-header-size=65536
 # Base stage for dev and build
 FROM node_upstream AS base
 
-ARG PNPM_VERSION=12.9.1
+ARG PNPM_VERSION=12.14.0
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 # apk has no network timeout, so a stalled mirror hung builds until the job limit: time-limit and retry, then try another mirror.

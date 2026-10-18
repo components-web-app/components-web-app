@@ -362,16 +362,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.29",
+            "version": "2.0.0-alpha.30",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "379fac1a32dd1b9bc4fd48a30bb4a36946b855d8"
+                "reference": "695d8a17a74bfaa24e8f8f4872715aba4d4e50be"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/379fac1a32dd1b9bc4fd48a30bb4a36946b855d8",
-                "reference": "379fac1a32dd1b9bc4fd48a30bb4a36946b855d8",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/695d8a17a74bfaa24e8f8f4872715aba4d4e50be",
+                "reference": "695d8a17a74bfaa24e8f8f4872715aba4d4e50be",
                 "shasum": ""
             },
             "require": {
@@ -428,14 +428,8 @@
                 "willdurand/negotiation": "^2"
             },
             "require-dev": {
-                "behat/behat": "^3.33",
-                "behat/mink": "^1.13",
-                "behat/mink-browserkit-driver": "^2.3",
-                "behatch/contexts": "dev-master",
                 "dama/doctrine-test-bundle": "^8.6",
                 "doctrine/doctrine-fixtures-bundle": "^4.3",
-                "friends-of-behat/mink-extension": "^2.7.5",
-                "friends-of-behat/symfony-extension": "^2.7",
                 "friendsofphp/php-cs-fixer": "^3.95",
                 "justinrainbow/json-schema": "^5.4",
                 "league/flysystem": "^3.36",
@@ -452,7 +446,6 @@
                 "rector/rector": "^2.6",
                 "roave/security-advisories": "dev-master",
                 "symfony/browser-kit": "^7.4 || ^8.1",
-                "symfony/css-selector": "^7.4 || ^8.1",
                 "symfony/dotenv": "^7.4 || ^8.1",
                 "symfony/http-client": "^7.4 || ^8.1",
                 "symfony/maker-bundle": "^1.68",
@@ -460,7 +453,9 @@
                 "symfony/monolog-bundle": "^3.11 || ^4.1",
                 "symfony/phpunit-bridge": "^7.4 || ^8.1",
                 "symfony/stopwatch": "^7.4 || ^8.1",
-                "symfony/web-profiler-bundle": "^7.4 || ^8.1"
+                "symfony/translation": "^7.4 || ^8.1",
+                "symfony/web-profiler-bundle": "^7.4 || ^8.1",
+                "symfony/yaml": "^7.4 || ^8.1"
             },
             "suggest": {
                 "ext-pdo_mysql": "To use MySQL 8.0 or above, or MariaDB 10.10 or above",
@@ -498,9 +493,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.29"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.30"
             },
-            "time": "2026-10-18T13:51:27+00:00"
+            "time": "2026-10-18T19:42:41+00:00"
         },
         {
             "name": "composer/semver",
@@ -2504,22 +2499,22 @@
         },
         {
             "name": "guzzlehttp/guzzle",
-            "version": "8.2.1",
+            "version": "8.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/guzzle.git",
-                "reference": "1113a54456d52be64bf629ba80b5360800e82db3"
+                "reference": "b920e5fcaf81d761b8fabe600ca90999beaefdb7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/1113a54456d52be64bf629ba80b5360800e82db3",
-                "reference": "1113a54456d52be64bf629ba80b5360800e82db3",
+                "url": "https://api.github.com/repos/guzzle/guzzle/zipball/b920e5fcaf81d761b8fabe600ca90999beaefdb7",
+                "reference": "b920e5fcaf81d761b8fabe600ca90999beaefdb7",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "guzzlehttp/promises": "^3.0.2",
-                "guzzlehttp/psr7": "^3.1.1",
+                "guzzlehttp/promises": "^3.1",
+                "guzzlehttp/psr7": "^3.2",
                 "php": "^7.4 || ^8.0",
                 "psr/http-client": "^1.0",
                 "psr/http-factory": "^1.0",
@@ -2533,7 +2528,7 @@
                 "bamarni/composer-bin-plugin": "^1.8.2",
                 "ext-curl": "*",
                 "guzzle/client-integration-tests": "4.0.1",
-                "guzzlehttp/test-server": "^1.0.1",
+                "guzzlehttp/test-server": "^1.1",
                 "php-http/message-factory": "^1.1",
                 "phpunit/phpunit": "^9.6.34",
                 "psr/log": "^1.1 || ^2.0 || ^3.0"
@@ -2610,7 +2605,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/guzzle/issues",
-                "source": "https://github.com/guzzle/guzzle/tree/8.2.1"
+                "source": "https://github.com/guzzle/guzzle/tree/8.3.0"
             },
             "funding": [
                 {
@@ -2626,7 +2621,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-18T12:57:15+00:00"
+            "time": "2026-10-18T13:38:43+00:00"
         },
         {
             "name": "guzzlehttp/promises",
