@@ -362,20 +362,20 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.28",
+            "version": "2.0.0-alpha.29",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "dc623a55273e359a02805d1100b08976b06bd894"
+                "reference": "379fac1a32dd1b9bc4fd48a30bb4a36946b855d8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/dc623a55273e359a02805d1100b08976b06bd894",
-                "reference": "dc623a55273e359a02805d1100b08976b06bd894",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/379fac1a32dd1b9bc4fd48a30bb4a36946b855d8",
+                "reference": "379fac1a32dd1b9bc4fd48a30bb4a36946b855d8",
                 "shasum": ""
             },
             "require": {
-                "api-platform/core": "^4.4 || ^5.0",
+                "api-platform/core": "^4.4.5 || ^5.0.4",
                 "cocur/slugify": "^4.7",
                 "doctrine/dbal": "^4.4",
                 "doctrine/doctrine-bundle": "^3.3",
@@ -498,9 +498,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.28"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.29"
             },
-            "time": "2026-10-18T13:19:03+00:00"
+            "time": "2026-10-18T13:51:27+00:00"
         },
         {
             "name": "composer/semver",
