@@ -16,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- Browser tests assume only what every project has, the admin user and the sitemap's pages, so they pass on a site without the sample content. The 308 redirect and the text and image publish tests are removed; the cache-hit, loading-bar and OG image tests use sitemap pages (#177). [5db12c9](https://github.com/components-web-app/components-web-app/commit/5db12c9e9992a1f02eaaf187f36ed56db965c13e)
 - `create-cwa`: dependencies updated (`@clack/prompts` 1, `giget` 3, TypeScript 7); a generated project is unchanged. [bc477e8](https://github.com/components-web-app/components-web-app/commit/bc477e83122fa90287f4e013c0eb4a25d03c2ee3)
 - Module 2.0.0-alpha.23: Move, in a component's menu, relocates a position through the clone workflow (not yet for page-data slots); clone-mode fixes. [5c5d873](https://github.com/components-web-app/components-web-app/commit/5c5d87372634ad1d18f94053d9043e5802b5f3a6)
 - Bundle 2.0.0-alpha.31: publishing a draft of a published component no longer empties its positions or orphans its groups, and a component PATCH adding an embedded position no longer 500s. No config or migration. [8125a75](https://github.com/components-web-app/components-web-app/commit/8125a7511596c1b707d3ef87e371f1aec84a2de4)
