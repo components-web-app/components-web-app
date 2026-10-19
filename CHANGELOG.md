@@ -17,6 +17,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- Module 2.0.0-alpha.24 (needs bundle 2.0.0-alpha.32): Move goes through `POST {component}/move`, page-data slots included; a shared component shows a "Shared · N places" badge by its publish button with the list of places, and its other copies on the page are outlined; Clone and Move usability fixes. [773ae69](https://github.com/components-web-app/components-web-app/commit/773ae694d086204c3f31501564aeec6f0510c2c3)
 - Bundle 2.0.0-alpha.32: `POST {component}/move` and the locations list on `GET {component}/usage`, which is now admin only. `route_security` patterns match the whole path, case-insensitive, with `*` the only wildcard; the template's `/user-area*` is a prefix, as intended. No migration. [d816382](https://github.com/components-web-app/components-web-app/commit/d816382770e6d7ca034d97dcb5f24bdf715abd11)
 - Browser tests: `logIn` waits for `/login` to hydrate before filling the form. [5b6a605](https://github.com/components-web-app/components-web-app/commit/5b6a6058fb59fc4f8c618f6ecf6f3b558d71e63c)
 - Browser tests assume only what every project has, the admin user and the sitemap's pages, so they pass on a site without the sample content. The 308 redirect and the text and image publish tests are removed; the cache-hit, loading-bar and OG image tests use sitemap pages (#177). [5db12c9](https://github.com/components-web-app/components-web-app/commit/5db12c9e9992a1f02eaaf187f36ed56db965c13e)
