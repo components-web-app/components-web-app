@@ -362,16 +362,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.30",
+            "version": "2.0.0-alpha.31",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "695d8a17a74bfaa24e8f8f4872715aba4d4e50be"
+                "reference": "e944a98497dbf7ba424fdc77c92de949a2f7e093"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/695d8a17a74bfaa24e8f8f4872715aba4d4e50be",
-                "reference": "695d8a17a74bfaa24e8f8f4872715aba4d4e50be",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/e944a98497dbf7ba424fdc77c92de949a2f7e093",
+                "reference": "e944a98497dbf7ba424fdc77c92de949a2f7e093",
                 "shasum": ""
             },
             "require": {
@@ -428,10 +428,11 @@
                 "willdurand/negotiation": "^2"
             },
             "require-dev": {
+                "brianium/paratest": "^7.26",
                 "dama/doctrine-test-bundle": "^8.6",
                 "doctrine/doctrine-fixtures-bundle": "^4.3",
                 "friendsofphp/php-cs-fixer": "^3.95",
-                "justinrainbow/json-schema": "^5.4",
+                "justinrainbow/json-schema": "^6.4",
                 "league/flysystem": "^3.36",
                 "league/flysystem-memory": "^3.31",
                 "monolog/monolog": "^3.12",
@@ -493,9 +494,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.30"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.31"
             },
-            "time": "2026-10-18T19:42:41+00:00"
+            "time": "2026-10-19T08:05:11+00:00"
         },
         {
             "name": "composer/semver",
