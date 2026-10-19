@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.42](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.42) - 2026-10-19
+
 ### Upgrade notes
 
 - Bundle 2.0.0-alpha.32: `route_security` patterns now match the whole path (case-insensitive, `*` the only wildcard). Check any `route` your project adds still matches what you mean: `/x*` is a prefix, `*/x*` matches anywhere. [d816382](https://github.com/components-web-app/components-web-app/commit/d816382770e6d7ca034d97dcb5f24bdf715abd11)
