@@ -16,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- `create-cwa`: dependencies updated (`@clack/prompts` 1, `giget` 3, TypeScript 7); a generated project is unchanged. [bc477e8](https://github.com/components-web-app/components-web-app/commit/bc477e83122fa90287f4e013c0eb4a25d03c2ee3)
 - Module 2.0.0-alpha.23: Move, in a component's menu, relocates a position through the clone workflow (not yet for page-data slots); clone-mode fixes. [5c5d873](https://github.com/components-web-app/components-web-app/commit/5c5d87372634ad1d18f94053d9043e5802b5f3a6)
 - Bundle 2.0.0-alpha.31: publishing a draft of a published component no longer empties its positions or orphans its groups, and a component PATCH adding an embedded position no longer 500s. No config or migration. [8125a75](https://github.com/components-web-app/components-web-app/commit/8125a7511596c1b707d3ef87e371f1aec84a2de4)
 - Helm chart: no API HPA while `autoscaling.maxReplicas` is 1 (the default); it couldn't scale and showed memory over target permanently. The next deploy removes it; raising the max brings it back. [7e0e4d2](https://github.com/components-web-app/components-web-app/commit/7e0e4d23ae5de5ea194e65c0533499ae3724f56f)
