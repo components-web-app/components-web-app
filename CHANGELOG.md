@@ -16,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- Bundle 2.0.0-alpha.31: publishing a draft of a published component no longer empties its positions or orphans its groups, and a component PATCH adding an embedded position no longer 500s. No config or migration. [8125a75](https://github.com/components-web-app/components-web-app/commit/8125a7511596c1b707d3ef87e371f1aec84a2de4)
 - Helm chart: no API HPA while `autoscaling.maxReplicas` is 1 (the default); it couldn't scale and showed memory over target permanently. The next deploy removes it; raising the max brings it back. [7e0e4d2](https://github.com/components-web-app/components-web-app/commit/7e0e4d23ae5de5ea194e65c0533499ae3724f56f)
 - A fixture load's full flush is followed by the same `/_api` warm as a deploy's (`warm_api_cache`). [02f653d](https://github.com/components-web-app/components-web-app/commit/02f653d7d74f2a01ea08e687a383334faa41269c)
 - `liip_imagine.yaml` has a commented `driver: gd` line. gd keeps AVIF, as vips does through libheif, so switching needs no image rebuild. [4341396](https://github.com/components-web-app/components-web-app/commit/434139660c906afbc2a4a46474bef38e79fc2fa7)
