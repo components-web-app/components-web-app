@@ -396,11 +396,7 @@ Opt-in Playwright suite in `e2e/` (`CWA_CI_E2E_ENABLED="true"`). It runs this re
 - **The browser must use `https://localhost`.** `localhost` is a secure context, but plain HTTP still fails: Mercure's `__Secure-mercure_access_token` cookie needs an HTTPS hub public URL, and login 500s otherwise (`Authorization.php`). So `SERVER_NAME` is `localhost, php:80`: HTTPS with Caddy's internal certificate for the browser, plain `http://php` for SSR. `forward.mjs` sends the tests container's `localhost:80/443` to php. Node's `localhost` is the container itself, so Chromium's `--host-resolver-rules` alone isn't enough for API requests.
 - **Uploads go to `fake-gcs-server`** through `GCLOUD_API_ENDPOINT` (`GoogleCloudStorageFactory`; empty means Google, as on every deploy). The prod container always wires Cloud Storage. It runs with `-scheme both`: php uses plain HTTP on `:8000`, and the browser gets `https://gcs:4443`, because an `http://` image on an HTTPS page is upgraded and fails.
 - **JWT keys:** `run.sh` derives both keys from a plain one. Homebrew's OpenSSL 3.6.3 on macOS failed to read an encrypted key back with `-passin`, which works on Alpine.
-- **Admin UI selectors** (no test ids in the module's editing UI):
-  - A component's content may be `pointer-events: none`, and the element over it takes the click. Click by position (`selectComponent`).
-  - The manager's action **Publish** is the last button of that name; the tab comes first.
-  - The admin menu toggle is an `<a>` with screen-reader text "Menu".
-- **The editing test publishes straight after the last keystroke**, which is the regression check for cwa-nuxt-module#394 (fixed in module alpha.16). Don't add a wait for saves back.
+- **The tests only assume what every project has (#177, Daniel, 2026-10-19):** the admin user and the pages its sitemap lists, so a project copies `e2e/` unchanged. No test depends on the sample scaffold; demo-content tests were removed, not tagged. Publish, redirect and other content-behaviour tests belong in the module or bundle. The admin menu toggle is an `<a>` with screen-reader text "Menu".
 - **The tests are type-checked and linted** (strict `e2e/tsconfig.json`; `e2e/eslint.config.mjs`: `@nuxt/eslint-config` stylistic like the module, `eslint-plugin-playwright` with its rules raised to errors, and typescript-eslint's `no-floating-promises`). The runner's CMD runs `tsc` and `eslint` before Playwright, which strips types without checking them. The suite is the example downstream sites copy, so keep it strict; `e2e/README.md` has the conventions. `e2e/` keeps its own `typescript` 6.0.3 pin, like the app.
 - **The OG image test** fetches a page's `og:image`: it fails with a 500 when `NUXT_APP_SECRET` is missing.
 
@@ -460,7 +456,7 @@ The module ships no service worker; the template carries the reference config in
   - **The lifecycle rule (#169):** one per prefixed app, `matchesPrefix: ["<GCLOUD_PATH_PREFIX>review/"]` (`["review/"]` with no prefix). `age` counts from each object's creation, not the app's, so a review app that lives longer than it loses its older uploads: choose an age longer than review apps live; it's only a backstop.
   - **Review apps deployed before alpha.37 (#169)** stored at the bucket root with root-relative database paths. Their next deploy uses `review/<slug>/`, so earlier uploads 404 and drop out of the orphan scan, and the stop guard (correctly) won't delete root objects. No code workaround: redeploy them with fresh fixtures (`CWA_CI_FIXTURES_PURGE=true` on the review fixture job), or stop and recreate them, then remove their old root objects by hand.
   - **Changing an existing app's prefix moves every media URL**: database paths are relative to the adapter, so move the objects under the new prefix first.
-  - The browser tests run with `review/e2e/`: the image must load from under it, and `run.sh` fails on any object outside it or left after the guarded delete.
+  - The browser tests run with `review/e2e/`: `run.sh` fails on any object outside it or left after the guarded delete.
   - Dev's local adapter ignores it.
 - In dev the local adapter has no `public_url`, so media falls back to the API URL.
 - **Upload sizing:** `upload_max_filesize = 20M`, `post_max_size = 21M` (`10-app.ini`), `Assert\File(maxSize: '20M')` on `Image::$file`. The ingress allows 30m.

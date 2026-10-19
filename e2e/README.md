@@ -38,6 +38,8 @@ The stack publishes no ports, so it runs beside the dev stack.
   context, checked the same way and closed after the test.
 - Find elements the way a person does: `getByRole`, `getByLabel`, `getByText`, with exact names. Fall back to CSS only
   where the markup gives nothing better, and say why in a comment.
+- The template's tests assume only what every project has: the admin user and the pages the sitemap lists, never
+  the sample content (#177). Your own specs can test your site's pages and content.
 - `logIn(page)` signs in as the admin. The password is generated per run and loaded with the fixtures.
 - Tests share one database and run one at a time. A test that edits content uses its own unique text.
 - `check-all-ran.mjs` fails the run unless every listed test ran and passed.
