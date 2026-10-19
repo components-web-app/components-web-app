@@ -16,6 +16,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- Bundle 2.0.0-alpha.32: `POST {component}/move` and the locations list on `GET {component}/usage`, which is now admin only. `route_security` patterns match the whole path, case-insensitive, with `*` the only wildcard; the template's `/user-area*` is a prefix, as intended. A project with its own `route_security` must check its patterns still match what it means (`*/x*` matches anywhere). No migration. [d816382](https://github.com/components-web-app/components-web-app/commit/d816382770e6d7ca034d97dcb5f24bdf715abd11)
+- Browser tests: `logIn` waits for `/login` to hydrate before filling the form. [5b6a605](https://github.com/components-web-app/components-web-app/commit/5b6a6058fb59fc4f8c618f6ecf6f3b558d71e63c)
 - Browser tests assume only what every project has, the admin user and the sitemap's pages, so they pass on a site without the sample content. The 308 redirect and the text and image publish tests are removed; the cache-hit, loading-bar and OG image tests use sitemap pages (#177). [5db12c9](https://github.com/components-web-app/components-web-app/commit/5db12c9e9992a1f02eaaf187f36ed56db965c13e)
 - `create-cwa`: dependencies updated (`@clack/prompts` 1, `giget` 3, TypeScript 7); a generated project is unchanged. [bc477e8](https://github.com/components-web-app/components-web-app/commit/bc477e83122fa90287f4e013c0eb4a25d03c2ee3)
 - Module 2.0.0-alpha.23: Move, in a component's menu, relocates a position through the clone workflow (not yet for page-data slots); clone-mode fixes. [5c5d873](https://github.com/components-web-app/components-web-app/commit/5c5d87372634ad1d18f94053d9043e5802b5f3a6)
