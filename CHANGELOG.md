@@ -8,6 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- Bundle 2.0.0-alpha.32: `route_security` patterns now match the whole path (case-insensitive, `*` the only wildcard). Check any `route` your project adds still matches what you mean: `/x*` is a prefix, `*/x*` matches anywhere. [d816382](https://github.com/components-web-app/components-web-app/commit/d816382770e6d7ca034d97dcb5f24bdf715abd11)
 - Behind Google Cloud CDN, set each media backend bucket's caps to a year, or the long `Cache-Control` from bundle 2.0.0-alpha.15's `uploadable.cache_control` (and alpha.25's back-fill) reaches browsers as `max-age=3600`: `gcloud compute backend-buckets update <backend-bucket> --max-ttl=31536000 --client-ttl=31536000`, then `gcloud compute url-maps invalidate-cdn-cache <url-map> --host <cdn host> --path "/*"`. New sites: create the bucket with both caps. [#154](https://github.com/components-web-app/components-web-app/issues/154)
 
 ### Fixed
@@ -16,7 +17,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
-- Bundle 2.0.0-alpha.32: `POST {component}/move` and the locations list on `GET {component}/usage`, which is now admin only. `route_security` patterns match the whole path, case-insensitive, with `*` the only wildcard; the template's `/user-area*` is a prefix, as intended. A project with its own `route_security` must check its patterns still match what it means (`*/x*` matches anywhere). No migration. [d816382](https://github.com/components-web-app/components-web-app/commit/d816382770e6d7ca034d97dcb5f24bdf715abd11)
+- Bundle 2.0.0-alpha.32: `POST {component}/move` and the locations list on `GET {component}/usage`, which is now admin only. `route_security` patterns match the whole path, case-insensitive, with `*` the only wildcard; the template's `/user-area*` is a prefix, as intended. No migration. [d816382](https://github.com/components-web-app/components-web-app/commit/d816382770e6d7ca034d97dcb5f24bdf715abd11)
 - Browser tests: `logIn` waits for `/login` to hydrate before filling the form. [5b6a605](https://github.com/components-web-app/components-web-app/commit/5b6a6058fb59fc4f8c618f6ecf6f3b558d71e63c)
 - Browser tests assume only what every project has, the admin user and the sitemap's pages, so they pass on a site without the sample content. The 308 redirect and the text and image publish tests are removed; the cache-hit, loading-bar and OG image tests use sitemap pages (#177). [5db12c9](https://github.com/components-web-app/components-web-app/commit/5db12c9e9992a1f02eaaf187f36ed56db965c13e)
 - `create-cwa`: dependencies updated (`@clack/prompts` 1, `giget` 3, TypeScript 7); a generated project is unchanged. [bc477e8](https://github.com/components-web-app/components-web-app/commit/bc477e83122fa90287f4e013c0eb4a25d03c2ee3)
