@@ -92,7 +92,7 @@ async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Ans
       message: 'Project name?',
       placeholder: 'my-cwa-app',
       initialValue: targetArg ?? '',
-      validate: (v) => (v.trim() ? undefined : 'Project name is required'),
+      validate: (v) => (v?.trim() ? undefined : 'Project name is required'),
     })
   ) as string
 
