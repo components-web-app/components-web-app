@@ -24,7 +24,10 @@ E2E_JWT_PUBLIC_KEY=$(cat "$keydir/public.pem")
 rm -rf "$keydir"
 export E2E_APP_SECRET E2E_NUXT_APP_SECRET E2E_MERCURE_JWT_SECRET E2E_JWT_PASSPHRASE E2E_ADMIN_PASSWORD E2E_JWT_SECRET_KEY E2E_JWT_PUBLIC_KEY
 
-compose() { docker compose -f compose.yaml "$@"; }
+# One stack per checkout, so two projects' local runs never share or tear down each other's (#178).
+project=$(printf '%s' "${COMPOSE_PROJECT_NAME:-cwa-e2e-$(basename "$(cd .. && pwd)")}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9_-' '-')
+tests_container="$project-tests"
+compose() { docker compose -p "$project" -f compose.yaml "$@"; }
 cleanup() {
   status=$?
   if [ "$status" -ne 0 ]; then
@@ -32,7 +35,8 @@ cleanup() {
     compose logs --tail 80 php app 2>&1 || true
   fi
   if [ "${E2E_KEEP_STACK:-}" = "true" ]; then
-    echo "Stack left running; admin password: $E2E_ADMIN_PASSWORD"
+    echo "Stack $project left running; admin password: $E2E_ADMIN_PASSWORD"
+    echo "Stop it with: docker compose -p $project -f e2e/compose.yaml down -v"
   else
     compose --profile tests down -v --remove-orphans >/dev/null 2>&1 || true
   fi
@@ -67,15 +71,15 @@ rm -rf playwright-report test-results
 compose --profile tests build --quiet tests
 set +e
 if [ -n "${E2E_ARGS:-}" ]; then
-  compose --profile tests run --name cwa-e2e-tests tests node forward.mjs "npx playwright test $E2E_ARGS"
+  compose --profile tests run --name "$tests_container" tests node forward.mjs "npx playwright test $E2E_ARGS"
 else
-  compose --profile tests run --name cwa-e2e-tests tests
+  compose --profile tests run --name "$tests_container" tests
 fi
 tests_status=$?
 set -e
-docker cp cwa-e2e-tests:/e2e/playwright-report ./playwright-report >/dev/null 2>&1 || true
-docker cp cwa-e2e-tests:/e2e/test-results ./test-results >/dev/null 2>&1 || true
-docker rm -f cwa-e2e-tests >/dev/null 2>&1 || true
+docker cp "$tests_container":/e2e/playwright-report ./playwright-report >/dev/null 2>&1 || true
+docker cp "$tests_container":/e2e/test-results ./test-results >/dev/null 2>&1 || true
+docker rm -f "$tests_container" >/dev/null 2>&1 || true
 
 # A 5xx the UI hid still sends the production error mail (#162).
 error_mails=$(compose exec -T php curl -fs 'http://mailpit:8025/api/v1/search?query=to:errors@cwa.test' | sed -n 's/.*"messages_count":\([0-9]*\).*/\1/p')

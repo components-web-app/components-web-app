@@ -24,7 +24,9 @@ E2E_PHP_IMAGE=cwa-e2e-php:local E2E_APP_IMAGE=cwa-e2e-app:local sh e2e/run.sh
 ```
 
 - `E2E_ARGS="tests/admin.spec.ts"` (or `--grep …`) runs part of the suite. The check that every test ran is skipped then.
-- `E2E_KEEP_STACK=true` leaves the stack running afterwards. Stop it with `docker compose -f e2e/compose.yaml down -v`.
+- `E2E_KEEP_STACK=true` leaves the stack running afterwards, and prints the command that stops it.
+- Each checkout gets its own stack, `cwa-e2e-<directory>` (`COMPOSE_PROJECT_NAME` overrides it), so two projects can
+  run at once on one machine (#178).
 - Reports land in `playwright-report/` and `test-results/`.
 - The registry's images are amd64 only. On an ARM Mac, run them with `DOCKER_DEFAULT_PLATFORM=linux/amd64`.
 
