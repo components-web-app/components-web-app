@@ -43,6 +43,8 @@ export const adminPassword = () => {
 
 export async function logIn(page: Page) {
   await page.goto('/login')
+  // Before hydration the form submits natively and reloads /login.
+  await isHydrated(page)
   await page.getByLabel('Username or Email').fill('admin')
   await page.getByLabel('Password', { exact: true }).fill(adminPassword())
   await Promise.all([
