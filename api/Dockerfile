@@ -72,8 +72,10 @@ FROM frankenphp_upstream AS frankenphp_base
 WORKDIR /app
 
 # apt retries, timeouts and no pipelining for every apt call, install-php-extensions' too; retry-fetch bounds each step (#176).
+# Debian over HTTPS: plain HTTP to deb.debian.org stalls on GitLab SaaS runners (#176).
 COPY --link --chmod=755 frankenphp/retry-fetch.sh /usr/local/bin/retry-fetch
-RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nAcquire::http::Pipeline-Depth "0";\n' > /etc/apt/apt.conf.d/80-cwa-retries
+RUN printf 'Acquire::Retries "5";\nAcquire::http::Timeout "30";\nAcquire::https::Timeout "30";\nAcquire::http::Pipeline-Depth "0";\n' > /etc/apt/apt.conf.d/80-cwa-retries \
+	&& sed -i 's#http://deb.debian.org#https://deb.debian.org#' /etc/apt/sources.list.d/debian.sources
 
 # persistent / runtime deps
 # hadolint ignore=DL3008
