@@ -25,6 +25,8 @@ E2E_PHP_IMAGE=cwa-e2e-php:local E2E_APP_IMAGE=cwa-e2e-app:local sh e2e/run.sh
 
 - `E2E_ARGS="tests/admin.spec.ts"` (or `--grep …`) runs part of the suite. The check that every test ran is skipped then.
 - `E2E_KEEP_STACK=true` leaves the stack running afterwards, and prints the command that stops it.
+- `E2E_SCALED=true` runs the same tests against scaled mode (#85): two php replicas on one Redis cache and one Mercure
+  hub (`compose.scaled.yaml`). In CI, set `CWA_CI_E2E_SCALED="true"`.
 - Each checkout gets its own stack, `cwa-e2e-<directory>` (`COMPOSE_PROJECT_NAME` overrides it), so two projects can
   run at once on one machine (#178).
 - Reports land in `playwright-report/` and `test-results/`.

@@ -1,0 +1,43 @@
+# Scaled mode's browser tests (#85), with E2E_SCALED=true: two php replicas sharing one Redis cache and one Mercure
+# hub, as on Kubernetes with CWA_CI_API_SCALED_<TRACK>. Docker's DNS spreads connections to `php` across the replicas.
+services:
+  redis:
+    image: redis:8.10.2
+    command: ["--requirepass", "e2e", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-lru", "--save", "", "--appendonly", "no"]
+
+  # The php image's own binary with the hub's Caddyfile, as templates/mercure-hub.yaml runs it.
+  mercure:
+    image: ${E2E_PHP_IMAGE:?set E2E_PHP_IMAGE}
+    entrypoint: ["frankenphp", "run", "--config", "/etc/caddy/mercure-hub.Caddyfile", "--adapter", "caddyfile"]
+    # The image's own healthcheck reads Caddy's admin API, which the hub turns off; the chart probes /healthz too.
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost/healthz"]
+      interval: 5s
+    environment:
+      MERCURE_PUBLISHER_JWT_KEY: ${E2E_MERCURE_JWT_SECRET:?}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${E2E_MERCURE_JWT_SECRET:?}
+      MERCURE_PUBLIC_URL: https://localhost/.well-known/mercure
+      MERCURE_CORS_ORIGIN: https://localhost
+
+  php:
+    deploy:
+      replicas: 2
+    depends_on:
+      redis: { condition: service_started }
+      mercure: { condition: service_started }
+    environment:
+      # The chart's cwa.scaled.cacheStorage block.
+      CADDY_CACHE_STORAGE: |
+        redis {
+          configuration {
+            Addrs redis:6379
+            Password e2e
+            DialTimeout 100ms
+            ReadTimeout 100ms
+            WriteTimeout 100ms
+            PoolTimeout 100ms
+            MaxRetries -1
+          }
+        }
+      MERCURE_HUB_UPSTREAM: mercure:80
+      MERCURE_URL: http://mercure/.well-known/mercure

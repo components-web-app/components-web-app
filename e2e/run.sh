@@ -27,7 +27,11 @@ export E2E_APP_SECRET E2E_NUXT_APP_SECRET E2E_MERCURE_JWT_SECRET E2E_JWT_PASSPHR
 # One stack per checkout, so two projects' local runs never share or tear down each other's (#178).
 project=$(printf '%s' "${COMPOSE_PROJECT_NAME:-cwa-e2e-$(basename "$(cd .. && pwd)")}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9_-' '-')
 tests_container="$project-tests"
-compose() { docker compose -p "$project" -f compose.yaml "$@"; }
+# E2E_SCALED=true: two php replicas on one Redis cache and one Mercure hub (#85).
+files="-f compose.yaml"
+[ "${E2E_SCALED:-}" = "true" ] && files="$files -f compose.scaled.yaml"
+# shellcheck disable=SC2086
+compose() { docker compose -p "$project" $files "$@"; }
 cleanup() {
   status=$?
   if [ "$status" -ne 0 ]; then
@@ -44,7 +48,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-compose pull --quiet --ignore-pull-failures database gcs mailpit php app
+compose pull --quiet --ignore-pull-failures
 compose up -d database gcs mailpit php app
 
 echo "Waiting for the API (migrations run on boot)..."
