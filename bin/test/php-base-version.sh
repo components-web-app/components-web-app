@@ -17,10 +17,7 @@ default=$(sed -n 's/^ARG CWA_PHP_BASE=//p' "$DOCKERFILE")
 if [ -f "$PACKAGE" ]; then
 	version=$(sed -n 's/^  "version": "\([^"]*\)".*/\1/p' "$PACKAGE" | head -1)
 	[ -n "$version" ] || fail "no version in $PACKAGE"
-	# Until the first release with cwa-php-base there is no image to pull (#208); delete this case after that release.
-	if [ "$version" = "2.0.0-alpha.43" ] && [ "$default" = cwa_php_base ]; then
-		echo "note: no cwa-php-base release yet; the Dockerfile builds the base from source"
-	elif [ "$default" != "$IMAGE:$version" ]; then
+	if [ "$default" != "$IMAGE:$version" ]; then
 		fail "CWA_PHP_BASE defaults to '$default'; a release sets it to '$IMAGE:$version' with create-cwa's version"
 	fi
 else
