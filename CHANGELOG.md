@@ -14,6 +14,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- The deploy refuses a `CWA_API_DATABASE_BACKUP_GCLOUD_JSON` site setting, which would have put the backup key into every API pod (#180). [705d5a7](https://github.com/components-web-app/components-web-app/commit/705d5a744499c69b9893fa6587db695d6d4394d4)
 - API pods stop cleanly (Completed, not Error): preStop only waits for the ingress, and Caddy's new `grace_period 15s` finishes in-flight requests and cuts open SSE subscriptions instead of `kill -QUIT` (#85). [9ce62c0](https://github.com/components-web-app/components-web-app/commit/9ce62c012508bde3cc9c0aea77598d294eba05b6)
 - Scaled mode's Mercure hub pod stops cleanly (Completed, not Error) with subscribers connected: a 5 s Caddy grace period instead of waiting forever for SSE connections (#85). [05090d5](https://github.com/components-web-app/components-web-app/commit/05090d5850f1fe2d3e78e3422e6299b27c10fb10)
 - php image: a sixth Souin patch gives its buffering writer a no-op `Flush()`, so a PHP `flush()` behind the cache (every dev request; a streamed response in prod) no longer logs "responseWriter is not a flusher". Nothing behaved differently; the body was always buffered (#185). [45c3e2f](https://github.com/components-web-app/components-web-app/commit/45c3e2fa170e32c4f1880dc52bfb6aafdc60fa9d)
