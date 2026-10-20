@@ -145,11 +145,22 @@ default_branch_cache_from() {
   fi
 }
 
-# The template's own CI builds the php base from source, so the patches are tested between releases (#208).
+# The php base to build on (#208): from source when asked, or in the template's own CI so its patches are tested; else CWA_CI_PHP_BASE_IMAGE or the Dockerfile's default.
 php_base_build_args() {
+  php_base=
   if [ "${CWA_CI_PHP_IMAGE_FROM_SOURCE:-}" = "true" ]; then
-    printf -- '--build-arg CWA_PHP_BASE=cwa_php_base'
+    php_base=cwa_php_base
+  elif [ -n "${CWA_CI_PHP_BASE_IMAGE:-}" ]; then
+    php_base=$CWA_CI_PHP_BASE_IMAGE
+  elif [ "${CWA_CI_PHP_IMAGE_FROM_SOURCE:-}" != "false" ] \
+    && { [ "${CI_PROJECT_PATH:-}" = "silverback-web-apps/cwa/components-web-app" ] || [ "${GITHUB_REPOSITORY:-}" = "components-web-app/components-web-app" ]; }; then
+    php_base=cwa_php_base
   fi
+  case "$php_base" in
+    "") return 0 ;;
+    *[!A-Za-z0-9._:/@-]*) echo "CWA_CI_PHP_BASE_IMAGE '$php_base' is not an image reference." >&2; return 1 ;;
+  esac
+  printf -- '--build-arg CWA_PHP_BASE=%s' "$php_base"
 }
 
 build_api() {
@@ -167,12 +178,13 @@ build_api() {
   # COMPOSER_AUTH (from GITHUB_TOKEN in setup.sh) authenticates composer's ~180
   # downloads from github.com. A build secret, so it's never written to the
   # image; empty is fine, the Dockerfile only uses it when it has content.
+  php_base_args=$(php_base_build_args) || return 1
   docker buildx build --push \
   	--secret id=composer_auth,env=COMPOSER_AUTH \
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG,mode=max \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	$(default_branch_cache_from "$PHP_REPOSITORY_CACHE") \
-  	$(php_base_build_args) \
+  	$php_base_args \
   	--tag $PHP_REPOSITORY:$TAG \
   	--metadata-file build-metadata.json \
   	--target frankenphp_prod \

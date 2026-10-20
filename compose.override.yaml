@@ -4,7 +4,7 @@ services:
     build:
       context: ./api
       target: frankenphp_dev
-      # Unset pulls this release's base; CWA_PHP_BASE=cwa_php_base in .env builds it from source (#208).
+      # Unset uses the Dockerfile's default, this release's cwa-php-base; CWA_PHP_BASE=cwa_php_base in .env builds it from source (#208).
       args:
         - CWA_PHP_BASE
     volumes:

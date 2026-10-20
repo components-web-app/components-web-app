@@ -2,9 +2,9 @@
 
 # Adapted from https://github.com/dunglas/symfony-docker
 
-# Prebuilt base for this release (#208): FrankenPHP with our plugins and patches, apt packages, PHP extensions.
-# --build-arg CWA_PHP_BASE=cwa_php_base builds it from source, for projects that change api/frankenphp/{souin,storages,caddy}.
-ARG CWA_PHP_BASE=ghcr.io/components-web-app/cwa-php-base:2.0.0-alpha.43
+# The php base (#208): a release sets this release's ghcr.io/components-web-app/cwa-php-base:<version>, prebuilt with our plugins, patches and extensions.
+# cwa_php_base builds it from source (--build-arg CWA_PHP_BASE=cwa_php_base), for projects that change api/frankenphp/{souin,storages,caddy}.
+ARG CWA_PHP_BASE=cwa_php_base
 
 FROM dunglas/frankenphp:builder AS builder
 

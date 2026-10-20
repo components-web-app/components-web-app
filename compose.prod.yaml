@@ -4,6 +4,9 @@ services:
     build:
       context: ./api
       target: frankenphp_prod
+      # As in compose.override.yaml: CWA_PHP_BASE=cwa_php_base builds the base from source (#208).
+      args:
+        - CWA_PHP_BASE
     environment:
       APP_SECRET: ${APP_SECRET:?set APP_SECRET}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:?set CADDY_MERCURE_JWT_SECRET}

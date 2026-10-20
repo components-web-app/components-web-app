@@ -1,5 +1,5 @@
 #!/bin/sh
-# The Dockerfile pulls the cwa-php-base of the template's own version, and the published stage holds nothing project-specific (#208).
+# The Dockerfile pulls the cwa-php-base of the template's own version, the published stage holds nothing project-specific, and build_api picks the base (#208).
 # No image or network needed. Usage: bin/test/php-base-version.sh [Dockerfile] [create-cwa package.json]
 set -eu
 
@@ -17,12 +17,16 @@ default=$(sed -n 's/^ARG CWA_PHP_BASE=//p' "$DOCKERFILE")
 if [ -f "$PACKAGE" ]; then
 	version=$(sed -n 's/^  "version": "\([^"]*\)".*/\1/p' "$PACKAGE" | head -1)
 	[ -n "$version" ] || fail "no version in $PACKAGE"
-	[ "$default" = "$IMAGE:$version" ] \
-		|| fail "CWA_PHP_BASE defaults to '$default'; a release sets it to '$IMAGE:$version' with create-cwa's version"
+	# Until the first release with cwa-php-base there is no image to pull (#208); delete this case after that release.
+	if [ "$version" = "2.0.0-alpha.43" ] && [ "$default" = cwa_php_base ]; then
+		echo "note: no cwa-php-base release yet; the Dockerfile builds the base from source"
+	elif [ "$default" != "$IMAGE:$version" ]; then
+		fail "CWA_PHP_BASE defaults to '$default'; a release sets it to '$IMAGE:$version' with create-cwa's version"
+	fi
 else
 	case "$default" in
-		"$IMAGE":*) ;;
-		*) echo "note: CWA_PHP_BASE defaults to '$default', not a published $IMAGE tag" ;;
+		"$IMAGE":*|cwa_php_base) ;;
+		*) echo "note: CWA_PHP_BASE defaults to '$default', neither a published $IMAGE tag nor cwa_php_base" ;;
 	esac
 fi
 
@@ -47,5 +51,27 @@ echo "$copies" | while IFS= read -r line; do
 	esac
 done || status=1
 
-[ "$status" -eq 0 ] && echo "OK: CWA_PHP_BASE=$default; cwa_php_base holds no project files"
+# build_api's base: from source when asked or in the template's own CI, else CWA_CI_PHP_BASE_IMAGE, else the default.
+K8S="$ROOT/bin/devops/k8s.sh"
+if [ -f "$K8S" ]; then
+	if command -v busybox >/dev/null 2>&1 && busybox ash -c : 2>/dev/null; then K8S_SHELL="busybox ash"; else K8S_SHELL=bash; fi
+	args_case() {
+		expected=$1; shift
+		got=$(env -i PATH="$PATH" "$@" $K8S_SHELL -c '. "$0" >/dev/null 2>&1; php_base_build_args' "$K8S" 2>/dev/null) || got="<error>"
+		[ "$got" = "$expected" ] || fail "php_base_build_args with '$*': got '$got', expected '$expected'"
+	}
+	SRC='--build-arg CWA_PHP_BASE=cwa_php_base'
+	args_case ''
+	args_case '' CWA_CI_PHP_IMAGE_FROM_SOURCE=false
+	args_case "$SRC" CWA_CI_PHP_IMAGE_FROM_SOURCE=true
+	args_case "$SRC" CI_PROJECT_PATH=silverback-web-apps/cwa/components-web-app
+	args_case "$SRC" GITHUB_REPOSITORY=components-web-app/components-web-app
+	args_case '' CI_PROJECT_PATH=silverback-web-apps/cwa/components-web-app CWA_CI_PHP_IMAGE_FROM_SOURCE=false
+	args_case '' CI_PROJECT_PATH=some-agency/some-site
+	args_case "--build-arg CWA_PHP_BASE=$IMAGE:1.0.0-r20261026@sha256:abc" CWA_CI_PHP_BASE_IMAGE="$IMAGE:1.0.0-r20261026@sha256:abc"
+	args_case "$SRC" CWA_CI_PHP_BASE_IMAGE="$IMAGE:x" CWA_CI_PHP_IMAGE_FROM_SOURCE=true
+	args_case '<error>' CWA_CI_PHP_BASE_IMAGE="$IMAGE:x --push"
+fi
+
+[ "$status" -eq 0 ] && echo "OK: CWA_PHP_BASE=$default; cwa_php_base holds no project files; build_api's base args"
 exit "$status"
