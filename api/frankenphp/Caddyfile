@@ -10,6 +10,10 @@
     # Cache outside encode: hits are stored compressed, one entry per normalised Accept-Encoding (#145).
     order cache before encode
 
+    # A stop finishes in-flight requests, then cuts open SSE subscriptions, which never end on their own (#85).
+    # Fits the pod's 30s termination grace after preStop's 5s.
+    grace_period 15s
+
     cache {
         mode strict
 

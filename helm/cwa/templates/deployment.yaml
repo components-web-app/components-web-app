@@ -84,7 +84,7 @@ spec:
             - name: http
               containerPort: 80
               protocol: TCP
-          # Keeps serving while the ingress drops the pod's endpoint, then stops Caddy (#148).
+          # Keeps serving while the ingress drops the pod's endpoint (#148); then the kubelet's SIGTERM stops Caddy within its grace_period (#85).
           lifecycle:
             {{- $warmMaxTime := int .Values.php.warmHttpCacheMaxTime }}
             {{- /* Scaled mode skips it: the shared cache is already warm, and the deploy warms after its flush (#85). */}}
@@ -96,7 +96,7 @@ spec:
             {{- end }}
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "/bin/sleep 5; kill -QUIT 1"]
+                command: ["/bin/sh", "-c", "/bin/sleep 5"]
           # The whole boot (database wait, migrations, ANALYZE): 60 x 5s, from when postStart returns. Readiness and liveness wait for it.
           startupProbe:
             tcpSocket:
