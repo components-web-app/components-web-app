@@ -10,8 +10,13 @@ fail() { echo "FAILED: $*" >&2; failures=$((failures + 1)); }
 out=$(mktemp)
 trap 'rm -f "$out"' EXIT
 
-REQUIRED="SITE_HOST APP_SECRET NUXT_APP_SECRET CADDY_MERCURE_JWT_SECRET POSTGRES_PASSWORD JWT_SECRET_KEY JWT_PUBLIC_KEY
+# The template's own required values; a project's extra ${NAME:?…} values are found in the files and tested too.
+TEMPLATE_REQUIRED="SITE_HOST APP_SECRET NUXT_APP_SECRET CADDY_MERCURE_JWT_SECRET POSTGRES_PASSWORD JWT_SECRET_KEY JWT_PUBLIC_KEY
   JWT_PASSPHRASE MAILER_DSN GCLOUD_BUCKET ADMIN_PASSWORD"
+REQUIRED=$(grep -ho '[$]{[A-Za-z_][A-Za-z0-9_]*:[?]' compose.yaml compose.prod.yaml | sed 's/^[$]{//; s/:[?]$//' | sort -u | tr '\n' ' ')
+for name in $TEMPLATE_REQUIRED; do
+  case " $REQUIRED " in *" $name "*) ;; *) fail "$name is no longer required (\${$name:?…})" ;; esac
+done
 # A clean environment, so neither the caller's variables nor a local .env decide the result.
 prod() { env -i PATH="$PATH" HOME="${HOME:-/tmp}" "$@" docker compose --env-file /dev/null -f compose.yaml -f compose.prod.yaml config; }
 values() { for name in $REQUIRED; do printf ' %s=dummy-%s' "$name" "$name"; done; }
