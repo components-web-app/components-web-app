@@ -8,7 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
-- **Copy `api/frankenphp/mercure-hub.caddy` (and `mercure-hub.Caddyfile`) with the Caddyfile**, which now imports the hub settings from it; without it php doesn't start. A project that changed the hub settings in its Caddyfile moves the change there. In scaled mode (still being built) the hub runs in its own pod and php forwards `/.well-known/mercure` to it (#85). [d51851c](https://github.com/components-web-app/components-web-app/commit/d51851c8fecb429aca2702c871198eec9c663cb6)
+- **Copy `api/frankenphp/mercure-hub.caddy` (and `mercure-hub.Caddyfile`) with the Caddyfile**, which now imports the hub settings from it; without it php doesn't start. A project that changed the hub settings in its Caddyfile moves the change there. In scaled mode (still being built) the hub runs in its own pod and php forwards `/.well-known/mercure` to it (#85). [d51851c](https://github.com/components-web-app/components-web-app/commit/d51851c8fecb429aca2702c871198eec9c663cb6), [eca4d2b](https://github.com/components-web-app/components-web-app/commit/eca4d2bdd92e21a671f99d19552d97adcf7c67e0)
 
 ### Fixed
 
