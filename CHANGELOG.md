@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+
+- The "maintenance mode is on" notice no longer names `CWA_CI_MAINTENANCE_DURING_MIGRATIONS` when a later deploy found the window left on without it (#182). [4fd54e2](https://github.com/components-web-app/components-web-app/commit/4fd54e2d8bb64caf98b4c61d04de95ba497f0069)
+
 ## [2.0.0-alpha.43](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.43) - 2026-10-20
 
 ### Upgrade notes
