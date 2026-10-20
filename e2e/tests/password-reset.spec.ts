@@ -1,5 +1,5 @@
 import type { APIRequestContext } from '@playwright/test'
-import { adminPassword, expect, logIn, test } from './fixtures'
+import { adminPassword, expect, isHydrated, logIn, test } from './fixtures'
 
 const mailpit = process.env.E2E_MAILPIT_URL ?? 'http://mailpit:8025'
 
@@ -23,12 +23,15 @@ async function linkInEmail(request: APIRequestContext, to: string, path: string)
 
 test('a password reset email links to a working reset page', async ({ page, request }) => {
   await page.goto('/forgot-password')
+  // Before hydration a form submits natively (#179).
+  await isHydrated(page)
   await page.getByLabel('Username or Email').fill('admin')
   await page.getByRole('button', { name: 'Reset Password' }).click()
 
   const link = await linkInEmail(request, 'admin@cwa.test', '/reset-password/')
   const response = await page.goto(new URL(link).pathname + new URL(link).search)
   expect(response?.status()).toBe(200)
+  await isHydrated(page)
 
   // Set the same password again, so the rest of the run can still log in, then log in with it.
   await page.getByLabel('Enter new password').fill(adminPassword())

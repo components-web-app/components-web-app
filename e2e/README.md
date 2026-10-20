@@ -2,7 +2,7 @@
 
 Playwright tests that drive the built app and API the way visitors and editors do (#157). They run against this
 commit's **production images** in a throwaway stack (`compose.yaml`): Postgres on tmpfs, a Cloud Storage emulator
-for uploads, and Mailpit for emails.
+(the production image always uses Cloud Storage, and your own specs may upload), and Mailpit for emails.
 
 ## In CI
 
