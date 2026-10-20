@@ -31,7 +31,7 @@ final class UploadDatabaseBackupCommand extends Command
      */
     public function __construct(
         private readonly PublicObjectProbe $probe,
-        #[Autowire(env: 'json:GCLOUD_JSON')]
+        #[Autowire(env: 'json:DATABASE_BACKUP_GCLOUD_JSON')]
         private readonly array $keyFile,
         #[Autowire(env: 'GCLOUD_API_ENDPOINT')]
         private readonly string $apiEndpoint = '',
@@ -61,6 +61,12 @@ final class UploadDatabaseBackupCommand extends Command
         }
         if ($keep < 1) {
             $output->writeln('<error>--keep must be at least 1.</error>');
+
+            return Command::INVALID;
+        }
+        // Without its own key the client would fall back to the node's default credentials (#180).
+        if ('' === $this->apiEndpoint && [] === $this->keyFile) {
+            $output->writeln('<error>No backup key (DATABASE_BACKUP_GCLOUD_JSON, from CWA_CI_DATABASE_BACKUP_GCLOUD_JSON).</error>');
 
             return Command::INVALID;
         }

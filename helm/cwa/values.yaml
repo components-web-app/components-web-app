@@ -23,6 +23,8 @@ php:
   appDebug: "0"
   appSecret: ""
   resetDatabase: "false"
+  # true: no pod, CronJob or Job runs the entrypoint's migrations (a track sharing production's database, #180).
+  skipMigrations: false
   corsAllowOrigin: "^https?://.*?\\.chart-example\\.local$"
   trustedHosts: "^(?:127\\.0\\.0\\.1|localhost|.*\\.chart-example\\.local)$"
   trustedProxies:
@@ -295,6 +297,8 @@ databaseJob:
     image: postgres:16-alpine
     # A private bucket, never the media bucket (public, and its orphan scan would list the dumps).
     bucket: ""
+    # The backup service account's key JSON, base64-encoded; k8s.sh passes it in a temporary values file.
+    gcloudJsonB64: ""
     directory: ""
     label: ""
     keep: 5

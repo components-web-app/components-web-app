@@ -106,6 +106,8 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/api-warm-surge.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-backend-timeout.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/database-guard.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/deploy-promotion.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/backup-bucket.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml

@@ -20,6 +20,8 @@ return static function (ContainerConfigurator $configurator) {
         ->parameters()
         ->set('locale', 'en')
         ->set('env(GCLOUD_JSON)', '{}')
+        // The database backup's own key, never the media key (#180); only the backup Job has it.
+        ->set('env(DATABASE_BACKUP_GCLOUD_JSON)', '{}')
         // Public base URL for media (a CDN in front of the bucket), with a trailing slash. Empty falls back to the
         // bucket's own public URL (#68).
         ->set('env(GCLOUD_PUBLIC_URL)', '')

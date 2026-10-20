@@ -156,6 +156,10 @@ jobs:
         run: sh bin/test/souin-backend-timeout.sh
       - name: Check the deploy's migrations plan, backup and maintenance window run in order (#180)
         run: sh bin/test/database-guard.sh
+      - name: Check the track tag moves only after a successful deploy, and staging never migrates production's database (#164, #180)
+        run: sh bin/test/deploy-promotion.sh
+      - name: Check backup-bucket.sh grants each project its own backup folder only (#180)
+        run: sh bin/test/backup-bucket.sh
 
   functional-tests:
     name: Functional Tests
@@ -282,6 +286,8 @@ jobs:
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
       # automatically; GitHub Actions does not, so each one must be mapped here.
       GCLOUD_JSON: ${{ secrets.GCLOUD_JSON }}
+      # The database backup's own key (bin/devops/backup-bucket.sh), never the media key (#180).
+      CWA_CI_DATABASE_BACKUP_GCLOUD_JSON: ${{ secrets.CWA_CI_DATABASE_BACKUP_GCLOUD_JSON }}
       GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
       GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
       # Optional; warm_cache defaults to 3 concurrent page requests.
@@ -425,6 +431,8 @@ jobs:
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
       # automatically; GitHub Actions does not, so each one must be mapped here.
       GCLOUD_JSON: ${{ secrets.GCLOUD_JSON }}
+      # The database backup's own key (bin/devops/backup-bucket.sh), never the media key (#180).
+      CWA_CI_DATABASE_BACKUP_GCLOUD_JSON: ${{ secrets.CWA_CI_DATABASE_BACKUP_GCLOUD_JSON }}
       GCLOUD_BUCKET: ${{ vars.GCLOUD_BUCKET }}
       GCLOUD_PUBLIC_URL: ${{ vars.GCLOUD_PUBLIC_URL }}
       # Optional; warm_cache defaults to 3 concurrent page requests.

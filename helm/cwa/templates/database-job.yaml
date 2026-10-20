@@ -8,6 +8,21 @@ An empty databaseJob.task renders nothing.
 {{- if not (has .task (list "plan" "backup" "migrate")) }}
 {{- fail (printf "databaseJob.task must be plan, backup or migrate, not %q" .task) }}
 {{- end }}
+{{- if eq .task "backup" }}
+# The backup's own key (CWA_CI_DATABASE_BACKUP_GCLOUD_JSON), never the media key; k8s.sh deletes it with the Job.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ required "databaseJob.name is required" .name }}
+  labels:
+    helm.sh/chart: {{ include "cwa.chart" $ }}
+    app.kubernetes.io/name: {{ include "cwa.name" $ }}-database-{{ .task }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+type: Opaque
+data:
+  gcloud-json: {{ required "databaseJob.backup.gcloudJsonB64 is required (CWA_CI_DATABASE_BACKUP_GCLOUD_JSON)" .backup.gcloudJsonB64 | quote }}
+---
+{{- end }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -113,8 +128,18 @@ spec:
           args: ["bin/console", "app:database:migrate", "--no-interaction"]
           {{- end }}
           env:
+            {{- if not $.Values.php.skipMigrations }}
+            # Else cwa.phpEnv sets it.
             - name: SKIP_MIGRATIONS
               value: "true"
+            {{- end }}
+            {{- if eq .task "backup" }}
+            - name: DATABASE_BACKUP_GCLOUD_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .name }}
+                  key: gcloud-json
+            {{- end }}
             {{- if ne .task "migrate" }}
             # Read-only sessions: neither the plan nor the backup can change the database.
             - name: PGOPTIONS

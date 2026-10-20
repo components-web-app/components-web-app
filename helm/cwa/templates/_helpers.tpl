@@ -209,6 +209,11 @@ Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the 
     secretKeyRef:
       name: {{ include "cwa.fullname" . }}
       key: database-url
+{{- if .Values.php.skipMigrations }}
+# A track sharing production's database never migrates it: production's deploy does (#180).
+- name: SKIP_MIGRATIONS
+  value: "true"
+{{- end }}
 - name: CADDY_CACHE_CDN_CONFIG
   valueFrom:
     secretKeyRef:

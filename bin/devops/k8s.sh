@@ -237,47 +237,88 @@ registry_login() {
   [ -n "$REGISTRY_TOKEN" ] || { echo "❌ The registry gave no token for $2" >&2; return 1; }
 }
 
-# Prints the image tag the deploy uses for repository $1 (#164): <tag>@<digest>, so every pod, CronJob and Job
-# started later runs exactly this build. Staging, canary and production first copy it to their own tag ($3),
-# moved only by a deploy; the registry keeps it tagged. $2: this pipeline's build digest, or empty for :$TAG's.
-promote_image() {
-  local repo="$1" digest="$2" target="$3" host path body type
+# Prints the digest to deploy for repository $1 (#164): $2, this pipeline's build, or else :$TAG's current digest.
+image_digest() {
+  local repo="$1" digest="$2" host path
   host=${repo%%/*}
   path=${repo#*/}
-  registry_login "$host" "$path" || return 1
   if [ -z "$digest" ]; then
+    registry_login "$host" "$path" || return 1
     digest=$(registry_curl -I -H "Accept: $REGISTRY_MANIFEST_TYPES" "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$TAG" \
       | tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *//p') || return 1
   fi
   case "$digest" in
-    sha256:*) ;;
+    sha256:*) printf '%s' "$digest" ;;
     *) echo "❌ No digest for $repo:$TAG" >&2; return 1 ;;
   esac
-  if [ -n "$target" ]; then
-    body=$(mktemp)
-    type=$(registry_curl -H "Accept: $REGISTRY_MANIFEST_TYPES" -D - -o "$body" "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$digest" \
-      | tr -d '\r' | sed -n 's/^[Cc]ontent-[Tt]ype: *//p' | tail -1) || { rm -f "$body"; return 1; }
-    registry_curl -X PUT -H "Content-Type: $type" --data-binary "@$body" -o /dev/null \
-      "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$target" || { rm -f "$body"; echo "❌ Couldn't tag $repo@$digest as $target" >&2; return 1; }
-    rm -f "$body"
-    echo "Tagged $repo@$digest as $target" >&2
-  fi
-  printf '%s@%s' "${target:-$TAG}" "$digest"
 }
 
-# Sets PHP_IMAGE_TAG and APP_IMAGE_TAG for the deploy of track $1 (#164).
-promote_images() {
-  local target
+# Copies repository $1's manifest $2 to tag $3 through the registry API: no pull, no new layers.
+copy_image_tag() {
+  local repo="$1" digest="$2" target="$3" host path body type
+  host=${repo%%/*}
+  path=${repo#*/}
+  registry_login "$host" "$path" || return 1
+  body=$(mktemp)
+  type=$(registry_curl -H "Accept: $REGISTRY_MANIFEST_TYPES" -D - -o "$body" "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$digest" \
+    | tr -d '\r' | sed -n 's/^[Cc]ontent-[Tt]ype: *//p' | tail -1) || { rm -f "$body"; return 1; }
+  registry_curl -X PUT -H "Content-Type: $type" --data-binary "@$body" -o /dev/null \
+    "${REGISTRY_SCHEME:-https}://$host/v2/$path/manifests/$target" || { rm -f "$body"; echo "❌ Couldn't tag $repo@$digest as $target" >&2; return 1; }
+  rm -f "$body"
+  echo "Tagged $repo@$digest as $target"
+}
+
+# The track's own registry tag: production, staging or canary; none for review apps.
+image_track_tag() {
   case "${1:-stable}" in
-    stable) target=production ;;
-    staging|canary) target="$1" ;;
-    *) target="" ;;
+    stable) echo production ;;
+    staging|canary) echo "$1" ;;
   esac
-  PHP_IMAGE_TAG=$(promote_image "$PHP_REPOSITORY" "${CWA_CI_PHP_IMAGE_DIGEST:-}" "$target") || return 1
-  APP_IMAGE_TAG=$(promote_image "$APP_REPOSITORY" "${CWA_CI_APP_IMAGE_DIGEST:-}" "$target") || return 1
-  export PHP_IMAGE_TAG APP_IMAGE_TAG
+}
+
+# Sets PHP_IMAGE_TAG and APP_IMAGE_TAG (<track tag>@<digest>) for track $1's deploy, before helm (#164). Moves no tag:
+# pods run the digest, so promote_images copies the track tag only once the deploy succeeded.
+pin_images() {
+  local target
+  target=$(image_track_tag "$1")
+  PHP_IMAGE_DIGEST=$(image_digest "$PHP_REPOSITORY" "${CWA_CI_PHP_IMAGE_DIGEST:-}") || return 1
+  APP_IMAGE_DIGEST=$(image_digest "$APP_REPOSITORY" "${CWA_CI_APP_IMAGE_DIGEST:-}") || return 1
+  PHP_IMAGE_TAG="${target:-$TAG}@$PHP_IMAGE_DIGEST"
+  APP_IMAGE_TAG="${target:-$TAG}@$APP_IMAGE_DIGEST"
+  export PHP_IMAGE_TAG APP_IMAGE_TAG PHP_IMAGE_DIGEST APP_IMAGE_DIGEST
   echo "Deploying php $PHP_REPOSITORY:$PHP_IMAGE_TAG"
   echo "Deploying app $APP_REPOSITORY:$APP_IMAGE_TAG"
+}
+
+# After track $1's deploy succeeded: copies the pinned builds to the track tag, which keeps the registry from deleting
+# what runs (#164). A failed migration or rollout never gets here, so the tag keeps the last good build.
+promote_images() {
+  local target attempt
+  target=$(image_track_tag "$1")
+  [ -n "$target" ] || return 0
+  for attempt in 1 2 3; do
+    copy_image_tag "$PHP_REPOSITORY" "$PHP_IMAGE_DIGEST" "$target" \
+      && copy_image_tag "$APP_REPOSITORY" "$APP_IMAGE_DIGEST" "$target" && return 0
+    [ "$attempt" = 3 ] || sleep "${CWA_CI_REGISTRY_RETRY_DELAY:-5}"
+  done
+  return 1
+}
+
+# Waits for release $1's PWA, then API, rollout (CWA_CI_DEPLOY_ROLLOUT_TIMEOUT, 900s each). A pod whose entrypoint
+# migration fails never becomes ready, so its build is never promoted (#164).
+wait_for_rollouts() {
+  local name="$1" timeout="${CWA_CI_DEPLOY_ROLLOUT_TIMEOUT:-900}" side deploy
+  for side in cwa-pwa cwa; do
+    deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=$side,app.kubernetes.io/instance=$name" -o name | sed -n 1p)
+    [ -n "$deploy" ] || { echo "❌ No $side deployment for release '$name'." >&2; return 1; }
+    echo "Waiting for the $side rollout (at most ${timeout}s)..."
+    if ! kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout="${timeout}s"; then
+      echo "!!!! THE $side ROLLOUT DID NOT FINISH: the track tag still points at the last good build. !!!!"
+      echo "   kubectl describe $deploy -n $KUBE_NAMESPACE; kubectl logs $deploy -n $KUBE_NAMESPACE --all-containers"
+      [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Rollout failed::$side did not become ready"
+      return 1
+    fi
+  done
 }
 
 run_test_phpunit() {
@@ -1101,9 +1142,19 @@ deploy() {
   fi
   # Again, now that deploy_secrets has set NUXT_APP_SECRET; the first run already reported.
   site_env_yaml=$(site_env_values "$environment_name" 2>/dev/null) || return 1
-  # Before the images are promoted: pending migrations' backup, migrate Job and maintenance window (#180).
-  database_guard "$track" || return 1
-  promote_images "$track" || return 1
+  # Resolve the builds first (the database Jobs run this php image); no tag moves until the deploy succeeded (#164).
+  pin_images "$track" || return 1
+  # A track on production's database never migrates it, and waits while migrations are pending (#180).
+  DEPLOY_SKIPPED=false DATABASE_SHARED_WITH_PRODUCTION=false
+  rm -f "$DEPLOY_SKIPPED_FILE"
+  if database_shared_with_production "$track"; then
+    DATABASE_SHARED_WITH_PRODUCTION=true
+    shared_database_guard "$track" || return 1
+    [ "$DEPLOY_SKIPPED" = "false" ] || return 0
+  else
+    # Pending migrations' backup, migrate Job and maintenance window (#180).
+    database_guard "$track" || return 1
+  fi
   ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
@@ -1215,6 +1266,7 @@ php:
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${CWA_CI_RESET_DATABASE:-false}"
+  skipMigrations: ${DATABASE_SHARED_WITH_PRODUCTION}
   mailer:
     dsn: ${MAILER_DSN:-"~"}
     email: ${MAILER_EMAIL:-"~"}
@@ -1331,6 +1383,14 @@ EOF
   if [ -n "$TLS_PREVIOUS_SECRET_NAME" ]; then
     cleanup_tls_certificates "$name" "$TLS_SECRET_NAME" "$TLS_PREVIOUS_SECRET_NAME"
   fi
+
+  # Only a finished rollout moves the track tag (#164): a failed migration or crash-looping pod leaves the last good build tagged.
+  wait_for_rollouts "$name" || return 1
+  if ! promote_images "$track"; then
+    echo "WARNING: the deploy succeeded, but :$(image_track_tag "$track") couldn't be copied to this build; the next deploy copies it." >&2
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Track tag not copied::the registry refused the tag copy"
+  fi
+  return 0
 }
 
 # environment_url.txt, plus a dotenv report (SITE_ENVIRONMENT_URL) for a job's `url:`.
@@ -1411,6 +1471,7 @@ load_fixtures() {
 # Waits for the PWA, then the API. `exec deploy/...` reaches one pod: complete only while the API has one replica.
 purge_rendered_html() {
   local track="${1-stable}"
+  if deploy_was_skipped "$track"; then echo "The $track deploy was skipped: nothing to purge."; return 0; fi
   local release_name="$RELEASE"
   if [[ "$track" != "stable" ]]; then
     release_name="$release_name-$track"
@@ -1872,6 +1933,9 @@ performance_audit() {
 #   CWA_CI_DATABASE_BACKUP_<TRACK>     "true": pg_dump to CWA_CI_DATABASE_BACKUP_BUCKET before pending migrations.
 #   CWA_CI_MIGRATIONS_JOB_<TRACK>      "true": migrate in a one-off Job before helm, not in the new pod's entrypoint.
 #   CWA_CI_MAINTENANCE_DURING_MIGRATIONS  "true" for one production pipeline only: maintenance on around the migration.
+#   CWA_CI_DATABASE_BACKUP_BUCKET      the private backup bucket (bin/devops/backup-bucket.sh; set once on the group).
+#   CWA_CI_DATABASE_BACKUP_GCLOUD_JSON the project's backup key, base64 on one line; never the media key.
+#   CWA_CI_DATABASE_BACKUP_FOLDER      the project's folder in that bucket; default the project path slug.
 
 database_track_name() {
   case "${1-stable}" in
@@ -1893,7 +1957,10 @@ database_track_switch() {
 
 # The new php image for the database Jobs: this pipeline's build (or :$TAG's digest), never promoted here.
 database_job_image() {
-  promote_image "$PHP_REPOSITORY" "${CWA_CI_PHP_IMAGE_DIGEST:-}" ""
+  local digest
+  if [ -n "${PHP_IMAGE_TAG:-}" ]; then printf '%s' "$PHP_IMAGE_TAG"; return 0; fi
+  digest=$(image_digest "$PHP_REPOSITORY" "${CWA_CI_PHP_IMAGE_DIGEST:-}") || return 1
+  printf '%s@%s' "$TAG" "$digest"
 }
 
 # database_job <track> <task> <image tag> [helm --set ...]: renders templates/database-job.yaml from the live release's
@@ -1932,6 +1999,7 @@ database_job() {
     return 1
   fi
   rm -f "$manifest"
+  [ "$task" != "backup" ] || database_job_own_secret "$job"
   state=""
   while [ -z "$state" ] && [ "$waited" -le $(( deadline + 120 )) ]; do
     state=$(kubectl get job -n "$KUBE_NAMESPACE" "$job" -o jsonpath='{.status.succeeded}{.status.failed}' 2>/dev/null || true)
@@ -1940,6 +2008,8 @@ database_job() {
     waited=$(( waited + (poll > 0 ? poll : 1) ))
   done
   DATABASE_JOB_LOG=$(kubectl logs -n "$KUBE_NAMESPACE" "job/$job" --all-containers=true 2>&1 || true)
+  # The backup key's Secret goes as soon as the Job is done; its owner reference covers a cancelled CI job.
+  [ "$task" != "backup" ] || kubectl delete secret -n "$KUBE_NAMESPACE" "$job" --ignore-not-found >/dev/null 2>&1 || true
   printf '%s\n' "$DATABASE_JOB_LOG" | sed 's/^/  /'
   [ -n "$state" ] || { echo "❌ Job $job did not finish (not scheduled, or past its deadline): kubectl describe job $job -n $KUBE_NAMESPACE" >&2; return 124; }
   [ "$(kubectl get job -n "$KUBE_NAMESPACE" "$job" -o jsonpath='{.status.succeeded}' 2>/dev/null)" = "1" ] || return 1
@@ -1978,9 +2048,27 @@ migrations_plan() {
   return 0
 }
 
-# The bucket and path for track $1's backups: CWA_CI_DATABASE_BACKUP_BUCKET, under <GCLOUD_PATH_PREFIX>database/<release>/.
+# Makes the backup Job own its key's Secret, so Kubernetes deletes the Secret with the Job if nothing else does.
+database_job_own_secret() {
+  local uid
+  uid=$(kubectl get job -n "$KUBE_NAMESPACE" "$1" -o jsonpath='{.metadata.uid}' 2>/dev/null) || return 0
+  [ -n "$uid" ] || return 0
+  kubectl patch secret -n "$KUBE_NAMESPACE" "$1" --type merge \
+    -p "{\"metadata\":{\"ownerReferences\":[{\"apiVersion\":\"batch/v1\",\"kind\":\"Job\",\"name\":\"$1\",\"uid\":\"$uid\"}]}}" >/dev/null 2>&1 || true
+}
+
+# This project's folder in the backup bucket: CWA_CI_DATABASE_BACKUP_FOLDER, else the project path as a slug
+# (GitLab's CI_PROJECT_PATH_SLUG; GitHub's owner/repo slugged the same way). It's the folder backup-bucket.sh grants.
+database_backup_folder() {
+  local folder="${CWA_CI_DATABASE_BACKUP_FOLDER:-${CI_PROJECT_PATH_SLUG:-${GITHUB_REPOSITORY:-}}}"
+  folder=$(printf '%s' "$folder" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | cut -c1-63)
+  [ -n "$folder" ] || { echo "No backup folder: set CWA_CI_DATABASE_BACKUP_FOLDER (no CI_PROJECT_PATH_SLUG)." >&2; return 1; }
+  printf '%s' "$folder"
+}
+
+# The bucket and path for track $1's backups: CWA_CI_DATABASE_BACKUP_BUCKET, under <folder>/<track>/<release>/.
 database_backup_location() {
-  local prefix
+  local folder track_dir
   if [ -z "${CWA_CI_DATABASE_BACKUP_BUCKET:-}" ]; then
     echo "CWA_CI_DATABASE_BACKUP_$(database_track_name "$1")=true needs CWA_CI_DATABASE_BACKUP_BUCKET, a private bucket." >&2
     return 1
@@ -1989,23 +2077,108 @@ database_backup_location() {
     echo "CWA_CI_DATABASE_BACKUP_BUCKET can't be the media bucket (GCLOUD_BUCKET): media is public, and the orphan scan would list the dumps." >&2
     return 1
   fi
-  prefix=$(gcloud_path_prefix "$1") || return 1
-  printf '%s %sdatabase/%s/' "$CWA_CI_DATABASE_BACKUP_BUCKET" "$prefix" "$(database_release_name "$1")"
+  if [ -z "${CWA_CI_DATABASE_BACKUP_GCLOUD_JSON:-}" ]; then
+    echo "CWA_CI_DATABASE_BACKUP_$(database_track_name "$1")=true needs CWA_CI_DATABASE_BACKUP_GCLOUD_JSON, the backup service account's key (bin/devops/backup-bucket.sh); never the media key." >&2
+    return 1
+  fi
+  folder=$(database_backup_folder) || return 1
+  track_dir="${1-stable}"
+  [ "$track_dir" != "stable" ] || track_dir=production
+  printf '%s %s/%s/%s/' "$CWA_CI_DATABASE_BACKUP_BUCKET" "$folder" "$track_dir" "$(database_release_name "${1-stable}")"
+}
+
+# A key JSON's client_email.
+database_key_email() {
+  printf '%s' "$1" | tr -d '\n' | sed -n 's/.*"client_email"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p'
+}
+
+# CWA_CI_DATABASE_BACKUP_GCLOUD_JSON as one base64 line: the key JSON base64-encoded (maskable on GitLab), or the JSON
+# itself. Never printed. Fails unless it decodes to a service account key, and refuses the media key.
+database_backup_key_b64() {
+  local value="${CWA_CI_DATABASE_BACKUP_GCLOUD_JSON:-}" json
+  case "$value" in
+    '{'*) json="$value" ;;
+    *) json=$(printf '%s' "$value" | tr -d ' \n\r' | base64 -d 2>/dev/null) || json="" ;;
+  esac
+  case "$json" in
+    *'"service_account"'*'"private_key"'*|*'"private_key"'*'"service_account"'*) ;;
+    *) echo "CWA_CI_DATABASE_BACKUP_GCLOUD_JSON isn't a service account key (base64 of the key JSON, or the JSON)." >&2; return 1 ;;
+  esac
+  if [ -n "$(database_key_email "$json")" ] && [ "$(database_key_email "$json")" = "$(database_key_email "${GCLOUD_JSON:-}")" ]; then
+    echo "CWA_CI_DATABASE_BACKUP_GCLOUD_JSON is the media key (GCLOUD_JSON): backups need their own service account." >&2
+    return 1
+  fi
+  printf '%s' "$json" | base64 -w0
+}
+
+# host:port/database of a PostgreSQL URL, lower-cased, without credentials or parameters (never printed).
+database_identity() {
+  local rest="${1#*://}" hostport
+  rest="${rest%%\?*}"
+  rest="${rest##*@}"
+  hostport="${rest%%/*}"
+  case "$hostport" in *:[0-9]*) ;; *) hostport="$hostport:5432" ;; esac
+  case "$rest" in */*) rest="${rest#*/}" ;; *) rest="" ;; esac
+  printf '%s/%s' "$hostport" "$rest" | tr '[:upper:]' '[:lower:]'
+}
+
+# True when track $1 (not production) would use production's database: an external DATABASE_URL naming the same
+# host, port and database as production's live Secret. GitLab's staging and canary jobs run under environment: production.
+database_shared_with_production() {
+  local live
+  [ "${1-stable}" != "stable" ] || return 1
+  [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ] && [ -n "${DATABASE_URL:-}" ] || return 1
+  live=$(deployed_value "$(cwa_fullname "$RELEASE")" database-url)
+  [ -n "$live" ] || return 1
+  [ "$(database_identity "$DATABASE_URL")" = "$(database_identity "$live")" ]
+}
+
+# For a track sharing production's database (in deploy, instead of database_guard): its pods never migrate, and with
+# migrations pending it isn't deployed (DEPLOY_SKIPPED=true; a canary fails instead), so production's deploy runs them
+# with its plan, backup and window. 0 deploy (or skip), 1 failed.
+shared_database_guard() {
+  local track="$1" tag
+  echo "The $track deploy uses production's database: its pods never migrate (SKIP_MIGRATIONS); production's deploy does."
+  tag=$(database_job_image) || { echo "❌ No php image for the migrations plan." >&2; return 1; }
+  migrations_plan stable "$tag" || return 1
+  case "$MIGRATIONS_PENDING" in ''|0) return 0 ;; esac
+  if [ "$track" = "canary" ]; then
+    echo "!!!! CANARY NOT DEPLOYED: ${MIGRATIONS_PENDING} migration(s) pending on production's database, which a canary must not run. Deploy production instead. !!!!"
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Canary not deployed::migrations are pending on production's database"
+    return 1
+  fi
+  DEPLOY_SKIPPED=true
+  printf '%s\n' "$track" > "$DEPLOY_SKIPPED_FILE"
+  echo "!!!! $track NOT DEPLOYED: ${MIGRATIONS_PENDING} migration(s) pending on production's database. The old $track keeps running; the production deploy migrates (plan, backup, window), then $track deploys again. !!!!"
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=${track} not deployed::migrations are pending on production's database; deploy production"
+  return 0
+}
+
+# Written by a skipped deploy, so the job's later steps (purge_rendered_html) leave the old release alone.
+DEPLOY_SKIPPED_FILE=deploy-skipped.txt
+
+deploy_was_skipped() {
+  [ -f "$DEPLOY_SKIPPED_FILE" ] && [ "$(cat "$DEPLOY_SKIPPED_FILE")" = "${1-stable}" ]
 }
 
 # pg_dump of track $1's database to its backup bucket, keeping CWA_CI_DATABASE_BACKUP_KEEP (5). Sets DATABASE_BACKUP.
 database_backup() {
-  local track="${1-stable}" tag="$2" location bucket directory major image label status=0
+  local track="${1-stable}" tag="$2" location bucket directory major image label key status=0
   DATABASE_BACKUP=""
   location=$(database_backup_location "$track") || return 1
   bucket="${location%% *}" directory="${location#* }"
   major="${DATABASE_SERVER_VERSION%%[!0-9]*}"
   image="${CWA_CI_DATABASE_BACKUP_IMAGE:-postgres:${major:-16}-alpine}"
   label=$(printf '%s' "${CI_COMMIT_SHORT_SHA:-${CI_COMMIT_SHA:-deploy}}" | cut -c1-12)
-  database_job "$track" backup "$tag" \
+  # The backup key goes to helm in a values file, never on a command line; removed straight after.
+  key=$(mktemp)
+  printf 'databaseJob:\n  backup:\n    gcloudJsonB64: "%s"\n' "$(database_backup_key_b64)" > "$key" \
+    && grep -q 'gcloudJsonB64: "[A-Za-z0-9+/=]\{20,\}"' "$key" || { rm -f "$key"; echo "!!!! DATABASE BACKUP FAILED: no usable backup key. !!!!"; return 1; }
+  database_job "$track" backup "$tag" -f "$key" \
     --set-string databaseJob.backup.image="$image" --set-string databaseJob.backup.bucket="$bucket" \
     --set-string databaseJob.backup.directory="$directory" --set-string databaseJob.backup.label="$label" \
     --set databaseJob.backup.keep="${CWA_CI_DATABASE_BACKUP_KEEP:-5}" || status=$?
+  rm -f "$key"
   DATABASE_BACKUP=$(database_job_marker CWA_DATABASE_BACKUP)
   if [ "$status" -ne 0 ] || [ -z "$DATABASE_BACKUP" ]; then
     echo "!!!! DATABASE BACKUP FAILED (exit $status): the deploy stopped before migrating; the live site is unchanged. !!!!"
@@ -2063,7 +2236,10 @@ database_guard() {
   database_track_switch DATABASE_BACKUP "$track" && backup=true
   database_track_switch MIGRATIONS_JOB "$track" && migrate=true
   [ "$maintenance$backup$migrate" != "falsefalsefalse" ] || return 0
-  if [ "$backup" = "true" ]; then database_backup_location "$track" >/dev/null || return 1; fi
+  if [ "$backup" = "true" ]; then
+    database_backup_location "$track" >/dev/null || return 1
+    database_backup_key_b64 >/dev/null || return 1
+  fi
 
   tag=$(database_job_image) || { echo "❌ No php image for the database Jobs." >&2; return 1; }
   migrations_plan "$track" "$tag" || return 1

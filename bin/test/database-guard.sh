@@ -25,7 +25,9 @@ cat >"$DIR/bin/helm" <<'STUB'
 echo "helm $*" >>"$STUB_LOG"
 case "$1 $2" in
   "get values") [ -z "${STUB_NO_RELEASE:-}" ] || { echo "Error: release: not found" >&2; exit 1; }; echo "php: {}" ;;
-  "template "*) echo "# rendered: $*" ;;
+  "template "*)
+    echo "# rendered: $*"
+    prev=""; for a; do [ "$prev" = "-f" ] && cat "$a" >>"$STUB_LOG.values"; prev="$a"; done ;;
 esac
 exit 0
 STUB
@@ -42,7 +44,7 @@ case "$*" in
   "logs "*)
     case "$(task "$@")" in
       plan) printf 'Out-of-date!\nALTER TABLE x;\nCWA_DATABASE_SERVER_VERSION=14.13\nCWA_MIGRATIONS_PENDING=%s\n' "${STUB_PENDING:-2}" ;;
-      backup) failed "$@" || echo "CWA_DATABASE_BACKUP=gs://backups/site-a/database/rel/20261020-000000Z-abc.dump" ;;
+      backup) failed "$@" || echo "CWA_DATABASE_BACKUP=gs://backups/group-site/production/rel/20261020-000000Z-abc.dump" ;;
       migrate) echo "migrated" ;;
     esac ;;
   *"get deploy"*"name=cwa,"*) echo "deployment.apps/rel-cwa" ;;
@@ -56,21 +58,28 @@ chmod +x "$DIR/bin/helm" "$DIR/bin/kubectl"
 case "$K8S" in /*) ;; *) K8S="$(pwd)/$K8S" ;; esac
 run() {
   : >"$DIR/log"
+  : >"$DIR/log.values"
   rm -f "$DIR/work/maintenance-window.txt"
   set +e
   (cd "$DIR/work" && PATH="$DIR/bin:$PATH" STUB_LOG="$DIR/log" RELEASE=rel KUBE_NAMESPACE=ns $K8S_SHELL -c '
     unset CWA_CI_DATABASE_BACKUP_PRODUCTION CWA_CI_DATABASE_BACKUP_STAGING CWA_CI_MIGRATIONS_JOB_PRODUCTION \
       CWA_CI_MAINTENANCE_DURING_MIGRATIONS CWA_CI_DATABASE_BACKUP_BUCKET GCLOUD_BUCKET GCLOUD_PATH_PREFIX \
       CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME STUB_FAIL STUB_PENDING STUB_NO_RELEASE \
-      STUB_MAINTENANCE STUB_MAINTENANCE_EXIT CWA_CI_DATABASE_BACKUP_IMAGE
+      STUB_MAINTENANCE STUB_MAINTENANCE_EXIT CWA_CI_DATABASE_BACKUP_IMAGE CWA_CI_DATABASE_BACKUP_FOLDER GITHUB_REPOSITORY \
+      PHP_IMAGE_TAG GCLOUD_JSON
+    export CWA_CI_DATABASE_BACKUP_GCLOUD_JSON="$4" CI_PROJECT_PATH_SLUG=group-site TAG=main
     for setting in $3; do export "$setting"; done
     . "$1" >/dev/null
     export CWA_CI_DATABASE_JOB_POLL=0 CI_COMMIT_SHORT_SHA=abc1234
-    promote_image() { printf "main@sha256:new"; }
-    eval "$2"' k8s "$K8S" "$1" "$2") >"$DIR/out" 2>&1
+    image_digest() { printf "sha256:new"; }
+    eval "$2"' k8s "$K8S" "$1" "$2" "$KEY_B64") >"$DIR/out" 2>&1
   echo $? >"$DIR/status"
   set -e
 }
+
+# A backup service account key, as the CI variable holds it: the key JSON, base64-encoded.
+KEY_JSON='{"type": "service_account", "client_email": "db-backup@p.iam.gserviceaccount.com", "private_key": "-----BEGIN PRIVATE KEY-----\\nabc\\n-----END PRIVATE KEY-----\\n"}'
+KEY_B64=$(printf '%s' "$KEY_JSON" | base64 | tr -d '\n')
 
 failures=0
 fail() { failures=$((failures + 1)); echo "FAIL ($1): $2" >&2; }
@@ -98,13 +107,38 @@ run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATAB
 status media-bucket 1
 refuse media-bucket "kubectl"
 
+run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups CWA_CI_DATABASE_BACKUP_GCLOUD_JSON="
+status no-key 1
+said no-key "needs CWA_CI_DATABASE_BACKUP_GCLOUD_JSON"
+refuse no-key "kubectl"
+
+run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups CWA_CI_DATABASE_BACKUP_GCLOUD_JSON=bm90IGEga2V5"
+status bad-key 1
+said bad-key "isn't a service account key"
+refuse bad-key "kubectl"
+
+# The media service account can't take backups.
+run "database_guard stable" 'CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups GCLOUD_JSON={"client_email":"db-backup@p.iam.gserviceaccount.com"}'
+status media-key 1
+said media-key "is the media key"
+refuse media-key "kubectl"
+
+# GitHub: the folder is owner/repo as a slug; CWA_CI_DATABASE_BACKUP_FOLDER overrides it.
+run "database_backup_location staging" "CWA_CI_DATABASE_BACKUP_BUCKET=backups CI_PROJECT_PATH_SLUG= GITHUB_REPOSITORY=Org/My.Repo"
+said github-folder "backups org-my-repo/staging/rel-staging/"
+run "database_backup_location stable" "CWA_CI_DATABASE_BACKUP_BUCKET=backups CWA_CI_DATABASE_BACKUP_FOLDER=shared-site"
+said folder-override "backups shared-site/production/rel/"
+
 run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups GCLOUD_PATH_PREFIX=site-a"
 status backup 0
 expect backup "helm get values rel -n ns -o yaml"
 expect backup "--set-string php.image.tag=main@sha256:new --set-string databaseJob.task=plan"
 expect backup "databaseJob.backup.image=postgres:14-alpine"
 expect backup "databaseJob.backup.bucket=backups"
-expect backup "databaseJob.backup.directory=site-a/database/rel/"
+expect backup "databaseJob.backup.directory=group-site/production/rel/"
+grep -qF "gcloudJsonB64: \"$KEY_B64\"" "$DIR/log.values" || fail backup "the key isn't in the Job's values file"
+refuse backup "$KEY_B64"
+expect backup "kubectl delete secret -n ns rel-db-backup-"
 expect backup "databaseJob.backup.label=abc1234"
 order backup "databaseJob.task=plan" "databaseJob.task=backup"
 refuse backup "databaseJob.task=migrate"
@@ -149,7 +183,7 @@ expect window-fails "maintenance on"
 refuse window-fails "maintenance off"
 said window-fails "MIGRATIONS FAILED"
 said window-fails "MAINTENANCE MODE IS ON"
-said window-fails "gs://backups/site-a/database/rel/20261020-000000Z-abc.dump"
+said window-fails "gs://backups/group-site/production/rel/20261020-000000Z-abc.dump"
 said window-fails "silverback:api-components:maintenance off"
 grep -qF "maintenance off" "$DIR/work/maintenance-window.txt" 2>/dev/null || fail window-fails "no notice for the job's after_script"
 
