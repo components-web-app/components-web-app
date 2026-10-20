@@ -6,6 +6,18 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **`compose.prod.yaml` (single-server, preview) takes `SITE_HOST` (one host) and `SITE_ALIASES` (optional, space-separated) instead of `SERVER_NAME`, and now requires `MAILER_DSN` and `GCLOUD_BUCKET`.** Rename `SERVER_NAME` in the `.env` a single-server deploy uses and add the two values. Copy together: `compose.prod.yaml`, `api/frankenphp/docker-entrypoint.sh`, `api/frankenphp/site-hosts.sh` (new), `api/Dockerfile`; a project that copied `e2e/` takes `e2e/compose.yaml`, `e2e/compose.scaled.yaml`, `e2e/run.sh` and `e2e/cache-checks.sh` (new) together (#207). [5bfc71f](https://github.com/components-web-app/components-web-app/commit/5bfc71f4d89fdccb5fce3578f1c23eab69f7cabd)
+
+### Changed
+
+- Single-server production (`compose.prod.yaml`, preview: media still needs a bucket, #211; no deploy script yet, #212) sets what the Kubernetes deploy sets for its hosts: anchored, escaped `TRUSTED_HOSTS`, `CORS_ALLOW_ORIGIN` and `MERCURE_CORS_ORIGIN` (built by the php entrypoint from `SITE_HOST`/`SITE_ALIASES`; a value you set wins), `NUXT_SITE_URL`, `CWA_ENVIRONMENT`, log rotation, restart policies and a healthy-database dependency. Its `MERCURE_PUBLIC_URL` and `BROWSER_SERVER_NAME` no longer break with more than one host. The browser tests now boot `compose.yaml` + `compose.prod.yaml` with CI stand-ins and run cache checks before Playwright (stored then hit, a tag purge drops only its page, admin port closed); a new `compose config` CI job checks the required values (#207). [5bfc71f](https://github.com/components-web-app/components-web-app/commit/5bfc71f4d89fdccb5fce3578f1c23eab69f7cabd)
+
+### Fixed
+
+- `bin/up --skip-fixtures` no longer says the admin is unchanged on a database that has none (#206). [be18f08](https://github.com/components-web-app/components-web-app/commit/be18f085c15f67bdae587782eab74e9bf1c406a9)
+
 ## [2.0.0-alpha.44](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.44) - 2026-10-20
 
 ### Fixed
