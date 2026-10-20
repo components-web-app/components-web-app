@@ -50,13 +50,18 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 			echo "* The database is now ready and reachable"
 		fi
 
-		if [ "${RESET_DATABASE:-false}" = "true" ]; then
-			echo "* RESET_DATABASE=true: dropping schema before migrations..."
-			php bin/console doctrine:schema:drop --force --full-database
-		fi
+		if [ "${SKIP_MIGRATIONS:-false}" = "true" ]; then
+			# The deploy's database Jobs (#180): a plan or backup must never change the schema.
+			echo "* SKIP_MIGRATIONS=true: not migrating"
+		else
+			if [ "${RESET_DATABASE:-false}" = "true" ]; then
+				echo "* RESET_DATABASE=true: dropping schema before migrations..."
+				php bin/console doctrine:schema:drop --force --full-database
+			fi
 
-		# Migrations and ANALYZE under a database lock, so pods and CronJobs starting together run them once (#85).
-		php bin/console app:database:migrate --no-interaction
+			# Migrations and ANALYZE under a database lock, so pods and CronJobs starting together run them once (#85).
+			php bin/console app:database:migrate --no-interaction
+		fi
 	fi
 
 	echo "* READY"
