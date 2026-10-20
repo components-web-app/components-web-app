@@ -62,6 +62,18 @@
     order rate_limit after cache
 }
 
+# Docker's HEALTHCHECK (#205): loopback only and independent of SERVER_NAME. The Host is one TRUSTED_HOSTS accepts.
+http://127.0.0.1:2080 {
+	bind 127.0.0.1
+	root * /app/public
+	@health path /_api/_/health /_api/_/health/live
+	handle @health {
+		request_header Host {$BROWSER_SERVER_NAME:localhost}
+		php_server
+	}
+	respond 404
+}
+
 # Cloudflare's ranges (https://www.cloudflare.com/ips/), the only senders CF-Connecting-IP is believed from.
 # CLOUDFLARE_IP_RANGES overrides the list.
 (cloudflare_client) {
@@ -230,6 +242,7 @@
 	# Disable Topics tracking if not enabled explicitly: https://github.com/jkarlin/topics
 	header ?Permissions-Policy "browsing-topics=()"
 
+    # Health checks always reach php and never share a singleflight key (#62, #205).
     # Purge-driven cache for /_api and page HTML. Keep the HTML exclusions (Mercure's SSE above all) in sync with @page_query.
     # Match the cookie with .matches(): an absent cookie isn't "". Pages are extensionless or .xml only, never big files (#105).
     # CEL has no comments: a `#` inside the backticks crash-loops php, and `frankenphp adapt` won't catch it.
@@ -241,6 +254,7 @@
                     {path}.startsWith("/_api") &&
                     !{path}.startsWith("/_api/logout") &&
                     !{path}.startsWith("/_api/me") &&
+                    !{path}.startsWith("/_api/_/health") &&
                     {file.ext} != ".pdf"
                 ) ||
                 (

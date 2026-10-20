@@ -38,6 +38,10 @@ ENV PORT 3000
 EXPOSE 3000
 EXPOSE 24678
 
+# Node answering, not the API: /_cwa/healthcheck never calls php, so an API outage doesn't flap app (#205).
+# 127.0.0.1, not localhost, which can resolve to ::1.
+HEALTHCHECK --start-period=300s --start-interval=2s --interval=10s --timeout=5s --retries=3 \
+	CMD wget -qO /dev/null -T 4 http://127.0.0.1:3000/_cwa/healthcheck || exit 1
 CMD ["sh", "-c", "pnpm install; pnpm dev"]
 
 
@@ -78,4 +82,8 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOST="0.0.0.0"
 
+# Node answering, not the API: /_cwa/healthcheck never calls php, so an API outage doesn't flap app (#205).
+# 127.0.0.1, not localhost, which can resolve to ::1.
+HEALTHCHECK --start-period=30s --start-interval=2s --interval=10s --timeout=5s --retries=3 \
+	CMD wget -qO /dev/null -T 4 http://127.0.0.1:3000/_cwa/healthcheck || exit 1
 CMD ["node", "server/index.mjs"]

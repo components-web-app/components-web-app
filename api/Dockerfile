@@ -123,7 +123,10 @@ COPY --link frankenphp/mercure-hub.caddy frankenphp/mercure-hub.Caddyfile /etc/c
 
 ENTRYPOINT ["docker-entrypoint"]
 
-HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
+# php and the database through the Caddyfile's loopback health site, whatever SERVER_NAME is (#205); start-period covers migrations.
+# Kubernetes ignores this: the chart's probes are its own.
+HEALTHCHECK --start-period=300s --start-interval=2s --interval=10s --timeout=5s --retries=3 \
+	CMD curl -fsS -o /dev/null --max-time 4 http://127.0.0.1:2080/_api/_/health || exit 1
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 
 # Dev FrankenPHP image

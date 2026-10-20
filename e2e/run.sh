@@ -49,15 +49,9 @@ cleanup() {
 trap cleanup EXIT
 
 compose pull --quiet --ignore-pull-failures
-compose up -d database gcs mailpit php app
-
-echo "Waiting for the API (migrations run on boot)..."
-tries=0
-until compose exec -T php curl -fsk -o /dev/null https://localhost/_api/_/site_config_parameters.jsonld; do
-  tries=$((tries + 1))
-  if [ "$tries" -gt 90 ]; then echo "The API never answered." >&2; exit 1; fi
-  sleep 2
-done
+# The images' healthchecks: php and its database, then Node (#205). Never the tests service, which exits by design.
+echo "Starting the stack and waiting for it to be healthy (migrations run on boot)..."
+compose up -d --wait --wait-timeout 300 database gcs mailpit php app
 
 compose exec -T php curl -fs -o /dev/null -X POST -H 'Content-Type: application/json' -d '{"name":"cwa-e2e"}' http://gcs:8000/storage/v1/b
 compose exec -T -e SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load --no-interaction
