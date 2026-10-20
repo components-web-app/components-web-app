@@ -25,6 +25,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- **Scaled mode is ready to turn on** (`CWA_CI_API_SCALED_<TRACK>`), rehearsed on preview.cwa.rocks on 2026-10-20 (#85's rehearsal comment). After a scaled deploy's flush and warm, the deploy checks the API cache is a Redis hit through the API service and prints a loud error (`::error` on GitHub) if it isn't, without failing the live deploy. The deploy also prints the database connections the API pods may open (peak pods × `CWA_CI_API_WORKERS` + 5) and warns past the in-cluster PostgreSQL's limit. There's no manual scale job: for a planned spike, raise `CWA_CI_API_AUTOSCALE_MIN` and deploy (#193). [683634b](https://github.com/components-web-app/components-web-app/commit/683634bf51f680b81cca64eb9aac3c0a1e967b2b), [5c33656](https://github.com/components-web-app/components-web-app/commit/5c3365685b0a8696a0314ec7ffe6a4d167701fe7)
 - `create-cwa` checks Docker, ports 80/443/3001/5432 and Docker's memory before downloading, offers the host `pnpm install` only when the stack isn't started (it crashed a running dev server), validates the project name and an empty target directory up front, shows the manifest's hints, fixes the generated README's links, prints a prerelease and no-telemetry notice, and has an npm README; `api/README.md` documents `user:create --admin` (#204). [5847944](https://github.com/components-web-app/components-web-app/commit/5847944625b125026fc43414f3fe9d573af85110)
 
 
