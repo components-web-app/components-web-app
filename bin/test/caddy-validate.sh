@@ -18,8 +18,11 @@ OUT=$(mktemp)
 trap 'rm -f "$OUT"' EXIT
 
 status=0
+# php's own hub, then scaled mode's (#85): php forwarding to the hub's pod.
+for hub_upstream in '' 'example-mercure:80'; do
 for server_name in ':80' 'localhost, php.local:80, php.local:443'; do
 	if env \
+		MERCURE_HUB_UPSTREAM="$hub_upstream" \
 		SERVER_NAME="$server_name" \
 		BROWSER_SERVER_NAME=localhost \
 		APP_UPSTREAM=app:3000 \
@@ -29,13 +32,29 @@ for server_name in ':80' 'localhost, php.local:80, php.local:443'; do
 		MERCURE_SUBSCRIBER_JWT_ALG=HS256 \
 		MERCURE_PUBLIC_URL=https://localhost/.well-known/mercure \
 		"$BIN" validate --config "$CONFIG" --adapter caddyfile >"$OUT" 2>&1; then
-		echo "ok:   SERVER_NAME='$server_name'"
+		echo "ok:   SERVER_NAME='$server_name' MERCURE_HUB_UPSTREAM='$hub_upstream'"
 	else
-		echo "FAIL: SERVER_NAME='$server_name'"
+		echo "FAIL: SERVER_NAME='$server_name' MERCURE_HUB_UPSTREAM='$hub_upstream'"
 		grep -E '"level":"error"|^Error' "$OUT" || tail -n 20 "$OUT"
 		status=1
 	fi
 done
+done
+
+# Scaled mode's hub pod, from the same directory (it imports mercure-hub.caddy).
+if env \
+	MERCURE_PUBLISHER_JWT_KEY="$KEY" \
+	MERCURE_SUBSCRIBER_JWT_KEY="$KEY" \
+	MERCURE_PUBLISHER_JWT_ALG=HS256 \
+	MERCURE_SUBSCRIBER_JWT_ALG=HS256 \
+	MERCURE_PUBLIC_URL=https://localhost/.well-known/mercure \
+	"$BIN" validate --config "$(dirname "$CONFIG")/mercure-hub.Caddyfile" --adapter caddyfile >"$OUT" 2>&1; then
+	echo "ok:   mercure-hub.Caddyfile"
+else
+	echo "FAIL: mercure-hub.Caddyfile"
+	grep -E '"level":"error"|^Error' "$OUT" || tail -n 20 "$OUT"
+	status=1
+fi
 
 if [ "$status" -ne 0 ]; then
 	echo "The Caddyfile parses but doesn't provision: php would not start." >&2

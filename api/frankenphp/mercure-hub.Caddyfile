@@ -1,0 +1,25 @@
+# Scaled mode's Mercure hub (#85): one pod every API pod publishes to, run with the php image's own binary so the
+# Mercure version always matches. Its settings are php's, from mercure-hub.caddy.
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	log {
+		# Redact the authorization query parameter that can be set by Mercure
+		format filter {
+			request>uri query {
+				replace authorization REDACTED
+			}
+		}
+	}
+
+	route {
+		respond /healthz 200
+		mercure {
+			import mercure-hub.caddy
+		}
+		respond 404
+	}
+}

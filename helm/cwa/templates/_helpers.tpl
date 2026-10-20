@@ -109,6 +109,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+The Mercure hub's own labels in scaled mode: never the API's name label.
+*/}}
+{{- define "cwa.mercureLabels" -}}
+helm.sh/chart: {{ include "cwa.chart" . }}
+app.kubernetes.io/name: {{ include "cwa.name" . }}-mercure
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: mercure
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
 Souin's store block for this release's Redis, put in CADDY_CACHE_STORAGE. Short timeouts and no retries, so a Redis
 outage makes requests uncached instead of slow (go-redis's defaults add seconds per request).
 */}}
@@ -216,6 +227,9 @@ Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the 
     secretKeyRef:
       name: {{ include "cwa.fullname" . }}
       key: caddy-cache-storage
+# Subscribers reach the hub's pod through php; php's own hub stays off (#85).
+- name: MERCURE_HUB_UPSTREAM
+  value: {{ include "cwa.fullname" . }}-mercure:80
 {{- end }}
 - name: MERCURE_URL
   valueFrom:

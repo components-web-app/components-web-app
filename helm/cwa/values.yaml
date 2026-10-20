@@ -236,6 +236,14 @@ scaled:
     # Redis's maxmemory, Mi. The container gets about 1.4x for Redis's own overhead.
     maxMemoryMi: 256
     cpuRequest: 50m
+  # The Mercure hub's own pod: the php image's binary with /etc/caddy/mercure-hub.Caddyfile.
+  mercure:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
 
 nodeSelector:
   cloud.google.com/compute-class: cost-optimized

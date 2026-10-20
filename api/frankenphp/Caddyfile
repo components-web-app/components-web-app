@@ -212,30 +212,10 @@
 		}
 	}
 
-	mercure {
-		# Named (#113): each SERVER_NAME port gets a copy of this block, and same-named copies share one transport.
-		name cwa
-		# Transport to use (default to Bolt)
-		transport bolt {$MERCURE_TRANSPORT_URL:bolt:///data/mercure.db}
-		# Must equal the API's `iss` (jwt.claims.iss in mercure.yaml): change both or neither (#110).
-		issuer cwa {
-			publisher {
-				jwt {env.MERCURE_PUBLISHER_JWT_KEY} {env.MERCURE_PUBLISHER_JWT_ALG}
-			}
-			subscriber {
-				jwt {env.MERCURE_SUBSCRIBER_JWT_KEY} {env.MERCURE_SUBSCRIBER_JWT_ALG}
-			}
-		}
-		# Pin `aud` to the public URL: the API publishes through the internal one, so unpinned every publish is 401.
-		resource_identifier {$MERCURE_PUBLIC_URL:https://localhost/.well-known/mercure}
-		# Allow anonymous subscribers (double-check that it's what you want)
-		anonymous
-		# Enable the subscription API (double-check that it's what you want)
-		subscriptions
-		# Extra directives
-		{$MERCURE_EXTRA_DIRECTIVES}
-        # Cors origins
-        cors_origins {$MERCURE_CORS_ORIGIN:*}
+	# php's own hub, unless scaled mode runs the hub in its own pod (#85); its settings are in mercure-hub.caddy.
+	@local_hub expression `"{$MERCURE_HUB_UPSTREAM}" == ""`
+	mercure @local_hub {
+		import mercure-hub.caddy
 	}
 
 	vulcain
@@ -318,6 +298,17 @@
     @api_handle expression `
         {path}.startsWith("/_api") || {path}.startsWith("/uploads/") || {path}.startsWith("/bundles/")
     `
+
+    # Scaled mode (#85): subscribers reach the hub's own pod through php, so the ingress and TLS stay as they are.
+    @remote_hub {
+        expression `"{$MERCURE_HUB_UPSTREAM}" != ""`
+        path /.well-known/mercure*
+    }
+    handle @remote_hub {
+        reverse_proxy {$MERCURE_HUB_UPSTREAM:localhost:1} {
+            flush_interval -1
+        }
+    }
 
     # PURGE/BAN on the site purge nothing: purge by tag through Souin's admin API (#138).
     @purge_method method PURGE BAN

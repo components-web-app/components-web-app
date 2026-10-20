@@ -1,0 +1,121 @@
+{{- if include "cwa.scaled" . }}
+{{- $fullName := include "cwa.fullname" . }}
+# Scaled mode's Mercure hub (#85): one pod every API pod publishes to, so an update reaches every subscriber. The free
+# hub runs one copy only; when it restarts, live updates pause and browsers reconnect. No disk: bolt is a short replay
+# buffer, not a store.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullName }}-mercure
+  labels:
+    {{- include "cwa.mercureLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cwa.name" . }}-mercure
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
+        # One hub: stop the cluster autoscaler evicting it to consolidate nodes.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app.kubernetes.io/name: {{ include "cwa.name" . }}-mercure
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: mercure
+          image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.php.image.pullPolicy }}
+          # Not the entrypoint: the hub needs no database and must never migrate.
+          command: ["frankenphp", "run", "--config", "/etc/caddy/mercure-hub.Caddyfile", "--adapter", "caddyfile"]
+          env:
+            - name: MERCURE_PUBLISHER_JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-publisher-jwt-key
+            - name: MERCURE_SUBSCRIBER_JWT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-subscriber-jwt-key
+            - name: MERCURE_PUBLISHER_JWT_ALG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-publisher-jwt-algorithm
+            - name: MERCURE_SUBSCRIBER_JWT_ALG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-subscriber-jwt-algorithm
+            - name: MERCURE_PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-public-url
+            - name: MERCURE_EXTRA_DIRECTIVES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-extra-directives
+            - name: MERCURE_CORS_ORIGIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $fullName }}
+                  key: mercure-cors-origin
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            {{- toYaml .Values.scaled.mercure.resources | nindent 12 }}
+      volumes:
+        - name: data
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullName }}-mercure
+  labels:
+    {{- include "cwa.mercureLabels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: {{ include "cwa.name" . }}-mercure
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
