@@ -21,8 +21,9 @@ header('Cache-Control: public, s-maxage=3600');
 echo '<!doctype html><html><body>' . str_repeat('<div class="cwa">component</div>', 2000) . '</body></html>';
 PHP
 
-# A copy beside an empty worker.Caddyfile, so php isn't booted in worker mode.
+# A copy beside an empty worker.Caddyfile, so php isn't booted in worker mode, and the hub settings it imports (#85).
 cp "$CONFIG" "$DIR/Caddyfile"
+cp "$(dirname "$CONFIG")/mercure-hub.caddy" "$DIR/"
 : >"$DIR/worker.Caddyfile"
 
 php -n -S "127.0.0.1:$UPSTREAM" "$DIR/upstream.php" >"$DIR/php.log" 2>&1 &
