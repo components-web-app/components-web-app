@@ -111,7 +111,7 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 | `@cwa/nuxt` | Needs api-components-bundle at least | Why |
 |---|---|---|
 | 2.0.0-alpha.24 | 2.0.0-alpha.32 | Move uses `POST {component}/move`; the shared-component list reads `GET {component}/usage` |
-| 2.0.0-alpha.21 | 2.0.0-alpha.29 | Anonymous Mercure updates and cookie changes |
+| 2.0.0-alpha.21 | 2.0.0-alpha.29 recommended | Anonymous Mercure updates and cookie changes. The module also works with older bundles, but skip bundle 2.0.0-alpha.27 and alpha.28: they return 500 on publish under a debug kernel (api-components-bundle#501) |
 | 2.0.0-alpha.20 | 2.0.0-alpha.25 | "Purge this page" needs the scoped purge (an older bundle flushes everything) |
 | 2.0.0-alpha.19 | 2.0.0-alpha.24 | The API orders component positions |
 | 2.0.0-alpha.10 | 2.0.0-alpha.13 | Publishing sends `"publishedAt": "now"` |
