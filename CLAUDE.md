@@ -16,6 +16,7 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 - **Two issue trackers.** Issues are on GitHub (`gh` works against this repo), and GitLab has its own tracker too: `glab issue list -R silverback-web-apps/cwa/components-web-app`.
 - **Every change to `main` gets a `CHANGELOG.md` line.** See *Releasing the template*.
 - **Measure caching claims against `APP_ENV=prod` config, not just the dev stack.** Dev TTLs are deliberately short and hide problems (see *Page cache*).
+- **`README.md` is the public front door (#209): it makes no claim the template doesn't support** (single-server stays "preview" until #211/#212 ship). create-cwa writes its own README for new projects, so the repo's never ships. Its *Versions and support* tables (latest template → bundle/module, and module → minimum bundle) are the public home of the "go together" pairs: update them with every release and every new pair.
 - **Comments are one line, two at most** (#131): what the line does or what not to change, with the issue number. The why goes in issues, the CHANGELOG and this file; no measurements, dates or history in comments.
 
 ## Releasing the template
@@ -31,7 +32,7 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
 - `create-cwa` projects don't get this file (`alwaysExclude` in `cwa-manifest.json`): it describes the template, not the new project.
 
 To release:
-1. Update everything and run the usual checks. Make sure `CHANGELOG.md`'s Unreleased section is complete, then turn it into the version's section.
+1. Update everything and run the usual checks. Make sure `CHANGELOG.md`'s Unreleased section is complete, then turn it into the version's section. Update the README's *Versions and support* table to the new version and its bundle and module.
 2. Set `packages/create-cwa/package.json`'s version to the same `X.Y.Z-alpha.N`, **and `ARG CWA_PHP_BASE=ghcr.io/components-web-app/cwa-php-base:X.Y.Z-alpha.N` in `api/Dockerfile`** (`bin/test/php-base-version.sh` fails otherwise), then commit and push.
 3. On that commit, `git tag -a vX.Y.Z-alpha.N --cleanup=verbatim -F <the version's CHANGELOG section>` (without `--cleanup=verbatim` git strips the `### …` headings as comment lines; alpha.14's tag lost them) and `git tag create-cwa/vX.Y.Z-alpha.N`. Push **only the template tag** to `origin` (and only there) for now. A CLI published before its template tag exists fails for every user with "No CWA template found".
    - **3a.** When the tag has mirrored (`gh api repos/components-web-app/components-web-app/git/ref/tags/<tag>`), wait for `publish-php-base.yml` on it to pass (`gh run list --workflow publish-php-base.yml`, `gh run watch <id>`; ~30 min). It publishes `cwa-php-base:X.Y.Z-alpha.N`, which that release's Dockerfile pulls (see *Published php base*). **First publish only:** GHCR packages start private, so github.com/orgs/components-web-app/packages → `cwa-php-base` → Package settings → Change visibility → Public (the org must allow public packages; the REST API can't change visibility).
