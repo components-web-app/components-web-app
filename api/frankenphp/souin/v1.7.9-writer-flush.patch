@@ -1,0 +1,52 @@
+diff --git a/pkg/middleware/writer_flush.go b/pkg/middleware/writer_flush.go
+new file mode 100644
+--- /dev/null
++++ b/pkg/middleware/writer_flush.go
+@@ -0,0 +1,12 @@
++package middleware
++
++import "net/http"
++
++var _ http.Flusher = (*CustomWriter)(nil)
++
++// Flush is a no-op: CustomWriter buffers the whole response until Send, so
++// there is nothing to flush early, and flushing the wrapped writer would send
++// the headers before Cache-Status is set. Without it, http.ResponseController
++// returns ErrNotSupported to handlers that flush (FrankenPHP logs a warning on
++// every PHP flush() behind the cache). Caddy's buffering ResponseRecorder does the same.
++func (r *CustomWriter) Flush() {}
+diff --git a/pkg/middleware/writer_flush_test.go b/pkg/middleware/writer_flush_test.go
+new file mode 100644
+--- /dev/null
++++ b/pkg/middleware/writer_flush_test.go
+@@ -0,0 +1,30 @@
++package middleware
++
++import (
++	"bytes"
++	"net/http"
++	"net/http/httptest"
++	"testing"
++)
++
++func TestCustomWriterFlushIsSupportedAndBuffers(t *testing.T) {
++	rec := httptest.NewRecorder()
++	rq := httptest.NewRequest(http.MethodGet, "/", nil)
++	w := NewCustomWriter(rq, rec, new(bytes.Buffer))
++
++	_, _ = w.Write([]byte("first,"))
++	if err := http.NewResponseController(w).Flush(); err != nil {
++		t.Fatalf("Flush through http.ResponseController = %v, want nil", err)
++	}
++	if rec.Flushed || rec.Body.Len() != 0 {
++		t.Fatalf("Flush reached the wrapped writer (flushed %v, body %q); it must stay buffered until Send", rec.Flushed, rec.Body.String())
++	}
++	_, _ = w.Write([]byte("second"))
++
++	if _, err := w.Send(); err != nil {
++		t.Fatal(err)
++	}
++	if got := rec.Body.String(); got != "first,second" {
++		t.Fatalf("body after Send = %q, want %q", got, "first,second")
++	}
++}

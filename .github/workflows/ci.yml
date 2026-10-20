@@ -140,6 +140,8 @@ jobs:
         run: sh bin/test/souin-flush-storage.sh
       - name: Check coalesced requests all get an upstream 5xx (#137)
         run: sh bin/test/souin-coalesced-5xx.sh
+      - name: Check a PHP flush() behind the cache logs no "not a flusher" warning (#185)
+        run: sh bin/test/souin-php-flush.sh
       - name: Check two Souin instances on one Redis purge every page under a shared tag (#85)
         run: sh bin/test/souin-redis-shared-purge.sh
       - name: Check the Caddyfile provisions for helm and compose (#113)

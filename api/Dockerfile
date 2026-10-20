@@ -8,13 +8,14 @@ FROM dunglas/frankenphp:builder AS builder
 # Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 
-# Patched Souin v1.7.9: purge regex (#84), singleflight (#62, #137), flush (#114), Cloudflare purge (#108, #115).
+# Patched Souin v1.7.9: purge regex (#84), singleflight (#62, #137), flush (#114), Cloudflare purge (#108, #115), writer Flush (#185).
 # Remove each with its replace once a Souin release has it (bin/test/souin-*.sh must pass).
 COPY --link frankenphp/souin/v1.7.9-purge-fix.patch /tmp/souin-purge-fix.patch
 COPY --link frankenphp/souin/v1.7.9-singleflight-fix.patch /tmp/souin-singleflight-fix.patch
 COPY --link frankenphp/souin/v1.7.9-singleflight-5xx.patch /tmp/souin-singleflight-5xx.patch
 COPY --link frankenphp/souin/v1.7.9-flush-no-close.patch /tmp/souin-flush-no-close.patch
 COPY --link frankenphp/souin/v1.7.9-cloudflare-purge.patch /tmp/souin-cloudflare-purge.patch
+COPY --link frankenphp/souin/v1.7.9-writer-flush.patch /tmp/souin-writer-flush.patch
 RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
 	cp -r "$SOUIN_DIR" /tmp/souin && \
 	chmod -R u+w /tmp/souin && \
@@ -22,7 +23,8 @@ RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-singleflight-fix.patch && \
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-singleflight-5xx.patch && \
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-flush-no-close.patch && \
-	patch -d /tmp/souin -p1 --forward < /tmp/souin-cloudflare-purge.patch
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-cloudflare-purge.patch && \
+	patch -d /tmp/souin -p1 --forward < /tmp/souin-writer-flush.patch
 
 # Patched storages go-redis v0.0.20: atomic tag sets across pods (#85, darkweak/storages#65).
 # Remove with its replace once a storages release has it (bin/test/souin-redis-shared-purge.sh must pass).
