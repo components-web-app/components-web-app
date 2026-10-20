@@ -1,0 +1,148 @@
+{{- /*
+The deploy's one-off database Jobs (#180): plan, backup or migrate. Never installed by helm: k8s.sh renders this file
+alone (`helm template --show-only`) from the live release's values with the new php image, and creates the Job.
+An empty databaseJob.task renders nothing.
+*/}}
+{{- with .Values.databaseJob }}
+{{- if .task }}
+{{- if not (has .task (list "plan" "backup" "migrate")) }}
+{{- fail (printf "databaseJob.task must be plan, backup or migrate, not %q" .task) }}
+{{- end }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ required "databaseJob.name is required" .name }}
+  labels:
+    helm.sh/chart: {{ include "cwa.chart" $ }}
+    app.kubernetes.io/name: {{ include "cwa.name" $ }}-database-{{ .task }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: {{ .activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "cwa.name" $ }}-database-{{ .task }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+    spec:
+      restartPolicy: Never
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "cwa.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml $.Values.podSecurityContext | nindent 8 }}
+      {{- if eq .task "backup" }}
+      volumes:
+        - name: backup
+          emptyDir: {}
+      initContainers:
+        # pg_dump of the server's major version; the php container uploads the dump.
+        - name: pg-dump
+          image: {{ required "databaseJob.backup.image is required" .backup.image | quote }}
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -ec
+            - |
+              rest="${DATABASE_URL#*://}"
+              case "$DATABASE_URL" in
+                pgsql://*|postgres://*|postgresql://*) ;;
+                *) echo "DATABASE_URL is not a PostgreSQL URL, so there is no backup." >&2; exit 1 ;;
+              esac
+              # Doctrine's query parameters (serverVersion, charset) aren't libpq's; only sslmode is kept.
+              query=""
+              case "$rest" in *\?*) query="${rest#*\?}"; rest="${rest%%\?*}" ;; esac
+              PGSSLMODE="${DATABASE_SSL_MODE:-prefer}"
+              for pair in $(printf '%s' "$query" | tr '&' ' '); do
+                case "$pair" in sslmode=*) PGSSLMODE="${pair#sslmode=}" ;; esac
+              done
+              export PGSSLMODE
+              pem() { case "$2" in *"-----BEGIN"*) printf '%s\n' "$2" > "$1"; chmod 600 "$1" ;; *) return 1 ;; esac; }
+              if pem /tmp/ca.pem "${DATABASE_CA_CERT:-}"; then export PGSSLROOTCERT=/tmp/ca.pem; fi
+              if pem /tmp/cert.pem "${DATABASE_CLIENT_CERT:-}"; then export PGSSLCERT=/tmp/cert.pem; fi
+              if pem /tmp/key.pem "${DATABASE_CLIENT_KEY:-}"; then export PGSSLKEY=/tmp/key.pem; fi
+              echo "pg_dump $(pg_dump --version | sed 's/^pg_dump //') of the release's database..."
+              pg_dump --format=custom --dbname="postgresql://$rest" --file=/backup/database.dump
+              # A dump pg_restore can't list is no backup.
+              pg_restore --list /backup/database.dump > /dev/null
+              echo "Dumped $(wc -c < /backup/database.dump) bytes."
+          env:
+            - name: PGOPTIONS
+              value: "-c default_transaction_read_only=on"
+            {{- range $name, $key := dict "DATABASE_URL" "database-url" "DATABASE_CA_CERT" "database-ssl-ca" "DATABASE_CLIENT_CERT" "database-ssl-cert" "DATABASE_CLIENT_KEY" "database-ssl-key" }}
+            - name: {{ $name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cwa.fullname" $ }}
+                  key: {{ $key }}
+            {{- end }}
+            - name: DATABASE_SSL_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "cwa.fullname" $ }}
+                  key: database-ssl-mode
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+          resources:
+            {{- toYaml .backup.resources | nindent 12 }}
+      {{- end }}
+      containers:
+        - name: {{ $.Chart.Name }}-database-{{ .task }}
+          securityContext:
+            {{- toYaml $.Values.securityContext | nindent 12 }}
+          image: "{{ $.Values.php.image.repository }}:{{ $.Values.php.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.php.image.pullPolicy }}
+          # Through the entrypoint (database certificates, the wait for the database), which SKIP_MIGRATIONS stops migrating.
+          {{- if eq .task "plan" }}
+          args: ["bin/console", "app:database:migrations-plan", "--no-interaction"]
+          {{- else if eq .task "backup" }}
+          args:
+            - bin/console
+            - app:database:backup-upload
+            - /backup/database.dump
+            - --bucket={{ required "databaseJob.backup.bucket is required" .backup.bucket }}
+            - --directory={{ .backup.directory }}
+            - --label={{ .backup.label | default "backup" }}
+            - --keep={{ .backup.keep }}
+            - --no-interaction
+          {{- else }}
+          args: ["bin/console", "app:database:migrate", "--no-interaction"]
+          {{- end }}
+          env:
+            - name: SKIP_MIGRATIONS
+              value: "true"
+            {{- if ne .task "migrate" }}
+            # Read-only sessions: neither the plan nor the backup can change the database.
+            - name: PGOPTIONS
+              value: "-c default_transaction_read_only=on"
+            {{- end }}
+            {{- include "cwa.phpEnv" $ | nindent 12 }}
+          {{- with include "cwa.siteEnvFrom" (dict "ctx" $ "side" "api") }}
+          {{- . | nindent 10 }}
+          {{- end }}
+          {{- if eq .task "backup" }}
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+          {{- end }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
+{{- end }}

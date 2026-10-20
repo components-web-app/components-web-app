@@ -276,3 +276,31 @@ cronjobs:
         memory: 1536Mi
       limits:
         memory: 1536Mi
+
+# The deploy's one-off database Jobs (#180): templates/database-job.yaml, which helm never installs. k8s.sh renders it
+# alone from the live release's values with the new php image (plan, backup, migrate). An empty task renders nothing.
+databaseJob:
+  task: ""
+  name: ""
+  activeDeadlineSeconds: 1800
+  # The php container: a console command, sized like the orphan scan.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  backup:
+    # pg_dump of the server's major version; k8s.sh picks it from the plan.
+    image: postgres:16-alpine
+    # A private bucket, never the media bucket (public, and its orphan scan would list the dumps).
+    bucket: ""
+    directory: ""
+    label: ""
+    keep: 5
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
