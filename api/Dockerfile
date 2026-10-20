@@ -7,6 +7,8 @@ FROM dunglas/frankenphp:builder AS builder
 
 # Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
+# Go module fetches stall or fail (sum.golang.org stream errors) on GitLab SaaS runners: bound and retry them, as for Debian (#176, #213).
+COPY --link --chmod=755 frankenphp/retry-fetch.sh /usr/local/bin/retry-fetch
 
 # Patched Souin v1.7.9: purge regex (#84), singleflight (#62, #137), flush (#114), Cloudflare purge (#108, #115), writer Flush (#185).
 # Remove each with its replace once a Souin release has it (bin/test/souin-*.sh must pass).
@@ -16,7 +18,7 @@ COPY --link frankenphp/souin/v1.7.9-singleflight-5xx.patch /tmp/souin-singleflig
 COPY --link frankenphp/souin/v1.7.9-flush-no-close.patch /tmp/souin-flush-no-close.patch
 COPY --link frankenphp/souin/v1.7.9-cloudflare-purge.patch /tmp/souin-cloudflare-purge.patch
 COPY --link frankenphp/souin/v1.7.9-writer-flush.patch /tmp/souin-writer-flush.patch
-RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
+RUN retry-fetch 300 go mod download github.com/darkweak/souin@v1.7.9 && SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
 	cp -r "$SOUIN_DIR" /tmp/souin && \
 	chmod -R u+w /tmp/souin && \
 	patch -d /tmp/souin -p1 --forward < /tmp/souin-purge-fix.patch && \
@@ -29,7 +31,7 @@ RUN SOUIN_DIR=$(go mod download -json github.com/darkweak/souin@v1.7.9 | sed -n 
 # Patched storages go-redis v0.0.20: atomic tag sets across pods (#85, darkweak/storages#65).
 # Remove with its replace once a storages release has it (bin/test/souin-redis-shared-purge.sh must pass).
 COPY --link frankenphp/storages/go-redis-v0.0.20-atomic-sets.patch /tmp/storages-go-redis.patch
-RUN GO_REDIS_DIR=$(go mod download -json github.com/darkweak/storages/go-redis@v0.0.20 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
+RUN retry-fetch 300 go mod download github.com/darkweak/storages/go-redis@v0.0.20 && GO_REDIS_DIR=$(go mod download -json github.com/darkweak/storages/go-redis@v0.0.20 | sed -n 's/.*"Dir": "\(.*\)",/\1/p') && \
 	cp -r "$GO_REDIS_DIR" /tmp/storages-go-redis && \
 	chmod -R u+w /tmp/storages-go-redis && \
 	patch -d /tmp/storages-go-redis -p1 --forward < /tmp/storages-go-redis.patch
@@ -43,7 +45,7 @@ RUN CGO_ENABLED=1 \
     XCADDY_GO_BUILD_FLAGS="-ldflags='-w -s' -tags=nobadger,nomysql,nopgx" \
     CGO_CFLAGS=$(php-config --includes) \
     CGO_LDFLAGS="$(php-config --ldflags) $(php-config --libs)" \
-    xcaddy build \
+    retry-fetch 1000 xcaddy build \
     --output /usr/local/bin/frankenphp \
 	--with github.com/dunglas/frankenphp/caddy \
 	--with github.com/dunglas/caddy-cbrotli \
