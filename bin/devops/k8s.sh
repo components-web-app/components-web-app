@@ -313,7 +313,8 @@ run_browser_tests() {
   if [ -n "$CI_REGISTRY_USER" ]; then
     echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   fi
-  E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" sh ./e2e/run.sh
+  # CWA_CI_E2E_SCALED="true" runs them against two php pods on one Redis and one Mercure hub (#85).
+  E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" E2E_SCALED="${CWA_CI_E2E_SCALED:-}" sh ./e2e/run.sh
 }
 
 # A leading or trailing dot means the url's variable (e.g. KUBE_INGRESS_BASE_DOMAIN) was empty.
@@ -1336,6 +1337,16 @@ persist_environment_url() {
 	echo "SITE_ENVIRONMENT_URL=https://${DOMAIN}" > environment_url.env
 }
 
+# A ready API pod that isn't shutting down, for commands run in the API. `kubectl exec deploy/…` can pick an old pod
+# still terminating after a rollout, whose own cache a flush would empty instead of scaled mode's Redis (#85).
+api_ready_pod() {
+  local pod
+  pod=$(kubectl get pods -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" \
+    -o go-template='{{range .items}}{{$name := .metadata.name}}{{if not .metadata.deletionTimestamp}}{{range .status.conditions}}{{if and (eq .type "Ready") (eq .status "True")}}pod/{{$name}}{{"\n"}}{{end}}{{end}}{{end}}{{end}}' 2>/dev/null \
+    | sed -n 1p)
+  printf '%s' "${pod:-$2}"
+}
+
 load_fixtures() {
   local track="${1-stable}"
   local release_name="$RELEASE"
@@ -1350,6 +1361,8 @@ load_fixtures() {
 
   echo "Waiting for PHP deployment to be ready..."
   kubectl rollout status "$deploy" -n "$KUBE_NAMESPACE" --timeout=600s
+  local api_pod
+  api_pod=$(api_ready_pod "$release_name" "$deploy")
 
   # CWA_CI_FIXTURES_PURGE empties every table first: review on "true" or "force", production only on "force".
   # Otherwise the load appends (#74). Staging has no fixture job: it would write to production's database.
@@ -1367,15 +1380,15 @@ load_fixtures() {
       ;;
   esac
   [ -n "$append" ] && echo "Loading database fixtures (append - existing content is kept)..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
     -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
 
   # The load changes data under Souin's cache, so flush all of it; one pod's flush reaches every pod in scaled mode's Redis.
   echo "Flushing the HTTP cache..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
     -- php bin/console silverback:api-components:purge-http-cache || return 1
   # The flush emptied the API cache, so warm it as after a deploy's flush (#174).
-  warm_api_cache_for "$track" "$deploy" "$release_name"
+  warm_api_cache_for "$track" "$api_pod" "$release_name"
 }
 
 # Drops every cached page (`cwa-html`) after a deploy, or old HTML loads /_nuxt files that now 404 (#71).
@@ -1404,6 +1417,8 @@ purge_rendered_html() {
   kubectl rollout status "$pwa_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
   echo "Waiting for the API rollout..."
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
+  local api_pod
+  api_pod=$(api_ready_pod "$release_name" "$api_deploy")
 
   # With Cloudflare (#108) the edge also holds /_api responses, so flush everything, which purges the whole zone.
   # Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone too. In scaled mode Redis outlives the
@@ -1422,19 +1437,19 @@ purge_rendered_html() {
         api_warm_surge_start "$(cwa_fullname "$release_name")" "$api_deploy"
       fi
       echo "$flush"
-      kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+      kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
         -- php bin/console silverback:api-components:purge-http-cache
       # The flush empties the new pod's postStart warm, so a visitor's first page would miss on every /_api fetch (#175).
       if api_scaled "$track"; then
-        warm_api_cache_for "$track" "$api_deploy" "$release_name" "${CWA_CI_API_WARM_SURGE:-0}"
+        warm_api_cache_for "$track" "$api_pod" "$release_name" "${CWA_CI_API_WARM_SURGE:-0}"
         api_warm_surge_end "$(cwa_fullname "$release_name")"
       else
-        warm_api_cache "$api_deploy"
+        warm_api_cache "$api_pod"
       fi
       ;;
     *)
       echo "Purging rendered HTML..."
-      kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+      kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
         -- php bin/console silverback:api-components:purge-rendered-html
       ;;
   esac
@@ -1557,9 +1572,11 @@ generate_image_variants() {
   echo "Generated ${total} image variants in ${runs} Job(s)."
   if [[ "$total" -gt 0 ]]; then
     echo "Purging the HTTP cache, so cached API responses list the new variants..."
-    kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
+    local api_pod
+    api_pod=$(api_ready_pod "$release_name" "$api_deploy")
+    kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
       -- php bin/console silverback:api-components:purge-http-cache
-    warm_api_cache_for "$track" "$api_deploy" "$release_name"
+    warm_api_cache_for "$track" "$api_pod" "$release_name"
   fi
 
   if [[ "$status" -ne 0 ]]; then

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Regression test (#85): a scaled deploy's purge_rendered_html raises the API autoscaler's minimum by
 # CWA_CI_API_WARM_SURGE, flushes, warms through the API service, then puts the minimum back; a single-pod deploy
-# warms in its pod as before. Runs k8s.sh against a stub kubectl. Usage (repository root): bin/test/api-warm-surge.sh [k8s.sh]
+# warms in its pod as before. Commands run in a ready pod, never `deploy/…`, which can pick a terminating one. Runs k8s.sh against a stub kubectl. Usage (repository root): bin/test/api-warm-surge.sh [k8s.sh]
 set -eu
 
 K8S="${1:-bin/devops/k8s.sh}"
@@ -27,6 +27,7 @@ case "$*" in
   *"get deploy"*"name=cwa-pwa,"*) echo "deployment.apps/rel-cwa-pwa" ;;
   *"get deploy"*"name=cwa,"*) echo "deployment.apps/rel-cwa" ;;
   *"get deployment.apps/rel-cwa"*readyReplicas*) echo 4 ;;
+  *"get pods"*"name=cwa,"*) echo "pod/rel-cwa-new" ;;
 esac
 exit 0
 STUB
@@ -68,6 +69,8 @@ run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=2"
 expect surge '"minReplicas":4'
 expect surge '"minReplicas":2'
 expect surge 'purge-http-cache'
+expect surge 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-http-cache'
+refuse surge 'exec -n ns deployment.apps/rel-cwa '
 expect surge '--base-url=http://rel-cwa --concurrency=8'
 order surge '"minReplicas":4' 'purge-http-cache'
 order surge 'purge-http-cache' '--base-url=http://rel-cwa'
@@ -83,6 +86,7 @@ expect concurrency '--base-url=http://rel-cwa --concurrency=3'
 
 run ""
 expect single 'purge-rendered-html'
+expect single 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-rendered-html'
 refuse single 'purge-http-cache'
 refuse single 'patch hpa'
 
