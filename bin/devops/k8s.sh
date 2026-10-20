@@ -1017,6 +1017,11 @@ api_scaled_track_name() {
   esac
 }
 
+# Scaled mode's Redis watch CronJob (#85): on unless CWA_CI_API_REDIS_WATCH is "false". Prints the chart's value.
+api_redis_watch_enabled() {
+  if [ "${CWA_CI_API_REDIS_WATCH:-}" = "false" ]; then echo false; else echo true; fi
+}
+
 # Sets API_AUTOSCALE_MIN, API_AUTOSCALE_MAX and API_REDIS_MEMORY_MIB for the chart. Fails before the cluster is touched
 # on more than one API pod without scaled mode (a second pod's cache is never purged), or a setting scaled mode can't use.
 check_api_scaling() {
@@ -1342,6 +1347,9 @@ scaled:
   redis:
     password: "${REDIS_PASSWORD:-}"
     maxMemoryMi: ${API_REDIS_MEMORY_MIB}
+  redisWatch:
+    enabled: $(api_redis_watch_enabled)
+    schedule: "${CWA_CI_API_REDIS_WATCH_SCHEDULE:-*/2 * * * *}"
 cronjobs:
   orphanScan:
     enabled: ${CWA_CI_ORPHAN_SCAN:-$orphan_scan_default}

@@ -1,0 +1,68 @@
+{{- if and (include "cwa.scaled" .) .Values.scaled.redisWatch.enabled }}
+{{- $fullName := include "cwa.fullname" . }}
+# Scaled mode's Redis watch (#85): once php can reach Redis again after an outage, flushes the cache (purges were
+# lost meanwhile) and the Cloudflare zone, and emails MAILER_EMAIL. Its own name label, so no Service selects it.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $fullName }}-redis-watch
+  labels:
+    helm.sh/chart: {{ include "cwa.chart" . }}
+    app.kubernetes.io/name: {{ include "cwa.name" . }}-redis-watch
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  schedule: {{ .Values.scaled.redisWatch.schedule | quote }}
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      # A failed run is retried by the next schedule, not by a backoff.
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "cwa.name" . }}-redis-watch
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: Never
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "cwa.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: {{ .Chart.Name }}-redis-watch
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+              image: "{{ .Values.php.image.repository }}:{{ .Values.php.image.tag | default .Chart.AppVersion }}"
+              imagePullPolicy: {{ .Values.php.image.pullPolicy }}
+              # Through the entrypoint (database certificates and wait), which SKIP_MIGRATIONS stops migrating. Redis's
+              # address and password come from CADDY_CACHE_STORAGE, the block php's Souin uses.
+              args: ["bin/console", "app:redis-watch", "--api-url=http://{{ $fullName }}", "--no-interaction"]
+              env:
+                - name: SKIP_MIGRATIONS
+                  value: "true"
+                {{- include "cwa.phpEnv" . | nindent 16 }}
+              {{- with include "cwa.siteEnvFrom" (dict "ctx" . "side" "api") }}
+              {{- . | nindent 14 }}
+              {{- end }}
+              resources:
+                {{- toYaml .Values.scaled.redisWatch.resources | nindent 16 }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

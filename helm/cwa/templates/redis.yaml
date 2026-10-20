@@ -86,8 +86,8 @@ spec:
     app.kubernetes.io/name: {{ include "cwa.name" . }}-redis
     app.kubernetes.io/instance: {{ .Release.Name }}
 ---
-# Only this release's API pods reach Redis. Enforced only where the cluster enforces NetworkPolicy; the password
-# protects it either way.
+# Only this release's API pods and its Redis watch reach Redis. Enforced only where the cluster enforces
+# NetworkPolicy; the password protects it either way.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -106,6 +106,10 @@ spec:
         - podSelector:
             matchLabels:
               {{- include "cwa.selectorLabels" . | nindent 14 }}
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "cwa.name" . }}-redis-watch
+              app.kubernetes.io/instance: {{ .Release.Name }}
       ports:
         - port: 6379
           protocol: TCP

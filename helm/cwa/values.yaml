@@ -246,6 +246,16 @@ scaled:
         memory: 64Mi
       limits:
         memory: 256Mi
+  # Flushes the cache and emails MAILER_EMAIL once Redis is reachable again after php couldn't reach it (app:redis-watch).
+  redisWatch:
+    enabled: true
+    schedule: "*/2 * * * *"
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 256Mi
 
 nodeSelector:
   cloud.google.com/compute-class: cost-optimized
