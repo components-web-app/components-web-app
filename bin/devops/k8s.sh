@@ -2259,7 +2259,7 @@ MAINTENANCE_NOTICE=maintenance-window.txt
 write_maintenance_notice() {
   local name="$1"
   {
-    echo "!!!! MAINTENANCE MODE IS ON for '$name': visitors see the maintenance page (CWA_CI_MAINTENANCE_DURING_MIGRATIONS). !!!!"
+    echo "!!!! MAINTENANCE MODE IS ON for '$name' from a maintenance window: visitors see the maintenance page. !!!!"
     if [ -n "${DATABASE_BACKUP:-}" ]; then
       echo "The backup taken before migrating: $DATABASE_BACKUP"
       echo "A failed migration is rolled back (one transaction), so restoring is rarely needed. To restore it (replaces the database):"
