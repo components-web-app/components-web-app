@@ -2036,6 +2036,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             concurrency?: int|Param, // The most warm requests in flight at once. // Default: 2
  *             timeout?: float|Param, // The most seconds one warm request may take. // Default: 30.0
  *             limit?: int|Param, // Warm at most this many routes, shortest paths first; null warms every public route until the maximum time. // Default: null
+ *             requests_per_connection?: int|Param, // Send `Connection: close` on every Nth warm request, as `warm-http-cache --requests-per-connection`, so a Kubernetes Service, which balances per connection, spreads the warm across its pods; 1 opens a new connection for every request; null keeps connections alive. // Default: null
  *         },
  *     },
  *     orphaned_resources?: array{
