@@ -8,7 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
-- php image: the builder stage's Go module downloads and `xcaddy build` run through `retry-fetch`, with a time limit and up to three attempts, after uncached downstream builds failed on a sum.golang.org stream error and slowed to about 2 minutes per `go get` on GitLab SaaS runners (#213). [21abfb0](https://github.com/components-web-app/components-web-app/commit/21abfb0efb54666e5b773c8e404143f116aa4f5e)
+- php image: the builder stage's Go module downloads and `xcaddy build` run through `retry-fetch`, with a time limit and up to three attempts, after uncached downstream builds failed on a sum.golang.org stream error and slowed to about 2 minutes per `go get` on GitLab SaaS runners; Go also fetches over HTTP/1.1 there, since sum.golang.org kept resetting HTTP/2 streams (#213). [21abfb0](https://github.com/components-web-app/components-web-app/commit/21abfb0efb54666e5b773c8e404143f116aa4f5e), [d1241a9](https://github.com/components-web-app/components-web-app/commit/d1241a9386b7e979abdcd1a442f9c6c2515ede4d)
 - The "maintenance mode is on" notice no longer names `CWA_CI_MAINTENANCE_DURING_MIGRATIONS` when a later deploy found the window left on without it (#182). [4fd54e2](https://github.com/components-web-app/components-web-app/commit/4fd54e2d8bb64caf98b4c61d04de95ba497f0069)
 
 ### Upgrade notes
