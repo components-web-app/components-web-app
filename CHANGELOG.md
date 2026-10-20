@@ -13,6 +13,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- Deploys refuse more than one API pod (`CWA_CI_API_AUTOSCALE_MIN`/`_MAX` or `CWA_CI_API_REPLICA_COUNT` above 1) unless scaled mode is on for that track, since a second pod's cache is never purged. Scaled mode (`CWA_CI_API_SCALED_PRODUCTION`, `_STAGING`, `_CANARY`, `_REVIEW`) is being built and isn't ready to turn on: so far it starts a Redis per release as the shared cache and flushes on every deploy (#85). [62bfeb9](https://github.com/components-web-app/components-web-app/commit/62bfeb928ad665d29666e4569507f1f79c47172a)
 - php entrypoint: migrations and `ANALYZE` run through `app:database:migrate`, under a Postgres advisory lock, so pods and CronJob pods starting together (a deploy beside the 03:00 orphan scan, or several API pods) run them once; the others wait up to 600 s (#85). [77617ca](https://github.com/components-web-app/components-web-app/commit/77617ca22aabb871c6a2db27e1748df4d70984d5)
 
 ## [2.0.0-alpha.42](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.42) - 2026-10-19
