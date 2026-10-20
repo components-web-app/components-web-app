@@ -3,6 +3,8 @@
 {
 	admin off
 	auto_https off
+	# Open subscriptions otherwise hold the shutdown until the kubelet's SIGKILL, so the pod ends as Error (#85).
+	grace_period 5s
 }
 
 :80 {
