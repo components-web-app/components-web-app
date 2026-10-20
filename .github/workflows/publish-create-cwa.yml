@@ -19,6 +19,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The template this CLI installs pulls cwa-php-base:<version>: it must exist and be public first (#208).
+      - name: Check the php base image is published and public
+        run: |
+          set -eu
+          V=$(node -p "require('./package.json').version")
+          T=$(curl -fsS "https://ghcr.io/token?scope=repository:components-web-app/cwa-php-base:pull" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+          curl -fsS -o /dev/null -H "Authorization: Bearer $T" \
+            -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
+            "https://ghcr.io/v2/components-web-app/cwa-php-base/manifests/$V" \
+            || { echo "::error::ghcr.io/components-web-app/cwa-php-base:$V is missing or private: wait for publish-php-base.yml on v$V, and make the package public"; exit 1; }
+
       - uses: pnpm/action-setup@v4
         with:
           version: latest

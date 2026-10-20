@@ -14,7 +14,8 @@
     "CODE_OF_CONDUCT.md",
     ".github/ISSUE_TEMPLATE/",
     ".github/pull_request_template.md",
-    ".github/workflows/publish-create-cwa.yml"
+    ".github/workflows/publish-create-cwa.yml",
+    ".github/workflows/publish-php-base.yml"
   ],
   "questions": [
     {
