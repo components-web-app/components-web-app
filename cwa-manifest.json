@@ -22,6 +22,7 @@
       "id": "ci",
       "type": "select",
       "message": "CI/CD pipeline?",
+      "hint": "Kubernetes deploy pipelines; choose None to decide later",
       "choices": [
         { "value": "github", "label": "GitHub Actions" },
         { "value": "gitlab", "label": "GitLab CI" },
@@ -35,7 +36,7 @@
       "choices": [
         { "value": "navigation", "label": "Navigation links" },
         { "value": "html-content", "label": "HTML content editor (requires TipTap)" },
-        { "value": "image", "label": "Image uploads (requires cloud storage)" },
+        { "value": "image", "label": "Image uploads (local in dev; a bucket in production)" },
         { "value": "blog", "label": "Blog / articles", "requires": ["html-content", "image"] },
         { "value": "nested-pages", "label": "Nested pages / topics", "requires": ["html-content"] },
         { "value": "forms", "label": "Example form (Symfony form composables demo)" }
@@ -45,7 +46,7 @@
       "id": "fixtures",
       "type": "confirm",
       "message": "Include database fixtures for selected features?",
-      "hint": "Scaffolds sample content so the site works out of the box",
+      "hint": "sample pages; the admin login is created either way",
       "default": true
     }
   ],

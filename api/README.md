@@ -10,8 +10,8 @@ The Symfony and API Platform application behind the CWA template, served by Fran
 The pipeline's fixtures create one from `ADMIN_USERNAME`, `ADMIN_EMAIL` and `ADMIN_PASSWORD`. To create one by hand, see [`user:create`](https://cwa.rocks/api/console-commands):
 
 ```sh
-# asks for the username, email and password; --super-admin gives access to /_cwa
-docker compose exec php bin/console silverback:api-components:user:create --super-admin
+# asks for the username, email and password; --admin gives access to /_cwa
+docker compose exec php bin/console silverback:api-components:user:create --admin
 ```
 
 ## Built on API Platform

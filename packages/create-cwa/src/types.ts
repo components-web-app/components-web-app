@@ -1,6 +1,7 @@
 export interface ManifestChoice {
   value: string
   label: string
+  hint?: string
   requires?: string[]
 }
 

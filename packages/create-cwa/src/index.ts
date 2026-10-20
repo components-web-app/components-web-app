@@ -15,12 +15,14 @@ import { downloadTemplate } from 'giget'
 import fse from 'fs-extra'
 import fg from 'fast-glob'
 import { readFile, writeFile } from 'node:fs/promises'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { randomBytes } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
-import type { Manifest, Answers } from './types.js'
+import { styleText } from 'node:util'
+import { preflight } from './preflight.js'
+import type { Manifest, ManifestQuestion, Answers } from './types.js'
 
 const REPO = 'components-web-app/components-web-app'
 
@@ -86,20 +88,45 @@ function run(cmd: string, args: string[], cwd: string): boolean {
   return result.status === 0
 }
 
+function withHint(message: string, hint?: string): string {
+  return hint ? `${message} ${styleText('dim', `(${hint})`)}` : message
+}
+
+// The name becomes the directory and the compose project name.
+const PROJECT_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+function validateProjectName(value: string | undefined): string | undefined {
+  const name = value?.trim() ?? ''
+  if (!name) return 'Project name is required'
+  if (!PROJECT_NAME.test(name)) {
+    return 'Use lower-case letters, digits and single dashes (for example my-cwa-app)'
+  }
+  const dir = resolve(process.cwd(), name)
+  if (existsSync(dir) && (!statSync(dir).isDirectory() || readdirSync(dir).length > 0)) {
+    return `"${name}" already exists here and is not an empty directory`
+  }
+  return undefined
+}
+
 async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Answers> {
+  const question = (id: string): ManifestQuestion | undefined =>
+    manifest.questions.find((q) => q.id === id)
+
+  const nameQuestion = question('projectName')
   const projectName = checkCancel(
     await text({
-      message: 'Project name?',
-      placeholder: 'my-cwa-app',
+      message: withHint(nameQuestion?.message ?? 'Project name?', nameQuestion?.hint),
+      placeholder: nameQuestion?.placeholder ?? 'my-cwa-app',
       initialValue: targetArg ?? '',
-      validate: (v) => (v?.trim() ? undefined : 'Project name is required'),
+      validate: validateProjectName,
     })
   ) as string
 
+  const ciQuestion = question('ci')
   const ci = checkCancel(
     await select({
-      message: 'CI/CD pipeline?',
-      options: [
+      message: withHint(ciQuestion?.message ?? 'CI/CD pipeline?', ciQuestion?.hint),
+      options: ciQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? [
         { value: 'github', label: 'GitHub Actions' },
         { value: 'gitlab', label: 'GitLab CI' },
         { value: 'none', label: 'None' },
@@ -107,14 +134,16 @@ async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Ans
     })
   ) as string
 
+  const featuresQuestion = question('features')
   const featureChoices =
-    manifest.questions
-      .find((q) => q.id === 'features')
-      ?.choices?.map((c) => ({ value: c.value, label: c.label })) ?? []
+    featuresQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? []
 
   const features = checkCancel(
     await multiselect({
-      message: 'Which features to include? (space to toggle, enter to confirm)',
+      message: withHint(
+        `${featuresQuestion?.message ?? 'Which features to include?'} (space to toggle, enter to confirm)`,
+        featuresQuestion?.hint
+      ),
       options: featureChoices,
       required: false,
     })
@@ -135,10 +164,14 @@ async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Ans
     note(`Also enabling: ${added.join(', ')} (required by selected features)`, 'Dependencies')
   }
 
+  const fixturesQuestion = question('fixtures')
   const fixtures = checkCancel(
     await confirm({
-      message: 'Include database fixtures for selected features?',
-      initialValue: true,
+      message: withHint(
+        fixturesQuestion?.message ?? 'Include database fixtures for selected features?',
+        fixturesQuestion?.hint
+      ),
+      initialValue: fixturesQuestion?.default ?? true,
     })
   ) as boolean
 
@@ -244,7 +277,7 @@ No sample content is bundled. Create the admin (\`ADMIN_USERNAME\` / \`ADMIN_PAS
 docker compose exec php bin/console doctrine:fixtures:load --append
 \`\`\`
 
-Or create one by hand: \`docker compose exec php bin/console silverback:api-components:user:create --admin\`.
+Or create one by hand (\`--admin\` opens the admin at \`/_cwa\`): \`docker compose exec php bin/console silverback:api-components:user:create --admin\`.
 `
 
   const readme = `# ${answers.projectName}
@@ -267,8 +300,10 @@ docker compose up -d
 docker compose logs -f app
 \`\`\`
 
-\`app/\` is mounted into the app container, so its \`node_modules\` is shared. Run
-\`pnpm install\` in \`app/\` yourself only if your editor needs the types locally.
+\`app/\` is mounted into the app container, so its \`node_modules\` is shared: your
+editor gets the types from the container's install. Don't run \`pnpm install\` on
+this machine while the stack runs (it rewrites \`node_modules\` under the dev
+server); if you do, run \`docker compose restart app\`.
 
 | URL | Description |
 |---|---|
@@ -284,8 +319,8 @@ ${fixturesSection}
 ${ciSection}## Learn more
 
 - [CWA documentation](https://cwa.rocks)
-- [API Components Bundle](https://github.com/silverbackdan/api-components-bundle)
-- [\`@cwa/nuxt\` module](https://github.com/components-web-app/cwa-nuxt-3-module)
+- [API Components Bundle](https://github.com/components-web-app/api-components-bundle)
+- [\`@cwa/nuxt\` module](https://github.com/components-web-app/cwa-nuxt-module)
 `
 
   await writeFile(join(tempDir, 'README.md'), readme, 'utf-8')
@@ -301,8 +336,62 @@ async function moveToTarget(tempDir: string, targetDir: string): Promise<void> {
   await fse.move(tempDir, targetDir, { overwrite: false })
 }
 
+// Decides, before anything is downloaded, whether to start the stack and whether to
+// install app/ dependencies on the host. The host install shares app/node_modules with
+// the app container, so it's only offered when the stack isn't started now (#204).
+async function askSetup(): Promise<{ startDocker: boolean; installDeps: boolean }> {
+  let startDocker = false
+  if (commandExists('docker')) {
+    startDocker = checkCancel(
+      await confirm({
+        message: withHint('Start the Docker stack when the project is ready?', 'docker compose up -d'),
+        initialValue: true,
+      })
+    ) as boolean
+  } else {
+    log.warn('docker not found. Install Docker Desktop, then run `docker compose up -d` in the project.')
+  }
+
+  if (startDocker) {
+    const s = spinner()
+    s.start('Checking Docker and ports...')
+    const result = await preflight()
+    s.stop('Docker checked.')
+    if (!result.dockerRunning) {
+      log.warn('Docker is installed but `docker info` failed: start Docker Desktop (or the Docker daemon).')
+      startDocker = false
+    } else if (result.takenPorts.length) {
+      log.warn(result.takenPorts.join('\n\n'))
+      startDocker = false
+    }
+    if (result.memoryWarning) log.warn(result.memoryWarning)
+    if (!startDocker) {
+      log.info('The project will be created without starting Docker. Run `docker compose up -d` in it once that is fixed.')
+    }
+    return { startDocker, installDeps: false }
+  }
+
+  let installDeps = false
+  if (commandExists('pnpm')) {
+    installDeps = checkCancel(
+      await confirm({
+        message: withHint(
+          'Install app/ dependencies on this machine?',
+          'only for editor types; the app container installs its own on first start'
+        ),
+        initialValue: false,
+      })
+    ) as boolean
+  }
+  return { startDocker, installDeps }
+}
+
 async function main(): Promise<void> {
-  intro('create-cwa — Components Web App scaffolder')
+  intro(`create-cwa ${CLI_VERSION} — Components Web App scaffolder`)
+  log.warn(
+    'CWA is a prerelease: expect breaking changes between versions (see CHANGELOG.md on GitHub).\n' +
+      'create-cwa collects no telemetry; it only downloads the template from GitHub.'
+  )
 
   const args = parseArgs(process.argv)
   const s = spinner()
@@ -317,6 +406,7 @@ async function main(): Promise<void> {
   }
 
   const answers = await askQuestions(manifest, args.projectName)
+  const setup = await askSetup()
   const targetDir = resolve(process.cwd(), answers.projectName)
   const tempDir = join(tmpdir(), `cwa-${randomBytes(6).toString('hex')}`)
 
@@ -361,8 +451,8 @@ async function main(): Promise<void> {
       '  • waits for PostgreSQL to be ready',
       '  • runs database migrations',
       '',
-      'The app container installs the Nuxt dependencies and runs the dev server,',
-      'so there is nothing to start by hand.',
+      'The app container installs the Nuxt dependencies into app/node_modules',
+      '(which your editor reads too) and runs the dev server.',
       answers.fixtures
         ? '\nFixtures are NOT loaded automatically — you will be reminded below.'
         : '',
@@ -372,43 +462,18 @@ async function main(): Promise<void> {
     'What Docker handles for you'
   )
 
-  // Offer to start Docker
-  const hasDocker = commandExists('docker')
-  if (hasDocker) {
-    const startDocker = checkCancel(
-      await confirm({ message: 'Start the Docker stack now? (docker compose up -d)', initialValue: true })
-    ) as boolean
-
-    if (startDocker) {
-      log.step('Running: docker compose up -d')
-      const ok = run('docker', ['compose', 'up', '-d'], targetDir)
-      if (!ok) {
-        log.warn('docker compose up -d failed. Run it manually from the project directory.')
-      }
+  if (setup.installDeps) {
+    log.step('Running: pnpm install (in app/)')
+    if (!run('pnpm', ['install'], join(targetDir, 'app'))) {
+      log.warn('pnpm install failed. Run it manually inside app/.')
     }
-  } else {
-    log.warn('docker not found — install Docker Desktop, then run: docker compose up -d')
   }
 
-  // Offer to install Nuxt deps
-  const hasPnpm = commandExists('pnpm')
-  if (hasPnpm) {
-    const installDeps = checkCancel(
-      await confirm({
-        message: 'Also install app/ dependencies on this machine, for editor type support? (the app container installs them either way)',
-        initialValue: false,
-      })
-    ) as boolean
-
-    if (installDeps) {
-      log.step('Running: pnpm install')
-      const ok = run('pnpm', ['install'], join(targetDir, 'app'))
-      if (!ok) {
-        log.warn('pnpm install failed. Run it manually inside app/.')
-      }
+  if (setup.startDocker) {
+    log.step('Running: docker compose up -d')
+    if (!run('docker', ['compose', 'up', '-d'], targetDir)) {
+      log.warn('docker compose up -d failed. Run it manually from the project directory.')
     }
-  } else {
-    log.warn('pnpm not found — run: npm i -g pnpm, then pnpm install inside app/')
   }
 
   const outroLines = [
@@ -419,6 +484,9 @@ async function main(): Promise<void> {
     '  https://localhost        — app',
     '  https://localhost/_api   — API',
     '  https://localhost/login  — sign in to the admin',
+    '',
+    "Don't run pnpm install on this machine while the stack runs: app/node_modules",
+    'is shared with the dev server. If you do, run: docker compose restart app',
   ]
 
   if (answers.fixtures) {
