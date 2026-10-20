@@ -146,6 +146,22 @@ refuse single 'patch hpa'
 refuse single 'requests-per-connection'
 refuse single ' curl '
 
+# Per-track warm time (#217): production and canary fall back to the shared setting, staging and review to 0.
+warm_time() { # warm_time <track> <want> [settings...]
+  track=$1 want=$2; shift 2
+  got=$(env -u CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME "$@" $K8S_SHELL -c '. "$1" >/dev/null; api_warm_max_time "$2"' k8s "$K8S" "$track")
+  [ "$got" = "$want" ] || { failures=$((failures + 1)); echo "FAIL (warm time $track $*): wanted $want, got $got" >&2; }
+}
+warm_time stable 60
+warm_time canary 60
+warm_time staging 0
+warm_time review 0
+warm_time stable 150 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME=150
+warm_time staging 0 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME=150
+warm_time staging 30 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_STAGING=30
+warm_time stable 0 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME=150 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_PRODUCTION=0
+warm_time canary 90 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_CANARY=90
+
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2
   exit 1

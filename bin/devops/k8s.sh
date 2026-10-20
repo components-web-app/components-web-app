@@ -1343,7 +1343,7 @@ php:
   reservedMemory: ${CWA_CI_API_RESERVED_MEMORY:-"160Mi"}
   # Empty: what the budget leaves Go.
   goMemLimit: "${CWA_CI_API_GOMEMLIMIT:-}"
-  warmHttpCacheMaxTime: ${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}
+  warmHttpCacheMaxTime: $(api_warm_max_time "$track")
   corsAllowOrigin: ${CORS_ALLOW_ORIGIN:-"~"}
   trustedHosts: ${TRUSTED_HOSTS:-"~"}
   resetDatabase: "${CWA_CI_RESET_DATABASE:-false}"
@@ -1643,11 +1643,23 @@ api_check_shared_cache() {
   return 0
 }
 
+# Seconds each /_api warm pass may take on a track, for the postStart and post-flush warms; 0 turns both off (#217).
+# Production and canary: CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_<TRACK>, else CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME, else 60.
+# Staging and review: only their own CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_<TRACK>, else 0, since nobody visits them.
+api_warm_max_time() {
+  case "${1-stable}" in
+    stable) echo "${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_PRODUCTION:-${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}}" ;;
+    canary) echo "${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_CANARY:-${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}}" ;;
+    staging) echo "${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_STAGING:-0}" ;;
+    *) echo "${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_REVIEW:-0}" ;;
+  esac
+}
+
 # Warms /_api in the API pod after a full flush, as its postStart does: gzip for SSR, then br for browsers (#175).
-# Each pass stops at CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME seconds (0 skips it); a failure only warns.
+# Each pass stops at api_warm_max_time seconds for the caller's $track (0 skips it); a failure only warns.
 # In scaled mode ($2 is the API service URL) it goes through the service, so every API pod renders a share (#85).
 warm_api_cache() {
-  local api_deploy="$1" base_url="${2:-http://localhost}" concurrency="${3:-2}" max_time="${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}" spread=""
+  local api_deploy="$1" base_url="${2:-http://localhost}" concurrency="${3:-2}" max_time="$(api_warm_max_time "${track:-stable}")" spread=""
   # Through a Service: a new connection per request, so kube-proxy spreads them across the pods (#196).
   [ "$base_url" = "http://localhost" ] || spread="--requests-per-connection=1"
   if [ "$max_time" = "0" ]; then
