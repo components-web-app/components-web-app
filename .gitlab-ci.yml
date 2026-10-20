@@ -103,6 +103,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/cache-encoding.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/storage-prefix-parity.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/api-scaling-config.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/api-warm-surge.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-backend-timeout.sh
   artifacts:
     reports:

@@ -150,6 +150,8 @@ jobs:
         run: sh bin/test/storage-prefix-parity.sh
       - name: Check more than one API pod is only deployed in scaled mode (#85)
         run: sh bin/test/api-scaling-config.sh
+      - name: Check a scaled deploy surges, flushes, warms through the service and scales back (#85)
+        run: sh bin/test/api-warm-surge.sh
       - name: Check a slow cold render is served and cached in otter, not 504'd at 10s (#170)
         run: sh bin/test/souin-backend-timeout.sh
 

@@ -991,6 +991,10 @@ check_api_scaling() {
 "
     [ -z "${CWA_API_CADDY_CACHE_STORAGE:-}" ] || bad="${bad}  CWA_API_CADDY_CACHE_STORAGE is set: in scaled mode the store is this release's Redis
 "
+    case "${CWA_CI_API_WARM_SURGE:-0}${CWA_CI_API_WARM_CONCURRENCY:-2}" in
+      *[!0-9]*) bad="${bad}  CWA_CI_API_WARM_SURGE and CWA_CI_API_WARM_CONCURRENCY must be whole numbers
+" ;;
+    esac
   else
     API_AUTOSCALE_MIN="${CWA_CI_API_AUTOSCALE_MIN:-1}"
     API_AUTOSCALE_MAX="${CWA_CI_API_AUTOSCALE_MAX:-1}"
@@ -1366,12 +1370,12 @@ load_fixtures() {
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
     -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
 
-  # The load changes data under Souin's cache, so flush all of it; one pod is enough while the API has one replica.
+  # The load changes data under Souin's cache, so flush all of it; one pod's flush reaches every pod in scaled mode's Redis.
   echo "Flushing the HTTP cache..."
   kubectl exec -n "$KUBE_NAMESPACE" "$deploy" \
     -- php bin/console silverback:api-components:purge-http-cache || return 1
   # The flush emptied the API cache, so warm it as after a deploy's flush (#174).
-  warm_api_cache "$deploy"
+  warm_api_cache_for "$track" "$deploy" "$release_name"
 }
 
 # Drops every cached page (`cwa-html`) after a deploy, or old HTML loads /_nuxt files that now 404 (#71).
@@ -1413,11 +1417,20 @@ purge_rendered_html() {
   fi
   case "$flush" in
     ?*)
+      if api_scaled "$track"; then
+        check_api_scaling "$track" >/dev/null || return 1
+        api_warm_surge_start "$(cwa_fullname "$release_name")" "$api_deploy"
+      fi
       echo "$flush"
       kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
         -- php bin/console silverback:api-components:purge-http-cache
       # The flush empties the new pod's postStart warm, so a visitor's first page would miss on every /_api fetch (#175).
-      warm_api_cache "$api_deploy"
+      if api_scaled "$track"; then
+        warm_api_cache_for "$track" "$api_deploy" "$release_name" "${CWA_CI_API_WARM_SURGE:-0}"
+        api_warm_surge_end "$(cwa_fullname "$release_name")"
+      else
+        warm_api_cache "$api_deploy"
+      fi
       ;;
     *)
       echo "Purging rendered HTML..."
@@ -1429,18 +1442,60 @@ purge_rendered_html() {
 
 # Warms /_api in the API pod after a full flush, as its postStart does: gzip for SSR, then br for browsers (#175).
 # Each pass stops at CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME seconds (0 skips it); a failure only warns.
+# In scaled mode ($2 is the API service URL) it goes through the service, so every API pod renders a share (#85).
 warm_api_cache() {
-  local api_deploy="$1" max_time="${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}"
+  local api_deploy="$1" base_url="${2:-http://localhost}" concurrency="${3:-2}" max_time="${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}"
   if [ "$max_time" = "0" ]; then
     return 0
   fi
-  echo "Warming /_api in the API pod (gzip, then br; at most ${max_time}s each)..."
+  echo "Warming /_api through ${base_url} (gzip, then br; ${concurrency} at a time, at most ${max_time}s each)..."
   kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
-    -- php bin/console silverback:api-components:warm-http-cache --max-time="$max_time" --no-interaction \
+    -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" --max-time="$max_time" --no-interaction \
     || echo "WARNING: the gzip /_api warm failed; visitors' first requests render cold." >&2
   kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
-    -- php bin/console silverback:api-components:warm-http-cache --accept-encoding=br --max-time="$max_time" --no-interaction \
+    -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" --accept-encoding=br --max-time="$max_time" --no-interaction \
     || echo "WARNING: the br /_api warm failed; visitors' first requests render cold." >&2
+}
+
+# warm_api_cache for a track: in scaled mode through the API service, two requests at a time per pod (or
+# CWA_CI_API_WARM_CONCURRENCY), so the pods share the renders (#85). $3 adds the warm surge's pods to that count.
+warm_api_cache_for() {
+  local track="$1" api_deploy="$2" release_name="$3" extra="${4:-0}"
+  if api_scaled "$track"; then
+    check_api_scaling "$track" >/dev/null || return 1
+    warm_api_cache "$api_deploy" "http://$(cwa_fullname "$release_name")" \
+      "${CWA_CI_API_WARM_CONCURRENCY:-$(( (API_AUTOSCALE_MIN + extra) * 2 ))}"
+  else
+    warm_api_cache "$api_deploy"
+  fi
+}
+
+# Scaled mode's warm surge (#85): CWA_CI_API_WARM_SURGE extra API pods for a deploy's flush and warm. Raises the
+# HPA's minimum and waits (up to CWA_CI_API_WARM_SURGE_TIMEOUT, 300s) for the pods; the warm runs on whatever is ready.
+api_warm_surge_start() {
+  local hpa="$1" api_deploy="$2" surge="${CWA_CI_API_WARM_SURGE:-0}" timeout="${CWA_CI_API_WARM_SURGE_TIMEOUT:-300}" want waited=0 ready
+  case "$surge" in ''|*[!0-9]*) echo "WARNING: CWA_CI_API_WARM_SURGE is '$surge', not a number; no surge." >&2; return 0 ;; esac
+  [ "$surge" -gt 0 ] || return 0
+  want=$((API_AUTOSCALE_MIN + surge))
+  echo "Warm surge: raising the API autoscaler's minimum to ${want} pods for the warm..."
+  kubectl patch hpa "$hpa" -n "$KUBE_NAMESPACE" --type merge -p "{\"spec\":{\"minReplicas\":${want}}}" >/dev/null \
+    || { echo "WARNING: could not raise the autoscaler's minimum; warming on the pods there are." >&2; return 0; }
+  while [ "$waited" -lt "$timeout" ]; do
+    ready=$(kubectl get "$api_deploy" -n "$KUBE_NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
+    [ "${ready:-0}" -ge "$want" ] && { echo "Warm surge: ${ready} API pods ready."; return 0; }
+    sleep 5
+    waited=$((waited + 5))
+  done
+  echo "WARNING: only ${ready:-0} of ${want} API pods were ready after ${timeout}s; warming on those." >&2
+}
+
+# Puts the autoscaler's minimum back; its scale-down window then removes the extra pods after ten minutes.
+api_warm_surge_end() {
+  local surge="${CWA_CI_API_WARM_SURGE:-0}"
+  case "$surge" in ''|*[!0-9]*|0) return 0 ;; esac
+  kubectl patch hpa "$1" -n "$KUBE_NAMESPACE" --type merge -p "{\"spec\":{\"minReplicas\":${API_AUTOSCALE_MIN}}}" >/dev/null \
+    && echo "Warm surge: the autoscaler's minimum is back to ${API_AUTOSCALE_MIN}." \
+    || echo "WARNING: could not put the autoscaler's minimum back to ${API_AUTOSCALE_MIN}; the next deploy resets it." >&2
 }
 
 # Creates every image variant not stored yet in one-off Jobs with their own memory limit, never in the serving pod (#153),
@@ -1504,7 +1559,7 @@ generate_image_variants() {
     echo "Purging the HTTP cache, so cached API responses list the new variants..."
     kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
       -- php bin/console silverback:api-components:purge-http-cache
-    warm_api_cache "$api_deploy"
+    warm_api_cache_for "$track" "$api_deploy" "$release_name"
   fi
 
   if [[ "$status" -ne 0 ]]; then
