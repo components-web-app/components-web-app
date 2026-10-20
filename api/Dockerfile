@@ -9,6 +9,8 @@ FROM dunglas/frankenphp:builder AS builder
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
 # Go module fetches stall or fail (sum.golang.org stream errors) on GitLab SaaS runners: bound and retry them, as for Debian (#176, #213).
 COPY --link --chmod=755 frankenphp/retry-fetch.sh /usr/local/bin/retry-fetch
+# sum.golang.org resets HTTP/2 streams from GitLab SaaS runners ("stream error … INTERNAL_ERROR"): Go fetches over HTTP/1.1 (#213).
+ENV GODEBUG=http2client=0
 
 # Patched Souin v1.7.9: purge regex (#84), singleflight (#62, #137), flush (#114), Cloudflare purge (#108, #115), writer Flush (#185).
 # Remove each with its replace once a Souin release has it (bin/test/souin-*.sh must pass).
