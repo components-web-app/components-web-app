@@ -12,10 +12,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- **Copy the Caddyfile and both Dockerfiles together** for the new Docker healthchecks: php's `HEALTHCHECK` calls a loopback-only health site (`http://127.0.0.1:2080`) that the Caddyfile now adds, so the healthcheck without the site leaves php permanently unhealthy. Locally, run `docker compose build php app` to pick them up (#205). [8c771f5](https://github.com/components-web-app/components-web-app/commit/8c771f5f42384d950b76e0707f5d122a3c4ddf27)
 - Deploys and fixture loads now warn when `ADMIN_PASSWORD` is unset or `admin` (the public admin/admin super-admin login, which every fixture load resets): set it as a masked CI variable or secret. The deploy still runs. `compose.prod.yaml` now requires `ADMIN_PASSWORD` (#203). [80f63f3](https://github.com/components-web-app/components-web-app/commit/80f63f3758d6951c4e26ed9eddcf7a095ce5f4fc)
 
 ### Added
 
+- Docker readiness checks: php checks `/_api/_/health` (PHP and the database) through a loopback-only Caddy site, app checks `/_cwa/healthcheck`, and the health endpoint is never cached, so `docker compose up -d --wait` waits until the site is ready. app gets `restart: unless-stopped`, and the browser tests use `--wait`. Kubernetes probes are unchanged (#205). [8c771f5](https://github.com/components-web-app/components-web-app/commit/8c771f5f42384d950b76e0707f5d122a3c4ddf27)
 - An MIT `LICENSE` (Silverback Internet Services Limited, as the bundle's), `SECURITY.md` (private reporting through GitHub, no warranty or guaranteed response), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and GitHub issue and PR templates; `.all-contributorsrc` is removed. Projects made with `create-cwa` get none of them: a client site chooses its own licence (#202). [031b006](https://github.com/components-web-app/components-web-app/commit/031b006d18c7372e8b5dc9cb4fd0d1dfd1683bd3)
 
 ### Changed
