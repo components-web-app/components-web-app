@@ -6,7 +6,7 @@ php:
   admin:
     username: admin
     password: admin
-    email: hello@cwa.rocks
+    email: admin@example.com
   gcloud:
     jsonKey: "my-dummy-very-long-json-key-placeholder-value"
     bucket: "no-gcloud-bucket"

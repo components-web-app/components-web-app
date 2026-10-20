@@ -20,6 +20,8 @@ services:
       MERCURE_EXTRA_DIRECTIVES: debugger # Mercure 1.0's debugging UI (replaces `demo`, removed in 1.0). Dev only.
       # See https://xdebug.org/docs/all_settings#mode
       XDEBUG_MODE: "${XDEBUG_MODE:-off}"
+      # Dev emails go to Mailpit, http://localhost:8025 (#206); MAILER_DSN in the root .env overrides it.
+      MAILER_DSN: ${MAILER_DSN:-smtp://mailpit:1025}
       # CADDY_GLOBAL_CONFIG: "local_certs"
     extra_hosts:
       # Ensure that host.docker.internal is correctly defined on Linux
@@ -52,6 +54,14 @@ services:
         protocol: tcp
     links:
       - "php:php.local"
+
+  # Catches every email the API sends in dev; its UI is http://localhost:8025 (#206).
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - target: 8025
+        published: 8025
+        protocol: tcp
 
 ###> doctrine/doctrine-bundle ###
   database:

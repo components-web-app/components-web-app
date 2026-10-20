@@ -20,9 +20,9 @@ The CLI asks for:
 - **CI/CD pipeline**: GitHub Actions, GitLab CI (both deploy to Kubernetes) or None to decide later.
 - **Features**: navigation links, an HTML content editor, image uploads, a blog, nested pages and an example form. Features another one needs are added for you.
 - **Fixtures**: sample pages for the chosen features.
-- **Start the Docker stack?** Before anything is downloaded, it checks that Docker is running and that ports 80, 443, 3001 and 5432 are free, and names whatever holds a port. If you don't start the stack now, it offers to install `app/` dependencies on your machine for editor types (default No): the app container installs its own either way.
+- **Start the Docker stack?** Before anything is downloaded, it checks that Docker is running and that ports 80, 443, 3001, 5432 and 8025 are free, and names whatever holds a port. If you don't start the stack now, it offers to install `app/` dependencies on your machine for editor types (default No): the app container installs its own either way.
 
-Then follow the printed steps: the dev server runs in the `app` container, the site is at `https://localhost`, and the admin signs in at `https://localhost/login`.
+If you start the stack, the CLI runs the project's `bin/up`: it waits until the stack is healthy, loads the fixtures (which create the admin, and the sample pages if you chose them), pre-compiles the first pages and prints the login. Run `bin/up` again any time; it's safe to repeat. The site is at `https://localhost`, the admin signs in at `https://localhost/login` (`admin` / `admin` in dev), and Mailpit shows the emails the API sends at `http://localhost:8025`. Without a POSIX shell (Windows without WSL), the CLI prints the steps instead.
 
 ## Options
 

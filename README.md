@@ -40,6 +40,24 @@ gh repo create my-project \
 > rm -rf packages/
 > ```
 
+### Run it locally
+
+With Docker running, from the project directory:
+
+```bash
+bin/up
+```
+
+It starts the stack and waits until it's healthy (the first run builds the images and installs dependencies: several minutes), loads the fixtures with `--append` (only what's missing: the admin and the sample pages), pre-compiles the first pages and prints the login. Run it again any time; `bin/up --skip-fixtures` keeps an admin password you changed, since each fixture load resets it to `ADMIN_PASSWORD`.
+
+| URL | |
+|---|---|
+| https://localhost | The site |
+| https://localhost/login | Sign in (dev: `admin` / `admin`) |
+| http://localhost:8025 | Mailpit: every email the API sends in dev |
+
+The browser warns about the certificate on the first visit: Caddy signs it with its own local CA, and accepting the warning is expected for local development. If a phase fails or times out, `bin/up` names it and prints that service's last log lines.
+
 ## Documentation
 
 [cwa.rocks](https://cwa.rocks)

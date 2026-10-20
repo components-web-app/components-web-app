@@ -1324,7 +1324,7 @@ php:
   admin:
     username: ${ADMIN_USERNAME:-"admin"}
     password: ${ADMIN_PASSWORD:-"admin"}
-    email: ${ADMIN_EMAIL:-"hello@cwa.rocks"}
+    email: ${ADMIN_EMAIL:-"admin@example.com"}
   gcloud:
     jsonKey: ${GCLOUD_JSON_B64:-"my-dummy-very-long-json-key-placeholder-value"}
     bucket: ${GCLOUD_BUCKET:-"no-gcloud-bucket"}

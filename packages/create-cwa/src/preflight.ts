@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process'
 import { createConnection, createServer } from 'node:net'
 
-// Ports the dev stack publishes: compose.yaml (80, 443) and compose.override.yaml (3001, 5432).
+// Ports the dev stack publishes: compose.yaml (80, 443) and compose.override.yaml (3001, 5432, 8025).
 export const STACK_PORTS: { port: number; service: string; culprits: string; alternative?: string }[] = [
   {
     port: 80,
@@ -27,6 +27,12 @@ export const STACK_PORTS: { port: number; service: string; culprits: string; alt
     culprits:
       'another CWA project (`docker compose stop` in its directory) or a local PostgreSQL (Postgres.app, `brew services stop postgresql`)',
     alternative: 'Or change `published: 5432` under `database:` in compose.override.yaml to a free port.',
+  },
+  {
+    port: 8025,
+    service: 'Mailpit web UI (mailpit container)',
+    culprits: 'another CWA project (`docker compose stop` in its directory) or a local Mailpit or MailHog',
+    alternative: 'Or change `published: 8025` under `mailpit:` in compose.override.yaml to a free port.',
   },
 ]
 

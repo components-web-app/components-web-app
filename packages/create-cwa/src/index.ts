@@ -260,24 +260,17 @@ async function generateReadme(tempDir: string, answers: Answers): Promise<void> 
         ? '## CI/CD\n\nGitLab CI is configured in `.gitlab-ci.yml`. See `bin/devops/` for the reusable pipeline scripts.\n'
         : ''
 
-  const fixturesSection = answers.fixtures
-    ? `## Fixtures
+  const fixturesSection = `## Fixtures and the admin account
 
-Sample content is bundled. Load it after the API container is healthy:
-
-\`\`\`bash
-docker compose exec php bin/console doctrine:fixtures:load --append
-\`\`\`
-`
-    : `## Admin account
-
-No sample content is bundled. Create the admin (\`ADMIN_USERNAME\` / \`ADMIN_PASSWORD\` / \`ADMIN_EMAIL\`, default \`admin\` / \`admin\`) once the API container is healthy:
+\`bin/up\` loads the fixtures with \`--append\`, which only creates what's missing: the admin
+(\`ADMIN_USERNAME\` / \`ADMIN_PASSWORD\` / \`ADMIN_EMAIL\` in \`api/.env.local\`, default
+\`admin\` / \`admin\` / \`admin@example.com\`)${answers.fixtures ? ' and the sample pages' : ''}. Each load resets the
+admin's password to \`ADMIN_PASSWORD\`; \`bin/up --skip-fixtures\` keeps one changed in the admin.
+To load them by hand:
 
 \`\`\`bash
 docker compose exec php bin/console doctrine:fixtures:load --append
 \`\`\`
-
-Or create one by hand (\`--admin\` opens the admin at \`/_cwa\`): \`docker compose exec php bin/console silverback:api-components:user:create --admin\`.
 `
 
   const readme = `# ${answers.projectName}
@@ -291,14 +284,18 @@ ${featureList}
 ## Getting started
 
 \`\`\`bash
-# Start the stack. The php container runs composer install, waits for the
-# database and migrates; the app container installs the Nuxt dependencies and
-# runs the dev server. There is nothing to start by hand.
-docker compose up -d
+# Start the stack, wait until it's healthy, load the fixtures, pre-compile the
+# first pages and print where to sign in. Safe to run again.
+bin/up
 
 # Follow the Nuxt dev server
 docker compose logs -f app
 \`\`\`
+
+\`bin/up\` runs \`docker compose up -d --wait\`: the php container runs composer install,
+waits for the database and migrates; the app container installs the Nuxt dependencies
+and runs the dev server. Without a POSIX shell (Windows without WSL), run
+\`docker compose up -d --wait\` and the fixtures command below instead.
 
 \`app/\` is mounted into the app container, so its \`node_modules\` is shared: your
 editor gets the types from the container's install. Don't run \`pnpm install\` on
@@ -310,10 +307,10 @@ server); if you do, run \`docker compose restart app\`.
 | https://localhost | Nuxt app |
 | https://localhost/_api | API (JSON-LD / HAL) |
 | https://localhost/login | Sign in to the CWA admin |
+| http://localhost:8025 | Mailpit: every email the API sends in dev |
 
-> **SSL:** Caddy issues local certificates from its own CA. Accept the browser warning, or trust the CA once:
-> \`docker compose cp php:/data/caddy/pki/authorities/local/root.crt caddy-local-root.crt\`,
-> then add \`caddy-local-root.crt\` to your system or browser trust store.
+> **Certificate warning:** Caddy signs the local certificate with its own CA, so the browser warns
+> on the first visit. Accepting the warning is expected for local development.
 
 ${fixturesSection}
 ${ciSection}## Learn more
@@ -344,12 +341,12 @@ async function askSetup(): Promise<{ startDocker: boolean; installDeps: boolean 
   if (commandExists('docker')) {
     startDocker = checkCancel(
       await confirm({
-        message: withHint('Start the Docker stack when the project is ready?', 'docker compose up -d'),
+        message: withHint('Start the Docker stack when the project is ready?', 'bin/up: starts it, loads fixtures, prints the login'),
         initialValue: true,
       })
     ) as boolean
   } else {
-    log.warn('docker not found. Install Docker Desktop, then run `docker compose up -d` in the project.')
+    log.warn('docker not found. Install Docker Desktop, then run `bin/up` in the project.')
   }
 
   if (startDocker) {
@@ -366,7 +363,7 @@ async function askSetup(): Promise<{ startDocker: boolean; installDeps: boolean 
     }
     if (result.memoryWarning) log.warn(result.memoryWarning)
     if (!startDocker) {
-      log.info('The project will be created without starting Docker. Run `docker compose up -d` in it once that is fixed.')
+      log.info('The project will be created without starting Docker. Run `bin/up` in it once that is fixed.')
     }
     return { startDocker, installDeps: false }
   }
@@ -453,9 +450,11 @@ async function main(): Promise<void> {
       '',
       'The app container installs the Nuxt dependencies into app/node_modules',
       '(which your editor reads too) and runs the dev server.',
-      answers.fixtures
-        ? '\nFixtures are NOT loaded automatically — you will be reminded below.'
-        : '',
+      '',
+      'bin/up waits for all that, loads the fixtures (the admin' +
+        (answers.fixtures ? ' and sample pages' : '') +
+        '),',
+      'pre-compiles the first pages and prints where to sign in. Run it again any time.',
     ]
       .join('\n')
       .trim(),
@@ -469,35 +468,40 @@ async function main(): Promise<void> {
     }
   }
 
+  // bin/up is POSIX sh; Windows without sh (no WSL or Git Bash) gets the steps instead (#206).
+  const hasShell = process.platform !== 'win32' || commandExists('sh')
+  let ready = false
   if (setup.startDocker) {
-    log.step('Running: docker compose up -d')
-    if (!run('docker', ['compose', 'up', '-d'], targetDir)) {
-      log.warn('docker compose up -d failed. Run it manually from the project directory.')
+    if (hasShell) {
+      log.step('Running: bin/up')
+      ready = run('sh', ['bin/up'], targetDir)
+      if (!ready) log.warn('bin/up failed (see above). Fix it, then run bin/up again in the project directory.')
+    } else {
+      log.step('Running: docker compose up -d --wait')
+      if (!run('docker', ['compose', 'up', '-d', '--wait'], targetDir)) {
+        log.warn('docker compose up -d --wait failed. Run it again in the project directory.')
+      }
     }
   }
 
-  const outroLines = [
-    `The dev server runs in the app container. Follow it with:`,
-    `  cd ${answers.projectName} && docker compose logs -f app`,
-    '',
-    'Then visit:',
-    '  https://localhost        — app',
-    '  https://localhost/_api   — API',
-    '  https://localhost/login  — sign in to the admin',
-    '',
-    "Don't run pnpm install on this machine while the stack runs: app/node_modules",
-    'is shared with the dev server. If you do, run: docker compose restart app',
-  ]
+  const outroLines = ready
+    ? [`The site is ready: sign in with the login printed above. Next time: cd ${answers.projectName} && bin/up`]
+    : hasShell
+      ? ['Start the stack, load the fixtures and get the login with:', `  cd ${answers.projectName} && bin/up`]
+      : [
+          'Start the stack and create the admin (and any sample pages) with:',
+          `  cd ${answers.projectName}`,
+          '  docker compose up -d --wait',
+          '  docker compose exec php bin/console doctrine:fixtures:load --append',
+          'Then sign in at https://localhost/login as admin / admin (accept the certificate warning).',
+        ]
 
-  if (answers.fixtures) {
-    outroLines.push('')
-    outroLines.push('Load sample content (once the API container is healthy):')
-    outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load --append')
-  } else {
-    outroLines.push('')
-    outroLines.push('Create the admin from ADMIN_* (once the API container is healthy):')
-    outroLines.push('  docker compose exec php bin/console doctrine:fixtures:load --append')
-  }
+  outroLines.push(
+    '',
+    'Follow the dev server with: docker compose logs -f app',
+    "Don't run pnpm install on this machine while the stack runs: app/node_modules",
+    'is shared with the dev server. If you do, run: docker compose restart app'
+  )
 
   outro(outroLines.join('\n'))
 }

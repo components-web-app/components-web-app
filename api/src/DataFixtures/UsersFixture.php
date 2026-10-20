@@ -36,7 +36,7 @@ class UsersFixture extends Fixture
         $this->factory->create(
             $this->adminUsername ?: 'admin',
             $this->adminPassword ?: 'admin',
-            $this->adminEmail ?: 'hello@cwa.rocks',
+            $this->adminEmail ?: 'admin@example.com',
             superAdmin: true,
             overwrite: true,
         );

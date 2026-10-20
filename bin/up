@@ -1,0 +1,157 @@
+#!/bin/sh
+# Starts the dev stack and leaves it ready to sign in to (#206). Safe to run again: every phase is idempotent.
+set -u
+
+cd "$(dirname "$0")/.." || exit 1
+
+usage() {
+  cat <<'EOF'
+Usage: bin/up [--skip-fixtures]
+
+Starts the dev stack, waits until it's healthy, loads the fixtures (--append:
+only what's missing; the admin's password is reset to ADMIN_PASSWORD),
+pre-compiles the first pages and prints where to sign in.
+
+  --skip-fixtures   don't load fixtures (keeps an admin password changed in the UI)
+
+CWA_UP_TIMEOUT sets the whole run's budget in seconds (default 900).
+EOF
+}
+
+SKIP_FIXTURES=false
+for arg in "$@"; do
+  case $arg in
+    --skip-fixtures) SKIP_FIXTURES=true ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "bin/up: unknown option $arg" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+BUDGET=${CWA_UP_TIMEOUT:-900}
+START=$(date +%s)
+PHASE=""
+PHASE_START=$START
+
+if [ -t 1 ]; then BOLD=$(printf '\033[1m'); RED=$(printf '\033[31m'); YELLOW=$(printf '\033[33m'); RESET=$(printf '\033[0m')
+else BOLD=""; RED=""; YELLOW=""; RESET=""; fi
+
+remaining() {
+  r=$((BUDGET - ($(date +%s) - START)))
+  [ "$r" -lt 1 ] && r=1
+  echo "$r"
+}
+
+phase() {
+  PHASE=$1
+  PHASE_START=$(date +%s)
+  printf '\n%s==> %s%s\n' "$BOLD" "$1" "$RESET"
+}
+
+phase_done() {
+  echo "    done in $(($(date +%s) - PHASE_START))s"
+}
+
+warn() {
+  printf '%s    warning: %s%s\n' "$YELLOW" "$*" "$RESET" >&2
+}
+
+# fail <message> [service...]: names the phase, shows each service's last 40 log lines, exits 1.
+fail() {
+  msg=$1
+  shift
+  printf '\n%sbin/up failed at "%s" (after %ss): %s%s\n' "$RED" "$PHASE" "$(($(date +%s) - PHASE_START))" "$msg" "$RESET" >&2
+  for service in "$@"; do
+    printf '\n%s--- last 40 log lines of %s ---%s\n' "$BOLD" "$service" "$RESET" >&2
+    docker compose logs --no-color --tail 40 "$service" >&2
+    echo "    more: docker compose logs -f $service" >&2
+  done
+  echo "Fix it and run bin/up again; finished phases are skipped quickly." >&2
+  exit 1
+}
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "bin/up: docker not found. Install Docker Desktop (or Docker Engine with the compose plugin)." >&2
+  exit 1
+fi
+if ! docker info >/dev/null 2>&1; then
+  echo "bin/up: Docker isn't running: start Docker Desktop (or the Docker daemon) and run bin/up again." >&2
+  exit 1
+fi
+
+phase "Starting the stack (docker compose up -d --wait)"
+echo "    The first run builds the images, installs composer and pnpm dependencies and migrates: several minutes."
+if ! docker compose up -d --wait --wait-timeout "$(remaining)"; then
+  # Services that stopped or aren't healthy; none means the build or create step failed (see above).
+  bad=$(docker compose ps -a --format '{{.Service}} {{.State}} {{.Health}}' \
+    | awk '$2 != "running" || ($3 != "" && $3 != "healthy") { print $1 }' | tr "\n" " ")
+  [ -n "$bad" ] || fail "the images didn't build or the containers didn't start (see the output above)"
+  # shellcheck disable=SC2086
+  fail "not healthy: $bad" $bad
+fi
+phase_done
+
+if [ "$SKIP_FIXTURES" = true ]; then
+  printf '\n%s==> Skipping fixtures (--skip-fixtures)%s\n' "$BOLD" "$RESET"
+else
+  if docker compose exec -T php test -f src/DataFixtures/AppScaffold.php; then
+    phase "Loading fixtures: the admin and the sample pages (--append, only what's missing)"
+  else
+    phase "Loading fixtures: the admin user (--append)"
+  fi
+  # The load ends by flushing the HTTP cache itself, so no separate purge.
+  t=$(remaining)
+  docker compose exec -T php timeout "$t" bin/console doctrine:fixtures:load --append --no-interaction
+  status=$?
+  [ "$status" -eq 124 ] && fail "timed out after ${t}s" php database
+  [ "$status" -eq 0 ] || fail "doctrine:fixtures:load exited $status" php database
+  phase_done
+fi
+
+# BROWSER_SERVER_NAME is the public host (compose default localhost); the published HTTPS port may differ from 443.
+HOST=$(docker compose exec -T php printenv BROWSER_SERVER_NAME 2>/dev/null | tr -d '\r')
+HOST=${HOST:-localhost}
+PORT=$(docker compose port php 443 2>/dev/null | sed 's/.*://')
+ORIGIN="https://$HOST"
+[ -n "$PORT" ] && [ "$PORT" != 443 ] && ORIGIN="$ORIGIN:$PORT"
+
+# One request per page inside the php container, so the first visit isn't a cold Vite compile (non-fatal).
+phase "Pre-compiling / and /login"
+precompiled=true
+for path in / /login; do
+  t=$(remaining)
+  [ "$t" -gt 120 ] && t=120
+  if ! docker compose exec -T php curl -fsSk -o /dev/null --max-time "$t" \
+      --resolve "$HOST:443:127.0.0.1" "https://$HOST$path"; then
+    precompiled=false
+    warn "$path didn't answer within ${t}s; the first visit may be slow (docker compose logs app)"
+  fi
+done
+[ "$precompiled" = true ] && phase_done
+
+# The admin from the same env the fixtures read (api/.env, .env.local, real env), with UsersFixture's defaults.
+ADMIN=$(docker compose exec -T php php -r '
+  require "vendor/autoload.php";
+  (new Symfony\Component\Dotenv\Dotenv())->bootEnv(".env");
+  foreach (["ADMIN_USERNAME" => "admin", "ADMIN_PASSWORD" => "admin"] as $k => $d) {
+    echo ($_SERVER[$k] ?? "") ?: $d, "\n";
+  }' 2>/dev/null | tr -d '\r')
+ADMIN_USER=$(echo "$ADMIN" | sed -n 1p)
+ADMIN_PASS=$(echo "$ADMIN" | sed -n 2p)
+
+printf '\n%sReady in %ss.%s\n\n' "$BOLD" "$(($(date +%s) - START))" "$RESET"
+echo "  Site:      $ORIGIN"
+echo "  Sign in:   $ORIGIN/login"
+if [ "$SKIP_FIXTURES" = true ]; then
+  echo "  Admin:     unchanged (fixtures skipped)"
+else
+  echo "  Admin:     ${ADMIN_USER:-admin} / ${ADMIN_PASS:-admin}"
+fi
+if docker compose config --services 2>/dev/null | grep -qx mailpit; then
+  MAIL_PORT=$(docker compose port mailpit 8025 2>/dev/null | sed 's/.*://')
+  echo "  Emails:    http://localhost:${MAIL_PORT:-8025} (Mailpit catches every email the API sends)"
+fi
+echo
+echo "  Your browser will warn about the certificate: Caddy signs it with its own local CA."
+echo "  Accepting the warning is expected for local development."
+echo
+echo "  Follow the dev server: docker compose logs -f app"
