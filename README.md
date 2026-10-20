@@ -43,3 +43,9 @@ gh repo create my-project \
 ## Documentation
 
 [cwa.rocks](https://cwa.rocks)
+
+## Contributing, security and licence
+
+- Issues and pull requests are welcome on GitHub: see [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
+- Report security problems privately, as [SECURITY.md](SECURITY.md) describes, never in a public issue.
+- Released under the [MIT licence](LICENSE). Projects created with `create-cwa` don't get this licence file: your project's licence is yours to choose.

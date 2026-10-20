@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in the template or create-cwa doesn't work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problems: please don't report them here. See SECURITY.md.
+        Bugs in the API bundle or the Nuxt module belong on those repositories.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. pnpm create cwa my-app
+        2. docker compose up -d
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: template-version
+    attributes:
+      label: Template version
+      description: The template tag or commit, or the create-cwa version you created the project with.
+      placeholder: 2.0.0-alpha.43
+    validations:
+      required: true
+  - type: input
+    id: bundle-version
+    attributes:
+      label: API bundle version
+      description: "`components-web-app/api-components-bundle` in `api/composer.lock`."
+  - type: input
+    id: module-version
+    attributes:
+      label: Nuxt module version
+      description: "`@cwa/nuxt` in `app/pnpm-lock.yaml`."
+  - type: input
+    id: environment
+    attributes:
+      label: Where it runs
+      description: Local Docker (OS and the memory Docker has) or a deploy (GitLab or GitHub, Kubernetes, track).
+      placeholder: macOS 15, Docker Desktop with 8 GB
+  - type: textarea
+    id: first-hour
+    attributes:
+      label: Setting up a new project?
+      description: If this happened while setting up, which step you reached and roughly how long it had taken.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant output, e.g. `docker compose logs php app`. Remove secrets and personal data first.
+      render: text

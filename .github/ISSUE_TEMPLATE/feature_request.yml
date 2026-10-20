@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a change or an addition to the template or create-cwa.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you're trying to do, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like
+      description: The change you have in mind, and any alternatives you considered.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Links, examples, or whether it belongs in the API bundle or the Nuxt module instead.
