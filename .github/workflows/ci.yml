@@ -154,6 +154,8 @@ jobs:
         run: sh bin/test/api-warm-surge.sh
       - name: Check a slow cold render is served and cached in otter, not 504'd at 10s (#170)
         run: sh bin/test/souin-backend-timeout.sh
+      - name: Check the deploy's migrations plan, backup and maintenance window run in order (#180)
+        run: sh bin/test/database-guard.sh
 
   functional-tests:
     name: Functional Tests

@@ -10,6 +10,13 @@ on:
         options:
           - canary
           - production
+          - migrations-plan
+      # For this run only, never a repository variable (#180): maintenance on while pending migrations run.
+      maintenance_during_migrations:
+        description: 'Maintenance mode while pending migrations run (production)'
+        required: false
+        type: boolean
+        default: false
 
 defaults:
   run:
@@ -76,6 +83,8 @@ jobs:
       CWA_CI_ORPHAN_SCAN_SCHEDULE: ${{ vars.CWA_CI_ORPHAN_SCAN_SCHEDULE }}
       CWA_CI_ORPHAN_SCAN_TIMEZONE: ${{ vars.CWA_CI_ORPHAN_SCAN_TIMEZONE }}
       CWA_CI_FIXTURES_PURGE: ${{ vars.CWA_CI_FIXTURES_PURGE }}
+      # Set here, so a repository variable of the same name is never exported (#180).
+      CWA_CI_MAINTENANCE_DURING_MIGRATIONS: ${{ inputs.maintenance_during_migrations && 'true' || '' }}
       # Media storage. Without these three a GitHub deploy falls back to the
       # `no-gcloud-bucket` placeholder. GitLab exports CI/CD variables to the job
       # automatically; GitHub Actions does not, so each one must be mapped here.
@@ -149,10 +158,25 @@ jobs:
           create_docker_pull_secret
           deploy
           purge_rendered_html
+          # Ends a maintenance window (#180); nothing to do without one.
+          finish_maintenance_window
           # Non-fatal by design; see the comment in the canary step above (#80).
           delete canary
           delete staging
           persist_environment_url
+      # A failed window leaves maintenance on: say what to do (#180).
+      - name: Maintenance mode is still on
+        if: failure() && inputs.action == 'production'
+        run: '[ ! -f maintenance-window.txt ] || { cat maintenance-window.txt; echo "::error title=Maintenance mode is still on::see the step log"; }'
+      # The pending migrations and their SQL for production, read-only, with main's php image (#180).
+      - name: Migrations plan
+        if: inputs.action == 'migrations-plan'
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          helm_init
+          apply_kube_context
+          migrations_plan stable
       # Off unless CWA_CI_FIXTURES_ENABLED is "true". See load_fixtures.
       - name: Load fixtures
         if: inputs.action == 'production' && vars.CWA_CI_FIXTURES_ENABLED == 'true'

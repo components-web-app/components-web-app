@@ -105,6 +105,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/api-scaling-config.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/api-warm-surge.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-backend-timeout.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/database-guard.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml
@@ -270,9 +271,14 @@ production:
     - create_docker_pull_secret
     - deploy
     - purge_rendered_html
+    # Ends a CWA_CI_MAINTENANCE_DURING_MIGRATIONS window (#180); nothing to do without one.
+    - finish_maintenance_window
     - delete canary
     - delete staging
     - persist_environment_url
+  # A failed window leaves maintenance on: repeat what to do at the end of the log (#180).
+  after_script:
+    - '[ ! -f maintenance-window.txt ] || cat maintenance-window.txt'
   environment:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
@@ -302,6 +308,29 @@ production:
   except:
     variables:
       - $CWA_CI_PRODUCTION_DISABLED == "true"
+
+# The pending migrations and their SQL for production, read-only, with this pipeline's php image (#180). Read it before
+# pressing the production deploy. CWA_CI_MIGRATIONS_PLAN_PRODUCTION="false" removes it; a failure never blocks the deploy.
+migrations plan production:
+  stage: production
+  needs:
+    - job: 'build api'
+      optional: true
+    - job: 'staging'
+      optional: true
+  allow_failure: true
+  environment:
+    name: production
+    url: https://$KUBE_INGRESS_BASE_DOMAIN
+    action: prepare
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_MIGRATIONS_PLAN_PRODUCTION != "false"'
+  script:
+    - install_dependencies
+    - helm_init
+    - apply_kube_context
+    - set_namespace
+    - migrations_plan stable
 
 # After each deploy: generate missing image variants in their own Jobs (#152, #153), then warm https://$DOMAIN (#80, #132).
 # One job, so the warm doesn't wait for another runner (#160); each half keeps its own switch. allow_failure: never fails a live deploy.

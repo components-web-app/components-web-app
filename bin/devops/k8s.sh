@@ -695,7 +695,7 @@ SITE_ENV_RESERVED_API="
   MAILER_DSN MAILER_EMAIL MERCURE_CORS_ORIGIN MERCURE_EXTRA_DIRECTIVES
   MERCURE_HUB_UPSTREAM MERCURE_JWT_SECRET MERCURE_PUBLIC_URL MERCURE_PUBLISHER_JWT_ALG
   MERCURE_PUBLISHER_JWT_KEY MERCURE_SUBSCRIBER_JWT_ALG MERCURE_SUBSCRIBER_JWT_KEY
-  MERCURE_URL RESET_DATABASE SERVER_NAME TRUSTED_HOSTS TRUSTED_PROXIES
+  MERCURE_URL RESET_DATABASE SERVER_NAME SKIP_MIGRATIONS TRUSTED_HOSTS TRUSTED_PROXIES
 "
 SITE_ENV_RESERVED_PWA="
   NUXT_CWA_API_URL NUXT_PUBLIC_CWA_API_URL NUXT_PUBLIC_CWA_API_URL_BROWSER NUXT_SITE_URL
@@ -1101,6 +1101,8 @@ deploy() {
   fi
   # Again, now that deploy_secrets has set NUXT_APP_SECRET; the first run already reported.
   site_env_yaml=$(site_env_values "$environment_name" 2>/dev/null) || return 1
+  # Before the images are promoted: pending migrations' backup, migrate Job and maintenance window (#180).
+  database_guard "$track" || return 1
   promote_images "$track" || return 1
   ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
 
@@ -1844,6 +1846,264 @@ performance_audit() {
     fi
     return 1
   fi
+}
+
+# --- Migrations before the rollout (#180): plan, backup, migrate Job and the opt-in maintenance window ---
+# Settings (track names: PRODUCTION for stable, else the track upper-cased; staging runs under GitLab's production environment):
+#   CWA_CI_MIGRATIONS_PLAN_PRODUCTION  the read-only `migrations plan production` CI job, on unless "false".
+#   CWA_CI_DATABASE_BACKUP_<TRACK>     "true": pg_dump to CWA_CI_DATABASE_BACKUP_BUCKET before pending migrations.
+#   CWA_CI_MIGRATIONS_JOB_<TRACK>      "true": migrate in a one-off Job before helm, not in the new pod's entrypoint.
+#   CWA_CI_MAINTENANCE_DURING_MIGRATIONS  "true" for one production pipeline only: maintenance on around the migration.
+
+database_track_name() {
+  case "${1-stable}" in
+    stable) echo PRODUCTION ;;
+    *) printf '%s' "$1" | tr '[:lower:]' '[:upper:]' ;;
+  esac
+}
+
+database_release_name() {
+  if [ "${1-stable}" = "stable" ]; then printf '%s' "$RELEASE"; else printf '%s' "$RELEASE-$1"; fi
+}
+
+# database_track_switch <SETTING_PREFIX> <track>: true when CWA_CI_<SETTING_PREFIX>_<TRACK> is "true".
+database_track_switch() {
+  local value
+  eval "value=\${CWA_CI_$1_$(database_track_name "$2")-}"
+  [ "$value" = "true" ]
+}
+
+# The new php image for the database Jobs: this pipeline's build (or :$TAG's digest), never promoted here.
+database_job_image() {
+  promote_image "$PHP_REPOSITORY" "${CWA_CI_PHP_IMAGE_DIGEST:-}" ""
+}
+
+# database_job <track> <task> <image tag> [helm --set ...]: renders templates/database-job.yaml from the live release's
+# values with the new image, runs it and keeps its log in DATABASE_JOB_LOG. 0 done, 1 failed, 2 no release, 124 timed out.
+database_job() {
+  local track="$1" task="$2" tag="$3" name job values manifest state waited=0 deadline="${CWA_CI_DATABASE_JOB_TIMEOUT:-1800}"
+  local poll="${CWA_CI_DATABASE_JOB_POLL:-5}"
+  shift 3
+  name=$(database_release_name "$track")
+  job="$(printf '%s' "$name" | cut -c1-40)-db-${task}-$(date +%s)"
+  values=$(mktemp)
+  if ! helm get values "$name" -n "$KUBE_NAMESPACE" -o yaml > "$values" 2>"$values.err"; then
+    case "$(cat "$values.err")" in
+      *"not found"*) rm -f "$values" "$values.err"; return 2 ;;
+    esac
+    echo "❌ Could not read release '$name': $(cat "$values.err")" >&2
+    rm -f "$values" "$values.err"
+    return 1
+  fi
+  rm -f "$values.err"
+  manifest=$(mktemp)
+  # The values hold the release's secrets: removed straight after the render.
+  if ! helm template "$name" ./helm/cwa -n "$KUBE_NAMESPACE" -f "$values" \
+      --set-string php.image.tag="$tag" --set-string databaseJob.task="$task" --set-string databaseJob.name="$job" \
+      --set databaseJob.activeDeadlineSeconds="$deadline" "$@" \
+      --show-only templates/database-job.yaml > "$manifest"; then
+    rm -f "$values" "$manifest"
+    echo "❌ Could not render the database $task Job." >&2
+    return 1
+  fi
+  rm -f "$values"
+  echo "Database $task: Job $job (php $PHP_REPOSITORY:$tag)..."
+  if ! kubectl create -n "$KUBE_NAMESPACE" -f "$manifest" >/dev/null; then
+    rm -f "$manifest"
+    echo "❌ Could not create the database $task Job." >&2
+    return 1
+  fi
+  rm -f "$manifest"
+  state=""
+  while [ -z "$state" ] && [ "$waited" -le $(( deadline + 120 )) ]; do
+    state=$(kubectl get job -n "$KUBE_NAMESPACE" "$job" -o jsonpath='{.status.succeeded}{.status.failed}' 2>/dev/null || true)
+    [ -n "$state" ] && break
+    sleep "$poll"
+    waited=$(( waited + (poll > 0 ? poll : 1) ))
+  done
+  DATABASE_JOB_LOG=$(kubectl logs -n "$KUBE_NAMESPACE" "job/$job" --all-containers=true 2>&1 || true)
+  printf '%s\n' "$DATABASE_JOB_LOG" | sed 's/^/  /'
+  [ -n "$state" ] || { echo "❌ Job $job did not finish (not scheduled, or past its deadline): kubectl describe job $job -n $KUBE_NAMESPACE" >&2; return 124; }
+  [ "$(kubectl get job -n "$KUBE_NAMESPACE" "$job" -o jsonpath='{.status.succeeded}' 2>/dev/null)" = "1" ] || return 1
+}
+
+# A marker line (NAME=value) from the last database Job's log.
+database_job_marker() {
+  printf '%s\n' "${DATABASE_JOB_LOG:-}" | sed -n "s/^.*$1=\([^ ]*\)\$/\1/p" | tail -1
+}
+
+# migrations_plan <track> [image tag]: the pending migrations and their SQL, read-only, with the new image. Sets
+# MIGRATIONS_PENDING (empty when the release isn't deployed yet) and DATABASE_SERVER_VERSION. Pending isn't a failure.
+migrations_plan() {
+  local track="${1-stable}" tag="${2:-}" status=0
+  MIGRATIONS_PENDING="" DATABASE_SERVER_VERSION=""
+  [ -n "$tag" ] || tag=$(database_job_image) || { echo "❌ No php image for the migrations plan." >&2; return 1; }
+  database_job "$track" plan "$tag" || status=$?
+  case "$status" in
+    0) ;;
+    2) echo "Migrations plan: release '$(database_release_name "$track")' isn't deployed yet, so its first deploy creates the schema."; return 0 ;;
+    *)
+      echo "!!!! MIGRATIONS PLAN FAILED (exit $status): see the log above. Nothing was changed. !!!!"
+      [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Migrations plan failed::see the step log"
+      return 1 ;;
+  esac
+  MIGRATIONS_PENDING=$(database_job_marker CWA_MIGRATIONS_PENDING)
+  DATABASE_SERVER_VERSION=$(database_job_marker CWA_DATABASE_SERVER_VERSION)
+  case "$MIGRATIONS_PENDING" in
+    ''|*[!0-9]*) echo "!!!! MIGRATIONS PLAN FAILED: the Job printed no CWA_MIGRATIONS_PENDING line. !!!!"; return 1 ;;
+    0) echo "Migrations plan: the database of '$(database_release_name "$track")' is up to date; this deploy migrates nothing." ;;
+    *)
+      echo "Migrations plan: ${MIGRATIONS_PENDING} migration(s) pending for '$(database_release_name "$track")' (PostgreSQL ${DATABASE_SERVER_VERSION}); their SQL is above."
+      [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::notice title=Migrations pending::${MIGRATIONS_PENDING} migration(s) will run on deploy"
+      ;;
+  esac
+  return 0
+}
+
+# The bucket and path for track $1's backups: CWA_CI_DATABASE_BACKUP_BUCKET, under <GCLOUD_PATH_PREFIX>database/<release>/.
+database_backup_location() {
+  local prefix
+  if [ -z "${CWA_CI_DATABASE_BACKUP_BUCKET:-}" ]; then
+    echo "CWA_CI_DATABASE_BACKUP_$(database_track_name "$1")=true needs CWA_CI_DATABASE_BACKUP_BUCKET, a private bucket." >&2
+    return 1
+  fi
+  if [ "$CWA_CI_DATABASE_BACKUP_BUCKET" = "${GCLOUD_BUCKET:-}" ]; then
+    echo "CWA_CI_DATABASE_BACKUP_BUCKET can't be the media bucket (GCLOUD_BUCKET): media is public, and the orphan scan would list the dumps." >&2
+    return 1
+  fi
+  prefix=$(gcloud_path_prefix "$1") || return 1
+  printf '%s %sdatabase/%s/' "$CWA_CI_DATABASE_BACKUP_BUCKET" "$prefix" "$(database_release_name "$1")"
+}
+
+# pg_dump of track $1's database to its backup bucket, keeping CWA_CI_DATABASE_BACKUP_KEEP (5). Sets DATABASE_BACKUP.
+database_backup() {
+  local track="${1-stable}" tag="$2" location bucket directory major image label status=0
+  DATABASE_BACKUP=""
+  location=$(database_backup_location "$track") || return 1
+  bucket="${location%% *}" directory="${location#* }"
+  major="${DATABASE_SERVER_VERSION%%[!0-9]*}"
+  image="${CWA_CI_DATABASE_BACKUP_IMAGE:-postgres:${major:-16}-alpine}"
+  label=$(printf '%s' "${CI_COMMIT_SHORT_SHA:-${CI_COMMIT_SHA:-deploy}}" | cut -c1-12)
+  database_job "$track" backup "$tag" \
+    --set-string databaseJob.backup.image="$image" --set-string databaseJob.backup.bucket="$bucket" \
+    --set-string databaseJob.backup.directory="$directory" --set-string databaseJob.backup.label="$label" \
+    --set databaseJob.backup.keep="${CWA_CI_DATABASE_BACKUP_KEEP:-5}" || status=$?
+  DATABASE_BACKUP=$(database_job_marker CWA_DATABASE_BACKUP)
+  if [ "$status" -ne 0 ] || [ -z "$DATABASE_BACKUP" ]; then
+    echo "!!!! DATABASE BACKUP FAILED (exit $status): the deploy stopped before migrating; the live site is unchanged. !!!!"
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Database backup failed::the deploy stopped before migrating"
+    return 1
+  fi
+  echo "Database backup: $DATABASE_BACKUP"
+}
+
+# Runs `silverback:api-components:maintenance <on|off|status>` in release $1's API pod.
+maintenance_command() {
+  local deploy
+  deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" -o name | sed -n 1p)
+  [ -n "$deploy" ] || { echo "No API deployment for release '$1'." >&2; return 1; }
+  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" -- php bin/console silverback:api-components:maintenance "$2"
+}
+
+# What to do while maintenance is left on; the deploy job's after_script prints it if the job fails (#180).
+MAINTENANCE_NOTICE=maintenance-window.txt
+
+write_maintenance_notice() {
+  local name="$1"
+  {
+    echo "!!!! MAINTENANCE MODE IS ON for '$name': visitors see the maintenance page (CWA_CI_MAINTENANCE_DURING_MIGRATIONS). !!!!"
+    if [ -n "${DATABASE_BACKUP:-}" ]; then
+      echo "The backup taken before migrating: $DATABASE_BACKUP"
+      echo "A failed migration is rolled back (one transaction), so restoring is rarely needed. To restore it (replaces the database):"
+      echo "  gcloud storage cp $DATABASE_BACKUP database.dump"
+      if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ]; then
+        echo "  pg_restore --clean --if-exists --no-owner --dbname='postgresql://<user>:<password>@<host>/<database>' database.dump"
+      else
+        echo "  kubectl exec -i -n $KUBE_NAMESPACE $name-postgresql-0 -- sh -c 'PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_restore --clean --if-exists --no-owner -h 127.0.0.1 -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DATABASE\"' < database.dump"
+      fi
+    fi
+    echo "Fix forward and deploy again (the window resumes and ends), or turn it off by hand:"
+    echo "  kubectl exec -n $KUBE_NAMESPACE deploy/$(cwa_fullname "$name") -- php bin/console silverback:api-components:maintenance off"
+  } > "$MAINTENANCE_NOTICE"
+}
+
+database_guard_failed() {
+  [ -f "$MAINTENANCE_NOTICE" ] && cat "$MAINTENANCE_NOTICE"
+  return 1
+}
+
+# Before helm (in deploy): when migrations are pending, the opt-in maintenance window, the backup and the migrate Job.
+# Off unless one of the switches above is on. Any failure stops the deploy; maintenance is then left on.
+database_guard() {
+  local track="${1-stable}" name maintenance=false backup=false migrate=false tag state status=0
+  name=$(database_release_name "$track")
+  rm -f "$MAINTENANCE_NOTICE"
+  if [ "${CWA_CI_MAINTENANCE_DURING_MIGRATIONS:-}" = "true" ]; then
+    if [ "$track" = "stable" ]; then maintenance=true; migrate=true
+    else echo "CWA_CI_MAINTENANCE_DURING_MIGRATIONS is for production only: ignored for the $track deploy."; fi
+  fi
+  database_track_switch DATABASE_BACKUP "$track" && backup=true
+  database_track_switch MIGRATIONS_JOB "$track" && migrate=true
+  [ "$maintenance$backup$migrate" != "falsefalsefalse" ] || return 0
+  if [ "$backup" = "true" ]; then database_backup_location "$track" >/dev/null || return 1; fi
+
+  tag=$(database_job_image) || { echo "❌ No php image for the database Jobs." >&2; return 1; }
+  migrations_plan "$track" "$tag" || return 1
+  [ -n "$MIGRATIONS_PENDING" ] || return 0
+
+  if [ "$maintenance" = "true" ]; then
+    # Already on: a retry of this window, which this deploy now finishes.
+    state=$(maintenance_command "$name" status 2>&1) || {
+      echo "❌ The live API can't run silverback:api-components:maintenance, so the window can't start: $state" >&2
+      echo "   Deploy once without CWA_CI_MAINTENANCE_DURING_MIGRATIONS (or with an API image that has the command)." >&2
+      return 1
+    }
+    if [ "$MIGRATIONS_PENDING" = "0" ]; then
+      if printf '%s\n' "$state" | grep -qw on; then
+        echo "Maintenance mode is still on from an earlier attempt: this deploy turns it off after the rollout."
+        write_maintenance_notice "$name"
+      fi
+      return 0
+    fi
+    write_maintenance_notice "$name"
+    echo "Maintenance on for '$name' while ${MIGRATIONS_PENDING} migration(s) run..."
+    maintenance_command "$name" on || { echo "❌ Could not turn maintenance on." >&2; database_guard_failed; return 1; }
+  fi
+  [ "$MIGRATIONS_PENDING" != "0" ] || return 0
+
+  if [ "$backup" = "true" ]; then
+    database_backup "$track" "$tag" || { database_guard_failed; return 1; }
+    [ "$maintenance" = "false" ] || write_maintenance_notice "$name"
+  fi
+  if [ "$migrate" = "true" ]; then
+    database_job "$track" migrate "$tag" || status=$?
+    if [ "$status" -ne 0 ]; then
+      echo "!!!! MIGRATIONS FAILED (exit $status): the deploy stopped before the rollout; the old pods still serve. !!!!"
+      [ -z "${DATABASE_BACKUP:-}" ] || echo "The backup taken before migrating: $DATABASE_BACKUP"
+      [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Migrations failed::the deploy stopped before the rollout"
+      database_guard_failed
+      return 1
+    fi
+    echo "Migrations done before the rollout."
+  fi
+}
+
+# After the rollout and purge_rendered_html: ends a maintenance window database_guard started. Flushes and warms the
+# HTTP cache, then turns maintenance off. Nothing to do without one.
+finish_maintenance_window() {
+  local track="${1-stable}" name api_deploy
+  [ -f "$MAINTENANCE_NOTICE" ] || return 0
+  name=$(database_release_name "$track")
+  api_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$name" -o name | sed -n 1p)
+  [ -n "$api_deploy" ] || { echo "No API deployment for release '$name'." >&2; database_guard_failed; return 1; }
+  kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s || { database_guard_failed; return 1; }
+  echo "Flushing the HTTP cache before maintenance ends..."
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" -- php bin/console silverback:api-components:purge-http-cache \
+    || { database_guard_failed; return 1; }
+  warm_api_cache_for "$track" "$api_deploy" "$name"
+  maintenance_command "$name" off || { echo "❌ Could not turn maintenance off." >&2; database_guard_failed; return 1; }
+  rm -f "$MAINTENANCE_NOTICE"
+  echo "Maintenance mode is off."
 }
 
 # Runs in the pod, so the guard checks the prefix the pod really has: an app deployed before #166 has none.
