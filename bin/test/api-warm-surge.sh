@@ -27,6 +27,7 @@ case "$*" in
   *"get deploy"*"name=cwa-pwa,"*) echo "deployment.apps/rel-cwa-pwa" ;;
   *"get deploy"*"name=cwa,"*) echo "deployment.apps/rel-cwa" ;;
   *"get deployment.apps/rel-cwa"*readyReplicas*) echo 4 ;;
+  *"get pods"*"{{if .metadata.deletionTimestamp}}"*) ;;
   *"get pods"*"name=cwa,"*) echo "pod/rel-cwa-new" ;;
 esac
 exit 0
@@ -66,15 +67,20 @@ order() {
 }
 
 run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=2"
-expect surge '"minReplicas":4'
-expect surge '"minReplicas":2'
+expect surge '"minReplicas":4,"maxReplicas":4'
+expect surge '"minReplicas":2,"maxReplicas":3'
 expect surge 'purge-http-cache'
 expect surge 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-http-cache'
 refuse surge 'exec -n ns deployment.apps/rel-cwa '
 expect surge '--base-url=http://rel-cwa --concurrency=8'
 order surge '"minReplicas":4' 'purge-http-cache'
+order surge 'deletionTimestamp' 'purge-http-cache'
 order surge 'purge-http-cache' '--base-url=http://rel-cwa'
 order surge '--accept-encoding=br' '"minReplicas":2'
+
+run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_AUTOSCALE_MAX=6 CWA_CI_API_WARM_SURGE=2"
+expect surge-under-max '"minReplicas":4,"maxReplicas":6'
+expect surge-under-max '"minReplicas":2,"maxReplicas":6'
 
 run "CWA_CI_API_SCALED_PRODUCTION=true"
 expect scaled 'purge-http-cache'

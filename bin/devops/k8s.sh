@@ -1349,6 +1349,20 @@ api_ready_pod() {
   printf '%s' "${pod:-$2}"
 }
 
+# Waits (up to 120s) until no API pod is terminating. Right after a rollout the service still sends some connections to
+# the old pods while they stop, and a warm's requests on those fail (8 of 27 on preview's first surge deploy, #85).
+api_wait_old_pods_gone() {
+  local waited=0 old
+  while [ "$waited" -lt 120 ]; do
+    old=$(kubectl get pods -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" \
+      -o go-template='{{range .items}}{{if .metadata.deletionTimestamp}}x{{end}}{{end}}' 2>/dev/null)
+    [ -z "$old" ] && return 0
+    sleep 3
+    waited=$((waited + 3))
+  done
+  echo "WARNING: old API pods were still stopping after 120s; warming anyway." >&2
+}
+
 load_fixtures() {
   local track="${1-stable}"
   local release_name="$RELEASE"
@@ -1419,6 +1433,7 @@ purge_rendered_html() {
   kubectl rollout status "$pwa_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
   echo "Waiting for the API rollout..."
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
+  api_wait_old_pods_gone "$release_name"
   local api_pod
   api_pod=$(api_ready_pod "$release_name" "$api_deploy")
 
@@ -1494,8 +1509,11 @@ api_warm_surge_start() {
   case "$surge" in ''|*[!0-9]*) echo "WARNING: CWA_CI_API_WARM_SURGE is '$surge', not a number; no surge." >&2; return 0 ;; esac
   [ "$surge" -gt 0 ] || return 0
   want=$((API_AUTOSCALE_MIN + surge))
+  # The maximum rises with it when needed: Kubernetes refuses a minimum above the maximum.
+  local max="$API_AUTOSCALE_MAX"
+  [ "$want" -le "$max" ] || max="$want"
   echo "Warm surge: raising the API autoscaler's minimum to ${want} pods for the warm..."
-  kubectl patch hpa "$hpa" -n "$KUBE_NAMESPACE" --type merge -p "{\"spec\":{\"minReplicas\":${want}}}" >/dev/null \
+  kubectl patch hpa "$hpa" -n "$KUBE_NAMESPACE" --type merge -p "{\"spec\":{\"minReplicas\":${want},\"maxReplicas\":${max}}}" >/dev/null \
     || { echo "WARNING: could not raise the autoscaler's minimum; warming on the pods there are." >&2; return 0; }
   while [ "$waited" -lt "$timeout" ]; do
     ready=$(kubectl get "$api_deploy" -n "$KUBE_NAMESPACE" -o jsonpath='{.status.readyReplicas}' 2>/dev/null)
@@ -1510,7 +1528,7 @@ api_warm_surge_start() {
 api_warm_surge_end() {
   local surge="${CWA_CI_API_WARM_SURGE:-0}"
   case "$surge" in ''|*[!0-9]*|0) return 0 ;; esac
-  kubectl patch hpa "$1" -n "$KUBE_NAMESPACE" --type merge -p "{\"spec\":{\"minReplicas\":${API_AUTOSCALE_MIN}}}" >/dev/null \
+  kubectl patch hpa "$1" -n "$KUBE_NAMESPACE" --type merge -p "{\"spec\":{\"minReplicas\":${API_AUTOSCALE_MIN},\"maxReplicas\":${API_AUTOSCALE_MAX}}}" >/dev/null \
     && echo "Warm surge: the autoscaler's minimum is back to ${API_AUTOSCALE_MIN}." \
     || echo "WARNING: could not put the autoscaler's minimum back to ${API_AUTOSCALE_MIN}; the next deploy resets it." >&2
 }
