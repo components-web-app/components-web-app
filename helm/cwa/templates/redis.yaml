@@ -1,0 +1,112 @@
+{{- if include "cwa.scaled" . }}
+{{- $fullName := include "cwa.fullname" . }}
+{{- $maxMemory := int .Values.scaled.redis.maxMemoryMi }}
+# This release's cache store in scaled mode (#85): no disk (a lost cache only means a cold one), and volatile-lru,
+# because Souin's tag index has no TTL and must never be evicted.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullName }}-redis
+  labels:
+    {{- include "cwa.redisLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cwa.name" . }}-redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        # One Redis: stop the cluster autoscaler evicting it to consolidate nodes.
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app.kubernetes.io/name: {{ include "cwa.name" . }}-redis
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.scaled.redis.image | quote }}
+          args:
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            - --maxmemory
+            - {{ printf "%dmb" $maxMemory | quote }}
+            - --maxmemory-policy
+            - volatile-lru
+            - --save
+            - ""
+            - --appendonly
+            - "no"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}
+                  key: redis-password
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: redis
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: redis
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: {{ .Values.scaled.redis.cpuRequest | quote }}
+              memory: {{ printf "%dMi" (add (div (mul $maxMemory 14) 10) 16) | quote }}
+            limits:
+              memory: {{ printf "%dMi" (add (div (mul $maxMemory 14) 10) 16) | quote }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullName }}-redis
+  labels:
+    {{- include "cwa.redisLabels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+  selector:
+    app.kubernetes.io/name: {{ include "cwa.name" . }}-redis
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+# Only this release's API pods reach Redis. Enforced only where the cluster enforces NetworkPolicy; the password
+# protects it either way.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullName }}-redis
+  labels:
+    {{- include "cwa.redisLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cwa.name" . }}-redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "cwa.selectorLabels" . | nindent 14 }}
+      ports:
+        - port: 6379
+          protocol: TCP
+{{- end }}

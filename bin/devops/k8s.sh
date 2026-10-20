@@ -952,6 +952,79 @@ check_php_memory_budget() {
   echo "php memory budget: ${workers} x ${worker}Mi + ${headroom}Mi imagine + ${reserved}Mi reserved = ${php}Mi of ${limit}Mi; Go gets ${go}Mi."
 }
 
+# Scaled mode (#85): several API pods sharing this release's Redis as the cache. One switch per track, off unless
+# "true": CWA_CI_API_SCALED_PRODUCTION (stable), _STAGING, _CANARY, _REVIEW. Per-track names, because the staging
+# job runs under GitLab's production environment.
+api_scaled() {
+  local value
+  case "${1-stable}" in
+    stable) value="${CWA_CI_API_SCALED_PRODUCTION:-}" ;;
+    staging) value="${CWA_CI_API_SCALED_STAGING:-}" ;;
+    canary) value="${CWA_CI_API_SCALED_CANARY:-}" ;;
+    *) value="${CWA_CI_API_SCALED_REVIEW:-}" ;;
+  esac
+  [ "$value" = "true" ]
+}
+
+api_scaled_track_name() {
+  case "${1-stable}" in
+    stable) echo PRODUCTION ;;
+    staging) echo STAGING ;;
+    canary) echo CANARY ;;
+    *) echo REVIEW ;;
+  esac
+}
+
+# Sets API_AUTOSCALE_MIN, API_AUTOSCALE_MAX and API_REDIS_MEMORY_MIB for the chart. Fails before the cluster is touched
+# on more than one API pod without scaled mode (a second pod's cache is never purged), or a setting scaled mode can't use.
+check_api_scaling() {
+  local track="${1-stable}" bad="" count="${CWA_CI_API_REPLICA_COUNT:-1}" memory="${CWA_CI_API_REDIS_MEMORY:-256Mi}"
+  if api_scaled "$track"; then
+    API_AUTOSCALE_MIN="${CWA_CI_API_AUTOSCALE_MIN:-2}"
+    API_AUTOSCALE_MAX="${CWA_CI_API_AUTOSCALE_MAX:-3}"
+    API_REDIS_MEMORY_MIB=$(memory_mib "$memory")
+    [ -n "$API_REDIS_MEMORY_MIB" ] || bad="${bad}  CWA_CI_API_REDIS_MEMORY is '$memory'; use Mi or Gi, such as 256Mi
+"
+    [ "${CWA_CI_API_AUTOSCALE:-true}" = "true" ] || bad="${bad}  CWA_CI_API_AUTOSCALE is '${CWA_CI_API_AUTOSCALE}': scaled mode runs the API under its autoscaler
+"
+    [ "${CWA_CI_RESET_DATABASE:-false}" != "true" ] || bad="${bad}  CWA_CI_RESET_DATABASE=true would drop the schema each time an API pod starts
+"
+    [ -z "${CWA_API_CADDY_CACHE_STORAGE:-}" ] || bad="${bad}  CWA_API_CADDY_CACHE_STORAGE is set: in scaled mode the store is this release's Redis
+"
+  else
+    API_AUTOSCALE_MIN="${CWA_CI_API_AUTOSCALE_MIN:-1}"
+    API_AUTOSCALE_MAX="${CWA_CI_API_AUTOSCALE_MAX:-1}"
+    API_REDIS_MEMORY_MIB=256
+    case "${CWA_API_CADDY_CACHE_STORAGE:-}" in
+      *redis*) bad="${bad}  CWA_API_CADDY_CACHE_STORAGE names redis: use scaled mode, which runs and configures one
+" ;;
+    esac
+  fi
+  case "$API_AUTOSCALE_MIN$API_AUTOSCALE_MAX$count" in
+    *[!0-9]*) bad="${bad}  CWA_CI_API_AUTOSCALE_MIN, _MAX and CWA_CI_API_REPLICA_COUNT must be whole numbers
+" ;;
+    *)
+      if ! api_scaled "$track"; then
+        if [ "$API_AUTOSCALE_MIN" -gt 1 ] || [ "$API_AUTOSCALE_MAX" -gt 1 ] || [ "$count" -gt 1 ]; then
+          bad="${bad}  more than one API pod (min $API_AUTOSCALE_MIN, max $API_AUTOSCALE_MAX, replicas $count) needs scaled mode: set CWA_CI_API_SCALED_$(api_scaled_track_name "$track")=true
+"
+        fi
+      elif [ "$API_AUTOSCALE_MIN" -lt 1 ] || [ "$API_AUTOSCALE_MIN" -gt "$API_AUTOSCALE_MAX" ]; then
+        bad="${bad}  the API autoscaler's min ($API_AUTOSCALE_MIN) must be at least 1 and no more than its max ($API_AUTOSCALE_MAX)
+"
+      fi
+      ;;
+  esac
+  if [ -n "$bad" ]; then
+    echo "The API's scaling settings can't be deployed:" >&2
+    printf '%s' "$bad" >&2
+    return 1
+  fi
+  if api_scaled "$track"; then
+    echo "Scaled mode: ${API_AUTOSCALE_MIN} to ${API_AUTOSCALE_MAX} API pods sharing this release's Redis (${API_REDIS_MEMORY_MIB}Mi)."
+  fi
+}
+
 # A review app stores under <GCLOUD_PATH_PREFIX>review/<slug>/, never in another app's path of a shared bucket (#166).
 # Tidies GCLOUD_PATH_PREFIX exactly as php's PathPrefixEnvVarProcessor::normalise; bin/test/storage-prefix-parity.sh checks it (#168).
 gcloud_path_prefix() {
@@ -1000,6 +1073,7 @@ deploy() {
 	environment_name=$(cwa_environment_name "$track") || return 1
 	site_env_yaml=$(site_env_values "$environment_name") || return 1
 	check_php_memory_budget || return 1
+	check_api_scaling "$track" || return 1
 	gcloud_prefix=$(gcloud_path_prefix "$track") || return 1
 	name="$RELEASE"
 	TLS_SECRET_NAME_SCOPED="$CWA_CI_TLS_SECRET_NAME-$track"
@@ -1015,6 +1089,11 @@ deploy() {
 
   check_postgres_persistence "$name" || return 1
   deploy_secrets "$name" || return 1
+  # Scaled mode's Redis password: a CI variable, else the deployed one, else a new one, so pods keep their cache.
+  if api_scaled "$track" && [ -z "${REDIS_PASSWORD:-}" ]; then
+    REDIS_PASSWORD=$(deployed_value "$(cwa_fullname "$name")" redis-password)
+    [ -n "${REDIS_PASSWORD}" ] || { echo "Generate REDIS_PASSWORD..."; REDIS_PASSWORD="$(rand_str)"; }
+  fi
   # Again, now that deploy_secrets has set NUXT_APP_SECRET; the first run already reported.
   site_env_yaml=$(site_env_values "$environment_name" 2>/dev/null) || return 1
   promote_images "$track" || return 1
@@ -1195,10 +1274,15 @@ podAnnotations:
 # the autoscaling comment in helm/cwa/values.yaml.
 autoscaling:
   enabled: ${CWA_CI_API_AUTOSCALE:-"true"}
-  minReplicas: ${CWA_CI_API_AUTOSCALE_MIN:-"1"}
-  maxReplicas: ${CWA_CI_API_AUTOSCALE_MAX:-"1"}
+  minReplicas: ${API_AUTOSCALE_MIN}
+  maxReplicas: ${API_AUTOSCALE_MAX}
   targetCPUUtilizationPercentage: ${CWA_CI_API_AUTOSCALE_CPU_PERCENT:-"90"}
   targetMemoryUtilizationPercentage: ${CWA_CI_API_AUTOSCALE_MEMORY_PERCENT:-"90"}
+scaled:
+  enabled: $(api_scaled "$track" && echo true || echo false)
+  redis:
+    password: "${REDIS_PASSWORD:-}"
+    maxMemoryMi: ${API_REDIS_MEMORY_MIB}
 cronjobs:
   orphanScan:
     enabled: ${CWA_CI_ORPHAN_SCAN:-$orphan_scan_default}
@@ -1318,10 +1402,18 @@ purge_rendered_html() {
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
 
   # With Cloudflare (#108) the edge also holds /_api responses, so flush everything, which purges the whole zone.
-  # Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone too.
+  # Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone too. In scaled mode Redis outlives the
+  # pods, so every deploy flushes (#85).
+  local flush=""
   case "${CADDY_CACHE_CDN_CONFIG:-}" in
-    *"provider cloudflare"*)
-      echo "Cloudflare is configured: flushing the HTTP cache, which also purges everything at Cloudflare..."
+    *"provider cloudflare"*) flush="Cloudflare is configured: flushing the HTTP cache, which also purges everything at Cloudflare..." ;;
+  esac
+  if [ -z "$flush" ] && api_scaled "$track"; then
+    flush="Scaled mode: flushing the HTTP cache, which outlives the API pods in Redis..."
+  fi
+  case "$flush" in
+    ?*)
+      echo "$flush"
       kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
         -- php bin/console silverback:api-components:purge-http-cache
       # The flush empties the new pod's postStart warm, so a visitor's first page would miss on every /_api fetch (#175).

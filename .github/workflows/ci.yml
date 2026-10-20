@@ -148,6 +148,8 @@ jobs:
         run: sh bin/test/cache-encoding.sh
       - name: Check the deploy tidies GCLOUD_PATH_PREFIX exactly as php does (#168)
         run: sh bin/test/storage-prefix-parity.sh
+      - name: Check more than one API pod is only deployed in scaled mode (#85)
+        run: sh bin/test/api-scaling-config.sh
       - name: Check a slow cold render is served and cached in otter, not 504'd at 10s (#170)
         run: sh bin/test/souin-backend-timeout.sh
 

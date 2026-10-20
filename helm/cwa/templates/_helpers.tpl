@@ -91,6 +91,42 @@ The API's HPA only when it can scale: at maxReplicas 1 it can't act and shows me
 {{- end }}
 
 {{/*
+Scaled mode (#85): several API pods sharing this release's Redis as the cache.
+*/}}
+{{- define "cwa.scaled" -}}
+{{- if .Values.scaled.enabled }}true{{ end -}}
+{{- end }}
+
+{{/*
+Redis's own labels: never the API's name label, which k8s.sh and the PDB select the API by.
+*/}}
+{{- define "cwa.redisLabels" -}}
+helm.sh/chart: {{ include "cwa.chart" . }}
+app.kubernetes.io/name: {{ include "cwa.name" . }}-redis
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: cache
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Souin's store block for this release's Redis, put in CADDY_CACHE_STORAGE. Short timeouts and no retries, so a Redis
+outage makes requests uncached instead of slow (go-redis's defaults add seconds per request).
+*/}}
+{{- define "cwa.scaled.cacheStorage" -}}
+redis {
+	configuration {
+		Addrs {{ include "cwa.fullname" . }}-redis:6379
+		Password {{ required "scaled.redis.password is required in scaled mode" .Values.scaled.redis.password }}
+		DialTimeout 100ms
+		ReadTimeout 100ms
+		WriteTimeout 100ms
+		PoolTimeout 100ms
+		MaxRetries -1
+	}
+}
+{{- end }}
+
+{{/*
 The php container's env, shared by the API deployment and the orphan scan CronJob.
 Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the schema (#103).
 */}}
@@ -174,6 +210,13 @@ Never add RESET_DATABASE: the CronJob runs the entrypoint, which would drop the 
       name: {{ include "cwa.fullname" . }}
       key: caddy-cache-extra-config
       optional: true
+{{- if include "cwa.scaled" . }}
+- name: CADDY_CACHE_STORAGE
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "cwa.fullname" . }}
+      key: caddy-cache-storage
+{{- end }}
 - name: MERCURE_URL
   valueFrom:
     configMapKeyRef:

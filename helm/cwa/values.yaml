@@ -224,6 +224,19 @@ autoscaling:
   targetCPUUtilizationPercentage: 90
   targetMemoryUtilizationPercentage: 90
 
+# Scaled mode (#85): several API pods sharing one cache. Off by default; k8s.sh turns it on per track
+# (CWA_CI_API_SCALED_<TRACK>). The cache moves to this release's own Redis, which only the cache may use:
+# a full flush deletes every key in it.
+scaled:
+  enabled: false
+  redis:
+    image: redis:8.10.2
+    # Generated once and kept by k8s.sh's deploy_secrets; Souin's store block carries it.
+    password: ""
+    # Redis's maxmemory, Mi. The container gets about 1.4x for Redis's own overhead.
+    maxMemoryMi: 256
+    cpuRequest: 50m
+
 nodeSelector:
   cloud.google.com/compute-class: cost-optimized
 
