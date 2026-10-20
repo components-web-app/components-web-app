@@ -10,6 +10,19 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - The "maintenance mode is on" notice no longer names `CWA_CI_MAINTENANCE_DURING_MIGRATIONS` when a later deploy found the window left on without it (#182). [4fd54e2](https://github.com/components-web-app/components-web-app/commit/4fd54e2d8bb64caf98b4c61d04de95ba497f0069)
 
+### Upgrade notes
+
+- Deploys and fixture loads now warn when `ADMIN_PASSWORD` is unset or `admin` (the public admin/admin super-admin login, which every fixture load resets): set it as a masked CI variable or secret. The deploy still runs. `compose.prod.yaml` now requires `ADMIN_PASSWORD` (#203). [80f63f3](https://github.com/components-web-app/components-web-app/commit/80f63f3758d6951c4e26ed9eddcf7a095ce5f4fc)
+
+### Added
+
+- An MIT `LICENSE` (Silverback Internet Services Limited, as the bundle's), `SECURITY.md` (private reporting through GitHub, no warranty or guaranteed response), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and GitHub issue and PR templates; `.all-contributorsrc` is removed. Projects made with `create-cwa` get none of them: a client site chooses its own licence (#202). [031b006](https://github.com/components-web-app/components-web-app/commit/031b006d18c7372e8b5dc9cb4fd0d1dfd1683bd3)
+
+### Changed
+
+- `create-cwa` checks Docker, ports 80/443/3001/5432 and Docker's memory before downloading, offers the host `pnpm install` only when the stack isn't started (it crashed a running dev server), validates the project name and an empty target directory up front, shows the manifest's hints, fixes the generated README's links, prints a prerelease and no-telemetry notice, and has an npm README; `api/README.md` documents `user:create --admin` (#204). [5847944](https://github.com/components-web-app/components-web-app/commit/5847944625b125026fc43414f3fe9d573af85110)
+
+
 ## [2.0.0-alpha.43](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.43) - 2026-10-20
 
 ### Upgrade notes
