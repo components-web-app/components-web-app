@@ -220,6 +220,31 @@ final class RedisWatcherTest extends TestCase
         self::assertCount(2, $this->notifier->subjects, 'One failed attempt, one sent, none after');
     }
 
+    public function testAFailedRecoveryEmailIsSentNextRunWithoutFlushingAgain(): void
+    {
+        $this->check();
+        $this->redisDown();
+        $this->check();
+        $this->redisUp();
+        $this->notifier->result = Notifier::FAILED;
+
+        $back = $this->check();
+        self::assertFalse($back->failed);
+        self::assertNull($this->state->downSince);
+        self::assertNotNull($this->state->recoveryEmail);
+
+        $this->notifier->result = Notifier::SENT;
+        $this->check();
+        self::assertNull($this->state->recoveryEmail);
+        self::assertSame(1, $this->store->flushes);
+        self::assertSame(1, $this->edge->purges);
+        self::assertSame($this->notifier->bodies[1], $this->notifier->bodies[2], 'The retry sends the same email');
+        self::assertSame('the cache store (Redis) is back; the cache was flushed', $this->notifier->subjects[2]);
+
+        $this->check();
+        self::assertCount(3, $this->notifier->subjects, 'Outage, failed recovery, sent recovery; none after');
+    }
+
     private function redisDown(): void
     {
         $this->store->down = true;

@@ -13,11 +13,14 @@ use App\Entity\RedisWatchState;
  * - Down: this job can't reach Redis, or php can't store in it. Every attempt must agree, so a blip doesn't count.
  *   The first down run emails; later ones don't.
  * - Reachable again after a down run: flush Redis once, purge the CDN (it may have re-cached from a stale Redis),
- *   and email what happened. A failed flush keeps the outage open, so the next run tries again.
+ *   and email what happened. A failed flush keeps the outage open, so the next run tries again; a failed email is
+ *   kept and sent by the next run that reaches Redis.
  * - Redis restarted between two runs that both reached it: it came back empty, so nothing is stale; email only.
  */
 final class RedisWatcher
 {
+    private const string RECOVERY_SUBJECT = 'the cache store (Redis) is back; the cache was flushed';
+
     /** @var \Closure(int): void */
     private \Closure $sleep;
 
@@ -66,10 +69,12 @@ final class RedisWatcher
         }
         \assert(null !== $runId);
 
+        $recovered = false;
         if (null !== $state->downSince) {
             if (!$this->recover($state, $now, $outcome)) {
                 return $outcome;
             }
+            $recovered = true;
         } elseif (null !== $state->redisRunId && $runId !== $state->redisRunId && null !== $releaseRevision
             && null !== $state->releaseRevision && $releaseRevision !== $state->releaseRevision) {
             // A deploy recreated Redis (#85): expected, and empty, so no email.
@@ -86,6 +91,10 @@ final class RedisWatcher
 
                 return $outcome;
             }
+        }
+
+        if (!$recovered && null !== $state->recoveryEmail) {
+            $this->sendRecoveryEmail($state, $outcome);
         }
 
         if (null === $state->redisRunId) {
@@ -165,17 +174,26 @@ final class RedisWatcher
                 : \sprintf('Purging %s failed, so it may still serve stale copies; this job retries next run, or press Purge all cached data in the site settings.', $this->edge->name());
         }
 
-        $this->notify($outcome, 'the cache store (Redis) is back; the cache was flushed', implode("\n\n", array_filter([
+        $state->recoveryEmail = implode("\n\n", array_filter([
             \sprintf('The site could not reach its cache store (Redis) from %s (%s) until %s.', self::time($state->downSince), $state->downReason, self::time($now)),
             'Purges sent in that time were lost, so this job flushed the whole cache once: edits made meanwhile now show. Pages are cached again as visitors request them.',
             $edgeLine,
-        ])));
+        ]));
+        $this->sendRecoveryEmail($state, $outcome);
 
         $state->downSince = null;
         $state->downReason = null;
         $state->downNotified = false;
 
         return true;
+    }
+
+    private function sendRecoveryEmail(RedisWatchState $state, RedisWatchOutcome $outcome): void
+    {
+        \assert(null !== $state->recoveryEmail);
+        if (Notifier::FAILED !== $this->notify($outcome, self::RECOVERY_SUBJECT, $state->recoveryEmail)) {
+            $state->recoveryEmail = null;
+        }
     }
 
     private function purgeEdge(RedisWatchState $state, RedisWatchOutcome $outcome): bool

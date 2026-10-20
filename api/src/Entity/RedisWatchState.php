@@ -37,6 +37,10 @@ class RedisWatchState
     #[ORM\Column(type: Types::BOOLEAN)]
     public bool $downNotified = false;
 
+    /** The "Redis is back" email, kept while sending it fails so the next run retries it (#194). */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    public ?string $recoveryEmail = null;
+
     /** Redis was flushed but the CDN purge failed: the next run retries only the CDN. */
     #[ORM\Column(type: Types::BOOLEAN)]
     public bool $edgePurgePending = false;
