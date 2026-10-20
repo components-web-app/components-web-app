@@ -34,7 +34,7 @@ esac
 exit 0
 STUB
 # kubectl: deployments named after their release; STUB_ROLLOUT_FAIL (cwa or cwa-pwa) fails that rollout. STUB_PROD_DB is
-# production's live database-url. Database Jobs finish at once; a task in STUB_FAIL fails; plans report STUB_PENDING.
+# production's live database-url (STUB_REVIEW_PROD_DB: as a review job finds it in site-production). Database Jobs finish at once; a task in STUB_FAIL fails; plans report STUB_PENDING.
 cat >"$DIR/bin/kubectl" <<'STUB'
 #!/bin/sh
 echo "kubectl $*" >>"$STUB_LOG"
@@ -51,6 +51,7 @@ case "$*" in
       migrate) echo migrated ;;
     esac ;;
   "get secret rel-cwa "*"database-url"*) [ -z "${STUB_PROD_DB:-}" ] || printf '%s' "$STUB_PROD_DB" | base64 | tr -d '\n' ;;
+  "get secret production-cwa -n site-production "*"database-url"*) [ -z "${STUB_REVIEW_PROD_DB:-}" ] || printf '%s' "$STUB_REVIEW_PROD_DB" | base64 | tr -d '\n' ;;
   "get secret "*) ;;
   *"get deploy"*"name=cwa-pwa,"*) echo "deployment.apps/$(instance "$@")-cwa-pwa" ;;
   *"get deploy"*"name=cwa,"*) echo "deployment.apps/$(instance "$@")-cwa" ;;
@@ -205,6 +206,31 @@ run "deploy staging" "STUB_PROD_DB=pgsql://u:p@rel-postgresql/app"
 status in-cluster 0
 values in-cluster "skipMigrations: false"
 refuse in-cluster "databaseJob.task=plan"
+
+# A review app on production's database is refused (#197): production is release production in <project>-production.
+REVIEW_EXTERNAL="CI_PROJECT_NAME=site CWA_CI_POSTGRES_ENABLED=false DATABASE_URL=pgsql://u:p@db.example/app"
+run "deploy review" "$REVIEW_EXTERNAL STUB_REVIEW_PROD_DB=postgresql://prod:other@DB.example:5432/app"
+status review-shared 1
+expect review-shared "get secret production-cwa -n site-production"
+said review-shared "REVIEW APP NOT DEPLOYED"
+refuse review-shared "helm upgrade"
+if grep -qF "p@db" "$DIR/out" || grep -qF "other@" "$DIR/out"; then fail review-shared "printed a database URL"; fi
+
+run "deploy review" "$REVIEW_EXTERNAL STUB_REVIEW_PROD_DB=postgresql://prod:other@prod-db.example/app"
+status review-own 0
+expect review-own "helm upgrade"
+
+# Unreadable from the review job: a warning, and the deploy goes on.
+run "deploy review" "$REVIEW_EXTERNAL"
+status review-unchecked 0
+said review-unchecked "could not read production's database URL (release 'production' in namespace 'site-production'"
+
+run "deploy review" "$REVIEW_EXTERNAL KUBE_NAMESPACE_PRODUCTION=prod-ns RELEASE_PRODUCTION=live"
+expect review-names "get secret live-cwa -n prod-ns"
+
+run "deploy review" "CI_PROJECT_NAME=site"
+status review-in-cluster 0
+refuse review-in-cluster "get secret production-cwa"
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2

@@ -30,7 +30,7 @@ install_dependencies() {
 # One key of the release's live Secret, decoded; empty when there is none.
 deployed_value() {
   local value
-  value=$(kubectl get secret "$1" -n "$KUBE_NAMESPACE" -o go-template="{{ index .data \"$2\" }}" 2>/dev/null) || return 0
+  value=$(kubectl get secret "$1" -n "${3:-$KUBE_NAMESPACE}" -o go-template="{{ index .data \"$2\" }}" 2>/dev/null) || return 0
   case "$value" in ""|"<no value>") return 0 ;; esac
   printf '%s' "$value" | base64 -d
 }
@@ -1162,6 +1162,7 @@ deploy() {
   # A track on production's database never migrates it, and waits while migrations are pending (#180).
   DEPLOY_SKIPPED=false DATABASE_SHARED_WITH_PRODUCTION=false
   rm -f "$DEPLOY_SKIPPED_FILE"
+  if [ "$track" = "review" ]; then review_database_check || return 1; fi
   if database_shared_with_production "$track"; then
     DATABASE_SHARED_WITH_PRODUCTION=true
     shared_database_guard "$track" || return 1
@@ -2156,15 +2157,33 @@ database_identity() {
   printf '%s/%s' "$hostport" "$rest" | tr '[:upper:]' '[:lower:]'
 }
 
-# True when track $1 (not production) would use production's database: an external DATABASE_URL naming the same
-# host, port and database as production's live Secret. GitLab's staging and canary jobs run under environment: production.
+# True when staging or canary would use production's database: an external DATABASE_URL naming the same host, port and
+# database as production's live Secret. Their jobs share production's release name and namespace; review is review_database_check's.
 database_shared_with_production() {
   local live
-  [ "${1-stable}" != "stable" ] || return 1
+  case "${1-stable}" in staging|canary) ;; *) return 1 ;; esac
   [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ] && [ -n "${DATABASE_URL:-}" ] || return 1
   live=$(deployed_value "$(cwa_fullname "$RELEASE")" database-url)
   [ -n "$live" ] || return 1
   [ "$(database_identity "$DATABASE_URL")" = "$(database_identity "$live")" ]
+}
+
+# Refuses a review app on production's database (#197): production is RELEASE_PRODUCTION (production) in
+# KUBE_NAMESPACE_PRODUCTION (<project>-production); warns when it can't read it there.
+review_database_check() {
+  local release="${RELEASE_PRODUCTION:-production}" namespace live
+  namespace="${KUBE_NAMESPACE_PRODUCTION:-${CI_PROJECT_NAME:+$CI_PROJECT_NAME-production}}"
+  namespace="${namespace:-$KUBE_NAMESPACE}"
+  [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ] && [ -n "${DATABASE_URL:-}" ] || return 0
+  live=$(deployed_value "$(cwa_fullname "$release")" database-url "$namespace")
+  if [ -z "$live" ]; then
+    echo "WARNING: could not read production's database URL (release '$release' in namespace '$namespace'; set RELEASE_PRODUCTION or KUBE_NAMESPACE_PRODUCTION if they differ), so this review app's external database is unchecked. A review app must have its own database: on production's it would migrate it." >&2
+    return 0
+  fi
+  [ "$(database_identity "$DATABASE_URL")" != "$(database_identity "$live")" ] && return 0
+  echo "!!!! REVIEW APP NOT DEPLOYED: its DATABASE_URL is production's database, which a review app would migrate. Give review apps their own database (a review-scoped DATABASE_URL, or the in-cluster PostgreSQL with CWA_CI_POSTGRES_ENABLED unset). !!!!"
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Review app on production's database::give review apps their own database"
+  return 1
 }
 
 # For a track sharing production's database (in deploy, instead of database_guard): its pods never migrate, and with
