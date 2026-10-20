@@ -8,6 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- `bin/test/compose-prod-config.sh` finds the required values in `compose.yaml` and `compose.prod.yaml` instead of a fixed list, so a project that adds its own `${NAME:?…}` value (e.g. a Turnstile key) passes, and still fails if one of the template's required values stops being required (#207). [db6f1a0](https://github.com/components-web-app/components-web-app/commit/db6f1a0be3b72d73926ab5dd722d264dc7ed62ae)
 - README's versions table: `@cwa/nuxt` 2.0.0-alpha.21 recommends bundle 2.0.0-alpha.29 rather than requiring it, and says why bundle alpha.27 and alpha.28 are skipped. [7ef9eba](https://github.com/components-web-app/components-web-app/commit/7ef9eba7452dda29edfdaffdbd95203b0f203b67)
 
 ## [2.0.0-alpha.45](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.45) - 2026-10-21
