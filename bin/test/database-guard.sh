@@ -65,7 +65,7 @@ run() {
   rm -f "$DIR/work/maintenance-window.txt"
   set +e
   (cd "$DIR/work" && PATH="$DIR/bin:$PATH" STUB_LOG="$DIR/log" RELEASE=rel KUBE_NAMESPACE=ns $K8S_SHELL -c '
-    unset CWA_CI_DATABASE_BACKUP_PRODUCTION CWA_CI_DATABASE_BACKUP_STAGING CWA_CI_MIGRATIONS_JOB_PRODUCTION \
+    unset CWA_CI_DATABASE_BACKUP_PRODUCTION CWA_CI_DATABASE_BACKUP_STAGING CWA_CI_MIGRATIONS_JOB_DISABLED CWA_CI_MIGRATIONS_JOB_PRODUCTION \
       CWA_CI_MAINTENANCE_DURING_MIGRATIONS CWA_CI_DATABASE_BACKUP_BUCKET GCLOUD_BUCKET GCLOUD_PATH_PREFIX \
       CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME STUB_FAIL STUB_PENDING STUB_NO_RELEASE \
       STUB_MAINTENANCE STUB_MAINTENANCE_EXIT STUB_MARKER STUB_MARKER_FAIL STUB_PLAN_INCOMPLETE CWA_CI_DATABASE_BACKUP_STORAGE CWA_CI_DATABASE_BACKUP_IMAGE CWA_CI_DATABASE_BACKUP_FOLDER GITHUB_REPOSITORY \
@@ -96,7 +96,14 @@ order() {
   if [ -z "$first" ] || [ -z "$second" ] || [ "$first" -ge "$second" ]; then fail "$1" "'$2' must come before '$3'"; fi
 }
 
+# Production migrates in a Job by default (#180): with migrations pending, the plan then the migrate Job.
 run "database_guard stable" ""
+status default 0
+order default "databaseJob.task=plan" "databaseJob.task=migrate"
+refuse default "databaseJob.task=backup"
+
+# CWA_CI_MIGRATIONS_JOB_DISABLED turns it off: nothing but the marker check.
+run "database_guard stable" "CWA_CI_MIGRATIONS_JOB_DISABLED=true"
 status off 0
 refuse off "helm"
 expect off "kubectl get configmap -n ns rel-cwa-maintenance-window"
@@ -133,7 +140,7 @@ said github-folder "backups org-my-repo/staging/rel-staging/"
 run "database_backup_location stable" "CWA_CI_DATABASE_BACKUP_BUCKET=backups CWA_CI_DATABASE_BACKUP_FOLDER=shared-site"
 said folder-override "backups shared-site/production/rel/"
 
-run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups GCLOUD_PATH_PREFIX=site-a"
+run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_MIGRATIONS_JOB_DISABLED=true CWA_CI_DATABASE_BACKUP_BUCKET=backups GCLOUD_PATH_PREFIX=site-a"
 status backup 0
 expect backup "helm get values rel -n ns -o yaml"
 expect backup "--set-string php.image.tag=main@sha256:new --set-string databaseJob.task=plan"
@@ -151,7 +158,7 @@ refuse backup "databaseJob.backup.storage"
 said backup "Database backup: gs://backups/"
 
 # A migration writing from up(): the plan can't show its SQL, but the deploy still backs up and migrates (#183).
-run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_MIGRATIONS_JOB_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_PLAN_INCOMPLETE=1 CWA_CI_DATABASE_BACKUP_STORAGE=20Gi"
+run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_PLAN_INCOMPLETE=1 CWA_CI_DATABASE_BACKUP_STORAGE=20Gi"
 status plan-incomplete 0
 said plan-incomplete "so the plan shows no SQL"
 order plan-incomplete "databaseJob.task=backup" "databaseJob.task=migrate"
@@ -166,12 +173,12 @@ run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATAB
 status first-deploy 0
 refuse first-deploy "kubectl create"
 
-run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_MIGRATIONS_JOB_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_FAIL=backup"
+run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_FAIL=backup"
 status backup-fails 1
 said backup-fails "DATABASE BACKUP FAILED"
 refuse backup-fails "databaseJob.task=migrate"
 
-run "database_guard stable" "CWA_CI_MIGRATIONS_JOB_PRODUCTION=true"
+run "database_guard stable" ""
 status migrate-job 0
 order migrate-job "databaseJob.task=plan" "databaseJob.task=migrate"
 refuse migrate-job "databaseJob.task=backup"
@@ -239,7 +246,7 @@ refuse no-marker "databaseJob.task=migrate"
 [ ! -f "$DIR/work/maintenance-window.txt" ] || fail no-marker "a notice for a window that never started"
 
 # A window left on by a failed deploy: a later production deploy without the switch still ends it (#182).
-run "database_guard stable && finish_maintenance_window stable" "STUB_MARKER=1"
+run "database_guard stable && finish_maintenance_window stable" "STUB_MARKER=1 CWA_CI_MIGRATIONS_JOB_DISABLED=true"
 status left-on 0
 said left-on "still on from an earlier deploy's failed window"
 refuse left-on "helm"
@@ -248,7 +255,7 @@ order left-on "purge-http-cache" "maintenance off"
 order left-on "maintenance off" "delete configmap -n ns rel-cwa-maintenance-window"
 
 # Likewise when the later deploy has other switches and migrations pending.
-run "database_guard stable && finish_maintenance_window stable" "STUB_MARKER=1 CWA_CI_MIGRATIONS_JOB_PRODUCTION=true"
+run "database_guard stable && finish_maintenance_window stable" "STUB_MARKER=1"
 status left-on-migrate 0
 order left-on-migrate "databaseJob.task=migrate" "maintenance off"
 

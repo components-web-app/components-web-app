@@ -2055,7 +2055,8 @@ performance_audit() {
 # Settings (track names: PRODUCTION for stable, else the track upper-cased; staging runs under GitLab's production environment):
 #   CWA_CI_MIGRATIONS_PLAN_PRODUCTION  the read-only `migrations plan production` CI job, on unless "false".
 #   CWA_CI_DATABASE_BACKUP_<TRACK>     "true": pg_dump to CWA_CI_DATABASE_BACKUP_BUCKET before pending migrations.
-#   CWA_CI_MIGRATIONS_JOB_<TRACK>      "true": migrate in a one-off Job before helm, not in the new pod's entrypoint.
+#   Production migrates pending migrations in a one-off Job before helm; CWA_CI_MIGRATIONS_JOB_DISABLED="true" only if that Job can't run.
+#   CWA_CI_MIGRATIONS_JOB_<TRACK>      "true": the same for STAGING, CANARY or REVIEW.
 #   CWA_CI_MAINTENANCE_DURING_MIGRATIONS  "true" for one production pipeline only: maintenance on around the migration.
 #   CWA_CI_DATABASE_BACKUP_BUCKET      the private backup bucket (bin/devops/backup-bucket.sh; set once on the group).
 #   CWA_CI_DATABASE_BACKUP_GCLOUD_JSON the project's backup key, base64 on one line; never the media key.
@@ -2405,7 +2406,7 @@ database_guard_failed() {
 }
 
 # Before helm (in deploy): when migrations are pending, the opt-in maintenance window, the backup and the migrate Job.
-# Off unless one of the switches above is on. Any failure stops the deploy; maintenance is then left on.
+# Production always plans (its migrate Job is on by default); other tracks only with a switch. Any failure stops the deploy; maintenance is then left on.
 database_guard() {
   local track="${1-stable}" name maintenance=false backup=false migrate=false tag state status=0
   name=$(database_release_name "$track")
@@ -2415,7 +2416,9 @@ database_guard() {
     else echo "CWA_CI_MAINTENANCE_DURING_MIGRATIONS is for production only: ignored for the $track deploy."; fi
   fi
   database_track_switch DATABASE_BACKUP "$track" && backup=true
-  database_track_switch MIGRATIONS_JOB "$track" && migrate=true
+  # Production always migrates in a Job, so a failing migration stops before the rollout; CWA_CI_MIGRATIONS_JOB_DISABLED is the escape hatch.
+  if [ "$track" = "stable" ]; then [ "${CWA_CI_MIGRATIONS_JOB_DISABLED:-}" = "true" ] || migrate=true
+  else database_track_switch MIGRATIONS_JOB "$track" && migrate=true; fi
   if [ "$backup" = "true" ]; then
     database_backup_location "$track" >/dev/null || return 1
     database_backup_key_b64 >/dev/null || return 1

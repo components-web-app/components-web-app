@@ -147,7 +147,7 @@ status pwa-rollout-fails 1
 refuse pwa-rollout-fails "-X PUT"
 
 # The migrate Job fails: no helm, no tag.
-run "deploy" "CWA_CI_MIGRATIONS_JOB_PRODUCTION=true STUB_PENDING=2 STUB_FAIL=migrate"
+run "deploy" "STUB_PENDING=2 STUB_FAIL=migrate"
 status migrate-fails 1
 expect migrate-fails "databaseJob.task=migrate"
 expect migrate-fails "php.image.tag=production@sha256:php"
