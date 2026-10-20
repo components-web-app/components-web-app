@@ -11,6 +11,13 @@ workflow:
       when: never
     - when: always
 
+# The template's own jobs (#181); projects made from it don't have the file, so nothing is included.
+include:
+  - local: .gitlab/ci/template-only.yml
+    rules:
+      - exists:
+          - .gitlab/ci/template-only.yml
+
 variables:
   CWA_CI_BUILD_DISABLED: "false"
   CWA_CI_TEST_DISABLED: "false"

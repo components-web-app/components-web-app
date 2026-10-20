@@ -1,0 +1,19 @@
+# The template's own jobs (#181). Projects made from the template never get this file: create-cwa leaves it out
+# (cwa-manifest.json alwaysExclude) and .gitlab-ci.yml includes it only when it exists. Don't copy it downstream.
+
+# Reloads the demo site from its scaffold every day: a purged production fixture load (which flushes and warms /_api), then
+# the page warm. Only from a pipeline schedule on the default branch with CWA_CI_DEMO_RELOAD="true" (CLAUDE.md, #181).
+demo reload production:
+  stage: production
+  needs: []
+  environment:
+    name: production
+    url: https://$KUBE_INGRESS_BASE_DOMAIN
+    action: verify
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CWA_CI_DEMO_RELOAD == "true" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  script:
+    # In the script, so a project-level CWA_CI_FIXTURES_PURGE can't override it.
+    - export CWA_CI_FIXTURES_PURGE=force
+    - !reference ['load fixtures production', script]
+    - warm_cache
