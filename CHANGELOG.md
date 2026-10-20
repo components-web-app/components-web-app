@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.43](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.43) - 2026-10-20
+
 ### Upgrade notes
 
 - `CWA_CI_API_WARM_CONCURRENCY` is now per API pod (default 2), multiplied by the pods during the warm, warm surge included; a project that set a total divides it by its pod count. Review apps must have their own database: a review deploy whose `DATABASE_URL` is production's is refused (production is looked up as `RELEASE_PRODUCTION`, default `production`, in `KUBE_NAMESPACE_PRODUCTION`, default `<project>-production`; set it where yours differs) (#195, #197). [fa94640](https://github.com/components-web-app/components-web-app/commit/fa946403dfebb701b1948f683304c824cc9f74dc), [95ce541](https://github.com/components-web-app/components-web-app/commit/95ce541d61e89815bcf4ea5a10fc20f6535fce34)
