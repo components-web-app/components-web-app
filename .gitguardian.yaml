@@ -12,3 +12,5 @@ secret:
       match: '${JWT_PASSPHRASE:?set JWT_PASSPHRASE}'
     - name: compose.prod.yaml required POSTGRES_PASSWORD
       match: '${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}'
+    - name: compose.prod.yaml required ADMIN_PASSWORD
+      match: '${ADMIN_PASSWORD:?set ADMIN_PASSWORD}'

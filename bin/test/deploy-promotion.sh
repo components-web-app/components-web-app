@@ -1,6 +1,7 @@
 #!/bin/sh
-# Regression test (#164, #180): deploy copies the track tag only after its migrations and both rollouts succeeded, and a
+# Regression test (#164, #180, #203): deploy copies the track tag only after its migrations and both rollouts succeeded, and a
 # track sharing production's database never migrates it and isn't deployed while migrations are pending.
+# A missing or default ADMIN_PASSWORD warns but deploys.
 # Runs the real setup.sh and k8s.sh against stub kubectl, helm and curl (the registry). Usage (repository root):
 # bin/test/deploy-promotion.sh
 set -eu
@@ -42,6 +43,7 @@ task() { case "$*" in *-db-plan-*) echo plan ;; *-db-backup-*) echo backup ;; *-
 failed() { case " ${STUB_FAIL:-} " in *" $(task "$@") "*) return 0 ;; esac; return 1; }
 instance() { printf '%s' "$*" | sed -n 's/.*app.kubernetes.io\/instance=\([^ ,]*\).*/\1/p'; }
 case "$*" in
+  *"exec "*"ADMIN_PASSWORD"*) [ -z "${STUB_POD_ADMIN_DEFAULT:-}" ] || exit 3 ;;
   "create "*) cat "$4" >>"$STUB_LOG" ;;
   *"get job"*"succeeded}{.status.failed}"*) echo 1 ;;
   *"get job"*"status.succeeded}"*) failed "$@" || echo 1 ;;
@@ -231,6 +233,30 @@ expect review-names "get secret live-cwa -n prod-ns"
 run "deploy review" "CI_PROJECT_NAME=site"
 status review-in-cluster 0
 refuse review-in-cluster "get secret production-cwa"
+
+# The public admin/admin login warns but still deploys (#203); a real password says nothing.
+ADMIN_WARNING="the super-admin login on site.test is admin/admin"
+run "deploy" ""
+status admin-unset 0
+said admin-unset "ADMIN_PASSWORD is unset"
+expect admin-unset "helm upgrade --install"
+values admin-unset "password: admin"
+run "deploy" "ADMIN_PASSWORD=admin GITHUB_ACTIONS=true"
+status admin-default 0
+said admin-default "ADMIN_PASSWORD is 'admin'"
+said admin-default "::warning title=Public admin password::"
+run "deploy" "ADMIN_PASSWORD=s3cret-long-value"
+status admin-set 0
+if grep -qF "$ADMIN_WARNING" "$DIR/out"; then fail admin-set "warned with a real password"; fi
+if grep -qF "s3cret-long-value" "$DIR/out"; then fail admin-set "printed the password"; fi
+
+# The fixture load checks the pod's own value, since that's what it writes.
+run "load_fixtures" "ADMIN_PASSWORD=s3cret-long-value STUB_POD_ADMIN_DEFAULT=1"
+said fixtures-pod-default "ADMIN_PASSWORD is unset or 'admin' in the API pod"
+expect fixtures-pod-default "doctrine:fixtures:load --append"
+run "load_fixtures" "ADMIN_PASSWORD=admin"
+if grep -qF "$ADMIN_WARNING" "$DIR/out"; then fail fixtures-pod-set "warned though the pod has a real password"; fi
+expect fixtures-pod-set "doctrine:fixtures:load --append"
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2

@@ -14,6 +14,10 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?set JWT_PUBLIC_KEY}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE}
+      # The super admin that fixture loads create, and reset to this password every run (#203).
+      ADMIN_USERNAME:
+      ADMIN_EMAIL:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
       # The public host, for IRIs generated during SSR and for links in user emails.
       BROWSER_SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the site's domain}
       # Caddy faces the internet here, so a public client's X-Forwarded-For is

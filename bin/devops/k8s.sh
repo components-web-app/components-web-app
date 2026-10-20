@@ -1123,12 +1123,35 @@ gcloud_path_prefix() {
   printf '%s' "$prefix"
 }
 
+# A deploy still goes ahead on the public admin/admin login, but says so loudly (#203).
+admin_password_warning() {
+  echo "" >&2
+  echo "##################################################################" >&2
+  echo "WARNING: the super-admin login on ${DOMAIN:-this site} is admin/admin." >&2
+  echo "ADMIN_PASSWORD is $1, so anyone can sign in as super admin, and every" >&2
+  echo "fixture load resets the admin password to it. Set ADMIN_PASSWORD to a" >&2
+  echo "long random value (a masked CI variable or secret), then deploy." >&2
+  echo "##################################################################" >&2
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Public admin password::the super-admin login is admin/admin; set ADMIN_PASSWORD"
+  return 0
+}
+
+# Warns when the chart's admin Secret would get the default password (#203).
+check_admin_password() {
+  case "${ADMIN_PASSWORD:-}" in
+    "") admin_password_warning "unset" ;;
+    admin) admin_password_warning "'admin'" ;;
+  esac
+  return 0
+}
+
 deploy() {
 	local track="${1-stable}" environment_name site_env_yaml pwa_min_default pwa_max_default
 	local pwa_cpu_request_default pwa_memory_request_default api_cpu_request_default
 	local api_memory_request_default orphan_scan_default gcloud_prefix
 	check_cdn_config || return 1
 	check_cache_config || return 1
+	check_admin_password
 	apply_site_defaults "$track"
 	# Before anything changes in the cluster, so a bad name stops the deploy cold.
 	environment_name=$(cwa_environment_name "$track") || return 1
@@ -1474,6 +1497,11 @@ load_fixtures() {
       echo "CWA_CI_FIXTURES_PURGE is only read for review apps and production. Appending instead."
       ;;
   esac
+  # The pod's own ADMIN_PASSWORD, which the load writes; exit 3 means the default (#203).
+  local admin_check=0
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
+    -- sh -c '[ -n "${ADMIN_PASSWORD:-}" ] && [ "$ADMIN_PASSWORD" != admin ] || exit 3' || admin_check=$?
+  [ "$admin_check" = 3 ] && admin_password_warning "unset or 'admin' in the API pod"
   [ -n "$append" ] && echo "Loading database fixtures (append - existing content is kept)..."
   kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
     -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
