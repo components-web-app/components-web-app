@@ -1,6 +1,7 @@
 #!/bin/sh
 # Regression test (#85): a scaled deploy's purge_rendered_html raises the API autoscaler's minimum by
-# CWA_CI_API_WARM_SURGE, flushes, warms through the API service, then puts the minimum back; a single-pod deploy
+# CWA_CI_API_WARM_SURGE, flushes, warms through the API service, puts the minimum back, then checks the cache is a Redis
+# hit and only warns if not (#193); a single-pod deploy
 # warms in its pod as before. Commands run in a ready pod, never `deploy/…`, which can pick a terminating one. Runs k8s.sh against a stub kubectl. Usage (repository root): bin/test/api-warm-surge.sh [k8s.sh]
 set -eu
 
@@ -29,19 +30,41 @@ case "$*" in
   *"get deployment.apps/rel-cwa"*readyReplicas*) echo 4 ;;
   *"get pods"*"{{if .metadata.deletionTimestamp}}"*) ;;
   *"get pods"*"name=cwa,"*) echo "pod/rel-cwa-new" ;;
+  *"exec"*" curl "*) printf 'HTTP/1.1 200 OK\r\nCache-Status: %s\r\n\r\n' "$STUB_CACHE_STATUS" ;;
 esac
 exit 0
 STUB
 chmod +x "$DIR/bin/kubectl"
 
+# $2: the Cache-Status the stub's curl answers with (#193); default a Redis hit.
 run() {
   : >"$DIR/log"
-  PATH="$DIR/bin:$PATH" STUB_LOG="$DIR/log" RELEASE=rel KUBE_NAMESPACE=ns $K8S_SHELL -c '
+  status=0
+  PATH="$DIR/bin:$PATH" STUB_LOG="$DIR/log" RELEASE=rel KUBE_NAMESPACE=ns \
+    STUB_CACHE_STATUS="${2:-Souin; hit; ttl=99; key=GET-http-rel-cwa-/_api/_/site_config_parameters.jsonld; detail=REDIS}" $K8S_SHELL -c '
     unset CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_AUTOSCALE_MIN CWA_CI_API_AUTOSCALE_MAX CWA_CI_API_WARM_SURGE \
-      CWA_CI_API_WARM_CONCURRENCY CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME CADDY_CACHE_CDN_CONFIG
+      CWA_CI_API_WARM_CONCURRENCY CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME CADDY_CACHE_CDN_CONFIG GITHUB_ACTIONS
     for setting in $2; do export "$setting"; done
     . "$1" >/dev/null
-    purge_rendered_html stable >/dev/null 2>&1' k8s "$K8S" "$1"
+    purge_rendered_html stable' k8s "$K8S" "$1" >"$DIR/out" 2>&1 || status=$?
+}
+said() {
+  if ! grep -qF -- "$2" "$DIR/out"; then
+    failures=$((failures + 1))
+    echo "FAIL ($1): the output doesn't say: $2" >&2
+  fi
+}
+quiet() {
+  if grep -qF -- "$2" "$DIR/out"; then
+    failures=$((failures + 1))
+    echo "FAIL ($1): the output says: $2" >&2
+  fi
+}
+succeeded() {
+  if [ "$status" -ne 0 ]; then
+    failures=$((failures + 1))
+    echo "FAIL ($1): purge_rendered_html exited $status" >&2
+  fi
 }
 
 failures=0
@@ -78,6 +101,26 @@ order surge '"minReplicas":4' 'purge-http-cache'
 order surge 'deletionTimestamp' 'purge-http-cache'
 order surge 'purge-http-cache' '--base-url=http://rel-cwa'
 order surge '--accept-encoding=br' '"minReplicas":2'
+# The post-rollout check (#193): after the warm and the surge's end, through the API service from a ready pod.
+expect surge 'exec -n ns pod/rel-cwa-new -- curl -sS -o /dev/null -D - --max-time 10 -H Accept-Encoding: gzip http://rel-cwa/_api/_/site_config_parameters.jsonld'
+order surge '"minReplicas":2' ' curl '
+said surge 'the API cache is shared in Redis'
+quiet surge 'NOT SHARED'
+succeeded surge
+
+# Not a Redis hit (each pod's own store, or Redis down): loud, but the live deploy's job carries on (#193).
+run "CWA_CI_API_SCALED_PRODUCTION=true" "Souin; fwd=uri-miss; stored; key=GET-x; detail=OTTER"
+said not-shared 'SCALED MODE: THE API CACHE IS NOT SHARED IN REDIS'
+said not-shared "last Cache-Status: 'Souin; fwd=uri-miss; stored; key=GET-x; detail=OTTER'"
+succeeded not-shared
+if [ "$(grep -c ' curl ' "$DIR/log")" -ne 3 ]; then
+  failures=$((failures + 1))
+  echo "FAIL (not-shared): expected 3 requests, got $(grep -c ' curl ' "$DIR/log")" >&2
+fi
+
+run "CWA_CI_API_SCALED_PRODUCTION=true GITHUB_ACTIONS=true" "Souin; hit; ttl=9; key=GET-x; detail=DEFAULT"
+said not-shared-github '::error title=API cache not shared::'
+succeeded not-shared-github
 
 run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_AUTOSCALE_MAX=6 CWA_CI_API_WARM_SURGE=2"
 expect surge-under-max '"minReplicas":4,"maxReplicas":6'
@@ -101,6 +144,7 @@ expect single 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-comp
 refuse single 'purge-http-cache'
 refuse single 'patch hpa'
 refuse single 'requests-per-connection'
+refuse single ' curl '
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2

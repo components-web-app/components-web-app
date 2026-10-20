@@ -1,6 +1,6 @@
 #!/bin/sh
 # Regression test (#85): k8s.sh's check_api_scaling allows more than one API pod only in scaled mode, by every route,
-# and refuses settings scaled mode can't use. A setting the chart ignores (replicaCount under the autoscaler) is allowed (#184). Usage (repository root): bin/test/api-scaling-config.sh [k8s.sh]
+# and refuses settings scaled mode can't use; scaled mode prints the database connections it may need (#193). A setting the chart ignores (replicaCount under the autoscaler) is allowed (#184). Usage (repository root): bin/test/api-scaling-config.sh [k8s.sh]
 set -eu
 
 K8S="${1:-bin/devops/k8s.sh}"
@@ -17,7 +17,8 @@ else
 fi
 echo "Sourcing $K8S with $K8S_SHELL."
 
-# track | settings | expected: ok:<min>-<max>-<redis Mi>, or refused:<part of the message>
+# track | settings | expected: ok:<min>-<max>-<redis Mi>, or refused:<part of the message> | optional: part of the
+# output, or !part for output that mustn't appear (the database connections line, #193)
 CASES='
 stable||ok:1-1-256
 stable|CWA_CI_API_AUTOSCALE_MAX=2|refused:needs scaled mode: set CWA_CI_API_SCALED_PRODUCTION=true
@@ -46,12 +47,19 @@ stable|CWA_CI_API_AUTOSCALE_MAX=two|refused:whole numbers
 stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=2 CWA_CI_API_WARM_CONCURRENCY=6|ok:2-3-256
 stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=two|refused:CWA_CI_API_WARM_SURGE and CWA_CI_API_WARM_CONCURRENCY
 stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_CONCURRENCY=0|refused:requests per API pod
+stable|CWA_CI_API_SCALED_PRODUCTION=true|ok:2-3-256|up to 25 (5 API pods x 4 workers + 5) of the in-cluster PostgreSQL
+stable|CWA_CI_API_SCALED_PRODUCTION=true|ok:2-3-256|!WARNING
+stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=6 CWA_CI_API_WORKERS=2|ok:2-3-256|up to 21 (8 API pods x 2 workers + 5)
+stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_AUTOSCALE_MAX=20 CWA_CI_API_WORKERS=8|ok:2-20-256|WARNING: up to 181 database connections
+stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_AUTOSCALE_MAX=30 CWA_CI_POSTGRES_ENABLED=false|ok:2-30-256|up to 133 (32 API pods x 4 workers + 5); check the external database
+stable|CWA_CI_API_AUTOSCALE_MAX=1|ok:1-1-256|!Database connections
 '
 
 # Every name the cases set, cleared first so a project's own CI variables can't leak into a case.
 NAMES='CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_SCALED_STAGING CWA_CI_API_SCALED_CANARY CWA_CI_API_SCALED_REVIEW
 CWA_CI_API_AUTOSCALE CWA_CI_API_AUTOSCALE_MIN CWA_CI_API_AUTOSCALE_MAX CWA_CI_API_REPLICA_COUNT CWA_CI_API_REDIS_MEMORY
-CWA_CI_RESET_DATABASE CWA_API_CADDY_CACHE_STORAGE CWA_CI_API_WARM_SURGE CWA_CI_API_WARM_CONCURRENCY'
+CWA_CI_RESET_DATABASE CWA_API_CADDY_CACHE_STORAGE CWA_CI_API_WARM_SURGE CWA_CI_API_WARM_CONCURRENCY CWA_CI_API_WORKERS
+CWA_CI_POSTGRES_ENABLED GITHUB_ACTIONS'
 
 result() {
   $K8S_SHELL -c '
@@ -59,20 +67,28 @@ result() {
     for setting in $2; do export "$setting"; done
     . "$1" >/dev/null
     err=$(mktemp)
-    if check_api_scaling "$4" >/dev/null 2>"$err"; then
+    if check_api_scaling "$4" >"$5" 2>"$err"; then
       printf "ok:%s-%s-%s" "$API_AUTOSCALE_MIN" "$API_AUTOSCALE_MAX" "$API_REDIS_MEMORY_MIB"
     else
       printf "refused:"; tr "\n" " " <"$err"
     fi
-    rm -f "$err"' k8s "$K8S" "$2" "$NAMES" "$1"
+    rm -f "$err"' k8s "$K8S" "$2" "$NAMES" "$1" "$OUT"
 }
 
+OUT=$(mktemp)
+trap 'rm -f "$OUT"' EXIT
 failures=0
 count=0
-while IFS='|' read -r track settings expected; do
+while IFS='|' read -r track settings expected output; do
   [ -n "$track" ] || continue
   count=$((count + 1))
+  : >"$OUT"
   got=$(result "$track" "$settings")
+  case "$output" in
+    '') ;;
+    !*) if grep -qF -- "${output#!}" "$OUT"; then got="$got (output says: ${output#!})"; fi ;;
+    *) grep -qF -- "$output" "$OUT" || got="$got (output lacks: $output)" ;;
+  esac
   case "$expected" in
     ok:*) [ "$got" = "$expected" ] && continue ;;
     refused:*) case "$got" in refused:*"${expected#refused:}"*) continue ;; esac ;;

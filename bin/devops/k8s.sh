@@ -1103,7 +1103,29 @@ check_api_scaling() {
   fi
   if api_scaled "$track"; then
     echo "Scaled mode: ${API_AUTOSCALE_MIN} to ${API_AUTOSCALE_MAX} API pods sharing this release's Redis (${API_REDIS_MEMORY_MIB}Mi)."
+    api_database_connections
   fi
+}
+
+# Scaled mode's database connections (#193): peak API pods x workers + 5 for Jobs and console commands, against the
+# in-cluster PostgreSQL's 100 max_connections (97 usable). On stdout, so callers that silence check_api_scaling skip it.
+api_database_connections() {
+  local workers="${CWA_CI_API_WORKERS:-4}" pods surge_pods need
+  # The chart's rollingUpdate maxSurge (2) above the maximum, or the warm surge's minimum, whichever is higher.
+  pods=$((API_AUTOSCALE_MAX + 2))
+  surge_pods=$((API_AUTOSCALE_MIN + ${CWA_CI_API_WARM_SURGE:-0}))
+  [ "$surge_pods" -le "$pods" ] || pods="$surge_pods"
+  case "$workers" in ''|*[!0-9]*) return 0 ;; esac
+  need=$((pods * workers + 5))
+  if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ]; then
+    echo "Database connections: up to ${need} (${pods} API pods x ${workers} workers + 5); check the external database's max_connections allows that, plus every other track or app using it."
+  elif [ "$need" -gt 97 ]; then
+    echo "WARNING: up to ${need} database connections (${pods} API pods x ${workers} workers + 5), more than the in-cluster PostgreSQL's 97 (max_connections 100, 3 reserved). Lower CWA_CI_API_AUTOSCALE_MAX, CWA_CI_API_WARM_SURGE or CWA_CI_API_WORKERS, or raise max_connections."
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Database connections::up to ${need} connections, more than the in-cluster PostgreSQL's 97"
+  else
+    echo "Database connections: up to ${need} (${pods} API pods x ${workers} workers + 5) of the in-cluster PostgreSQL's 97."
+  fi
+  return 0
 }
 
 # A review app stores under <GCLOUD_PATH_PREFIX>review/<slug>/, never in another app's path of a shared bucket (#166).
@@ -1535,7 +1557,7 @@ load_fixtures() {
 }
 
 # Drops every cached page (`cwa-html`) after a deploy, or old HTML loads /_nuxt files that now 404 (#71).
-# Waits for the PWA, then the API. `exec deploy/...` reaches one pod: complete only while the API has one replica.
+# Waits for the PWA, then the API. Runs in one ready pod; in scaled mode Redis carries its purge to every pod (#85).
 purge_rendered_html() {
   local track="${1-stable}"
   if deploy_was_skipped "$track"; then echo "The $track deploy was skipped: nothing to purge."; return 0; fi
@@ -1588,6 +1610,7 @@ purge_rendered_html() {
       if api_scaled "$track"; then
         warm_api_cache_for "$track" "$api_pod" "$release_name" "${CWA_CI_API_WARM_SURGE:-0}"
         api_warm_surge_end "$(cwa_fullname "$release_name")"
+        api_check_shared_cache "$api_pod" "$(cwa_fullname "$release_name")"
       else
         warm_api_cache "$api_pod"
       fi
@@ -1598,6 +1621,26 @@ purge_rendered_html() {
         -- php bin/console silverback:api-components:purge-rendered-html
       ;;
   esac
+}
+
+# Scaled mode (#193): the same API path through the service until one response is a Redis hit; otherwise each pod keeps
+# its own cache and a purge leaves the others stale. Only warns: the release is live and the job's later steps must run.
+api_check_shared_cache() {
+  local api_pod="$1" url="http://$2/_api/_/site_config_parameters.jsonld" status="" try=0
+  while [ "$try" -lt 3 ]; do
+    try=$((try + 1))
+    status=$(kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- curl -sS -o /dev/null -D - --max-time 10 -H 'Accept-Encoding: gzip' "$url" 2>/dev/null \
+      | tr -d '\r' | sed -n 's/^[Cc][Aa][Cc][Hh][Ee]-[Ss][Tt][Aa][Tt][Uu][Ss]: *//p' | sed -n 1p)
+    case "$status" in
+      *"; hit"*"detail=REDIS"*) echo "Scaled mode: the API cache is shared in Redis."; return 0 ;;
+    esac
+    [ "$try" -lt 3 ] && sleep 1
+  done
+  echo "!!!! SCALED MODE: THE API CACHE IS NOT SHARED IN REDIS !!!!"
+  echo "Three requests for ${url} from ${api_pod} got no Redis hit (last Cache-Status: '${status}')."
+  echo "Until it is, a purge on one API pod leaves the other pods' copies stale. Check the Redis pod (kubectl logs deploy/$2-redis) and the API pods' logs for Redis errors, then press Purge all cached data."
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=API cache not shared::no Redis hit through the API service after the deploy; see the step log"
+  return 0
 }
 
 # Warms /_api in the API pod after a full flush, as its postStart does: gzip for SSR, then br for browsers (#175).
