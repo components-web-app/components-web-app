@@ -27,6 +27,7 @@ This CLAUDE.md is the primary place to track demo fixes, fixture updates, and te
   - **A commit can't link to itself** (its SHA doesn't exist yet), so add its line in a small follow-up commit, `Changelog: <subject>`, before pushing. Several changes can share one changelog commit. Changelog-only commits get no line of their own.
   - A merged MR or PR gets one line linking to it, not one per commit.
 - **A release** renames `## Unreleased` to `## [X.Y.Z-alpha.N](…/releases/tag/vX.Y.Z-alpha.N) - <date>`, and adds a fresh empty `## Unreleased` above it. **That section is the tag's message** (`git tag -a vX --cleanup=verbatim -F <section file>`) **and the GitHub release notes** (`gh release create … --notes-file <section file>`).
+- **When a tracked file (the entrypoint, `k8s.sh`, the chart, the Caddyfile) starts depending on new App code, the release's upgrade notes name those files** (`api/src/…`, migrations, `services.php`). Downstream sites copy tracked paths, so without the note the deploy files arrive without the code they run (alpha.43 missed this; the deployment-statuses notifier caught it).
 - `create-cwa` projects don't get this file (`alwaysExclude` in `cwa-manifest.json`): it describes the template, not the new project.
 
 To release:
