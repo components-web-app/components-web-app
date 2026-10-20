@@ -2067,6 +2067,10 @@ database_guard() {
     fi
     write_maintenance_notice "$name"
     echo "Maintenance on for '$name' while ${MIGRATIONS_PENDING} migration(s) run..."
+    if [ "$backup" = "false" ]; then
+      echo "WARNING: this maintenance window takes no database backup (CWA_CI_DATABASE_BACKUP_$(database_track_name "$track") isn't \"true\"): a failed migration can only be fixed forward." >&2
+      [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=No backup::this maintenance window takes no database backup"
+    fi
     maintenance_command "$name" on || { echo "❌ Could not turn maintenance on." >&2; database_guard_failed; return 1; }
   fi
   [ "$MIGRATIONS_PENDING" != "0" ] || return 0

@@ -153,6 +153,14 @@ said window-fails "gs://backups/site-a/database/rel/20261020-000000Z-abc.dump"
 said window-fails "silverback:api-components:maintenance off"
 grep -qF "maintenance off" "$DIR/work/maintenance-window.txt" 2>/dev/null || fail window-fails "no notice for the job's after_script"
 
+# A window without a backup still runs, with a warning (Daniel, 2026-10-20).
+run "database_guard stable && finish_maintenance_window stable" "CWA_CI_MAINTENANCE_DURING_MIGRATIONS=true"
+status window-no-backup 0
+order window-no-backup "maintenance on" "databaseJob.task=migrate"
+refuse window-no-backup "databaseJob.task=backup"
+said window-no-backup "takes no database backup"
+expect window-no-backup "maintenance off"
+
 run "database_guard stable" "CWA_CI_MAINTENANCE_DURING_MIGRATIONS=true STUB_MAINTENANCE_EXIT=1"
 status no-command 1
 refuse no-command "maintenance on"
