@@ -12,11 +12,13 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- Deploys run their commands in the API (the flush and warm, fixtures, image variants) in a ready pod, not `kubectl exec deploy/…`, which straight after a rollout could pick the old pod while it terminated. In scaled mode that flushed the old pod's own cache instead of the shared Redis (#85). [ba19fb4](https://github.com/components-web-app/components-web-app/commit/ba19fb47c8ead79cc55c2b291bac596279f0a895)
 - Browser tests: the password reset test waits for `/forgot-password` and the reset page to hydrate before filling them, as `logIn` does (#179). [b09d62b](https://github.com/components-web-app/components-web-app/commit/b09d62b92ed5286a31413c1b76df626bdf886aeb)
 - Browser tests: `e2e/run.sh` names its compose stack `cwa-e2e-<checkout directory>` (`COMPOSE_PROJECT_NAME` overrides) and its tests container after it, so two projects' local runs on one machine no longer join or tear down each other's (#178). [21a3745](https://github.com/components-web-app/components-web-app/commit/21a3745552ac615fad28aea8df53ee105a1b9b85)
 
 ### Changed
 
+- Browser tests: `E2E_SCALED=true` (CI: `CWA_CI_E2E_SCALED="true"`) runs them against two php replicas sharing scaled mode's Redis cache and Mercure hub (#85). [dd7ffe9](https://github.com/components-web-app/components-web-app/commit/dd7ffe950768ea4e09746b20ef8f6003639ade3e)
 - Scaled mode (still being built): `CWA_CI_API_WARM_SURGE` runs that many extra API pods for a deploy's flush and warm, then lets them go; warms after a flush go through the API service so every pod renders a share (`CWA_CI_API_WARM_CONCURRENCY`, default 2 per pod) (#85). [a4bd818](https://github.com/components-web-app/components-web-app/commit/a4bd81836fcb436a220cbd09985eac0bd1fb2243)
 - Scaled mode (still being built): API pods get a PDB (`maxUnavailable: 1`), spread across nodes, and an autoscaler on CPU only that removes pods after ten minutes; the chart refuses more than one API pod without it (#85). [9959bf3](https://github.com/components-web-app/components-web-app/commit/9959bf387d9813d01587e9972e1545c51282a81f)
 - Deploys refuse more than one API pod (`CWA_CI_API_AUTOSCALE_MIN`/`_MAX` or `CWA_CI_API_REPLICA_COUNT` above 1) unless scaled mode is on for that track, since a second pod's cache is never purged. Scaled mode (`CWA_CI_API_SCALED_PRODUCTION`, `_STAGING`, `_CANARY`, `_REVIEW`) is being built and isn't ready to turn on: so far it starts a Redis per release as the shared cache and flushes on every deploy (#85). [62bfeb9](https://github.com/components-web-app/components-web-app/commit/62bfeb928ad665d29666e4569507f1f79c47172a)
