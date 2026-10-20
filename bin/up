@@ -120,10 +120,18 @@ precompiled=true
 for path in / /login; do
   t=$(remaining)
   [ "$t" -gt 120 ] && t=120
-  if ! docker compose exec -T php curl -fsSk -o /dev/null --max-time "$t" \
-      --resolve "$HOST:443:127.0.0.1" "https://$HOST$path"; then
+  # Dev Nuxt serves a 503 "Starting Nuxt" page after its healthcheck passes: retry until the page answers (#206).
+  end=$(( $(date +%s) + t )); code=000
+  while :; do
+    code=$(docker compose exec -T php curl -sk -o /dev/null -w '%{http_code}' --max-time "$t" \
+      --resolve "$HOST:443:127.0.0.1" "https://$HOST$path" 2>/dev/null | tr -d '\r') || code=000
+    [ "$code" = 200 ] && break
+    [ "$(date +%s)" -ge "$end" ] && break
+    sleep 2
+  done
+  if [ "$code" != 200 ]; then
     precompiled=false
-    warn "$path didn't answer within ${t}s; the first visit may be slow (docker compose logs app)"
+    warn "$path still answered $code after ${t}s; the first visit may be slow (docker compose logs app)"
   fi
 done
 [ "$precompiled" = true ] && phase_done
