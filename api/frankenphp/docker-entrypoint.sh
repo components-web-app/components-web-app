@@ -55,15 +55,8 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 			php bin/console doctrine:schema:drop --force --full-database
 		fi
 
-		if [ "$( find ./migrations -iname '*.php' -print -quit )" ]; then
-			php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
-		fi
-
-		# Component subclass tables hold too few rows to ever trip autoanalyze's
-		# 50-row floor, so without this they keep reltuples = -1 and the planner
-		# misestimates the JOINED-inheritance hydration join by orders of magnitude.
-		echo "Updating database statistics..."
-		php bin/console dbal:run-sql "ANALYZE" --quiet || echo "!* ANALYZE failed (non-fatal); queries may be slow until it runs"
+		# Migrations and ANALYZE under a database lock, so pods and CronJobs starting together run them once (#85).
+		php bin/console app:database:migrate --no-interaction
 	fi
 
 	echo "* READY"
