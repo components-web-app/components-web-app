@@ -1061,8 +1061,13 @@ check_api_scaling() {
 " ;;
     *)
       if ! api_scaled "$track"; then
-        if [ "$API_AUTOSCALE_MIN" -gt 1 ] || [ "$API_AUTOSCALE_MAX" -gt 1 ] || [ "$count" -gt 1 ]; then
-          bad="${bad}  more than one API pod (min $API_AUTOSCALE_MIN, max $API_AUTOSCALE_MAX, replicas $count) needs scaled mode: set CWA_CI_API_SCALED_$(api_scaled_track_name "$track")=true
+        # As the chart: min and max count with the autoscaler, replicaCount without it (#184); an odd value checks both.
+        if [ "${CWA_CI_API_AUTOSCALE:-true}" != "false" ] && { [ "$API_AUTOSCALE_MIN" -gt 1 ] || [ "$API_AUTOSCALE_MAX" -gt 1 ]; }; then
+          bad="${bad}  more than one API pod (autoscaler min $API_AUTOSCALE_MIN, max $API_AUTOSCALE_MAX) needs scaled mode: set CWA_CI_API_SCALED_$(api_scaled_track_name "$track")=true
+"
+        fi
+        if [ "${CWA_CI_API_AUTOSCALE:-true}" != "true" ] && [ "$count" -gt 1 ]; then
+          bad="${bad}  more than one API pod (CWA_CI_API_REPLICA_COUNT $count, autoscaler off) needs scaled mode: set CWA_CI_API_SCALED_$(api_scaled_track_name "$track")=true
 "
         fi
       elif [ "$API_AUTOSCALE_MIN" -lt 1 ] || [ "$API_AUTOSCALE_MIN" -gt "$API_AUTOSCALE_MAX" ]; then

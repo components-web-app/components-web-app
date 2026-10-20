@@ -1,6 +1,6 @@
 #!/bin/sh
 # Regression test (#85): k8s.sh's check_api_scaling allows more than one API pod only in scaled mode, by every route,
-# and refuses settings scaled mode can't use. Usage (repository root): bin/test/api-scaling-config.sh [k8s.sh]
+# and refuses settings scaled mode can't use. A setting the chart ignores (replicaCount under the autoscaler) is allowed (#184). Usage (repository root): bin/test/api-scaling-config.sh [k8s.sh]
 set -eu
 
 K8S="${1:-bin/devops/k8s.sh}"
@@ -23,6 +23,10 @@ stable||ok:1-1-256
 stable|CWA_CI_API_AUTOSCALE_MAX=2|refused:needs scaled mode: set CWA_CI_API_SCALED_PRODUCTION=true
 stable|CWA_CI_API_AUTOSCALE_MIN=2|refused:needs scaled mode
 stable|CWA_CI_API_AUTOSCALE=false CWA_CI_API_REPLICA_COUNT=2|refused:needs scaled mode
+stable|CWA_CI_API_REPLICA_COUNT=2|ok:1-1-256
+stable|CWA_CI_API_AUTOSCALE=false CWA_CI_API_AUTOSCALE_MAX=3|ok:1-3-256
+stable|CWA_CI_API_AUTOSCALE=False CWA_CI_API_REPLICA_COUNT=2|refused:CWA_CI_API_REPLICA_COUNT 2
+stable|CWA_CI_API_AUTOSCALE=False CWA_CI_API_AUTOSCALE_MAX=2|refused:autoscaler min 1, max 2
 staging|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_AUTOSCALE_MAX=3|refused:set CWA_CI_API_SCALED_STAGING=true
 canary|CWA_CI_API_SCALED_PRODUCTION=true|ok:1-1-256
 stable|CWA_CI_API_SCALED_PRODUCTION=TRUE CWA_CI_API_AUTOSCALE_MAX=2|refused:needs scaled mode
