@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+
+- README's versions table: `@cwa/nuxt` 2.0.0-alpha.21 recommends bundle 2.0.0-alpha.29 rather than requiring it, and says why bundle alpha.27 and alpha.28 are skipped. [7ef9eba](https://github.com/components-web-app/components-web-app/commit/7ef9eba7452dda29edfdaffdbd95203b0f203b67)
+
 ## [2.0.0-alpha.45](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.45) - 2026-10-21
 
 ### Upgrade notes
