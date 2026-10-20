@@ -43,4 +43,8 @@ class RedisWatchState
 
     #[ORM\Column(type: Types::DATETIMETZ_IMMUTABLE, nullable: true)]
     public ?\DateTimeImmutable $checkedAt = null;
+
+    /** The Helm release revision at the last check: a Redis restart with a new revision was a deploy's, so no email. */
+    #[ORM\Column(type: Types::STRING, length: 32, nullable: true)]
+    public ?string $releaseRevision = null;
 }

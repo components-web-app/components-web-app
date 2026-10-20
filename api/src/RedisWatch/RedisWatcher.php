@@ -36,7 +36,7 @@ final class RedisWatcher
         $this->sleep = $sleep ? $sleep(...) : static function (int $seconds): void { sleep($seconds); };
     }
 
-    public function run(RedisWatchState $state, \DateTimeImmutable $now): RedisWatchOutcome
+    public function run(RedisWatchState $state, \DateTimeImmutable $now, ?string $releaseRevision = null): RedisWatchOutcome
     {
         $outcome = new RedisWatchOutcome();
         $state->checkedAt = $now;
@@ -70,6 +70,10 @@ final class RedisWatcher
             if (!$this->recover($state, $now, $outcome)) {
                 return $outcome;
             }
+        } elseif (null !== $state->redisRunId && $runId !== $state->redisRunId && null !== $releaseRevision
+            && null !== $state->releaseRevision && $releaseRevision !== $state->releaseRevision) {
+            // A deploy recreated Redis (#85): expected, and empty, so no email.
+            $outcome->say(\sprintf('Redis restarted with deploy revision %s; it started empty, so nothing is stale.', $releaseRevision));
         } elseif (null !== $state->redisRunId && $runId !== $state->redisRunId) {
             $outcome->say('Redis restarted since the last check; it started empty, so nothing is stale.');
             $this->notify($outcome, 'Redis restarted', implode("\n\n", [
@@ -91,6 +95,7 @@ final class RedisWatcher
         }
         $state->redisRunId = $runId;
         $state->lastOkAt = $now;
+        $state->releaseRevision = $releaseRevision ?? $state->releaseRevision;
 
         return $outcome;
     }

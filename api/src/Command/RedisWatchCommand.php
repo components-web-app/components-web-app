@@ -84,7 +84,8 @@ final class RedisWatchCommand extends Command
             CloudflareEdgeCache::fromCdnConfig($this->cdnConfig, $this->httpClient),
             (int) $input->getOption('attempts'),
         );
-        $outcome = $watcher->run($state, new \DateTimeImmutable());
+        $revision = getenv('CWA_RELEASE_REVISION');
+        $outcome = $watcher->run($state, new \DateTimeImmutable(), \is_string($revision) && '' !== $revision ? $revision : null);
         $this->entityManager->flush();
 
         foreach ($outcome->lines as $line) {

@@ -47,6 +47,9 @@ spec:
               env:
                 - name: SKIP_MIGRATIONS
                   value: "true"
+                # Changes with every deploy: a Redis restart under a new revision was the deploy's, so no email (#85).
+                - name: CWA_RELEASE_REVISION
+                  value: {{ .Release.Revision | quote }}
                 {{- include "cwa.phpEnv" . | nindent 16 }}
               {{- with include "cwa.siteEnvFrom" (dict "ctx" . "side" "api") }}
               {{- . | nindent 14 }}

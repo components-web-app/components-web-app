@@ -172,6 +172,27 @@ final class RedisWatcherTest extends TestCase
         self::assertFalse($outcome->failed);
     }
 
+    public function testARestartWithANewReleaseRevisionWasADeployAndSendsNoEmail(): void
+    {
+        $this->check('7');
+        $this->store->runId = 'run-2';
+        $outcome = $this->check('8');
+
+        self::assertSame([], $this->notifier->subjects);
+        self::assertSame(0, $this->store->flushes);
+        self::assertSame('8', $this->state->releaseRevision);
+        self::assertStringContainsString('deploy revision 8', implode("\n", $outcome->lines));
+    }
+
+    public function testARestartWithinOneReleaseRevisionStillEmails(): void
+    {
+        $this->check('7');
+        $this->store->runId = 'run-2';
+        $this->check('7');
+
+        self::assertSame(['Redis restarted'], $this->notifier->subjects);
+    }
+
     public function testWithoutACdnItOnlyFlushesRedis(): void
     {
         $watcher = new RedisWatcher($this->store, $this->php, $this->notifier, null, 1, 0, static function (): void {});
@@ -211,10 +232,10 @@ final class RedisWatcherTest extends TestCase
         $this->php->result = PhpViewResult::ok('Souin; fwd=uri-miss; stored');
     }
 
-    private function check(): \App\RedisWatch\RedisWatchOutcome
+    private function check(?string $revision = null): \App\RedisWatch\RedisWatchOutcome
     {
         return new RedisWatcher($this->store, $this->php, $this->notifier, $this->edge, 3, 0, static function (): void {})
-            ->run($this->state, $this->now());
+            ->run($this->state, $this->now(), $revision);
     }
 
     private function now(): \DateTimeImmutable
