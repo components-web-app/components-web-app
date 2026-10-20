@@ -13,6 +13,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- Scaled deploys flush and warm only once the old API pods are gone (warm requests failed on terminating pods), and the warm surge raises the autoscaler's maximum along with its minimum (Kubernetes refused a minimum above the maximum) (#85). [4d2ad50](https://github.com/components-web-app/components-web-app/commit/4d2ad505bdc724992f1cad89677c52f8533a4245)
 - Deploys run their commands in the API (the flush and warm, fixtures, image variants) in a ready pod, not `kubectl exec deploy/…`, which straight after a rollout could pick the old pod while it terminated. In scaled mode that flushed the old pod's own cache instead of the shared Redis (#85). [ba19fb4](https://github.com/components-web-app/components-web-app/commit/ba19fb47c8ead79cc55c2b291bac596279f0a895)
 - Browser tests: the password reset test waits for `/forgot-password` and the reset page to hydrate before filling them, as `logIn` does (#179). [b09d62b](https://github.com/components-web-app/components-web-app/commit/b09d62b92ed5286a31413c1b76df626bdf886aeb)
 - Browser tests: `e2e/run.sh` names its compose stack `cwa-e2e-<checkout directory>` (`COMPOSE_PROJECT_NAME` overrides) and its tests container after it, so two projects' local runs on one machine no longer join or tear down each other's (#178). [21a3745](https://github.com/components-web-app/components-web-app/commit/21a3745552ac615fad28aea8df53ee105a1b9b85)
