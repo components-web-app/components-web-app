@@ -41,18 +41,17 @@ jobs:
       sha: ${{ steps.plan.outputs.sha }}
       tag: ${{ steps.plan.outputs.tag }}
       skip: ${{ steps.plan.outputs.skip }}
+      created: ${{ steps.plan.outputs.created }}
     steps:
+      # No stored credentials in any job: build runs code from the image it built (#208).
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
       # Inputs reach the script through env:, never ${{ }} inside run:.
       - id: plan
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EVENT: ${{ github.event_name }}
           REF_NAME: ${{ github.ref_name }}
           IN_REF: ${{ inputs.ref }}
@@ -89,12 +88,14 @@ jobs:
             [ "$default" = "$IMAGE:$tag" ] \
               || { echo "::error::api/Dockerfile defaults CWA_PHP_BASE to '$default', but this release publishes $IMAGE:$tag"; exit 1; }
           fi
-          if docker buildx imagetools inspect "$IMAGE:$tag" >/dev/null 2>&1; then
+          # Logged in, so a private package counts; any answer but 200 or 404 fails the run.
+          state=$(sh .github/php-base/ghcr-tag-state.sh "${IMAGE#ghcr.io/}" "$tag")
+          if [ "$state" = present ]; then
             if [ "$EVENT" = schedule ]; then echo "::notice::$IMAGE:$tag exists already"; skip=true
             else echo "::error::$IMAGE:$tag exists; tags are never overwritten"; exit 1; fi
           fi
           echo "Building $IMAGE:$tag from $ref ($sha), skip=$skip"
-          { echo "sha=$sha"; echo "tag=$tag"; echo "skip=$skip"; } >> "$GITHUB_OUTPUT"
+          { echo "sha=$sha"; echo "tag=$tag"; echo "skip=$skip"; echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"; } >> "$GITHUB_OUTPUT"
 
   build:
     name: Build and test (${{ matrix.platform }})
@@ -120,6 +121,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -138,18 +140,28 @@ jobs:
           no-cache: true
           provenance: mode=max
           sbom: true
+          # Replace the labels inherited from dunglas/frankenphp; project images inherit these.
           labels: |
+            org.opencontainers.image.title=cwa-php-base
+            org.opencontainers.image.description=FrankenPHP with the CWA template's Caddy plugins and patches, and its PHP extensions. Third-party components keep their own licences (see the SBOM).
+            org.opencontainers.image.source=https://github.com/components-web-app/components-web-app
+            org.opencontainers.image.url=https://github.com/components-web-app/components-web-app
+            org.opencontainers.image.vendor=Components Web App
+            org.opencontainers.image.revision=${{ needs.plan.outputs.sha }}
+            org.opencontainers.image.version=${{ needs.plan.outputs.tag }}
+            org.opencontainers.image.created=${{ needs.plan.outputs.created }}
+            org.opencontainers.image.licenses=NOASSERTION
             rocks.cwa.php-base.version=${{ needs.plan.outputs.tag }}
             rocks.cwa.php-base.revision=${{ needs.plan.outputs.sha }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-      # The unit-tests job's Souin and Caddyfile tests, on this architecture, before anything is tagged.
+      # The unit-tests job's Souin and Caddyfile tests, on this architecture, before anything is tagged; the checkout is read-only.
       - name: Smoke test the image
         env:
           DIGEST: ${{ steps.build.outputs.digest }}
         run: |
           docker network create php-base-test
           docker run -d --name redis --network php-base-test redis:8.10.2
-          docker run --rm --network php-base-test -e REDIS_ADDR=redis:6379 -v "$PWD:/src" -w /src \
+          docker run --rm --network php-base-test -e REDIS_ADDR=redis:6379 -v "$PWD:/src:ro" -w /src \
             --entrypoint sh "$IMAGE@$DIGEST" bin/test/php-base-smoke.sh
       - name: Save the digest
         env:
@@ -174,6 +186,11 @@ jobs:
       id-token: write
       attestations: write
     steps:
+      # The workflow's own ref, for ghcr-tag-state.sh.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/php-base
       - uses: actions/download-artifact@v4
         with:
           path: digests
@@ -188,43 +205,73 @@ jobs:
       - id: index
         name: Tag the multi-arch image
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.plan.outputs.tag }}
           SHA: ${{ needs.plan.outputs.sha }}
         run: |
           set -eu
-          # Checked again here: a parallel run may have pushed it since plan.
-          if docker buildx imagetools inspect "$IMAGE:$TAG" >/dev/null 2>&1; then echo "::error::$IMAGE:$TAG exists; tags are never overwritten"; exit 1; fi
           set --
           for f in digests/*; do set -- "$@" "$IMAGE@sha256:$(basename "$f")"; done
-          docker buildx imagetools create -t "$IMAGE:$TAG" \
-            --annotation "index:org.opencontainers.image.source=https://github.com/components-web-app/components-web-app" \
-            --annotation "index:org.opencontainers.image.revision=$SHA" \
-            --annotation "index:org.opencontainers.image.version=$TAG" \
-            --annotation "index:org.opencontainers.image.licenses=MIT" \
-            --annotation "index:org.opencontainers.image.description=CWA php base: FrankenPHP with the template's Caddy plugins and patches, and its PHP extensions" \
-            "$@"
+          # The manifests a tag of these builds lists: each per-platform index's children (image and attestation manifests).
+          children() { for ref in "$@"; do docker buildx imagetools inspect --raw "$ref" | jq -r --arg d "${ref#*@}" 'if .manifests then .manifests[].digest else $d end'; done | sort; }
+          # Checked again here (a parallel run may have pushed it since plan). A rerun after a failed attestation finds its own builds and goes on.
+          state=$(sh .github/php-base/ghcr-tag-state.sh "${IMAGE#ghcr.io/}" "$TAG")
+          if [ "$state" = present ]; then
+            [ "$(children "$IMAGE:$TAG")" = "$(children "$@")" ] \
+              || { echo "::error::$IMAGE:$TAG exists; tags are never overwritten"; exit 1; }
+            echo "::notice::$IMAGE:$TAG already lists exactly these builds (a rerun); not retagging"
+          else
+            docker buildx imagetools create -t "$IMAGE:$TAG" \
+              --annotation "index:org.opencontainers.image.source=https://github.com/components-web-app/components-web-app" \
+              --annotation "index:org.opencontainers.image.revision=$SHA" \
+              --annotation "index:org.opencontainers.image.version=$TAG" \
+              --annotation "index:org.opencontainers.image.licenses=NOASSERTION" \
+              --annotation "index:org.opencontainers.image.description=CWA php base: FrankenPHP with the template's Caddy plugins and patches, and its PHP extensions. Third-party components keep their own licences (see the SBOM)." \
+              "$@"
+          fi
           digest=$(docker buildx imagetools inspect "$IMAGE:$TAG" --format '{{json .Manifest}}' | jq -r .digest)
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
           echo "Published $IMAGE:$TAG@$digest"
-      # gh attestation verify oci://ghcr.io/components-web-app/cwa-php-base:<tag> --repo components-web-app/components-web-app
+      # Releases and rebuilds only: a test-* build of any ref must not verify like a release (#208).
       - uses: actions/attest-build-provenance@v2
+        if: github.event_name != 'workflow_dispatch'
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.index.outputs.digest }}
           push-to-registry: true
+      - name: Verify the attestation
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIGEST: ${{ steps.index.outputs.digest }}
+        run: |
+          gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish-php-base.yml" --source-ref "$GITHUB_REF"
       # For the GitHub release notes (CLAUDE.md, Releasing the template).
       - name: Build info
         env:
           TAG: ${{ needs.plan.outputs.tag }}
           DIGEST: ${{ steps.index.outputs.digest }}
+          EVENT: ${{ github.event_name }}
         run: |
           set -eu
           {
             echo "### cwa-php-base $TAG"
             echo
-            echo '```'
-            echo "$IMAGE:$TAG@$DIGEST"
+            echo "Pin it as \`$IMAGE:$TAG@$DIGEST\`."
             echo
+            if [ "$EVENT" = workflow_dispatch ]; then
+              echo "A test build: not attested, not a release."
+            else
+              echo "Verify it with:"
+              echo
+              echo '```sh'
+              echo "gh attestation verify oci://$IMAGE:$TAG --repo $GITHUB_REPOSITORY \\"
+              echo "  --signer-workflow $GITHUB_REPOSITORY/.github/workflows/publish-php-base.yml --source-ref $GITHUB_REF"
+              echo '```'
+            fi
+            echo
+            echo '```'
             echo "# Base images (from the build provenance)"
             docker buildx imagetools inspect "$IMAGE:$TAG" --format '{{json .Provenance}}' \
               | jq -r '.. | objects | select(has("uri") and has("digest")) | "\(.uri) sha256:\(.digest.sha256)"' | sort -u
@@ -251,6 +298,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
       - uses: docker/setup-buildx-action@v3
       # Logged in, since a first publish is still private until it is made public by hand.
       - uses: docker/login-action@v3
@@ -275,4 +323,4 @@ jobs:
           set -eu
           base=$(docker inspect -f '{{ index .Config.Labels "rocks.cwa.php-base.version" }}' cwa-php-verify:local)
           [ "$base" = "$TAG" ] || { echo "::error::built on cwa-php-base '$base', expected '$TAG'"; exit 1; }
-          docker run --rm --entrypoint sh cwa-php-verify:local -s < bin/test/caddy-validate.sh
+          docker run --rm -i --entrypoint sh cwa-php-verify:local -s < bin/test/caddy-validate.sh
