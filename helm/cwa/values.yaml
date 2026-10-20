@@ -312,6 +312,8 @@ databaseJob:
     directory: ""
     label: ""
     keep: 5
+    # The dump's emptyDir sizeLimit (CWA_CI_DATABASE_BACKUP_STORAGE): a bigger dump evicts the Job, not the node's other pods (#183).
+    storage: 5Gi
     resources:
       requests:
         cpu: 50m

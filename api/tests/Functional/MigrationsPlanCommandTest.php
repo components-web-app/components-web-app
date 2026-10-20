@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Command\MigrationsPlanCommand;
 use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -75,6 +76,27 @@ final class MigrationsPlanCommandTest extends KernelTestCase
         self::assertSame(0, $tester->execute([]), $tester->getDisplay());
         self::assertStringContainsString('CWA_MIGRATIONS_PENDING=0', $tester->getDisplay());
         self::assertStringNotContainsString('The SQL the pending migrations will run', $tester->getDisplay());
+    }
+
+    // A migration writing from up() hits this on the plan's session; it makes the plan incomplete, not failed (#183).
+    public function testAWriteOnTheReadOnlySessionIsRecognised(): void
+    {
+        $this->connection->executeStatement('CREATE TABLE plan_probe (id INT)');
+        $this->connection->executeStatement('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY');
+        try {
+            $this->connection->executeStatement('INSERT INTO plan_probe VALUES (1)');
+            self::fail('The read-only session accepted a write.');
+        } catch (\Doctrine\DBAL\Exception $e) {
+            self::assertTrue(MigrationsPlanCommand::isReadOnlyViolation($e));
+            self::assertTrue(MigrationsPlanCommand::isReadOnlyViolation(new \RuntimeException('Migration failed', 0, $e)));
+        }
+
+        try {
+            $this->connection->executeStatement('SELECT * FROM no_such_table');
+            self::fail('The query should fail.');
+        } catch (\Doctrine\DBAL\Exception $e) {
+            self::assertFalse(MigrationsPlanCommand::isReadOnlyViolation($e), 'Any other error still fails the plan');
+        }
     }
 
     // A deploy plans in a new process: migrations this process ran are frozen.

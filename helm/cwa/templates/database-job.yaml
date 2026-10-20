@@ -52,7 +52,8 @@ spec:
       {{- if eq .task "backup" }}
       volumes:
         - name: backup
-          emptyDir: {}
+          emptyDir:
+            sizeLimit: {{ required "databaseJob.backup.storage is required" .backup.storage | quote }}
       initContainers:
         # pg_dump of the server's major version; the php container uploads the dump.
         - name: pg-dump

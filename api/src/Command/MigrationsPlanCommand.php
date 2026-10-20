@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Exception as DriverException;
 use Doctrine\Migrations\DependencyFactory;
 use Doctrine\Migrations\Metadata\Storage\TableMetadataStorageConfiguration;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -17,9 +18,10 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 /**
  * Prints the pending migrations and their SQL without changing the database (#180): the deploy's plan Job runs it
  * with the new image against the track's database. The session is read-only, so a migration that writes from up()
- * or postUp() fails here instead of running.
+ * or postUp() can't run here: the plan then lists the pending migrations without their SQL and says so (#183).
  *
- * The last lines are for bin/devops/k8s.sh: CWA_DATABASE_SERVER_VERSION=<version> and CWA_MIGRATIONS_PENDING=<count>.
+ * The last lines are for bin/devops/k8s.sh: CWA_DATABASE_SERVER_VERSION=<version>, CWA_MIGRATIONS_PENDING=<count>
+ * and, when the SQL couldn't be shown, CWA_MIGRATIONS_PLAN_INCOMPLETE=1.
  */
 #[AsCommand(name: 'app:database:migrations-plan', description: 'Shows the pending migrations and their SQL, read-only')]
 final class MigrationsPlanCommand extends Command
@@ -53,7 +55,22 @@ final class MigrationsPlanCommand extends Command
                     throw new \RuntimeException('Could not create a temporary file for the SQL.');
                 }
                 try {
-                    $status = $this->runCommand('doctrine:migrations:migrate', ['--dry-run' => true, '--write-sql' => $file, '--all-or-nothing' => true], $output);
+                    try {
+                        $status = $this->runCommand('doctrine:migrations:migrate', ['--dry-run' => true, '--write-sql' => $file, '--all-or-nothing' => true], $output);
+                    } catch (\Throwable $e) {
+                        if (!self::isReadOnlyViolation($e)) {
+                            throw $e;
+                        }
+                        // A migration writing from up() or postUp() can't be planned read-only; the deploy still backs up and migrates (#183).
+                        $output->writeln([
+                            '',
+                            '<comment>A pending migration writes through the connection in up() or postUp(), which a read-only plan cannot run: ' . $e->getMessage() . '</comment>',
+                            '<comment>Nothing was changed. The SQL is not shown; read the pending migrations above before deploying.</comment>',
+                        ]);
+                        $output->writeln(['', 'CWA_DATABASE_SERVER_VERSION=' . $serverVersion, 'CWA_MIGRATIONS_PENDING=' . $pending, 'CWA_MIGRATIONS_PLAN_INCOMPLETE=1']);
+
+                        return Command::SUCCESS;
+                    }
                     if (Command::SUCCESS !== $status) {
                         $output->writeln('<error>The dry run failed, so the plan is incomplete.</error>');
 
@@ -72,6 +89,20 @@ final class MigrationsPlanCommand extends Command
         $output->writeln(['', 'CWA_DATABASE_SERVER_VERSION=' . $serverVersion, 'CWA_MIGRATIONS_PENDING=' . $pending]);
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * True when $e, or one it wraps, is PostgreSQL refusing a write in a read-only transaction (SQLSTATE 25006).
+     */
+    public static function isReadOnlyViolation(\Throwable $e): bool
+    {
+        for ($current = $e; null !== $current; $current = $current->getPrevious()) {
+            if ($current instanceof DriverException && '25006' === $current->getSQLState()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

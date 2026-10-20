@@ -1954,6 +1954,7 @@ performance_audit() {
 #   CWA_CI_DATABASE_BACKUP_BUCKET      the private backup bucket (bin/devops/backup-bucket.sh; set once on the group).
 #   CWA_CI_DATABASE_BACKUP_GCLOUD_JSON the project's backup key, base64 on one line; never the media key.
 #   CWA_CI_DATABASE_BACKUP_FOLDER      the project's folder in that bucket; default the project path slug.
+#   CWA_CI_DATABASE_BACKUP_STORAGE     the dump's scratch space in the Job (emptyDir sizeLimit), default 5Gi.
 
 database_track_name() {
   case "${1-stable}" in
@@ -2073,6 +2074,11 @@ migrations_plan() {
       [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::notice title=Migrations pending::${MIGRATIONS_PENDING} migration(s) will run on deploy"
       ;;
   esac
+  # A migration writing from up()/postUp() can't run read-only: listed without SQL, and the deploy goes on (#183).
+  if [ "$(database_job_marker CWA_MIGRATIONS_PLAN_INCOMPLETE)" = "1" ]; then
+    echo "WARNING: a pending migration writes from up() or postUp(), so the plan shows no SQL: read the migrations listed above before deploying." >&2
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Migrations plan incomplete::a pending migration writes from up() or postUp(); its SQL isn't shown"
+  fi
   return 0
 }
 
@@ -2205,11 +2211,13 @@ database_backup() {
   database_job "$track" backup "$tag" -f "$key" \
     --set-string databaseJob.backup.image="$image" --set-string databaseJob.backup.bucket="$bucket" \
     --set-string databaseJob.backup.directory="$directory" --set-string databaseJob.backup.label="$label" \
-    --set databaseJob.backup.keep="${CWA_CI_DATABASE_BACKUP_KEEP:-5}" || status=$?
+    --set databaseJob.backup.keep="${CWA_CI_DATABASE_BACKUP_KEEP:-5}" \
+    ${CWA_CI_DATABASE_BACKUP_STORAGE:+--set-string databaseJob.backup.storage="$CWA_CI_DATABASE_BACKUP_STORAGE"} || status=$?
   rm -f "$key"
   DATABASE_BACKUP=$(database_job_marker CWA_DATABASE_BACKUP)
   if [ "$status" -ne 0 ] || [ -z "$DATABASE_BACKUP" ]; then
     echo "!!!! DATABASE BACKUP FAILED (exit $status): the deploy stopped before migrating; the live site is unchanged. !!!!"
+    echo "A dump bigger than CWA_CI_DATABASE_BACKUP_STORAGE (${CWA_CI_DATABASE_BACKUP_STORAGE:-5Gi}) gets the Job evicted: kubectl get events -n $KUBE_NAMESPACE."
     [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Database backup failed::the deploy stopped before migrating"
     return 1
   fi
@@ -2238,7 +2246,8 @@ write_maintenance_notice() {
       if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ]; then
         echo "  pg_restore --clean --if-exists --no-owner --dbname='postgresql://<user>:<password>@<host>/<database>' database.dump"
       else
-        echo "  kubectl exec -i -n $KUBE_NAMESPACE $name-postgresql-0 -- sh -c 'PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_restore --clean --if-exists --no-owner -h 127.0.0.1 -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DATABASE\"' < database.dump"
+        # The Bitnami chart's env names (bin/test/database-job-chart.sh checks them); no POSTGRES_USER means the postgres user (#183).
+        echo "  kubectl exec -i -n $KUBE_NAMESPACE $name-postgresql-0 -c postgresql -- sh -c 'PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_restore --clean --if-exists --no-owner -h 127.0.0.1 -U \"\${POSTGRES_USER:-postgres}\" -d \"\${POSTGRES_DATABASE:-postgres}\"' < database.dump"
       fi
     fi
     echo "Fix forward and deploy again: any production deploy ends the window, with or without CWA_CI_MAINTENANCE_DURING_MIGRATIONS."

@@ -57,6 +57,20 @@ for template in deployment.yaml orphan-scan-cronjob.yaml image-variants-cronjob.
 done
 out=$(render --set databaseJob.task=drop --set databaseJob.name=x) && fail bad-task "an unknown task rendered"
 
+# The dump's scratch space is bounded (#183): 5Gi by default, databaseJob.backup.storage overrides.
+out=$(render --set databaseJob.task=backup --set databaseJob.name=x --set databaseJob.backup.bucket=backups --set databaseJob.backup.gcloudJsonB64=a2V5)
+printf '%s\n' "$out" | grep -A1 'emptyDir:' | grep -q 'sizeLimit: "5Gi"' || fail backup-storage "the dump's emptyDir has no 5Gi sizeLimit"
+out=$(render --set databaseJob.task=backup --set databaseJob.name=x --set databaseJob.backup.bucket=backups --set databaseJob.backup.gcloudJsonB64=a2V5 --set-string databaseJob.backup.storage=20Gi)
+printf '%s\n' "$out" | grep -q 'sizeLimit: "20Gi"' || fail backup-storage "databaseJob.backup.storage isn't the sizeLimit"
+
+# The in-cluster restore command k8s.sh prints reads these from the PostgreSQL pod (#183): a chart bump that renames them fails here.
+out=$(helm template rel "$DIR/cwa" --set mercure.publicUrl=https://x/.well-known/mercure --show-only charts/postgresql/templates/primary/statefulset.yaml 2>&1)
+for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DATABASE; do
+  printf '%s\n' "$out" | grep -q -- "- name: $name\$" || fail restore-env "the PostgreSQL pod has no $name"
+done
+printf '%s\n' "$out" | grep -q -- '- name: postgresql$' || fail restore-env "the PostgreSQL container isn't named postgresql"
+printf '%s\n' "$out" | grep -q '^  name: rel-postgresql$' || fail restore-env "the StatefulSet isn't <release>-postgresql"
+
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2
   exit 1

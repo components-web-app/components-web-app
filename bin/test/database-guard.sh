@@ -45,7 +45,8 @@ case "$*" in
   *"get job"*"status.succeeded}"*) failed "$@" || echo 1 ;;
   "logs "*)
     case "$(task "$@")" in
-      plan) printf 'Out-of-date!\nALTER TABLE x;\nCWA_DATABASE_SERVER_VERSION=14.13\nCWA_MIGRATIONS_PENDING=%s\n' "${STUB_PENDING:-2}" ;;
+      plan) printf 'Out-of-date!\nALTER TABLE x;\nCWA_DATABASE_SERVER_VERSION=14.13\nCWA_MIGRATIONS_PENDING=%s\n' "${STUB_PENDING:-2}"
+        [ -z "${STUB_PLAN_INCOMPLETE:-}" ] || echo "CWA_MIGRATIONS_PLAN_INCOMPLETE=1" ;;
       backup) failed "$@" || echo "CWA_DATABASE_BACKUP=gs://backups/group-site/production/rel/20261020-000000Z-abc.dump" ;;
       migrate) echo "migrated" ;;
     esac ;;
@@ -67,7 +68,7 @@ run() {
     unset CWA_CI_DATABASE_BACKUP_PRODUCTION CWA_CI_DATABASE_BACKUP_STAGING CWA_CI_MIGRATIONS_JOB_PRODUCTION \
       CWA_CI_MAINTENANCE_DURING_MIGRATIONS CWA_CI_DATABASE_BACKUP_BUCKET GCLOUD_BUCKET GCLOUD_PATH_PREFIX \
       CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME STUB_FAIL STUB_PENDING STUB_NO_RELEASE \
-      STUB_MAINTENANCE STUB_MAINTENANCE_EXIT STUB_MARKER STUB_MARKER_FAIL CWA_CI_DATABASE_BACKUP_IMAGE CWA_CI_DATABASE_BACKUP_FOLDER GITHUB_REPOSITORY \
+      STUB_MAINTENANCE STUB_MAINTENANCE_EXIT STUB_MARKER STUB_MARKER_FAIL STUB_PLAN_INCOMPLETE CWA_CI_DATABASE_BACKUP_STORAGE CWA_CI_DATABASE_BACKUP_IMAGE CWA_CI_DATABASE_BACKUP_FOLDER GITHUB_REPOSITORY \
       PHP_IMAGE_TAG GCLOUD_JSON
     export CWA_CI_DATABASE_BACKUP_GCLOUD_JSON="$4" CI_PROJECT_PATH_SLUG=group-site TAG=main
     for setting in $3; do export "$setting"; done
@@ -146,7 +147,15 @@ expect backup "databaseJob.backup.label=abc1234"
 order backup "databaseJob.task=plan" "databaseJob.task=backup"
 refuse backup "databaseJob.task=migrate"
 refuse backup "silverback:api-components:maintenance"
+refuse backup "databaseJob.backup.storage"
 said backup "Database backup: gs://backups/"
+
+# A migration writing from up(): the plan can't show its SQL, but the deploy still backs up and migrates (#183).
+run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_MIGRATIONS_JOB_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_PLAN_INCOMPLETE=1 CWA_CI_DATABASE_BACKUP_STORAGE=20Gi"
+status plan-incomplete 0
+said plan-incomplete "so the plan shows no SQL"
+order plan-incomplete "databaseJob.task=backup" "databaseJob.task=migrate"
+expect plan-incomplete "databaseJob.backup.storage=20Gi"
 
 run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_PENDING=0"
 status up-to-date 0
@@ -189,6 +198,8 @@ refuse window-fails "maintenance off"
 said window-fails "MIGRATIONS FAILED"
 said window-fails "MAINTENANCE MODE IS ON"
 said window-fails "gs://backups/group-site/production/rel/20261020-000000Z-abc.dump"
+said window-fails "kubectl exec -i -n ns rel-postgresql-0 -c postgresql -- sh -c"
+said window-fails '-U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DATABASE:-postgres}"'
 said window-fails "silverback:api-components:maintenance off"
 said window-fails "kubectl delete configmap -n ns rel-cwa-maintenance-window"
 refuse window-fails "delete configmap"
