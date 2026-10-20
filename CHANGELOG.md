@@ -11,6 +11,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - Browser tests: the password reset test waits for `/forgot-password` and the reset page to hydrate before filling them, as `logIn` does (#179). [b09d62b](https://github.com/components-web-app/components-web-app/commit/b09d62b92ed5286a31413c1b76df626bdf886aeb)
 - Browser tests: `e2e/run.sh` names its compose stack `cwa-e2e-<checkout directory>` (`COMPOSE_PROJECT_NAME` overrides) and its tests container after it, so two projects' local runs on one machine no longer join or tear down each other's (#178). [21a3745](https://github.com/components-web-app/components-web-app/commit/21a3745552ac615fad28aea8df53ee105a1b9b85)
 
+### Changed
+
+- php entrypoint: migrations and `ANALYZE` run through `app:database:migrate`, under a Postgres advisory lock, so pods and CronJob pods starting together (a deploy beside the 03:00 orphan scan, or several API pods) run them once; the others wait up to 600 s (#85). [77617ca](https://github.com/components-web-app/components-web-app/commit/77617ca22aabb871c6a2db27e1748df4d70984d5)
+
 ## [2.0.0-alpha.42](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.42) - 2026-10-19
 
 ### Upgrade notes
