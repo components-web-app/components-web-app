@@ -164,6 +164,20 @@ jobs:
         run: sh bin/test/backup-bucket.sh
       - name: Check the Dockerfile pulls this release's cwa-php-base, which holds no project files (#208)
         run: sh bin/test/php-base-version.sh
+      - name: Check compose.prod.yaml's host settings match the Kubernetes deploy's (#207)
+        run: sh bin/test/site-hosts-parity.sh
+
+  # compose.prod.yaml renders with every required value and refuses without each one (#207). Only the compose CLI.
+  compose-config:
+    name: Compose config
+    runs-on: ubuntu-latest
+    needs: setup
+    if: vars.CWA_CI_TEST_DISABLED != 'true'
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check compose.prod.yaml renders, and refuses without each required value
+        run: sh bin/test/compose-prod-config.sh
 
   functional-tests:
     name: Functional Tests

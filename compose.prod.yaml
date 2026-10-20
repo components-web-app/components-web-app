@@ -1,4 +1,15 @@
-# Production override: every secret is required, so it never falls back to compose.yaml's dev defaults.
+# Single-server production, a PREVIEW for the beta: media still needs a Cloud Storage bucket (#211), no deploy script yet (#212).
+# `docker compose -f compose.yaml -f compose.prod.yaml up -d --wait`; every secret and site value is required.
+
+# CI boots it under e2e/compose.yaml and renders it in bin/test/compose-prod-config.sh (#207).
+
+# Docker's default json-file log grows without limit.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
 services:
   php:
     build:
@@ -7,7 +18,24 @@ services:
       # As in compose.override.yaml: CWA_PHP_BASE=cwa_php_base builds the base from source (#208).
       args:
         - CWA_PHP_BASE
+    depends_on:
+      database:
+        condition: service_healthy
+    logging: *logging
     environment:
+      # SITE_HOST is the one public host; SITE_ALIASES, optional, more hosts (space-separated) served the same.
+      # php.local is the app container's plain-HTTP route in (#98).
+      SERVER_NAME: ${SITE_HOST:?set SITE_HOST to the site's domain} ${SITE_ALIASES:-}, php.local:80, php.local:443
+      SITE_HOST: ${SITE_HOST:?set SITE_HOST to the site's domain}
+      SITE_ALIASES: ${SITE_ALIASES:-}
+      # The public host, for IRIs generated during SSR and for links in user emails.
+      BROWSER_SERVER_NAME: ${SITE_HOST:?set SITE_HOST to the site's domain}
+      # Empty: the entrypoint builds them from SITE_HOST and SITE_ALIASES, as the Kubernetes deploy does (#207). Set one to override it.
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-}
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-}
+      MERCURE_CORS_ORIGIN: ${MERCURE_CORS_ORIGIN:-}
+      MERCURE_PUBLIC_URL: https://${SITE_HOST:?set SITE_HOST to the site's domain}/.well-known/mercure
+      CWA_ENVIRONMENT: ${CWA_ENVIRONMENT:-production}
       APP_SECRET: ${APP_SECRET:?set APP_SECRET}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:?set CADDY_MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:?set CADDY_MERCURE_JWT_SECRET}
@@ -17,15 +45,22 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
       JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:?set JWT_PUBLIC_KEY}
       JWT_PASSPHRASE: ${JWT_PASSPHRASE:?set JWT_PASSPHRASE}
+      # Without it, emails go to api/.env's smtp-relay:25, which this stack doesn't have.
+      MAILER_DSN: ${MAILER_DSN:?set MAILER_DSN, your mail relay (Symfony Mailer DSN)}
+      MAILER_EMAIL:
+      # One email per unique 5xx per hour (#162); unset sends none.
+      ERROR_MAIL_TO:
+      # Media goes to Cloud Storage until local media lands (#211).
+      GCLOUD_BUCKET: ${GCLOUD_BUCKET:?set GCLOUD_BUCKET, the Cloud Storage bucket for media (#211)}
+      GCLOUD_JSON:
+      GCLOUD_PUBLIC_URL:
+      GCLOUD_PATH_PREFIX:
       # The super admin that fixture loads create, and reset to this password every run (#203).
       ADMIN_USERNAME:
       ADMIN_EMAIL:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
-      # The public host, for IRIs generated during SSR and for links in user emails.
-      BROWSER_SERVER_NAME: ${SERVER_NAME:?set SERVER_NAME to the site's domain}
-      # Caddy faces the internet here, so a public client's X-Forwarded-For is
-      # never believed for the rate limit (#106). Set it to false only if another
-      # proxy than Cloudflare sits in front, and trust it with CADDY_TRUSTED_PROXIES.
+      # Caddy faces the internet, so a client's X-Forwarded-For is never believed for the rate limit (#106).
+      # false only behind another proxy than Cloudflare, with its ranges in CADDY_TRUSTED_PROXIES.
       CADDY_EDGE: ${CADDY_EDGE:-true}
     networks:
       default:
@@ -37,16 +72,22 @@ services:
     build:
       context: ./app
       target: prod
+    logging: *logging
     environment:
       # SSR calls php over the compose network, without TLS (#98). Not http://php:
       # that host isn't in SERVER_NAME, so Caddy redirects it with a 308.
       NUXT_CWA_API_URL: http://php.local/_api
-      NUXT_PUBLIC_CWA_API_URL_BROWSER: https://${SERVER_NAME:?set SERVER_NAME to the site's domain}/_api
+      NUXT_PUBLIC_CWA_API_URL_BROWSER: https://${SITE_HOST:?set SITE_HOST to the site's domain}/_api
+      # Canonical URLs and og:url, whichever host rendered the page (#140).
+      NUXT_SITE_URL: https://${SITE_HOST:?set SITE_HOST to the site's domain}
+      NUXT_PUBLIC_CWA_ENVIRONMENT: ${CWA_ENVIRONMENT:-production}
       # HTTPS, because the warm sends the public Host: plain HTTP gets Caddy's 308 (cwa-nuxt-module#343).
       NUXT_CWA_PAGE_CACHE_WARM_ORIGIN: https://php.local
       # Signs OG image URLs (nuxt-og-image 7): at least 32 characters, e.g. `openssl rand -base64 32`.
       NUXT_APP_SECRET: ${NUXT_APP_SECRET:?set NUXT_APP_SECRET}
 
   database:
+    restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}

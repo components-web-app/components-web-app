@@ -1,5 +1,5 @@
 #!/bin/sh
-# Provisions the Caddyfile (`validate`, which catches what `adapt` passes) for helm's and compose's SERVER_NAME (#113).
+# Provisions the Caddyfile (`validate`, which catches what `adapt` passes) for helm's and compose's SERVER_NAME (#113, #207).
 # Runs in the API image with the job's CADDY_* env. Usage: bin/test/caddy-validate.sh [frankenphp] [Caddyfile]
 set -eu
 
@@ -20,7 +20,9 @@ trap 'rm -f "$OUT"' EXIT
 status=0
 # php's own hub, then scaled mode's (#85): php forwarding to the hub's pod.
 for hub_upstream in '' 'example-mercure:80'; do
-for server_name in ':80' 'localhost, php.local:80, php.local:443'; do
+# compose.prod.yaml's shapes too (#207): SITE_HOST alone leaves a space before the comma; SITE_ALIASES is space-separated.
+for server_name in ':80' 'localhost, php.local:80, php.local:443' 'example.com , php.local:80, php.local:443' \
+	'example.com www.example.com other.example.org, php.local:80, php.local:443'; do
 	if env \
 		MERCURE_HUB_UPSTREAM="$hub_upstream" \
 		SERVER_NAME="$server_name" \

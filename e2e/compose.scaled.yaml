@@ -14,14 +14,16 @@ services:
       test: ["CMD", "curl", "-fs", "http://localhost/healthz"]
       interval: 5s
     environment:
-      MERCURE_PUBLISHER_JWT_KEY: ${E2E_MERCURE_JWT_SECRET:?}
-      MERCURE_SUBSCRIBER_JWT_KEY: ${E2E_MERCURE_JWT_SECRET:?}
+      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:?}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET:?}
       MERCURE_PUBLIC_URL: https://localhost/.well-known/mercure
       MERCURE_CORS_ORIGIN: https://localhost
 
   php:
     deploy:
       replicas: 2
+    # Each replica its own /data, as each pod has: compose.yaml's shared caddy_data would open one Mercure bolt file twice.
+    volumes: !reset []
     depends_on:
       redis: { condition: service_started }
       mercure: { condition: service_started }

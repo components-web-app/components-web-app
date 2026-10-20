@@ -7,31 +7,47 @@ cd "$(dirname "$0")"
 : "${E2E_PHP_IMAGE:?set E2E_PHP_IMAGE to the php image (frankenphp_prod)}"
 : "${E2E_APP_IMAGE:?set E2E_APP_IMAGE to the app image (prod)}"
 
+# The stack is compose.yaml + compose.prod.yaml, the single-server production config, plus the CI stand-ins (#207).
+files="-f ../compose.yaml -f ../compose.prod.yaml -f compose.yaml"
+# E2E_SCALED=true: two php replicas on one Redis cache and one Mercure hub (#85).
+[ "${E2E_SCALED:-}" = "true" ] && files="$files -f compose.scaled.yaml"
+
+# Nothing from the caller's environment reaches the stack (a CI job holds the deploy's TRUSTED_HOSTS, GCLOUD_JSON...):
+# every name the files read is unset, and --env-file /dev/null keeps out a local .env.
+for name in $(cat ../compose.yaml ../compose.prod.yaml compose.yaml compose.scaled.yaml \
+  | grep -o '[$][{][A-Z_][A-Z0-9_]*\|^ *[A-Z_][A-Z0-9_]*: *$' | tr -d '${: ' | sort -u); do
+  case "$name" in E2E_*|CI) ;; *) unset "$name" ;; esac
+done
+
 # Throwaway secrets: this stack only lives for one run.
 rand() { openssl rand -hex 24; }
-E2E_APP_SECRET=$(rand)
-E2E_NUXT_APP_SECRET=$(rand)
-E2E_MERCURE_JWT_SECRET=$(rand)
-E2E_JWT_PASSPHRASE=$(rand)
-E2E_ADMIN_PASSWORD=$(rand)
+APP_SECRET=$(rand)
+NUXT_APP_SECRET=$(rand)
+CADDY_MERCURE_JWT_SECRET=$(rand)
+JWT_PASSPHRASE=$(rand)
+ADMIN_PASSWORD=$(rand)
+POSTGRES_PASSWORD=$(rand)
 keydir=$(mktemp -d)
 # Derive both keys from a plain one, so nothing has to read the passphrase back.
 openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$keydir/plain.pem"
 openssl pkey -in "$keydir/plain.pem" -pubout -out "$keydir/public.pem"
-openssl pkey -in "$keydir/plain.pem" -aes256 -passout "pass:$E2E_JWT_PASSPHRASE" -out "$keydir/private.pem"
-E2E_JWT_SECRET_KEY=$(cat "$keydir/private.pem")
-E2E_JWT_PUBLIC_KEY=$(cat "$keydir/public.pem")
+openssl pkey -in "$keydir/plain.pem" -aes256 -passout "pass:$JWT_PASSPHRASE" -out "$keydir/private.pem"
+JWT_SECRET_KEY=$(cat "$keydir/private.pem")
+JWT_PUBLIC_KEY=$(cat "$keydir/public.pem")
 rm -rf "$keydir"
-export E2E_APP_SECRET E2E_NUXT_APP_SECRET E2E_MERCURE_JWT_SECRET E2E_JWT_PASSPHRASE E2E_ADMIN_PASSWORD E2E_JWT_SECRET_KEY E2E_JWT_PUBLIC_KEY
+# The site values compose.prod.yaml requires. https://localhost: the Secure login cookie and the __Secure- Mercure
+# cookie need HTTPS, and localhost gets Caddy's internal certificate.
+SITE_HOST=localhost
+MAILER_DSN=smtp://mailpit:1025
+GCLOUD_BUCKET=cwa-e2e
+export APP_SECRET NUXT_APP_SECRET CADDY_MERCURE_JWT_SECRET JWT_PASSPHRASE ADMIN_PASSWORD POSTGRES_PASSWORD \
+  JWT_SECRET_KEY JWT_PUBLIC_KEY SITE_HOST MAILER_DSN GCLOUD_BUCKET
 
 # One stack per checkout, so two projects' local runs never share or tear down each other's (#178).
 project=$(printf '%s' "${COMPOSE_PROJECT_NAME:-cwa-e2e-$(basename "$(cd .. && pwd)")}" | tr 'A-Z' 'a-z' | tr -c 'a-z0-9_-' '-')
 tests_container="$project-tests"
-# E2E_SCALED=true: two php replicas on one Redis cache and one Mercure hub (#85).
-files="-f compose.yaml"
-[ "${E2E_SCALED:-}" = "true" ] && files="$files -f compose.scaled.yaml"
 # shellcheck disable=SC2086
-compose() { docker compose -p "$project" $files "$@"; }
+compose() { docker compose -p "$project" --env-file /dev/null $files "$@"; }
 cleanup() {
   status=$?
   if [ "$status" -ne 0 ]; then
@@ -39,8 +55,8 @@ cleanup() {
     compose logs --tail 80 php app 2>&1 || true
   fi
   if [ "${E2E_KEEP_STACK:-}" = "true" ]; then
-    echo "Stack $project left running; admin password: $E2E_ADMIN_PASSWORD"
-    echo "Stop it with: docker compose -p $project -f e2e/compose.yaml down -v"
+    echo "Stack $project left running; admin password: $ADMIN_PASSWORD"
+    echo "Stop it with (from the repository root): docker compose -p $project down -v"
   else
     compose --profile tests down -v --remove-orphans >/dev/null 2>&1 || true
   fi
@@ -51,7 +67,7 @@ trap cleanup EXIT
 compose pull --quiet --ignore-pull-failures
 # The images' healthchecks: php and its database, then Node (#205). Never the tests service, which exits by design.
 echo "Starting the stack and waiting for it to be healthy (migrations run on boot)..."
-compose up -d --wait --wait-timeout 300 database gcs mailpit php app
+compose up -d --no-build --wait --wait-timeout 300 database gcs mailpit php app
 
 compose exec -T php curl -fs -o /dev/null -X POST -H 'Content-Type: application/json' -d '{"name":"cwa-e2e"}' http://gcs:8000/storage/v1/b
 compose exec -T -e SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load --no-interaction
@@ -64,6 +80,17 @@ until compose exec -T php curl -fsk -o /dev/null -H 'Accept: text/html' https://
   if [ "$tries" -gt 60 ]; then echo "The site never answered." >&2; exit 1; fi
   sleep 2
 done
+
+# Pages stored then hit, a tag purge drops only its pages, purge-rendered-html drops every page (#207).
+compose exec -T php sh -s < cache-checks.sh
+# Caddy's admin API answers on php's loopback only, so no other container reaches it.
+if compose exec -T app wget -q -T 3 -O /dev/null http://php:2019/config/ 2>/dev/null; then
+  echo "Caddy's admin API (port 2019) answered from the app container." >&2
+  exit 1
+fi
+echo "  ok: port 2019 unreachable from the app container"
+# The browser tests start cold, as they did before the checks.
+compose exec -T php bin/console silverback:api-components:purge-http-cache --quiet
 
 rm -rf playwright-report test-results
 compose --profile tests build --quiet tests

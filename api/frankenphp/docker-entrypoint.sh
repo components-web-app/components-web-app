@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+# compose.prod.yaml's host settings from SITE_HOST and SITE_ALIASES (#207); unset everywhere else.
+. "$(dirname "$0")/site-hosts.sh"
+cwa_site_host_defaults
+
 if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 	if [ -z "$(ls -A 'vendor/' 2>/dev/null)" ]; then
 	  if [[ -n "$GITHUB_TOKEN" ]]; then

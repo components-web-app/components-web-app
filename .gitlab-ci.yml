@@ -117,6 +117,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/deploy-promotion.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/backup-bucket.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/php-base-version.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/site-hosts-parity.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml
@@ -154,6 +155,21 @@ functional tests:
   artifacts:
     reports:
       junit: api/build/logs/phpunit/functional.xml
+  except:
+    variables:
+      - $CWA_CI_TEST_DISABLED == "true"
+
+# compose.prod.yaml renders with every required value and refuses without each one (#207). Only the compose CLI, no daemon.
+compose config:
+  stage: test
+  image: docker:27
+  before_script: [ ]
+  dependencies: [ ]
+  needs: [ ]
+  script:
+    - sh bin/test/compose-prod-config.sh
+  only:
+    - branches
   except:
     variables:
       - $CWA_CI_TEST_DISABLED == "true"

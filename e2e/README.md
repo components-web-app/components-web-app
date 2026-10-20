@@ -1,8 +1,17 @@
 # Browser tests
 
 Playwright tests that drive the built app and API the way visitors and editors do (#157). They run against this
-commit's **production images** in a throwaway stack (`compose.yaml`): Postgres on tmpfs, a Cloud Storage emulator
-(the production image always uses Cloud Storage, and your own specs may upload), and Mailpit for emails.
+commit's **production images** in a throwaway stack: the repository's `compose.yaml` + `compose.prod.yaml` (the
+single-server production config, #207), with `e2e/compose.yaml` on top adding only the CI stand-ins: the images
+instead of builds, no published ports, Postgres on tmpfs, a Cloud Storage emulator (the production image always uses
+Cloud Storage, and your own specs may upload) and Mailpit for emails. `run.sh` sets the values `compose.prod.yaml`
+requires (throwaway secrets, `SITE_HOST=localhost`) and unsets everything else those files read, so nothing from your
+shell or a local `.env` reaches the stack.
+
+Before the browser tests, `cache-checks.sh` runs in the php container: every sitemap page is `stored` on its first
+view and a `hit` on its second, purging one component's tag drops only the page that rendered it, and
+`purge-rendered-html` drops every page but leaves the API cached. Then `run.sh` checks Caddy's admin API (port 2019)
+can't be reached from the app container.
 
 ## In CI
 
@@ -24,7 +33,8 @@ E2E_PHP_IMAGE=cwa-e2e-php:local E2E_APP_IMAGE=cwa-e2e-app:local sh e2e/run.sh
 ```
 
 - `E2E_ARGS="tests/admin.spec.ts"` (or `--grep …`) runs part of the suite. The check that every test ran is skipped then.
-- `E2E_KEEP_STACK=true` leaves the stack running afterwards, and prints the command that stops it.
+- `E2E_KEEP_STACK=true` leaves the stack running afterwards, and prints the command that stops it (from the
+  repository root, `docker compose -p <project> down -v`).
 - `E2E_SCALED=true` runs the same tests against scaled mode (#85): two php replicas on one Redis cache and one Mercure
   hub (`compose.scaled.yaml`). In CI, set `CWA_CI_E2E_SCALED="true"`.
 - Each checkout gets its own stack, `cwa-e2e-<directory>` (`COMPOSE_PROJECT_NAME` overrides it), so two projects can
