@@ -145,6 +145,13 @@ default_branch_cache_from() {
   fi
 }
 
+# The template's own CI builds the php base from source, so the patches are tested between releases (#208).
+php_base_build_args() {
+  if [ "${CWA_CI_PHP_IMAGE_FROM_SOURCE:-}" = "true" ]; then
+    printf -- '--build-arg CWA_PHP_BASE=cwa_php_base'
+  fi
+}
+
 build_api() {
   # https://gitlab.com/help/ci/variables/predefined_variables.md
   if [[ -n "$CI_REGISTRY_USER" ]]; then
@@ -165,6 +172,7 @@ build_api() {
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG,mode=max \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
   	$(default_branch_cache_from "$PHP_REPOSITORY_CACHE") \
+  	$(php_base_build_args) \
   	--tag $PHP_REPOSITORY:$TAG \
   	--metadata-file build-metadata.json \
   	--target frankenphp_prod \

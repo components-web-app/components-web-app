@@ -109,6 +109,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/database-guard.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/deploy-promotion.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/backup-bucket.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/php-base-version.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml

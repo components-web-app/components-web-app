@@ -162,6 +162,8 @@ jobs:
         run: sh bin/test/deploy-promotion.sh
       - name: Check backup-bucket.sh grants each project its own backup folder only (#180)
         run: sh bin/test/backup-bucket.sh
+      - name: Check the Dockerfile pulls this release's cwa-php-base, which holds no project files (#208)
+        run: sh bin/test/php-base-version.sh
 
   functional-tests:
     name: Functional Tests

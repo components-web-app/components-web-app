@@ -2,7 +2,10 @@
 
 # Adapted from https://github.com/dunglas/symfony-docker
 
-# Versions
+# Prebuilt base for this release (#208): FrankenPHP with our plugins and patches, apt packages, PHP extensions.
+# --build-arg CWA_PHP_BASE=cwa_php_base builds it from source, for projects that change api/frankenphp/{souin,storages,caddy}.
+ARG CWA_PHP_BASE=ghcr.io/components-web-app/cwa-php-base:2.0.0-alpha.43
+
 FROM dunglas/frankenphp:builder AS builder
 
 # Copy xcaddy in the builder image
@@ -65,17 +68,9 @@ RUN CGO_ENABLED=1 \
 	--with github.com/mholt/caddy-ratelimit \
 	--with github.com/components-web-app/components-web-app/api/frankenphp/caddy/queryallowlist=/tmp/queryallowlist
 
-FROM dunglas/frankenphp:latest AS frankenphp_upstream
+# Published as cwa-php-base by publish-php-base.yml (#208): nothing project-specific in this stage.
+FROM dunglas/frankenphp:latest AS cwa_php_base
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
-
-# The different stages of this Dockerfile are meant to be built into separate images
-# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
-# https://docs.docker.com/compose/compose-file/#target
-
-# Base FrankenPHP image
-FROM frankenphp_upstream AS frankenphp_base
-
-WORKDIR /app
 
 # apt retries, timeouts and no pipelining for every apt call, install-php-extensions' too; retry-fetch bounds each step (#176).
 # Debian over HTTPS: plain HTTP to deb.debian.org stalls on GitLab SaaS runners (#176).
@@ -98,6 +93,7 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Uncached, about 4 minutes; a retry skips the extensions already installed.
 # brotli: warm-http-cache --accept-encoding=br decodes br with it, or warms only the routes (#175).
+# xdebug is built here but left disabled; frankenphp_dev enables it with no network (#208).
 RUN retry-fetch 480 install-php-extensions \
 		@composer \
 		apcu \
@@ -108,16 +104,29 @@ RUN retry-fetch 480 install-php-extensions \
 		xsl \
 		gd \
 		ffi \
-		brotli
+		brotli \
+		pdo_pgsql \
+		xdebug \
+	&& rm "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini"
 
 # libvips, the imagine driver (#141): no ImageMagick, PDF or SVG loaders for uploads, two threads per image,
 # and glibc settings that hand freed image buffers back to the OS. All overridable at runtime.
 ENV VIPS_BLOCK_UNTRUSTED=1 VIPS_CONCURRENCY=2 MALLOC_ARENA_MAX=2 MALLOC_MMAP_THRESHOLD_=1048576
 
+# Inherited by project images, so `docker inspect` shows which base they were built on (#208).
+LABEL rocks.cwa.php-base.source="https://github.com/components-web-app/components-web-app"
+
+# The different stages of this Dockerfile are meant to be built into separate images
+# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
+# https://docs.docker.com/compose/compose-file/#target
+
+# Base FrankenPHP image: the published base (or cwa_php_base) plus this project's config (#208).
+FROM ${CWA_PHP_BASE} AS frankenphp_base
+
+WORKDIR /app
+
+# pdo_pgsql is already in the base (#208); a recipe adding an install-php-extensions line here is harmless.
 ###> recipes ###
-###> doctrine/doctrine-bundle ###
-RUN retry-fetch 120 install-php-extensions pdo_pgsql
-###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 COPY --link frankenphp/conf.d/10-app.ini $PHP_INI_DIR/conf.d/
@@ -141,10 +150,8 @@ VOLUME /app/var/
 
 RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 
-RUN set -eux; \
-	install-php-extensions \
-		xdebug \
-	;
+# Built into the base, disabled (#208).
+RUN docker-php-ext-enable xdebug
 
 COPY --link frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/conf.d/
 
