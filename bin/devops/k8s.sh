@@ -2002,7 +2002,7 @@ maintenance_command() {
   local deploy
   deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" -o name | sed -n 1p)
   [ -n "$deploy" ] || { echo "No API deployment for release '$1'." >&2; return 1; }
-  kubectl exec -n "$KUBE_NAMESPACE" "$deploy" -- php bin/console silverback:api-components:maintenance "$2"
+  kubectl exec -n "$KUBE_NAMESPACE" "$(api_ready_pod "$1" "$deploy")" -- php bin/console silverback:api-components:maintenance "$2"
 }
 
 # What to do while maintenance is left on; the deploy job's after_script prints it if the job fails (#180).
@@ -2097,10 +2097,12 @@ finish_maintenance_window() {
   api_deploy=$(kubectl get deploy -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$name" -o name | sed -n 1p)
   [ -n "$api_deploy" ] || { echo "No API deployment for release '$name'." >&2; database_guard_failed; return 1; }
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s || { database_guard_failed; return 1; }
+  local api_pod
+  api_pod=$(api_ready_pod "$name" "$api_deploy")
   echo "Flushing the HTTP cache before maintenance ends..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" -- php bin/console silverback:api-components:purge-http-cache \
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- php bin/console silverback:api-components:purge-http-cache \
     || { database_guard_failed; return 1; }
-  warm_api_cache_for "$track" "$api_deploy" "$name"
+  warm_api_cache_for "$track" "$api_pod" "$name"
   maintenance_command "$name" off || { echo "❌ Could not turn maintenance off." >&2; database_guard_failed; return 1; }
   rm -f "$MAINTENANCE_NOTICE"
   echo "Maintenance mode is off."
