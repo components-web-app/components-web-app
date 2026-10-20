@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.45](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.45) - 2026-10-21
+
 ### Upgrade notes
 
 - `CWA_CI_MIGRATIONS_JOB_PRODUCTION` is no longer read: production always migrates in a Job. Delete the variable. Only if that Job can't run on your cluster, set `CWA_CI_MIGRATIONS_JOB_DISABLED="true"`. `CWA_CI_MIGRATIONS_JOB_STAGING`/`_CANARY`/`_REVIEW` are unchanged (#180). [407aa51](https://github.com/components-web-app/components-web-app/commit/407aa51e459184c7af03078484a8d9a366eb88f2)
