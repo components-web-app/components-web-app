@@ -2241,9 +2241,29 @@ write_maintenance_notice() {
         echo "  kubectl exec -i -n $KUBE_NAMESPACE $name-postgresql-0 -- sh -c 'PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_restore --clean --if-exists --no-owner -h 127.0.0.1 -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DATABASE\"' < database.dump"
       fi
     fi
-    echo "Fix forward and deploy again (the window resumes and ends), or turn it off by hand:"
-    echo "  kubectl exec -n $KUBE_NAMESPACE deploy/$(cwa_fullname "$name") -- php bin/console silverback:api-components:maintenance off"
+    echo "Fix forward and deploy again: any production deploy ends the window, with or without CWA_CI_MAINTENANCE_DURING_MIGRATIONS."
+    echo "Or turn it off by hand in a Ready API pod (not one that is Terminating), then remove the window's marker:"
+    echo "  kubectl get pods -n $KUBE_NAMESPACE -l app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$name"
+    echo "  kubectl exec -n $KUBE_NAMESPACE <ready pod> -- php bin/console silverback:api-components:maintenance off"
+    echo "  kubectl delete configmap -n $KUBE_NAMESPACE $(maintenance_window_marker "$name")"
   } > "$MAINTENANCE_NOTICE"
+}
+
+# A ConfigMap marking a window a deploy turned on, so any later production deploy ends it (#182). Not helm's, so
+# upgrades keep it; maintenance an admin turned on has none and is left alone.
+maintenance_window_marker() {
+  printf '%s-maintenance-window' "$(cwa_fullname "$1")"
+}
+
+maintenance_window_marked() {
+  kubectl get configmap -n "$KUBE_NAMESPACE" "$(maintenance_window_marker "$1")" >/dev/null 2>&1
+}
+
+maintenance_window_mark() {
+  maintenance_window_marked "$1" && return 0
+  kubectl create configmap -n "$KUBE_NAMESPACE" "$(maintenance_window_marker "$1")" \
+    --from-literal=started="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --from-literal=pipeline="${CI_PIPELINE_URL:-${GITHUB_RUN_ID:+${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/$GITHUB_RUN_ID}}" >/dev/null
 }
 
 database_guard_failed() {
@@ -2263,11 +2283,17 @@ database_guard() {
   fi
   database_track_switch DATABASE_BACKUP "$track" && backup=true
   database_track_switch MIGRATIONS_JOB "$track" && migrate=true
-  [ "$maintenance$backup$migrate" != "falsefalsefalse" ] || return 0
   if [ "$backup" = "true" ]; then
     database_backup_location "$track" >/dev/null || return 1
     database_backup_key_b64 >/dev/null || return 1
   fi
+  # A window an earlier deploy left on: this deploy ends it after the rollout, whatever its own switches (#182).
+  if [ "$track" = "stable" ] && maintenance_window_marked "$name"; then
+    echo "!!!! Maintenance mode is still on from an earlier deploy's failed window: this deploy turns it off after the rollout. !!!!"
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Maintenance window left on::this deploy ends it after the rollout"
+    write_maintenance_notice "$name"
+  fi
+  [ "$maintenance$backup$migrate" != "falsefalsefalse" ] || return 0
 
   tag=$(database_job_image) || { echo "❌ No php image for the database Jobs." >&2; return 1; }
   migrations_plan "$track" "$tag" || return 1
@@ -2293,6 +2319,11 @@ database_guard() {
       echo "WARNING: this maintenance window takes no database backup (CWA_CI_DATABASE_BACKUP_$(database_track_name "$track") isn't \"true\"): a failed migration can only be fixed forward." >&2
       [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=No backup::this maintenance window takes no database backup"
     fi
+    maintenance_window_mark "$name" || {
+      echo "❌ Could not create ConfigMap $(maintenance_window_marker "$name"), which lets a later deploy end a failed window; maintenance stays off." >&2
+      rm -f "$MAINTENANCE_NOTICE"
+      return 1
+    }
     maintenance_command "$name" on || { echo "❌ Could not turn maintenance on." >&2; database_guard_failed; return 1; }
   fi
   [ "$MIGRATIONS_PENDING" != "0" ] || return 0
@@ -2332,6 +2363,8 @@ finish_maintenance_window() {
   maintenance_command "$name" off || { echo "❌ Could not turn maintenance off." >&2; database_guard_failed; return 1; }
   rm -f "$MAINTENANCE_NOTICE"
   echo "Maintenance mode is off."
+  kubectl delete configmap -n "$KUBE_NAMESPACE" "$(maintenance_window_marker "$name")" --ignore-not-found >/dev/null \
+    || echo "WARNING: could not delete ConfigMap $(maintenance_window_marker "$name"): the next production deploy turns maintenance off again." >&2
 }
 
 # Runs in the pod, so the guard checks the prefix the pod really has: an app deployed before #166 has none.

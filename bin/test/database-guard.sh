@@ -38,6 +38,8 @@ echo "kubectl $*" >>"$STUB_LOG"
 task() { case "$*" in *-db-plan-*) echo plan ;; *-db-backup-*) echo backup ;; *-db-migrate-*) echo migrate ;; esac; }
 failed() { case " ${STUB_FAIL:-} " in *" $(task "$@") "*) return 0 ;; esac; return 1; }
 case "$*" in
+  *"get configmap"*maintenance-window*) [ -n "${STUB_MARKER:-}" ] || exit 1 ;;
+  "create configmap"*) [ -z "${STUB_MARKER_FAIL:-}" ] || exit 1 ;;
   "create "*) cat "$4" >>"$STUB_LOG" ;;
   *"get job"*"succeeded}{.status.failed}"*) echo 1 ;;
   *"get job"*"status.succeeded}"*) failed "$@" || echo 1 ;;
@@ -65,7 +67,7 @@ run() {
     unset CWA_CI_DATABASE_BACKUP_PRODUCTION CWA_CI_DATABASE_BACKUP_STAGING CWA_CI_MIGRATIONS_JOB_PRODUCTION \
       CWA_CI_MAINTENANCE_DURING_MIGRATIONS CWA_CI_DATABASE_BACKUP_BUCKET GCLOUD_BUCKET GCLOUD_PATH_PREFIX \
       CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME STUB_FAIL STUB_PENDING STUB_NO_RELEASE \
-      STUB_MAINTENANCE STUB_MAINTENANCE_EXIT CWA_CI_DATABASE_BACKUP_IMAGE CWA_CI_DATABASE_BACKUP_FOLDER GITHUB_REPOSITORY \
+      STUB_MAINTENANCE STUB_MAINTENANCE_EXIT STUB_MARKER STUB_MARKER_FAIL CWA_CI_DATABASE_BACKUP_IMAGE CWA_CI_DATABASE_BACKUP_FOLDER GITHUB_REPOSITORY \
       PHP_IMAGE_TAG GCLOUD_JSON
     export CWA_CI_DATABASE_BACKUP_GCLOUD_JSON="$4" CI_PROJECT_PATH_SLUG=group-site TAG=main
     for setting in $3; do export "$setting"; done
@@ -96,7 +98,8 @@ order() {
 run "database_guard stable" ""
 status off 0
 refuse off "helm"
-refuse off "kubectl"
+expect off "kubectl get configmap -n ns rel-cwa-maintenance-window"
+refuse off "maintenance status"
 
 run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true"
 status no-bucket 1
@@ -142,7 +145,7 @@ expect backup "kubectl delete secret -n ns rel-db-backup-"
 expect backup "databaseJob.backup.label=abc1234"
 order backup "databaseJob.task=plan" "databaseJob.task=backup"
 refuse backup "databaseJob.task=migrate"
-refuse backup "maintenance"
+refuse backup "silverback:api-components:maintenance"
 said backup "Database backup: gs://backups/"
 
 run "database_guard stable" "CWA_CI_DATABASE_BACKUP_PRODUCTION=true CWA_CI_DATABASE_BACKUP_BUCKET=backups STUB_PENDING=0"
@@ -174,6 +177,8 @@ order window "databaseJob.task=backup" "databaseJob.task=migrate"
 order window "databaseJob.task=migrate" "purge-http-cache"
 order window "purge-http-cache" "warm-http-cache"
 order window "warm-http-cache" "maintenance off"
+order window "create configmap -n ns rel-cwa-maintenance-window" "maintenance on"
+order window "maintenance off" "delete configmap -n ns rel-cwa-maintenance-window"
 said window "Maintenance mode is off."
 [ ! -f "$DIR/work/maintenance-window.txt" ] || fail window "the notice was left behind"
 
@@ -185,6 +190,9 @@ said window-fails "MIGRATIONS FAILED"
 said window-fails "MAINTENANCE MODE IS ON"
 said window-fails "gs://backups/group-site/production/rel/20261020-000000Z-abc.dump"
 said window-fails "silverback:api-components:maintenance off"
+said window-fails "kubectl delete configmap -n ns rel-cwa-maintenance-window"
+refuse window-fails "delete configmap"
+grep -qF "deploy/" "$DIR/out" && fail window-fails "the notice names deploy/..., which can pick a terminating pod"
 grep -qF "maintenance off" "$DIR/work/maintenance-window.txt" 2>/dev/null || fail window-fails "no notice for the job's after_script"
 
 # A window without a backup still runs, with a warning (Daniel, 2026-10-20).
@@ -211,6 +219,32 @@ status retry 0
 refuse retry "maintenance on"
 refuse retry "databaseJob.task=migrate"
 expect retry "maintenance off"
+
+# No marker, no window: maintenance stays off rather than start a window a later deploy couldn't find (#182).
+run "database_guard stable" "CWA_CI_MAINTENANCE_DURING_MIGRATIONS=true STUB_MARKER_FAIL=1"
+status no-marker 1
+refuse no-marker "maintenance on"
+refuse no-marker "databaseJob.task=migrate"
+[ ! -f "$DIR/work/maintenance-window.txt" ] || fail no-marker "a notice for a window that never started"
+
+# A window left on by a failed deploy: a later production deploy without the switch still ends it (#182).
+run "database_guard stable && finish_maintenance_window stable" "STUB_MARKER=1"
+status left-on 0
+said left-on "still on from an earlier deploy's failed window"
+refuse left-on "helm"
+refuse left-on "maintenance on"
+order left-on "purge-http-cache" "maintenance off"
+order left-on "maintenance off" "delete configmap -n ns rel-cwa-maintenance-window"
+
+# Likewise when the later deploy has other switches and migrations pending.
+run "database_guard stable && finish_maintenance_window stable" "STUB_MARKER=1 CWA_CI_MIGRATIONS_JOB_PRODUCTION=true"
+status left-on-migrate 0
+order left-on-migrate "databaseJob.task=migrate" "maintenance off"
+
+# Staging never ends production's window.
+run "database_guard staging && finish_maintenance_window staging" "STUB_MARKER=1"
+status left-on-staging 0
+refuse left-on-staging "maintenance off"
 
 run "migrations_plan stable" ""
 status plan 0
