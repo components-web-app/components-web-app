@@ -16,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- Single-server: a comma-separated `SITE_ALIASES` stops the php entrypoint with a clear message (Caddy refuses commas in `SERVER_NAME`), and the browser tests' cache checks run on a site whose sitemap lists one page (they skip the tag-isolation check) (#207). [d6acdee](https://github.com/components-web-app/components-web-app/commit/d6acdeea7095f00093dc5241ecc6686e46495acf)
 - `bin/up --skip-fixtures` no longer says the admin is unchanged on a database that has none (#206). [be18f08](https://github.com/components-web-app/components-web-app/commit/be18f085c15f67bdae587782eab74e9bf1c406a9)
 
 ## [2.0.0-alpha.44](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.44) - 2026-10-20
