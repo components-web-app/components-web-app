@@ -1042,6 +1042,11 @@ check_api_scaling() {
       *[!0-9]*) bad="${bad}  CWA_CI_API_WARM_SURGE and CWA_CI_API_WARM_CONCURRENCY must be whole numbers
 " ;;
     esac
+    case "${CWA_CI_API_WARM_CONCURRENCY:-2}" in
+      *[!0]*) ;;
+      *) bad="${bad}  CWA_CI_API_WARM_CONCURRENCY is requests per API pod during the warm: at least 1
+" ;;
+    esac
   else
     API_AUTOSCALE_MIN="${CWA_CI_API_AUTOSCALE_MIN:-1}"
     API_AUTOSCALE_MAX="${CWA_CI_API_AUTOSCALE_MAX:-1}"
@@ -1558,14 +1563,14 @@ warm_api_cache() {
     || echo "WARNING: the br /_api warm failed; visitors' first requests render cold." >&2
 }
 
-# warm_api_cache for a track: in scaled mode through the API service, two requests at a time per pod (or
-# CWA_CI_API_WARM_CONCURRENCY), so the pods share the renders (#85). $3 adds the warm surge's pods to that count.
+# warm_api_cache for a track: in scaled mode through the API service, CWA_CI_API_WARM_CONCURRENCY (2) requests at a
+# time per pod, so the pods share the renders (#85, #195). $4 adds the warm surge's pods to the pod count.
 warm_api_cache_for() {
   local track="$1" api_deploy="$2" release_name="$3" extra="${4:-0}"
   if api_scaled "$track"; then
     check_api_scaling "$track" >/dev/null || return 1
     warm_api_cache "$api_deploy" "http://$(cwa_fullname "$release_name")" \
-      "${CWA_CI_API_WARM_CONCURRENCY:-$(( (API_AUTOSCALE_MIN + extra) * 2 ))}"
+      "$(( (API_AUTOSCALE_MIN + extra) * ${CWA_CI_API_WARM_CONCURRENCY:-2} ))"
   else
     warm_api_cache "$api_deploy"
   fi

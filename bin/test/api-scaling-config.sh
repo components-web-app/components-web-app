@@ -41,6 +41,7 @@ stable|CWA_API_CADDY_CACHE_STORAGE=redis|refused:use scaled mode
 stable|CWA_CI_API_AUTOSCALE_MAX=two|refused:whole numbers
 stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=2 CWA_CI_API_WARM_CONCURRENCY=6|ok:2-3-256
 stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=two|refused:CWA_CI_API_WARM_SURGE and CWA_CI_API_WARM_CONCURRENCY
+stable|CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_CONCURRENCY=0|refused:requests per API pod
 '
 
 # Every name the cases set, cleared first so a project's own CI variables can't leak into a case.

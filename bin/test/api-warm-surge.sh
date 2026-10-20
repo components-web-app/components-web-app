@@ -87,8 +87,12 @@ expect scaled 'purge-http-cache'
 expect scaled '--base-url=http://rel-cwa --concurrency=4'
 refuse scaled 'patch hpa'
 
+# Per pod (#195): 2 pods x 3, and with the surge (2 + 2 pods) x 3.
 run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_CONCURRENCY=3"
-expect concurrency '--base-url=http://rel-cwa --concurrency=3'
+expect concurrency '--base-url=http://rel-cwa --concurrency=6'
+
+run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=2 CWA_CI_API_WARM_CONCURRENCY=3"
+expect surge-concurrency '--base-url=http://rel-cwa --concurrency=12'
 
 run ""
 expect single 'purge-rendered-html'
