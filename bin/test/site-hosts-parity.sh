@@ -41,7 +41,6 @@ check() { # check <SITE_HOST> <SITE_ALIASES> <the same aliases, comma-separated>
 check example.com '' ''
 check example.com 'www.example.com' 'www.example.com'
 check example.com 'www.example.com other.example.org' 'www.example.com,other.example.org'
-check example.com 'www.example.com, other.example.org' 'www.example.com, other.example.org'
 check sub.domain.example.co.uk '' ''
 check localhost '' ''
 
@@ -52,6 +51,14 @@ if [ "$got" = '^custom$ ^https://(?:example\.com)$' ]; then echo "ok: a set valu
 got=$(env -u SITE_HOST -u TRUSTED_HOSTS sh -c '. "$0" && cwa_site_host_defaults && printf "%s" "${TRUSTED_HOSTS-unset}"' "$HOSTS")
 if [ "$got" = unset ]; then echo "ok: no SITE_HOST, no change"; else failures=$((failures + 1)); echo "FAIL: without SITE_HOST got '$got'" >&2; fi
 # Not a host name: refused, so the entrypoint stops.
+# Commas: compose puts SITE_ALIASES in SERVER_NAME, where Caddy refuses them (#207).
+for bad in 'www.example.com,other.example.org' 'www.example.com, other.example.org'; do
+  if SITE_HOST=example.com SITE_ALIASES="$bad" sh -c '. "$0" && cwa_site_host_defaults' "$HOSTS" 2>/dev/null; then
+    failures=$((failures + 1)); echo "FAIL: accepted SITE_ALIASES='$bad'" >&2
+  else
+    echo "ok: refuses SITE_ALIASES='$bad'"
+  fi
+done
 for bad in 'https://example.com' 'example.com:8443' '.example.com' 'exa$mple.com'; do
   if SITE_HOST="$bad" sh -c '. "$0" && cwa_site_host_defaults' "$HOSTS" 2>/dev/null; then
     failures=$((failures + 1)); echo "FAIL: accepted SITE_HOST='$bad'" >&2

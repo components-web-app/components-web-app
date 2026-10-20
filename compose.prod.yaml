@@ -34,6 +34,7 @@ services:
       TRUSTED_HOSTS: ${TRUSTED_HOSTS:-}
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-}
       MERCURE_CORS_ORIGIN: ${MERCURE_CORS_ORIGIN:-}
+      # From SITE_HOST, replacing compose.yaml's CADDY_MERCURE_PUBLIC_URL: it must match the browser's host (#207).
       MERCURE_PUBLIC_URL: https://${SITE_HOST:?set SITE_HOST to the site's domain}/.well-known/mercure
       CWA_ENVIRONMENT: ${CWA_ENVIRONMENT:-production}
       APP_SECRET: ${APP_SECRET:?set APP_SECRET}

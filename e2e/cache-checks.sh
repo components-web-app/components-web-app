@@ -41,12 +41,12 @@ for loc in $(locs /sitemap.xml); do
   esac
 done
 set -- $pages
-if [ "$#" -lt 2 ]; then
-  echo "The sitemap lists $# page(s); the checks need two." >&2
+if [ "$#" -lt 1 ]; then
+  echo "The sitemap lists no pages; the checks need at least one." >&2
   exit 1
 fi
 page_a=$1
-page_b=$2
+page_b=${2:-}
 echo "Cache checks on $# sitemap pages."
 
 echo "The API answers through php, and SSR's plain-HTTP route isn't redirected (#98):"
@@ -59,6 +59,10 @@ for page in "$@"; do expect "$page" "200 stored" "first view"; done
 for page in "$@"; do expect "$page" "200 hit" "second view"; done
 
 echo "Purging one resource's tag drops only the pages that rendered it (what a write purges):"
+# A one-page site has nothing to compare with: only the purge of every page below applies (#177).
+if [ -z "$page_b" ]; then
+  echo "  skipped: the sitemap lists one page"
+else
 get "$page_a" >/dev/null
 keys_a=$(header surrogate-key | tr ',' '\n' | sed 's/^ *//; s/ *$//')
 get "$page_b" >/dev/null
@@ -75,6 +79,7 @@ else
   php bin/console silverback:api-components:purge-http-cache --tag="$tag" --quiet
   expect "$page_a" "200 stored" "purged page renders again ($tag)"
   expect "$page_b" "200 hit" "the other page stays cached"
+fi
 fi
 
 echo "purge-rendered-html drops every page (cwa-html) and leaves the API cached:"

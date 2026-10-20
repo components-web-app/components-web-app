@@ -5,9 +5,13 @@ cwa_site_host_defaults() {
 	[ -n "${SITE_HOST:-}" ] || return 0
 	_cwa_alt=""
 	_cwa_origins=""
-	# SITE_ALIASES is space-separated (Caddy refuses "a,b" in SERVER_NAME); commas are tolerated here.
-	for _cwa_host in $(printf '%s %s' "$SITE_HOST" "${SITE_ALIASES:-}" | tr ',' ' '); do
+	# SITE_ALIASES is space-separated: compose puts it in SERVER_NAME, where Caddy refuses "a,b" (#207).
+	for _cwa_host in $SITE_HOST ${SITE_ALIASES:-}; do
 		case "$_cwa_host" in
+			*,*)
+				echo "SITE_ALIASES is space-separated, not comma-separated: '$_cwa_host'." >&2
+				return 1
+				;;
 			*[!A-Za-z0-9.-]*|.*|*.)
 				echo "SITE_HOST and SITE_ALIASES must be host names without a scheme or port, not '$_cwa_host'." >&2
 				return 1
