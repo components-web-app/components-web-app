@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Copy `api/frankenphp/mercure-hub.caddy` (and `mercure-hub.Caddyfile`) with the Caddyfile**, which now imports the hub settings from it; without it php doesn't start. A project that changed the hub settings in its Caddyfile moves the change there. In scaled mode (still being built) the hub runs in its own pod and php forwards `/.well-known/mercure` to it (#85). [d51851c](https://github.com/components-web-app/components-web-app/commit/d51851c8fecb429aca2702c871198eec9c663cb6)
+
 ### Fixed
 
 - Browser tests: the password reset test waits for `/forgot-password` and the reset page to hydrate before filling them, as `logIn` does (#179). [b09d62b](https://github.com/components-web-app/components-web-app/commit/b09d62b92ed5286a31413c1b76df626bdf886aeb)
@@ -13,7 +17,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
-- php Caddyfile: the Mercure hub settings moved to `api/frankenphp/mercure-hub.caddy`, imported by the Caddyfile; a project that changed them in its Caddyfile copies the change there. In scaled mode (still being built) the hub runs in its own pod and php forwards `/.well-known/mercure` to it (#85). [d51851c](https://github.com/components-web-app/components-web-app/commit/d51851c8fecb429aca2702c871198eec9c663cb6)
+- Scaled mode (still being built): API pods get a PDB (`maxUnavailable: 1`), spread across nodes, and an autoscaler on CPU only that removes pods after ten minutes; the chart refuses more than one API pod without it (#85). [9959bf3](https://github.com/components-web-app/components-web-app/commit/9959bf387d9813d01587e9972e1545c51282a81f)
 - Deploys refuse more than one API pod (`CWA_CI_API_AUTOSCALE_MIN`/`_MAX` or `CWA_CI_API_REPLICA_COUNT` above 1) unless scaled mode is on for that track, since a second pod's cache is never purged. Scaled mode (`CWA_CI_API_SCALED_PRODUCTION`, `_STAGING`, `_CANARY`, `_REVIEW`) is being built and isn't ready to turn on: so far it starts a Redis per release as the shared cache and flushes on every deploy (#85). [62bfeb9](https://github.com/components-web-app/components-web-app/commit/62bfeb928ad665d29666e4569507f1f79c47172a)
 - php entrypoint: migrations and `ANALYZE` run through `app:database:migrate`, under a Postgres advisory lock, so pods and CronJob pods starting together (a deploy beside the 03:00 orphan scan, or several API pods) run them once; the others wait up to 600 s (#85). [77617ca](https://github.com/components-web-app/components-web-app/commit/77617ca22aabb871c6a2db27e1748df4d70984d5)
 
