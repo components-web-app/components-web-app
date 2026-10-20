@@ -73,6 +73,7 @@ expect surge 'purge-http-cache'
 expect surge 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-http-cache'
 refuse surge 'exec -n ns deployment.apps/rel-cwa '
 expect surge '--base-url=http://rel-cwa --concurrency=8'
+expect surge '--base-url=http://rel-cwa --concurrency=8 --requests-per-connection=1'
 order surge '"minReplicas":4' 'purge-http-cache'
 order surge 'deletionTimestamp' 'purge-http-cache'
 order surge 'purge-http-cache' '--base-url=http://rel-cwa'
@@ -99,6 +100,7 @@ expect single 'purge-rendered-html'
 expect single 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-rendered-html'
 refuse single 'purge-http-cache'
 refuse single 'patch hpa'
+refuse single 'requests-per-connection'
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2

@@ -1556,16 +1556,18 @@ purge_rendered_html() {
 # Each pass stops at CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME seconds (0 skips it); a failure only warns.
 # In scaled mode ($2 is the API service URL) it goes through the service, so every API pod renders a share (#85).
 warm_api_cache() {
-  local api_deploy="$1" base_url="${2:-http://localhost}" concurrency="${3:-2}" max_time="${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}"
+  local api_deploy="$1" base_url="${2:-http://localhost}" concurrency="${3:-2}" max_time="${CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME:-60}" spread=""
+  # Through a Service: a new connection per request, so kube-proxy spreads them across the pods (#196).
+  [ "$base_url" = "http://localhost" ] || spread="--requests-per-connection=1"
   if [ "$max_time" = "0" ]; then
     return 0
   fi
   echo "Warming /_api through ${base_url} (gzip, then br; ${concurrency} at a time, at most ${max_time}s each)..."
   kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
-    -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" --max-time="$max_time" --no-interaction \
+    -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" ${spread} --max-time="$max_time" --no-interaction \
     || echo "WARNING: the gzip /_api warm failed; visitors' first requests render cold." >&2
   kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
-    -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" --accept-encoding=br --max-time="$max_time" --no-interaction \
+    -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" ${spread} --accept-encoding=br --max-time="$max_time" --no-interaction \
     || echo "WARNING: the br /_api warm failed; visitors' first requests render cold." >&2
 }
 
