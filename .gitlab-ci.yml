@@ -226,7 +226,10 @@ review:
 # Optional Vercel staging PWA job (deploy_vercel_app staging in bin/devops/vercel.sh); its definition is in v2.0.0-alpha.17's .gitlab-ci.yml.
 
 staging:
-  retry: 1
+  # Only when CI itself failed, never the deploy script: a retried maintenance window would back up and migrate again (#180).
+  retry:
+    max: 1
+    when: [runner_system_failure, stuck_or_timeout_failure, api_failure, scheduler_failure, runner_unsupported, data_integrity_failure]
   stage: staging
   script:
     - check_kube_domain
@@ -285,7 +288,10 @@ production:
   artifacts:
     paths: [ environment_url.txt ]
   when: manual
-  retry: 1
+  # Only when CI itself failed, never the deploy script: a retried maintenance window would back up and migrate again (#180).
+  retry:
+    max: 1
+    when: [runner_system_failure, stuck_or_timeout_failure, api_failure, scheduler_failure, runner_unsupported, data_integrity_failure]
   allow_failure: false
   # Needs the builds and tests too: without staging, needs: [] would deploy the
   # previous image. Optional, as the switches can remove them.
