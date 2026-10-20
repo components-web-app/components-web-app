@@ -150,7 +150,7 @@ printf '\n%sReady in %ss.%s\n\n' "$BOLD" "$(($(date +%s) - START))" "$RESET"
 echo "  Site:      $ORIGIN"
 echo "  Sign in:   $ORIGIN/login"
 if [ "$SKIP_FIXTURES" = true ]; then
-  echo "  Admin:     unchanged (fixtures skipped)"
+  echo "  Admin:     fixtures skipped, so this run created or changed no admin (on a new database, run bin/up without --skip-fixtures)"
 else
   echo "  Admin:     ${ADMIN_USER:-admin} / ${ADMIN_PASS:-admin}"
 fi
