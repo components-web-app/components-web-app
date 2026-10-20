@@ -22,7 +22,8 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
-    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- /* Not in scaled mode: php rarely hands memory back, so a memory target would hold the HPA at its max (#85). */}}
+    {{- if and .Values.autoscaling.targetMemoryUtilizationPercentage (not (include "cwa.scaled" .)) }}
     - type: Resource
       resource:
         name: memory
@@ -30,4 +31,12 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
     {{- end }}
+  {{- if include "cwa.scaled" . }}
+  # Add pods at once, remove them slowly: a warm surge or a spike's pods stay ten minutes (#85).
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+    scaleDown:
+      stabilizationWindowSeconds: 600
+  {{- end }}
 {{- end }}

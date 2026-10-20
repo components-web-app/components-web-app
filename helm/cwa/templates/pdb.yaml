@@ -1,0 +1,15 @@
+{{- if include "cwa.scaled" . }}
+# Scaled mode (#85): a node drain moves the API pods one at a time, so one keeps serving. Never with one pod: a PDB on
+# a single replica blocks every drain (#78). The selector must match the API pods only, never Redis, Mercure or SSR.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cwa.fullname" . }}
+  labels:
+    {{- include "cwa.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      {{- include "cwa.selectorLabels" . | nindent 6 }}
+{{- end }}

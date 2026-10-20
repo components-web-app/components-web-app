@@ -1,4 +1,8 @@
 {{- $fullName := include "cwa.fullname" . -}}
+{{- $apiPods := ternary .Values.autoscaling.maxReplicas .Values.replicaCount .Values.autoscaling.enabled }}
+{{- if and (not (include "cwa.scaled" .)) (or (gt (int $apiPods) 1) (and .Values.autoscaling.enabled (gt (int .Values.autoscaling.minReplicas) 1))) }}
+{{- fail "More than one API pod needs scaled.enabled: a second pod's cache is never purged (#85)." }}
+{{- end }}
 {{- $primaryHost := index .Values.ingress.hosts 0 }}
 apiVersion: apps/v1
 kind: Deployment
@@ -24,8 +28,11 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
         checksum/site-env: {{ include (print $.Template.BasePath "/site-env.yaml") . | sha256sum }}
+        {{- if not (include "cwa.scaled" .) }}
+        {{- /* Scaled mode has the PDB instead (#85). */}}
         # Single replica: stop the cluster autoscaler evicting it to consolidate nodes.
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+        {{- end }}
         {{- with .Values.podAnnotations }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -37,6 +44,16 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "cwa.serviceAccountName" . }}
+      {{- if include "cwa.scaled" . }}
+      # One API pod per node where possible, so losing a node never takes them all (#85).
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "cwa.selectorLabels" . | nindent 14 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -70,7 +87,8 @@ spec:
           # Keeps serving while the ingress drops the pod's endpoint, then stops Caddy (#148).
           lifecycle:
             {{- $warmMaxTime := int .Values.php.warmHttpCacheMaxTime }}
-            {{- if gt $warmMaxTime 0 }}
+            {{- /* Scaled mode skips it: the shared cache is already warm, and the deploy warms after its flush (#85). */}}
+            {{- if and (gt $warmMaxTime 0) (not (include "cwa.scaled" .)) }}
             # Warms /_api before the probes start (#160): SSR's gzip keys, then browsers' and Cloudflare's br (#170); at most 2 x maxTime + 270s, never fails the container.
             postStart:
               exec:
