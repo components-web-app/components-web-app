@@ -2096,7 +2096,7 @@ database_backup_location() {
     return 1
   fi
   if [ -z "${CWA_CI_DATABASE_BACKUP_GCLOUD_JSON:-}" ]; then
-    echo "CWA_CI_DATABASE_BACKUP_$(database_track_name "$1")=true needs CWA_CI_DATABASE_BACKUP_GCLOUD_JSON, the backup service account's key (bin/devops/backup-bucket.sh); never the media key." >&2
+    echo "A database backup needs CWA_CI_DATABASE_BACKUP_GCLOUD_JSON, the backup service account's key (bin/devops/backup-bucket.sh); never the media key. A Protected variable only reaches protected branches." >&2
     return 1
   fi
   folder=$(database_backup_folder) || return 1

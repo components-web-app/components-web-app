@@ -160,7 +160,7 @@ cmd_project() {
   fi
   say ""
   say "Set on the project (GitLab: Settings > CI/CD > Variables; GitHub: a repository secret):"
-  say "  CWA_CI_DATABASE_BACKUP_GCLOUD_JSON = that base64 line (GitLab: Masked and hidden, Protected; all environments)"
+  say "  CWA_CI_DATABASE_BACKUP_GCLOUD_JSON = that base64 line (GitLab: Masked and hidden, all environments; Protected only if the deploying branch is protected, or the job never sees it)"
   say "  CWA_CI_DATABASE_BACKUP_<TRACK>=true (e.g. PRODUCTION) to back up before migrating."
   say "The deploy writes to gs://$BUCKET/$slug/<track>/<release>/ (CWA_CI_DATABASE_BACKUP_FOLDER=$slug if the project's slug differs)."
 }
