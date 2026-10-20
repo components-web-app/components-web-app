@@ -2022,6 +2022,16 @@ database_job_marker() {
 
 # migrations_plan <track> [image tag]: the pending migrations and their SQL, read-only, with the new image. Sets
 # MIGRATIONS_PENDING (empty when the release isn't deployed yet) and DATABASE_SERVER_VERSION. Pending isn't a failure.
+# A backup on demand, e.g. before risky manual work (#180): the manual `database backup production` job. Runs the
+# read-only plan first for the server version, as a deploy does, then the backup.
+database_backup_now() {
+  local track="${1-stable}" tag
+  database_backup_location "$track" >/dev/null || return 1
+  tag=$(database_job_image) || { echo "❌ No php image for the backup." >&2; return 1; }
+  migrations_plan "$track" "$tag" || return 1
+  database_backup "$track" "$tag"
+}
+
 migrations_plan() {
   local track="${1-stable}" tag="${2:-}" status=0
   MIGRATIONS_PENDING="" DATABASE_SERVER_VERSION=""

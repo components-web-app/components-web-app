@@ -341,6 +341,25 @@ migrations plan production:
     - set_namespace
     - migrations_plan stable
 
+# A database backup on demand, e.g. before risky manual work (#180). Needs CWA_CI_DATABASE_BACKUP_BUCKET and the
+# project's CWA_CI_DATABASE_BACKUP_GCLOUD_JSON (bin/devops/backup-bucket.sh).
+database backup production:
+  stage: production
+  when: manual
+  allow_failure: true
+  environment:
+    name: production
+    url: https://$KUBE_INGRESS_BASE_DOMAIN
+    action: prepare
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_DATABASE_BACKUP_BUCKET'
+  script:
+    - install_dependencies
+    - helm_init
+    - apply_kube_context
+    - set_namespace
+    - database_backup_now stable
+
 # After each deploy: generate missing image variants in their own Jobs (#152, #153), then warm https://$DOMAIN (#80, #132).
 # One job, so the warm doesn't wait for another runner (#160); each half keeps its own switch. allow_failure: never fails a live deploy.
 image variants and warm review:

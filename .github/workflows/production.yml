@@ -11,6 +11,7 @@ on:
           - canary
           - production
           - migrations-plan
+          - database-backup
       # For this run only, never a repository variable (#180): maintenance on while pending migrations run.
       maintenance_during_migrations:
         description: 'Maintenance mode while pending migrations run (production)'
@@ -179,6 +180,15 @@ jobs:
           helm_init
           apply_kube_context
           migrations_plan stable
+      # A database backup on demand (#180), with the backup bucket and key.
+      - name: Database backup
+        if: inputs.action == 'database-backup'
+        run: |
+          source ./bin/devops/setup.sh
+          source ./bin/devops/k8s.sh
+          helm_init
+          apply_kube_context
+          database_backup_now stable
       # Off unless CWA_CI_FIXTURES_ENABLED is "true". See load_fixtures.
       - name: Load fixtures
         if: inputs.action == 'production' && vars.CWA_CI_FIXTURES_ENABLED == 'true'
