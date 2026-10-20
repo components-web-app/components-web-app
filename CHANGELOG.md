@@ -12,6 +12,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- **Staging and review apps no longer warm `/_api`** (the postStart warm and the warm after a full flush), since nobody visits them: Cymru Kitchens' staging job spent most of its 12.5 min on warms. `CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_<TRACK>` (`_PRODUCTION`, `_CANARY`, `_STAGING`, `_REVIEW`) sets a track's time; production and canary still fall back to `CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME`, then 60 (#217). [1824cfb](https://github.com/components-web-app/components-web-app/commit/1824cfbd18d837ceb414a3ddfea01ff1af148517)
 - Single-server production (`compose.prod.yaml`, preview: media still needs a bucket, #211; no deploy script yet, #212) sets what the Kubernetes deploy sets for its hosts: anchored, escaped `TRUSTED_HOSTS`, `CORS_ALLOW_ORIGIN` and `MERCURE_CORS_ORIGIN` (built by the php entrypoint from `SITE_HOST`/`SITE_ALIASES`; a value you set wins), `NUXT_SITE_URL`, `CWA_ENVIRONMENT`, log rotation, restart policies and a healthy-database dependency. Its `MERCURE_PUBLIC_URL` and `BROWSER_SERVER_NAME` no longer break with more than one host. The browser tests now boot `compose.yaml` + `compose.prod.yaml` with CI stand-ins and run cache checks before Playwright (stored then hit, a tag purge drops only its page, admin port closed); a new `compose config` CI job checks the required values (#207). [5bfc71f](https://github.com/components-web-app/components-web-app/commit/5bfc71f4d89fdccb5fce3578f1c23eab69f7cabd)
 
 ### Fixed
