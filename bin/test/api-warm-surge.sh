@@ -31,6 +31,7 @@ case "$*" in
   *"get pods"*"{{if .metadata.deletionTimestamp}}"*) ;;
   *"get pods"*"name=cwa,"*) echo "pod/rel-cwa-new" ;;
   *"exec"*" curl "*) printf 'HTTP/1.1 200 OK\r\nCache-Status: %s\r\n\r\n' "$STUB_CACHE_STATUS" ;;
+  *"app:edge-cache:purge-everything"*) [ -z "${STUB_EDGE_FAIL:-}" ] || exit 1 ;;
 esac
 exit 0
 STUB
@@ -45,6 +46,7 @@ run() {
     unset CWA_CI_API_SCALED_PRODUCTION CWA_CI_API_AUTOSCALE_MIN CWA_CI_API_AUTOSCALE_MAX CWA_CI_API_WARM_SURGE \
       CWA_CI_API_WARM_CONCURRENCY CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME CADDY_CACHE_CDN_CONFIG GITHUB_ACTIONS
     for setting in $2; do export "$setting"; done
+    [ -z "${CDN_CLOUDFLARE:-}" ] || export CADDY_CACHE_CDN_CONFIG="provider cloudflare"
     . "$1" >/dev/null
     purge_rendered_html stable' k8s "$K8S" "$1" >"$DIR/out" 2>&1 || status=$?
 }
@@ -161,6 +163,19 @@ warm_time staging 0 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME=150
 warm_time staging 30 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_STAGING=30
 warm_time stable 0 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME=150 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_PRODUCTION=0
 warm_time canary 90 CWA_CI_API_WARM_HTTP_CACHE_MAX_TIME_CANARY=90
+
+# One pod with Cloudflare (#218): rendered HTML locally, then the edge only; the pod keeps its postStart warm.
+run "CDN_CLOUDFLARE=1"
+expect cloudflare-single 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-rendered-html'
+expect cloudflare-single 'exec -n ns pod/rel-cwa-new -- php bin/console app:edge-cache:purge-everything'
+refuse cloudflare-single 'purge-http-cache'
+refuse cloudflare-single 'warm-http-cache'
+said cloudflare-single "the new pod warms /_api before it's ready"
+# The edge purge failing falls back to the full flush (which purges Cloudflare through Souin) and the warm.
+run "CDN_CLOUDFLARE=1 STUB_EDGE_FAIL=1"
+expect cloudflare-fallback 'purge-http-cache'
+expect cloudflare-fallback 'warm-http-cache'
+said cloudflare-fallback "The edge-only purge failed"
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2

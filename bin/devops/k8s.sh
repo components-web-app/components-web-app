@@ -1581,21 +1581,35 @@ purge_rendered_html() {
 
   echo "Waiting for the PWA rollout, so no old-build pod can refill the cache..."
   kubectl rollout status "$pwa_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
-  echo "Waiting for the API rollout..."
+  local warm_time
+  warm_time=$(api_warm_max_time "$track")
+  if [ "$warm_time" != "0" ] && ! api_scaled "$track"; then
+    echo "Waiting for the API rollout: the new pod warms /_api before it's ready (gzip then br, up to ${warm_time}s each, #160)..."
+  else
+    echo "Waiting for the API rollout..."
+  fi
   kubectl rollout status "$api_deploy" -n "$KUBE_NAMESPACE" --timeout=600s
   api_wait_old_pods_gone "$release_name"
   local api_pod
   api_pod=$(api_ready_pod "$release_name" "$api_deploy")
 
-  # With Cloudflare (#108) the edge also holds /_api responses, so flush everything, which purges the whole zone.
-  # Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone too. In scaled mode Redis outlives the
-  # pods, so every deploy flushes (#85).
+  # In scaled mode Redis outlives the pods, so every deploy flushes (#85). One new pod's cache holds only this build's
+  # responses: with Cloudflare (#108) only the edge needs everything purged, so the pod keeps its postStart warm (#218).
+  # Staging shares CADDY_CACHE_CDN_CONFIG, so its deploys purge the zone too.
   local flush=""
-  case "${CADDY_CACHE_CDN_CONFIG:-}" in
-    *"provider cloudflare"*) flush="Cloudflare is configured: flushing the HTTP cache, which also purges everything at Cloudflare..." ;;
-  esac
-  if [ -z "$flush" ] && api_scaled "$track"; then
+  if api_scaled "$track"; then
     flush="Scaled mode: flushing the HTTP cache, which outlives the API pods in Redis..."
+  else
+    case "${CADDY_CACHE_CDN_CONFIG:-}" in
+      *"provider cloudflare"*)
+        echo "Purging rendered HTML, then everything at Cloudflare (the new API pod's cache is already this build's)..."
+        if kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- php bin/console silverback:api-components:purge-rendered-html \
+          && kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- php bin/console app:edge-cache:purge-everything; then
+          return 0
+        fi
+        flush="The edge-only purge failed: flushing the HTTP cache instead, which also purges everything at Cloudflare..."
+        ;;
+    esac
   fi
   case "$flush" in
     ?*)
