@@ -578,6 +578,8 @@ The module ships no service worker; the template carries the reference config in
 
 Throttled email requests (api-components-bundle#331) return 429 with `Retry-After`, and the module's resend link counts down from it (cwa-nuxt-module#353). Browsers only let cross-origin JavaScript read CORS-safelisted headers plus those in `Access-Control-Expose-Headers`, so `nelmio_cors.yaml` exposes `Retry-After` alongside `Link`. The template's own browser calls are same-origin `/_api`, so this only matters for a site that serves the API from another origin. Don't drop it from `expose_headers`.
 
+`allow_headers` also has `X-CWA-Client-Id` (#219): the module's co-editing (cwa-nuxt-module#429) sends it on every write, and a cross-origin preflight without it fails. It went in before the module sends it (alpha.46); allowing a header early is harmless.
+
 ## Production logging and the error mail (#162)
 
 Ported from bcio (`api/config/packages/prod/monolog.yaml`, `App\Monolog\ErrorMailHandler`, `tests/Unit/Monolog/`).
