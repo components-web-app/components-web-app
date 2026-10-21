@@ -6,8 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.46](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.46) - 2026-10-21
+
 ### Upgrade notes
 
+- **Take this release promptly: it is the PHP security release.** Its `cwa-php-base:2.0.0-alpha.46` has PHP 8.5.12 (CVE-2026-109618, CVE-2026-109619). Copy `api/Dockerfile` (its `CWA_PHP_BASE` default names this release) and redeploy. If you set `CWA_CI_PHP_BASE_IMAGE` to the `2.0.0-alpha.45-r20261021` rebuild in the meantime, delete it so the Dockerfile's default applies.
+- Bundle 2.0.0-alpha.35 and `@cwa/nuxt` 2.0.0-alpha.26 go together: update both in the same deploy.
 - `JWT_COOKIE_SAMESITE` now defaults to `strict` (`api/.env` and `api/config/packages/lexik_jwt_authentication.yaml`). A site whose front end and API are on different registrable domains must set `CWA_API_JWT_COOKIE_SAMESITE=none`; `lax` keeps the old behaviour. [1cf48ad](https://github.com/components-web-app/components-web-app/commit/1cf48ad1f168d0d7f129f1334fcd639c12784aee)
 - `k8s.sh` now runs the new App command `app:edge-cache:purge-everything` on deploys with Cloudflare: copy `api/src/Command/PurgeEdgeCacheCommand.php` with it. It uses `api/src/RedisWatch/CloudflareEdgeCache.php` and `EdgeCache.php`, already in alpha.44 and later (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
 

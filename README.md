@@ -105,11 +105,13 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 
 | Template | api-components-bundle | `@cwa/nuxt` |
 |---|---|---|
-| 2.0.0-alpha.45 (latest) | 2.0.0-alpha.34 | 2.0.0-alpha.25 |
+| 2.0.0-alpha.46 (latest) | 2.0.0-alpha.35 | 2.0.0-alpha.26 |
+| 2.0.0-alpha.45 | 2.0.0-alpha.34 | 2.0.0-alpha.25 |
 | 2.0.0-alpha.44 | 2.0.0-alpha.34 | 2.0.0-alpha.24 |
 
 | `@cwa/nuxt` | Needs api-components-bundle at least | Why |
 |---|---|---|
+| 2.0.0-alpha.26 | 2.0.0-alpha.35 | Co-editing reads `_metadata.lastWrite` on admin writes |
 | 2.0.0-alpha.24 | 2.0.0-alpha.32 | Move uses `POST {component}/move`; the shared-component list reads `GET {component}/usage` |
 | 2.0.0-alpha.21 | 2.0.0-alpha.29 recommended | Anonymous Mercure updates and cookie changes. The module also works with older bundles, but skip bundle 2.0.0-alpha.27 and alpha.28: they return 500 on publish under a debug kernel (api-components-bundle#501) |
 | 2.0.0-alpha.20 | 2.0.0-alpha.25 | "Purge this page" needs the scoped purge (an older bundle flushes everything) |
