@@ -1,5 +1,5 @@
 # Publishes ghcr.io/components-web-app/cwa-php-base, the prebuilt php base downstream projects pull (#208).
-# Tags are never overwritten: X for template tag vX, X-rYYYYMMDD for weekly security rebuilds, test-<name> by hand.
+# Tags are never overwritten: X for template tag vX, X-rYYYYMMDD for security rebuilds (weekly, or by hand with tag 'rebuild'), test-<name> by hand.
 name: Publish php base image
 
 on:
@@ -16,7 +16,7 @@ on:
         required: true
         default: main
       tag:
-        description: 'Image tag: test-<name>'
+        description: "Image tag: test-<name>, or 'rebuild' for an attested security rebuild of the newest release (ref ignored)"
         required: true
 
 permissions: {}
@@ -41,6 +41,7 @@ jobs:
       sha: ${{ steps.plan.outputs.sha }}
       tag: ${{ steps.plan.outputs.tag }}
       skip: ${{ steps.plan.outputs.skip }}
+      kind: ${{ steps.plan.outputs.kind }}
       created: ${{ steps.plan.outputs.created }}
     steps:
       # No stored credentials in any job: build runs code from the image it built (#208).
@@ -58,12 +59,17 @@ jobs:
           IN_TAG: ${{ inputs.tag }}
         run: |
           set -eu
+          # A manual 'rebuild' is the weekly security rebuild, run now (PHP security releases).
+          kind=release
+          [ "$EVENT" = schedule ] && kind=rebuild
+          [ "$EVENT" = workflow_dispatch ] && { [ "$IN_TAG" = rebuild ] && kind='rebuild' || kind='test'; }
+          [ "$kind" = rebuild ] && EVENT=rebuild
           case "$EVENT" in
             push)
               ref="refs/tags/$REF_NAME"
               tag="${REF_NAME#v}"
               ;;
-            schedule)
+            schedule|rebuild)
               ref=$(git tag -l 'v*' --sort=-creatordate | head -1)
               [ -n "$ref" ] || { echo "::error::No release tag to rebuild"; exit 1; }
               tag="${ref#v}-r$(date -u +%Y%m%d)"
@@ -81,7 +87,7 @@ jobs:
           skip=false
           if ! git show "$sha:api/Dockerfile" | grep -q '^FROM .* AS cwa_php_base$'; then
             # Releases before #208 have no published stage.
-            if [ "$EVENT" = schedule ]; then echo "::notice::$ref predates cwa_php_base; nothing to rebuild"; skip=true; else echo "::error::$ref has no cwa_php_base stage"; exit 1; fi
+            if [ "$EVENT" = rebuild ]; then echo "::notice::$ref predates cwa_php_base; nothing to rebuild"; skip=true; else echo "::error::$ref has no cwa_php_base stage"; exit 1; fi
           fi
           if [ "$EVENT" = push ]; then
             default=$(git show "$sha:api/Dockerfile" | sed -n 's/^ARG CWA_PHP_BASE=//p')
@@ -91,11 +97,11 @@ jobs:
           # Logged in, so a private package counts; any answer but 200 or 404 fails the run.
           state=$(sh .github/php-base/ghcr-tag-state.sh "${IMAGE#ghcr.io/}" "$tag")
           if [ "$state" = present ]; then
-            if [ "$EVENT" = schedule ]; then echo "::notice::$IMAGE:$tag exists already"; skip=true
+            if [ "$EVENT" = rebuild ]; then echo "::notice::$IMAGE:$tag exists already"; skip=true
             else echo "::error::$IMAGE:$tag exists; tags are never overwritten"; exit 1; fi
           fi
           echo "Building $IMAGE:$tag from $ref ($sha), skip=$skip"
-          { echo "sha=$sha"; echo "tag=$tag"; echo "skip=$skip"; echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"; } >> "$GITHUB_OUTPUT"
+          { echo "sha=$sha"; echo "tag=$tag"; echo "skip=$skip"; echo "kind=$kind"; echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)"; } >> "$GITHUB_OUTPUT"
 
   build:
     name: Build and test (${{ matrix.platform }})
@@ -234,13 +240,13 @@ jobs:
           echo "Published $IMAGE:$TAG@$digest"
       # Releases and rebuilds only: a test-* build of any ref must not verify like a release (#208).
       - uses: actions/attest-build-provenance@v2
-        if: github.event_name != 'workflow_dispatch'
+        if: needs.plan.outputs.kind != 'test'
         with:
           subject-name: ${{ env.IMAGE }}
           subject-digest: ${{ steps.index.outputs.digest }}
           push-to-registry: true
       - name: Verify the attestation
-        if: github.event_name != 'workflow_dispatch'
+        if: needs.plan.outputs.kind != 'test'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DIGEST: ${{ steps.index.outputs.digest }}
@@ -252,7 +258,7 @@ jobs:
         env:
           TAG: ${{ needs.plan.outputs.tag }}
           DIGEST: ${{ steps.index.outputs.digest }}
-          EVENT: ${{ github.event_name }}
+          KIND: ${{ needs.plan.outputs.kind }}
         run: |
           set -eu
           {
@@ -260,7 +266,7 @@ jobs:
             echo
             echo "Pin it as \`$IMAGE:$TAG@$DIGEST\`."
             echo
-            if [ "$EVENT" = workflow_dispatch ]; then
+            if [ "$KIND" = test ]; then
               echo "A test build: not attested, not a release."
             else
               echo "Verify it with:"
