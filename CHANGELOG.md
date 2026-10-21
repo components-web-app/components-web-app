@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Security
+
+- `fflate` 0.7.5 (GHSA-px8p-9vwx-vf98, moderate: an infinite loop on a crafted ZIP64 archive) through an override in `app/pnpm-workspace.yaml`; satori's opentype.js locked 0.7.3, the only one of today's five flagged npm packages that ships in the server output, though only its font inflate, not the affected `unzipSync`, is used. [424492f](https://github.com/components-web-app/components-web-app/commit/424492f849bef71087c5a8b07a47467bd40050bb)
+
 ## [2.0.0-alpha.46](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.46) - 2026-10-21
 
 ### Upgrade notes
