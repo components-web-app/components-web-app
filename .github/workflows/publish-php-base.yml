@@ -253,6 +253,29 @@ jobs:
         run: |
           gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY" \
             --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/publish-php-base.yml" --source-ref "$GITHUB_REF"
+      # `latest` is the one moving tag: an exact copy of the newest attested release or rebuild, never a test, never backwards.
+      - name: Move latest
+        if: needs.plan.outputs.kind != 'test'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.plan.outputs.tag }}
+          DIGEST: ${{ steps.index.outputs.digest }}
+        run: |
+          set -eu
+          repo=${IMAGE#ghcr.io/}
+          token=$(curl -fsS -u "$GITHUB_ACTOR:$GITHUB_TOKEN" "https://ghcr.io/token?service=ghcr.io&scope=repository:$repo:pull,push" | jq -r .token)
+          accept='application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json'
+          if [ "$(sh .github/php-base/ghcr-tag-state.sh "$repo" latest)" = present ]; then
+            current=$(curl -fsS -H "Authorization: Bearer $token" -H "Accept: $accept" "https://ghcr.io/v2/$repo/manifests/latest" | jq -r '.annotations["org.opencontainers.image.version"] // ""')
+            newest=$(printf '%s\n%s\n' "$current" "$TAG" | sort -V | tail -1)
+            [ "$newest" = "$TAG" ] || { echo "::notice::latest stays at $current (newer than $TAG)"; exit 0; }
+          fi
+          curl -fsS -H "Authorization: Bearer $token" -H "Accept: $accept" -D headers -o index.json "https://ghcr.io/v2/$repo/manifests/$DIGEST"
+          type=$(grep -i '^content-type:' headers | cut -d' ' -f2 | tr -d '\r')
+          curl -fsS -X PUT -H "Authorization: Bearer $token" -H "Content-Type: $type" --data-binary @index.json "https://ghcr.io/v2/$repo/manifests/latest" >/dev/null
+          [ "$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{json .Manifest}}' | jq -r .digest)" = "$DIGEST" ] \
+            || { echo "::error::$IMAGE:latest is not $DIGEST after the copy"; exit 1; }
+          echo "::notice::$IMAGE:latest -> $TAG ($DIGEST)"
       # For the GitHub release notes (CLAUDE.md, Releasing the template).
       - name: Build info
         env:
