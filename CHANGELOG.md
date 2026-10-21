@@ -16,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- CORS `allow_headers` adds `X-CWA-Client-Id`, which the module's co-editing will send on every write (cwa-nuxt-module#429). Added ahead of that module version so cross-origin admin writes keep passing their preflight; harmless until then (#219). [aca1900](https://github.com/components-web-app/components-web-app/commit/aca1900b94f690afe267ce61cc42df3485ae8682)
 - **Deploys with Cloudflare no longer flush and re-warm the new API pod.** A single-pod deploy purges rendered HTML locally and everything at Cloudflare (new `app:edge-cache:purge-everything`), and keeps the pod's postStart warm; about 5 minutes off cymru-kitchens' production deploy. If the edge purge fails it falls back to the full flush and warm. Scaled mode is unchanged. The job now says the API rollout is waiting for the postStart warm, and for at most how long. (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
 
 ### Fixed
