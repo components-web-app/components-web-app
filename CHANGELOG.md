@@ -30,6 +30,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Added
 
+- `cwa-php-base:latest`: an alias that follows the newest release or security rebuild (same digest and attestation; never a test build, never backwards). For trying the image by hand: the Dockerfile still names its release's version. [14a77e8](https://github.com/components-web-app/components-web-app/commit/14a77e84fccf315d2cf920af8876b35fd45e8f78)
 - `publish-php-base.yml` can run the security rebuild by hand (`-f tag=rebuild`), as `<newest release>-rYYYYMMDD`, attested like the weekly one, so a PHP security release reaches downstream sites without a template release. [301d8b0](https://github.com/components-web-app/components-web-app/commit/301d8b0b7d0f2bf5c2b7a379465e436bc8b43909)
 
 ### Fixed
