@@ -13,6 +13,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Security
 
+- `session.upload_progress.enabled = 0` in `api/frankenphp/conf.d/10-app.ini`: unused by CWA, and one of php2shell's confirmed attack paths; PHP advises keeping it off even after patching. [5e9163c](https://github.com/components-web-app/components-web-app/commit/5e9163c715c9fd0d236d5ead6f267d49fbdd41f8)
 - **The login (`api_component`), Mercure and session cookies are `SameSite=Strict` by default**, so no request another site starts carries them (CSRF hardening). An admin following a link from another site gets the anonymous page and is signed back in by the app's `/me` call; a browser test checks it. [1cf48ad](https://github.com/components-web-app/components-web-app/commit/1cf48ad1f168d0d7f129f1334fcd639c12784aee)
 - **PHP 8.5.12 (CVE-2026-109618, CVE-2026-109619, critical RCEs; the second affects long-running workers like FrankenPHP's).** `bin/test/php-base-smoke.sh` refuses a `cwa-php-base` below 8.5.12, so no release or rebuild can publish an unpatched PHP. [4136243](https://github.com/components-web-app/components-web-app/commit/4136243fea7a5a14499ede187ad29244b968b52e)
 
