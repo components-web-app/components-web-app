@@ -5,6 +5,13 @@ set -eu
 
 cd "$(dirname "$0")/../.."
 
+# Lowest PHP a base may ship (CVE-2026-109618, CVE-2026-109619: fixed in 8.5.12); raise it with each PHP security release.
+MIN_PHP_ID=80512
+for php_id in "$(php -r 'echo PHP_VERSION_ID;')" "$(frankenphp php-cli -r 'echo PHP_VERSION_ID;')"; do
+	[ "$php_id" -ge "$MIN_PHP_ID" ] || { echo "FAIL: PHP $php_id is below $MIN_PHP_ID (unpatched security release)"; exit 1; }
+done
+echo "ok:   PHP $(php -r 'echo PHP_VERSION;') is at or above the security floor"
+
 # build-info prints a replace as a "=>" line under its "dep" line.
 frankenphp build-info | awk '$1 == "dep" { m = $2 } $1 == "=>" { print m " => " $2 }' > /tmp/build-info.txt
 for replace in 'github.com/darkweak/souin => /tmp/souin' \
