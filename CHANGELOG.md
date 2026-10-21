@@ -10,6 +10,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - `k8s.sh` now runs the new App command `app:edge-cache:purge-everything` on deploys with Cloudflare: copy `api/src/Command/PurgeEdgeCacheCommand.php` with it. It uses `api/src/RedisWatch/CloudflareEdgeCache.php` and `EdgeCache.php`, already in alpha.44 and later (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
 
+### Security
+
+- **PHP 8.5.12 (CVE-2026-109618, CVE-2026-109619, critical RCEs; the second affects long-running workers like FrankenPHP's).** `bin/test/php-base-smoke.sh` refuses a `cwa-php-base` below 8.5.12, so no release or rebuild can publish an unpatched PHP. [4136243](https://github.com/components-web-app/components-web-app/commit/4136243fea7a5a14499ede187ad29244b968b52e)
+
 ### Changed
 
 - **Deploys with Cloudflare no longer flush and re-warm the new API pod.** A single-pod deploy purges rendered HTML locally and everything at Cloudflare (new `app:edge-cache:purge-everything`), and keeps the pod's postStart warm; about 5 minutes off cymru-kitchens' production deploy. If the edge purge fails it falls back to the full flush and warm. Scaled mode is unchanged. The job now says the API rollout is waiting for the postStart warm, and for at most how long. (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
