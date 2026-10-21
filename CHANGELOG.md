@@ -6,6 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- `k8s.sh` now runs the new App command `app:edge-cache:purge-everything` on deploys with Cloudflare: copy `api/src/Command/PurgeEdgeCacheCommand.php` with it. It uses `api/src/RedisWatch/CloudflareEdgeCache.php` and `EdgeCache.php`, already in alpha.44 and later (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
+
+### Changed
+
+- **Deploys with Cloudflare no longer flush and re-warm the new API pod.** A single-pod deploy purges rendered HTML locally and everything at Cloudflare (new `app:edge-cache:purge-everything`), and keeps the pod's postStart warm; about 5 minutes off cymru-kitchens' production deploy. If the edge purge fails it falls back to the full flush and warm. Scaled mode is unchanged. The job now says the API rollout is waiting for the postStart warm, and for at most how long. (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
+
 ### Fixed
 
 - `bin/test/compose-prod-config.sh` finds the required values in `compose.yaml` and `compose.prod.yaml` instead of a fixed list, so a project that adds its own `${NAME:?…}` value (e.g. a Turnstile key) passes, and still fails if one of the template's required values stops being required (#207). [db6f1a0](https://github.com/components-web-app/components-web-app/commit/db6f1a0be3b72d73926ab5dd722d264dc7ed62ae)
