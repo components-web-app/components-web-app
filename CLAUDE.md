@@ -82,6 +82,10 @@ API Platform's `SkolemIriConverter` (`/.well-known/genid/…` IRIs, produced by 
 - **A compiler pass that adds a `kernel.reset` tag must run before `ResettableServicePass` (-32).** As `Kernel::process()` (-10000) the tag showed in `debug:container`, but the resetter never called it.
 - Measured in a worker simulation over 300 requests to a form component: 41 → 125 MB before the fix, and 44.5 → 44.6 MB on bundle alpha.21. Workers also restart every 500 requests (`FRANKENPHP_LOOP_MAX`).
 
+### Accepted npm advisories (#220)
+
+`app/pnpm-workspace.yaml`'s `auditConfig.ignoreGhsas` is the register of advisories the template knows about and leaves unpatched, one comment line each: package and severity, why it's unreachable on a deployed site (not in `.output/server`, build or dev only), and the upstream fix it waits on. `pnpm audit` then reports them as ignored, and downstream sites inherit the register with the release. **Review it every release** (next look: 2026-11-21): drop an entry once a fix ships, and list what's still accepted in the release's *Security* section. A new advisory goes in only after checking it isn't shipped (`ls .output/server/node_modules/<pkg>` in a production build); one that ships gets an override or a fix, never an ignore.
+
 ### ⚠ TypeScript is pinned to exact `6.0.3`
 
 - Do **not** bump to 7.x. TS 7 is the native (Go) rewrite; `vue-tsc` (3.3.13) still resolves `typescript/lib/tsc` and fails with `ERR_PACKAGE_PATH_NOT_EXPORTED: ./lib/tsc`. **Re-check on every dependency update** (Daniel, 2026-10-13) by watching [vuejs/language-tools#6170](https://github.com/vuejs/language-tools/pull/6170) (content mapper, vue-tsc v4 alpha; a draft on 2026-10-18), the support upstream points to; every TS 7 issue there is closed (#6156, #6124, #5381) with `typescript-native-bridge` as the stopgap. 3.3.13 only adds support for aliasing `typescript` to `@typescript/typescript6`.

@@ -2,8 +2,18 @@ overrides:
   tar-fs: '>=3.0.7'
   ws: '>=8.21.0'
   'fflate@^0.7.3': '^0.7.5'
+# Accepted advisories (#220): why each is unreachable and the upstream fix it waits on. Review every release.
 auditConfig:
   ignoreCves: []
+  ignoreGhsas:
+    # node-forge <=1.4.0, high: listhen (nuxt dev server) only, not in .output; no fixed release yet.
+    - GHSA-86w9-cpqp-85rv
+    # braces <=3.0.3, high: build-time globbing (nitropack, fast-glob) only, not in .output; no fixed release yet.
+    - GHSA-vfj7-8cjw-p6xm
+    # postcss-selector-parser 6.0.10, moderate: @tailwindcss/typography pins it, our own CSS at build only; fix is 7.x.
+    - GHSA-rj75-hqrm-r3gf
+    # esbuild 0.27.7, low: esbuild's dev server, which fontless (@nuxt/fonts) never starts; build only; waits on @nuxt/ui moving to @nuxt/fonts 1.x.
+    - GHSA-g7r4-m6w7-qqqr
 shamefullyHoist: true
 strictPeerDependencies: false
 minimumReleaseAge: 0
