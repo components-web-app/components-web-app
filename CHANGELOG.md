@@ -8,10 +8,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- `JWT_COOKIE_SAMESITE` now defaults to `strict` (`api/.env` and `api/config/packages/lexik_jwt_authentication.yaml`). A site whose front end and API are on different registrable domains must set `CWA_API_JWT_COOKIE_SAMESITE=none`; `lax` keeps the old behaviour. [1cf48ad](https://github.com/components-web-app/components-web-app/commit/1cf48ad1f168d0d7f129f1334fcd639c12784aee)
 - `k8s.sh` now runs the new App command `app:edge-cache:purge-everything` on deploys with Cloudflare: copy `api/src/Command/PurgeEdgeCacheCommand.php` with it. It uses `api/src/RedisWatch/CloudflareEdgeCache.php` and `EdgeCache.php`, already in alpha.44 and later (#218). [be7c71e](https://github.com/components-web-app/components-web-app/commit/be7c71ea80e43fbfabf1eab6de280ac12ec19260)
 
 ### Security
 
+- **The login (`api_component`), Mercure and session cookies are `SameSite=Strict` by default**, so no request another site starts carries them (CSRF hardening). An admin following a link from another site gets the anonymous page and is signed back in by the app's `/me` call; a browser test checks it. [1cf48ad](https://github.com/components-web-app/components-web-app/commit/1cf48ad1f168d0d7f129f1334fcd639c12784aee)
 - **PHP 8.5.12 (CVE-2026-109618, CVE-2026-109619, critical RCEs; the second affects long-running workers like FrankenPHP's).** `bin/test/php-base-smoke.sh` refuses a `cwa-php-base` below 8.5.12, so no release or rebuild can publish an unpatched PHP. [4136243](https://github.com/components-web-app/components-web-app/commit/4136243fea7a5a14499ede187ad29244b968b52e)
 
 ### Changed
