@@ -2,8 +2,8 @@
   <article>
     <TipTapHtmlEditor
       v-if="$cwa.admin.isEditing"
-      ref="editorComponent"
-      v-model="resourceModel.model.value"
+      :model="resourceModel"
+      :iri="iri"
       :disabled="disableEditor"
       data-placeholder="[Empty HTML Content Area]"
       :class="{ 'is-empty opacity-50 text-inherit': disableEditor && !htmlContent }"
@@ -44,7 +44,7 @@ const htmlContent = computed<string>(() => resource.value?.data?.html)
 // The module's hydration-safe `v-html` (cwa-nuxt-module#333), used as `v-cwa-html`.
 const { vCwaHtml } = useHtmlContent(htmlContainer, htmlContent)
 
-const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(toRef(props, 'iri'))
+const { resourceModel, disableEditor } = useCustomHtmlComponent(toRef(props, 'iri'))
 
 const proseClasses = 'prose prose-invert prose-primary max-w-none'
 </script>

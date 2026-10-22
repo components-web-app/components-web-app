@@ -1,5 +1,9 @@
 <template>
-  <div v-if="editor">
+  <CwaUiFieldPresence
+    v-if="editor"
+    :model="model"
+    v-bind="focusListeners"
+  >
     <bubble-menu
       class="bg-stone-700 text-stone-100 rounded overflow-hidden text-sm"
       style="z-index: 760"
@@ -7,6 +11,7 @@
       :options="{ strategy: 'fixed' }"
       :editor="editor"
       :update-delay="0"
+      @mousedown.prevent
       @contextmenu.stop
     >
       <BubbleMenuButton
@@ -57,6 +62,7 @@
       :options="{ strategy: 'fixed' }"
       :editor="editor"
       :update-delay="0"
+      @mousedown.prevent
       @contextmenu.stop
     >
       <BubbleMenuButton
@@ -79,7 +85,12 @@
       </BubbleMenuButton>
     </floating-menu>
     <editor-content :editor="editor" />
-  </div>
+    <CwaUiRemoteChangeConflict
+      v-if="remoteChange"
+      :change="remoteChange"
+      class="mt-2"
+    />
+  </CwaUiFieldPresence>
 </template>
 
 <script lang="ts" setup>
@@ -91,15 +102,20 @@ import {
   EditorContent,
 } from '@tiptap/vue-3'
 import { BubbleMenu, FloatingMenu } from '@tiptap/vue-3/menus'
-import { computed, toRef, watch } from 'vue'
+import { computed, reactive, toRef, watch } from 'vue'
 import type { Editor, ChainedCommands } from '@tiptap/core'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
+import { RemoteCursors, applyRemoteContent, setRemoteCursors } from '~/tiptap/co-editing'
+import type { RemoteCursor } from '~/tiptap/co-editing'
+import { useCwaRealtime } from '#imports'
+import type { useCwaResourceModel } from '#imports'
 
 // The menu buttons. Hiding one only removes it from the menus: the extension stays registered (pastes, shortcuts).
 type EditorStyle = 'h1' | 'h2' | 'bold' | 'italic' | 'underline' | 'link' | 'bulletList'
 
 const props = defineProps<{
-  modelValue: string | null | undefined
+  model: ReturnType<typeof useCwaResourceModel<string>>
+  iri: string
   disabled?: boolean
   editorClasses?: string
   // Every button shows by default. Set a style to `false` to hide its button, for
@@ -110,25 +126,39 @@ const props = defineProps<{
 
 const show = (style: EditorStyle) => props.config?.[style] !== false
 
-const emit = defineEmits(['update:modelValue'])
-
 // Render the menus at the top level so they escape the editor's stacking context and clear the CWA
 // page overlay. `document` isn't available in the template expression scope, so define it here.
 const appendToBody = () => document.body
 
-// reactive updating of the model
-const value = computed({
-  get() {
-    return props.modelValue
-  },
-  set(value) {
-    emit('update:modelValue', value)
-  },
+const { model: html, remoteChange, focusedBy, focusListeners } = props.model
+
+// Other admins' carets (#219): sent and received over the module's real-time channel, drawn only while they're in this field.
+type Selection = { from: number, to: number } | null
+const { send, on } = useCwaRealtime<{ selection: { selection: Selection } }>(() => props.iri)
+const selections = reactive(new Map<string, RemoteCursor>())
+
+on('selection', ({ data: { selection }, clientId, name, colour }) => {
+  if (!selection) {
+    selections.delete(clientId)
+    return
+  }
+  selections.set(clientId, { id: clientId, name, colour, ...selection })
 })
 
-// create the editor
+const inField = computed(() => focusedBy.value.flatMap(peer => peer.clientIds))
+
+watch(inField, (now, before) => {
+  before.filter(clientId => !now.includes(clientId)).forEach(clientId => selections.delete(clientId))
+})
+
+const cursors = computed(() => [...selections.values()].filter(({ id }) => inField.value.includes(id)))
+
+function sendSelection(selection: Selection) {
+  send('selection', { selection })
+}
+
 const editor = useEditor({
-  content: value.value,
+  content: html.value,
   editorProps: {
     attributes: {
       class: props.editorClasses || '',
@@ -148,17 +178,16 @@ const editor = useEditor({
       openOnClick: false,
       defaultProtocol: 'https',
     }),
+    RemoteCursors,
   ],
-  onUpdate: () => {
-    // HTML
-    value.value = editor.value?.isEmpty ? null : editor.value?.getHTML()
-
-    // JSON
-    // this.$emit('update:modelValue', this.editor.getJSON())
+  onUpdate: ({ editor }) => {
+    html.value = editor.isEmpty ? null : editor.getHTML()
   },
-  // Anything the model changed while the editor had focus was held back (see
-  // syncFromModel), so apply it now that nobody is typing.
-  onBlur: () => syncFromModel(),
+  onSelectionUpdate: ({ editor }) => {
+    editor.isFocused && sendSelection({ from: editor.state.selection.from, to: editor.state.selection.to })
+  },
+  onFocus: ({ editor }) => sendSelection({ from: editor.state.selection.from, to: editor.state.selection.to }),
+  onBlur: () => sendSelection(null),
   editable: !props.disabled,
 })
 
@@ -193,25 +222,16 @@ function showLinkManager() {
     .run()
 }
 
-// Match the editor to modelValue, but never while it has focus: setContent moves the caret to the end, and the
-// model can briefly hold an older value. Applied on blur; emitUpdate: false, or onUpdate would save it again.
-function syncFromModel() {
-  if (!editor.value || editor.value.isFocused) {
-    return
+// A remote save keeps the caret and stays out of undo history (#219).
+watch(html, (value) => {
+  if (editor.value && editor.value.getHTML() !== value) {
+    applyRemoteContent(editor.value, value)
   }
-  const newValue = value.value
-  // HTML
-  const isSame = editor.value.isEmpty ? !newValue : editor.value.getHTML() === newValue
+})
 
-  // JSON
-  // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
-  if (isSame) {
-    return
-  }
-
-  editor.value.commands.setContent(newValue || null, { emitUpdate: false })
-}
-watch(value, syncFromModel)
+watch([cursors, editor], ([drawn, loaded]) => {
+  loaded && setRemoteCursors(loaded, drawn)
+})
 
 // Toggle disabled prop and focus when enabled
 const disabledRef = toRef(props, 'disabled')

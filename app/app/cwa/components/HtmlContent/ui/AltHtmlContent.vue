@@ -6,8 +6,8 @@
     />
     <TipTapHtmlEditor
       v-if="$cwa.admin.isEditing"
-      ref="editorComponent"
-      v-model="resourceModel.model.value"
+      :model="resourceModel"
+      :iri="iri"
       :disabled="disableEditor"
       data-placeholder="[Empty HTML Content Area]"
       :class="{ 'is-empty opacity-50 text-inherit': disableEditor && !htmlContent }"
@@ -46,7 +46,7 @@ const htmlContent = computed<string>(() => resource.value?.data?.html)
 const { vCwaHtml } = useHtmlContent(htmlContainer, htmlContent)
 
 // This deals with the HTML editor
-const { editorComponent, resourceModel, disableEditor } = useCustomHtmlComponent(iriRef)
+const { resourceModel, disableEditor } = useCustomHtmlComponent(iriRef)
 </script>
 
 <style>
