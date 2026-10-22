@@ -6,6 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- `@cwa/nuxt` 2.0.0-alpha.28 and the TipTap editor go together: copy `app/app/components/TipTapHtmlEditor.vue`, `app/app/tiptap/co-editing.ts` (new), `app/app/composables/useCustomHtmlComponent.ts` and both HtmlContent components (`cwa/components/HtmlContent/HtmlContent.vue`, `ui/AltHtmlContent.vue`) with the module update. The editor now takes `:model` (the field's `useCwaResourceModel`) and `:iri` instead of `v-model`, and needs `useCwaRealtime`'s `send`/`on`, new in alpha.28. No bundle change beyond 2.0.0-alpha.35. [685dfdf](https://github.com/components-web-app/components-web-app/commit/685dfdf2c1d4553daf3495cfba64789d82e38cd6)
+
+### Changed
+
+- **TipTap co-editing** (`@cwa/nuxt` 2.0.0-alpha.28, cwa-nuxt-module#429): the body-text editor outlines the field with the name of another admin editing it, applies their saves without moving your caret or adding to your undo history, shows their caret live, and offers "Use theirs / Keep mine" on a held change. Ported from the module's playground. Known module issue: when two admins save the same field at the same moment, one edit can be lost without a conflict row (reported to the module) (#219). [685dfdf](https://github.com/components-web-app/components-web-app/commit/685dfdf2c1d4553daf3495cfba64789d82e38cd6)
+
 ### Security
 
 - **A register of accepted npm advisories** in `app/pnpm-workspace.yaml` (`auditConfig.ignoreGhsas`), so `pnpm audit` and scans read them as known: node-forge 1.4.0 (GHSA-86w9-cpqp-85rv, high) and braces 3.0.3 (GHSA-vfj7-8cjw-p6xm, high), no fix released; postcss-selector-parser 6.0.10 (GHSA-rj75-hqrm-r3gf, moderate), pinned by @tailwindcss/typography; esbuild 0.27.7 (GHSA-g7r4-m6w7-qqqr, low), via @nuxt/fonts. None ships in the server output: build or dev only. Next review 2026-11-21 or the next release (#220). [146f9ed](https://github.com/components-web-app/components-web-app/commit/146f9ed1efdc45fdd143e999e2d1f59fb39773d2)
