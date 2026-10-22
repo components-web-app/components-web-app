@@ -10,9 +10,13 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - `@cwa/nuxt` 2.0.0-alpha.28 and the TipTap editor go together: copy `app/app/components/TipTapHtmlEditor.vue`, `app/app/tiptap/co-editing.ts` (new), `app/app/composables/useCustomHtmlComponent.ts` and both HtmlContent components (`cwa/components/HtmlContent/HtmlContent.vue`, `ui/AltHtmlContent.vue`) with the module update. The editor now takes `:model` (the field's `useCwaResourceModel`) and `:iri` instead of `v-model`, and needs `useCwaRealtime`'s `send`/`on`, new in alpha.28. No bundle change beyond 2.0.0-alpha.35. [685dfdf](https://github.com/components-web-app/components-web-app/commit/685dfdf2c1d4553daf3495cfba64789d82e38cd6)
 
+- api-components-bundle 2.0.0-alpha.36 adds a `resource_version` column to components and page data: after `composer update components-web-app/api-components-bundle`, run `bin/console doctrine:migrations:diff` and commit the migration with the lock (the template's is `api/migrations/Version20261022184324.php`). A site whose API is on another origin also takes `nelmio_cors.yaml`'s `ETag` (exposed) and `If-Match` (allowed). [ede2e9f](https://github.com/components-web-app/components-web-app/commit/ede2e9f2f59dc917783b2651ea1072543a893991)
+
 ### Changed
 
 - **TipTap co-editing** (`@cwa/nuxt` 2.0.0-alpha.28, cwa-nuxt-module#429): the body-text editor outlines the field with the name of another admin editing it, applies their saves without moving your caret or adding to your undo history, shows their caret live, and offers "Use theirs / Keep mine" on a held change. Ported from the module's playground. Known module issue: when two admins save the same field at the same moment, one edit can be lost without a conflict row (reported to the module) (#219). [685dfdf](https://github.com/components-web-app/components-web-app/commit/685dfdf2c1d4553daf3495cfba64789d82e38cd6)
+
+- **api-components-bundle 2.0.0-alpha.36** (api-components-bundle#561): components and page data are sent with an `ETag`, and a write with `If-Match` is refused if someone saved in between. Groundwork for the module's fix for simultaneous saves (#219). [ede2e9f](https://github.com/components-web-app/components-web-app/commit/ede2e9f2f59dc917783b2651ea1072543a893991)
 
 ### Security
 
