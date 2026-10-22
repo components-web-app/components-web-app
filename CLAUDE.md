@@ -85,6 +85,8 @@ API Platform's `SkolemIriConverter` (`/.well-known/genid/…` IRIs, produced by 
 ### Accepted npm advisories (#220)
 
 `app/pnpm-workspace.yaml`'s `auditConfig.ignoreGhsas` is the register of advisories the template knows about and leaves unpatched, one comment line each: package and severity, why it's unreachable on a deployed site (not in `.output/server`, build or dev only), and the upstream fix it waits on. `pnpm audit` then reports them as ignored, and downstream sites inherit the register with the release. **Review it every release** (next look: 2026-11-21): drop an entry once a fix ships, and list what's still accepted in the release's *Security* section. A new advisory goes in only after checking it isn't shipped (`ls .output/server/node_modules/<pkg>` in a production build); one that ships gets an override or a fix, never an ignore.
+- **cwa-deployment-statuses watches the register** (hourly, on `main`): when a lock refresh drops an entry's advisory or OSV lists a fixed version, it opens a confidential issue there ("Accepted advisory now fixable: <pkg> <version> (<id>)"), which emails Daniel. Then take the fix, drop the entry from `ignoreGhsas` and the CHANGELOG list, and release; the issue closes itself once `main`'s register no longer lists it.
+- **Composer's equivalent is `config.audit.ignore` in `api/composer.json`**, which the same scan reads. Accept a PHP advisory only in the reason form (`{"<id>": "<why it's unreachable; the fix it waits on>"}`), so the reason shows wherever it's read. None today.
 
 ### ⚠ TypeScript is pinned to exact `6.0.3`
 
