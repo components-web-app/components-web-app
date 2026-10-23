@@ -26,6 +26,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - **TipTap co-editing through Yjs** (`@cwa/nuxt` 2.0.0-alpha.29, cwa-nuxt-module#439): admins in one field share a Yjs document, so simultaneous typing merges instead of one save replacing the other; the editing state is stored through the bundle's `/_/collaboration_states`. (#219). [92565ad](https://github.com/components-web-app/components-web-app/commit/92565ad71a97f13769063d8704345d0d26bed3dc)
 
+### Added
+
+- **`create-cwa` runs unattended:** `--yes` takes every default, `--ci` never prompts (a missing project name is an error, a failed `bin/up` exits 1), `--template-dir <path>` copies a local checkout instead of downloading, and `--pipeline`, `--features`, `--[no-]fixtures`, `--[no-]start` and `--[no-]install-deps` answer their questions. Without flags nothing changes (#215). [24c09d3](https://github.com/components-web-app/components-web-app/commit/24c09d3dfdf3d0e2b8d21d1e9a4386ecdd890f2f)
+- **create-cwa smoke job** (template CI only, GitHub and GitLab): creates a project from the pushed ref, starts it through `bin/up` and signs in, with all features and with none (#215). [593ce7a](https://github.com/components-web-app/components-web-app/commit/593ce7adcc2f7e895a698d27f169166a020760c9)
+
 ### Fixed
 
 - TipTap co-editing no longer loses one admin's text when both type at once (`@cwa/nuxt` 2.0.0-alpha.30, cwa-nuxt-module#440): a refused save (412) no longer shows the pre-typing HTML, and a component shown twice on a page no longer takes its own tab's save for someone else's (#219). [3487864](https://github.com/components-web-app/components-web-app/commit/34878641f5877421beeaa355f709bd5f99bba923)
