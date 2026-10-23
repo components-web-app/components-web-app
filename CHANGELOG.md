@@ -8,6 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- **Review apps' TLS secrets are now per release** (#221): `letsencrypt-cert-<release>-api`. Each review app issues its own certificate on its next deploy; once every review app in a shared namespace has redeployed, delete the old shared secret by hand (`kubectl delete secret letsencrypt-cert-review-api -n <review namespace>`). A `CWA_CI_TLS_SECRET_NAME` set per branch as a workaround can go. [64d7152](https://github.com/components-web-app/components-web-app/commit/64d71523c2a42d8995eafbc13e387adafa7c9964)
 - **Media storage is chosen at runtime by `MEDIA_STORAGE`** (`local` or `gcloud`, #211), so copy `api/config/services.php` with the new `api/src/Flysystem/MediaAdapterFactory.php` and `MediaUrlEnvVarProcessor.php`. Kubernetes deploys keep Cloud Storage (the prod default is `gcloud`) and need nothing else. A single-server site already using a bucket with `compose.prod.yaml` sets `MEDIA_STORAGE=gcloud`, because the file now defaults to `local`. A project that edited the storage block of `services.php` merges its change into the new wiring. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
 - **`bin/devops/k8s.sh` now sources `bin/lib/site.sh`** (the sitemap and page-cache warm moved there, #212): copy both, or every deploy fails at its first line. A project with its own `stop review` job adds `bin/lib` to that job's sparse checkout, as `.gitlab-ci.yml` does. [8b4b3e9](https://github.com/components-web-app/components-web-app/commit/8b4b3e987cd863c8e8692cbc4fcd1e6cf15ac32e)
 - `api/frankenphp/Caddyfile` changed (`/uploads` is static only); copy it. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
@@ -30,6 +31,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - **Single-server production stores media on the server** (#211): `compose.prod.yaml` keeps uploads in a `media_data` volume, served at `https://<SITE_HOST>/uploads/`, and no longer needs a Cloud Storage bucket. The browser tests upload an image and check it and its WebP variants are served, before and after php is recreated (local storage, or `CWA_CI_E2E_STORAGE="gcloud"`). Dev media URLs are now `https://localhost/uploads/…` too. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
 - **`create-cwa` runs unattended:** `--yes` takes every default, `--ci` never prompts (a missing project name is an error, a failed `bin/up` exits 1), `--template-dir <path>` copies a local checkout instead of downloading, and `--pipeline`, `--features`, `--[no-]fixtures`, `--[no-]start` and `--[no-]install-deps` answer their questions. Without flags nothing changes (#215). [24c09d3](https://github.com/components-web-app/components-web-app/commit/24c09d3dfdf3d0e2b8d21d1e9a4386ecdd890f2f)
 - **create-cwa smoke job** (template CI only, GitHub and GitLab): creates a project from the pushed ref, starts it through `bin/up` and signs in, with all features and with none (#215). [593ce7a](https://github.com/components-web-app/components-web-app/commit/593ce7adcc2f7e895a698d27f169166a020760c9)
+
+### Fixed
+
+- Review apps sharing a namespace no longer share one TLS Certificate, which only the newest app's host matched and which stopping any of them deleted (#221). [64d7152](https://github.com/components-web-app/components-web-app/commit/64d71523c2a42d8995eafbc13e387adafa7c9964)
 
 ## [2.0.0-alpha.47](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.47) - 2026-10-23
 
