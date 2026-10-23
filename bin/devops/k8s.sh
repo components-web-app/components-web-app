@@ -136,14 +136,52 @@ setup_test_db_environment() {
   echo "Test database: ${DATABASE_URL}"
 }
 
-# --cache-from for the default branch's build cache, so a new branch's first build starts warm; nothing on that branch itself.
-default_branch_cache_from() {
+# The default branch's image tag; nothing on that branch itself.
+default_branch_slug() {
   local slug
   slug=$(printf '%s' "${CI_DEFAULT_BRANCH:-main}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//' | cut -c1-63)
   if [[ -n "$slug" && "$slug" != "$TAG" ]]; then
+    printf '%s' "$slug"
+  fi
+}
+
+# --cache-from for the default branch's build cache, so a new branch's first build starts warm; nothing on that branch itself.
+default_branch_cache_from() {
+  local slug
+  slug=$(default_branch_slug)
+  if [[ -n "$slug" ]]; then
     printf -- '--cache-from type=registry,ref=%s:%s' "$1" "$slug"
   fi
 }
+
+# What an image's build depends on: its context's git tree, the build options ($2) and the ISO week, so a moving base image is picked up at least weekly.
+image_inputs() {
+  local tree
+  tree=$(git rev-parse "HEAD:$1" 2>/dev/null) || { echo "❌ No git tree for $1" >&2; return 1; }
+  printf '%s|%s|%s' "$tree" "$2" "$(date -u +%G-W%V)" | sha256sum | cut -c1-40
+}
+
+# Skips a build whose inputs ($3) match an image already pushed: :$TAG, else the default branch's (a new branch). CWA_CI_BUILD_FORCE="true" always builds.
+reuse_image() {
+  local name="$1" repo="$2" inputs="$3" ref found digest
+  [ "${CWA_CI_BUILD_FORCE:-}" != "true" ] || return 1
+  for ref in "$TAG" $(default_branch_slug); do
+    found=$(docker buildx imagetools inspect --format '{{json .Image}}' "$repo:$ref" 2>/dev/null \
+      | grep -o "\"$IMAGE_INPUTS_LABEL\": *\"[0-9a-f]*\"" | head -1 | sed 's/.*"\([0-9a-f]*\)"$/\1/')
+    [ "$found" = "$inputs" ] || continue
+    if [ "$ref" != "$TAG" ]; then
+      docker buildx imagetools create --tag "$repo:$TAG" "$repo:$ref" || return 1
+    fi
+    digest=$(docker buildx imagetools inspect --format '{{json .Manifest}}' "$repo:$TAG" | grep -m1 -o '"digest": *"sha256:[0-9a-f]*"' | grep -o 'sha256:[0-9a-f]*') || return 1
+    echo "♻️ $repo:$ref was built from these inputs ($inputs): not building $name again."
+    save_image_digest "$name" "$digest"
+    return
+  done
+  echo "Building $name: no image from these inputs ($inputs)."
+  return 1
+}
+
+IMAGE_INPUTS_LABEL=rocks.cwa.ci.inputs
 
 # The php base to build on (#208): from source when asked, or in the template's own CI so its patches are tested; else CWA_CI_PHP_BASE_IMAGE or the Dockerfile's default.
 php_base_build_args() {
@@ -179,7 +217,10 @@ build_api() {
   # downloads from github.com. A build secret, so it's never written to the
   # image; empty is fine, the Dockerfile only uses it when it has content.
   php_base_args=$(php_base_build_args) || return 1
+  inputs=$(image_inputs api "$php_base_args frankenphp_prod") || return 1
+  reuse_image PHP "$PHP_REPOSITORY" "$inputs" && return 0
   docker buildx build --push \
+  	--label "$IMAGE_INPUTS_LABEL=$inputs" \
   	--secret id=composer_auth,env=COMPOSER_AUTH \
   	--cache-to type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG,mode=max \
   	--cache-from type=registry,ref=$PHP_REPOSITORY_CACHE:$TAG \
@@ -204,9 +245,12 @@ build_app() {
 	docker context create builder
   docker buildx create builder --driver=docker-container --use
 
+  inputs=$(image_inputs app "CI=true prod") || return 1
+  reuse_image APP "$APP_REPOSITORY" "$inputs" && return 0
   # Site settings are runtime env: never pass one as a --build-arg or --secret.
   # mode=max caches the builder stage too (pnpm fetch, base setup), not only the final image's layers.
   docker buildx build \
+    --label "$IMAGE_INPUTS_LABEL=$inputs" \
     --build-arg CI=true \
     --push \
     --cache-to type=registry,ref=$APP_REPOSITORY_CACHE:$TAG,mode=max \
@@ -219,12 +263,12 @@ build_app() {
   save_image_digest APP
 }
 
-# The pushed image's digest, for the deploys (#164): GitLab reads image_digest.env (a dotenv artifact), GitHub a step output.
+# The image's digest ($2 when reused, else the build's), for the deploys (#164): GitLab reads image_digest.env (a dotenv artifact), GitHub a step output.
 save_image_digest() {
-  local digest
-  digest=$(sed -n 's/.*"containerimage.digest": *"\(sha256:[0-9a-f]*\)".*/\1/p' build-metadata.json | head -1)
+  local digest="${2:-}"
+  [ -n "$digest" ] || digest=$(sed -n 's/.*"containerimage.digest": *"\(sha256:[0-9a-f]*\)".*/\1/p' build-metadata.json | head -1)
   [ -n "$digest" ] || { echo "❌ No image digest in build-metadata.json" >&2; return 1; }
-  echo "Pushed $1 image digest: $digest"
+  echo "$1 image digest: $digest"
   echo "CWA_CI_$1_IMAGE_DIGEST=$digest" > image_digest.env
   if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "digest=$digest" >> "$GITHUB_OUTPUT"; fi
 }

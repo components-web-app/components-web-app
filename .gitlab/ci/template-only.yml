@@ -38,7 +38,6 @@ create-cwa smoke:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" || $CWA_CI_TEST_DISABLED == "true" || $CI_COMMIT_BRANCH == null'
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
     - changes:
         - .gitlab/ci/template-only.yml
         - packages/create-cwa/**/*

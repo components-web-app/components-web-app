@@ -9,6 +9,17 @@ workflow:
     # hold nothing useful, and "Pipelines must succeed" would judge the MR by it (#88).
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
+    # A push that changes only Markdown files at the root (CHANGELOG.md, CLAUDE.md, README.md) runs no pipeline.
+    # The globs match every other path: anything in a directory, and root files not ending in ".md".
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH
+      changes:
+        - "*/**/*"
+        - "*[!d]"
+        - "*[!m]d"
+        - "*[!.]md"
+      when: always
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH
+      when: never
     - when: always
 
 # The template's own jobs (#181); projects made from it don't have the file, so nothing is included.
