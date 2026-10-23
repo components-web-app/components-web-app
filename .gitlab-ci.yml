@@ -130,6 +130,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/php-base-version.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/site-hosts-parity.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/site-lib.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/tls-secret-name.sh
   artifacts:
     reports:
       junit: api/build/logs/phpunit/junit.xml

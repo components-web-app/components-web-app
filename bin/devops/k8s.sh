@@ -590,6 +590,20 @@ cwa_fullname() {
   printf '%s' "$full" | cut -c1-63 | sed 's/-*$//'
 }
 
+# The ingress's TLS secret (and cert-manager Certificate) for release $2 on track $1. Review apps get one each, since several
+# can share a namespace (#221); other tracks keep <CWA_CI_TLS_SECRET_NAME>-<track>-api. At most 63 characters (a label value).
+tls_secret_name() {
+  local name
+  case "$1" in
+    review) name="$CWA_CI_TLS_SECRET_NAME-$2-api" ;;
+    *) name="$CWA_CI_TLS_SECRET_NAME-$1-api" ;;
+  esac
+  if [ "${#name}" -gt 63 ]; then
+    name="$(printf '%s' "$name" | cut -c1-54 | sed 's/-*$//')-$(printf '%s' "$name" | sha256sum | cut -c1-8)"
+  fi
+  printf '%s' "$name"
+}
+
 # Picks the stable ingress's TLS secret; a changed host list gets a new one, issued before helm switches to it (#86).
 # Sets TLS_SECRET_NAME, and TLS_PREVIOUS_SECRET_NAME for cleanup_tls_certificates.
 ensure_tls_certificate() {
@@ -1265,7 +1279,6 @@ deploy() {
 	check_api_scaling "$track" || return 1
 	gcloud_prefix=$(gcloud_path_prefix "$track") || return 1
 	name="$RELEASE"
-	TLS_SECRET_NAME_SCOPED="$CWA_CI_TLS_SECRET_NAME-$track"
 	if [[ "$track" != "stable" ]]; then
 		name="$name-$track"
 	fi
@@ -1299,7 +1312,7 @@ deploy() {
     # Pending migrations' backup, migrate Job and maintenance window (#180).
     database_guard "$track" || return 1
   fi
-  ensure_tls_certificate "$track" "$name" "${TLS_SECRET_NAME_SCOPED}-api" || return 1
+  ensure_tls_certificate "$track" "$name" "$(tls_secret_name "$track" "$name")" || return 1
 
   DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
   DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
@@ -2501,6 +2514,8 @@ function delete() {
   if [ "$track" = "review" ]; then
     kubectl delete pvc --namespace="$KUBE_NAMESPACE" --wait=false \
       -l "app.kubernetes.io/instance=$name,app.kubernetes.io/name=postgresql" || true
+    # cert-manager leaves the secret behind; the name is this app's own, never another's (#221).
+    kubectl delete secret --namespace="$KUBE_NAMESPACE" --ignore-not-found "$(tls_secret_name review "$name")" || true
   fi
 
   # Namespaces are never deleted: CI can't recreate their role bindings (see ensure_namespace).
