@@ -6,6 +6,12 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+
+- **An unchanged image isn't built again:** `build api`/`build app` label each image with a hash of its build context's git tree, build options and the ISO week, and reuse the branch's (or default branch's) image when it matches, so the job takes seconds and the deploy keeps the same digest and doesn't restart those pods. Base images still reach a build at least weekly; `CWA_CI_BUILD_FORCE="true"` always builds. The first build after taking this always builds (no label yet). [d17d26a](https://github.com/components-web-app/components-web-app/commit/d17d26a5b99be79e5c971e65f51024cb888eb0cb)
+- **A push that changes only Markdown files at the root (CHANGELOG.md, README.md, …) runs no pipeline**, on GitLab (`workflow:rules`) and GitHub (`paths-ignore`). [d17d26a](https://github.com/components-web-app/components-web-app/commit/d17d26a5b99be79e5c971e65f51024cb888eb0cb)
+- The create-cwa smoke job runs on `main` only when its paths change, like other branches (template CI only). [d17d26a](https://github.com/components-web-app/components-web-app/commit/d17d26a5b99be79e5c971e65f51024cb888eb0cb)
+
 ### Added
 
 - **`create-cwa` runs unattended:** `--yes` takes every default, `--ci` never prompts (a missing project name is an error, a failed `bin/up` exits 1), `--template-dir <path>` copies a local checkout instead of downloading, and `--pipeline`, `--features`, `--[no-]fixtures`, `--[no-]start` and `--[no-]install-deps` answer their questions. Without flags nothing changes (#215). [24c09d3](https://github.com/components-web-app/components-web-app/commit/24c09d3dfdf3d0e2b8d21d1e9a4386ecdd890f2f)
