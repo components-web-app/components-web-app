@@ -171,6 +171,8 @@ jobs:
         run: sh bin/test/site-hosts-parity.sh
       - name: Check the shared sitemap warm runs under plain sh and from k8s.sh (#212)
         run: sh bin/test/site-lib.sh
+      - name: Check review apps sharing a namespace get a TLS secret each (#221)
+        run: sh bin/test/tls-secret-name.sh
 
   # compose.prod.yaml renders with every required value and refuses without each one (#207). Only the compose CLI.
   compose-config:
