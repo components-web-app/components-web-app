@@ -30,6 +30,8 @@ services:
       MAILER_EMAIL: CWA Tests <tests@cwa.test>
       # Any 5xx during the run mails here; run.sh fails the run if one arrives (#162).
       ERROR_MAIL_TO: errors@cwa.test
+      # local by default, as compose.prod.yaml ships; E2E_STORAGE=gcloud runs the same against the bucket stand-in (#211).
+      MEDIA_STORAGE: ${E2E_STORAGE:-local}
       GCLOUD_API_ENDPOINT: http://gcs:8000
       GCLOUD_PUBLIC_URL: https://gcs:4443/cwa-e2e/
       # A review app's prefix, so uploads, variants and the stop-review delete run under one (#166).

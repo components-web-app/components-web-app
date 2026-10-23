@@ -1,4 +1,4 @@
-# Single-server production, a PREVIEW for the beta: media still needs a Cloud Storage bucket (#211), no deploy script yet (#212).
+# Single-server production, a PREVIEW for the beta: no deploy script yet (#212).
 # `docker compose -f compose.yaml -f compose.prod.yaml up -d --wait`; every secret and site value is required.
 
 # CI boots it under e2e/compose.yaml and renders it in bin/test/compose-prod-config.sh (#207).
@@ -51,8 +51,9 @@ services:
       MAILER_EMAIL:
       # One email per unique 5xx per hour (#162); unset sends none.
       ERROR_MAIL_TO:
-      # Media goes to Cloud Storage until local media lands (#211).
-      GCLOUD_BUCKET: ${GCLOUD_BUCKET:?set GCLOUD_BUCKET, the Cloud Storage bucket for media (#211)}
+      # Media in the media_data volume, served at /uploads/ (#211); gcloud stores it in GCLOUD_BUCKET instead.
+      MEDIA_STORAGE: ${MEDIA_STORAGE:-local}
+      GCLOUD_BUCKET:
       GCLOUD_JSON:
       GCLOUD_PUBLIC_URL:
       GCLOUD_PATH_PREFIX:
@@ -63,6 +64,8 @@ services:
       # Caddy faces the internet, so a client's X-Forwarded-For is never believed for the rate limit (#106).
       # false only behind another proxy than Cloudflare, with its ranges in CADDY_TRUSTED_PROXIES.
       CADDY_EDGE: ${CADDY_EDGE:-true}
+    volumes:
+      - media_data:/app/public/uploads
     networks:
       default:
         # The app container reaches php by this name. php.local:80 is in Caddy's
@@ -92,3 +95,7 @@ services:
     logging: *logging
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+
+volumes:
+  # Uploaded media and its variants (#211): back it up with the database.
+  media_data:

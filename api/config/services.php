@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Resources\config;
 
 use App\Flysystem\GoogleCloudStorageFactory;
+use App\Flysystem\MediaAdapterFactory;
 use App\Mercure\SkipAwareMercureHub;
-use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
+use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use Silverback\ApiComponentsBundle\Flysystem\FilesystemProvider;
 use Silverback\ApiComponentsBundle\Imagine\FlysystemCacheResolver;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ReferenceConfigurator;
 use Symfony\Component\DependencyInjection\Reference;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service_closure;
 
 
 return static function (ContainerConfigurator $configurator) {
@@ -29,10 +32,11 @@ return static function (ContainerConfigurator $configurator) {
         ->set('env(GCLOUD_API_ENDPOINT)', '')
         // Path inside the bucket for this app's objects, e.g. review/<slug>/ (#166). Empty stores at the bucket root.
         ->set('env(GCLOUD_PATH_PREFIX)', '')
-        ->set('app.gcloud_bucket_public_url', 'https://storage.googleapis.com/%env(GCLOUD_BUCKET)%/')
+        // Where media is stored (#211): local (public/uploads, served at /uploads/) or gcloud. Deploys default to gcloud.
+        ->set('env(MEDIA_STORAGE)', 'prod' === $configurator->env() ? 'gcloud' : 'local')
         ->set('app.storage_path_prefix', '%env(storage_prefix:GCLOUD_PATH_PREFIX)%')
         // public_url bypasses the adapter's prefix, so media URLs add it here, once (#166).
-        ->set('app.media_public_url', '%env(default:app.gcloud_bucket_public_url:GCLOUD_PUBLIC_URL)%%app.storage_path_prefix%')
+        ->set('app.media_public_url', '%env(media_url:MEDIA_STORAGE)%%app.storage_path_prefix%')
         // Origin for links in user emails; the bundle refuses those emails without one. Defaults to the public host.
         ->set('env(EMAIL_LINK_DEFAULT_ORIGIN)', '')
         ->set('app.browser_origin', 'https://%env(BROWSER_SERVER_NAME)%')
@@ -62,53 +66,39 @@ return static function (ContainerConfigurator $configurator) {
         ])
         ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'local' ]);
 
-    // The gcloud filesystem is built by the bundle's FilesystemProvider; its adapter is configured below.
-
-    if ($configurator->env() !== 'prod') {
-        $services
-            ->set(FlysystemCacheResolver::class)
-            ->args([
-                '$filesystem' => new Reference("api_components.filesystem.gcloud"),
-                '$rootUrl' => '/uploads/',
-                '$cachePrefix' => 'cache',
-                '$visibility' => 'public'
-            ])
-            ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
-
-        $services
-            ->set(LocalFilesystemAdapter::class)
-            ->args(
-                [
-                    '%kernel.project_dir%/public/uploads',
-                ]
-            )
-            ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, ['alias' => 'gcloud']);
-    } else {
-        $services
-            ->set(GoogleCloudStorageFactory::class)
-            ->args([
-                '%env(json:GCLOUD_JSON)%',
-                '%env(GCLOUD_BUCKET)%',
-                '%env(GCLOUD_API_ENDPOINT)%',
-                '%app.storage_path_prefix%',
-            ])
-        ;
-        $services
-            ->set(GoogleCloudStorageAdapter::class)
-            ->factory(new ReferenceConfigurator(GoogleCloudStorageFactory::class))
-            // Flysystem reads only public_url from this config; the path prefix goes to the adapter's constructor (#166).
-            ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => '%app.media_public_url%' ] ]);
-        $services
-            ->set(FlysystemCacheResolver::class)
-            ->args([
-                '$filesystem' => new Reference("api_components.filesystem.gcloud"),
-                '$rootUrl' => '%app.media_public_url%',
-                '$cachePrefix' => 'cache',
-                '$visibility' => 'public'
-            ])
-            ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
-    }
-
+    // The gcloud filesystem is built by the bundle's FilesystemProvider, from the adapter MEDIA_STORAGE picks at runtime (#211).
+    $services
+        ->set(GoogleCloudStorageFactory::class)
+        ->args([
+            '%env(json:GCLOUD_JSON)%',
+            '%env(GCLOUD_BUCKET)%',
+            '%env(GCLOUD_API_ENDPOINT)%',
+            '%app.storage_path_prefix%',
+        ])
+    ;
+    $services
+        ->set(MediaAdapterFactory::class)
+        ->args([
+            '%env(MEDIA_STORAGE)%',
+            '%kernel.project_dir%/public/uploads',
+            '%app.storage_path_prefix%',
+            service_closure(GoogleCloudStorageFactory::class),
+        ])
+    ;
+    $services
+        ->set('app.media_adapter', FilesystemAdapter::class)
+        ->factory(new ReferenceConfigurator(MediaAdapterFactory::class))
+        // Flysystem reads only public_url from this config; the path prefix goes to the adapter (#166).
+        ->tag(FilesystemProvider::FILESYSTEM_ADAPTER_TAG, [ 'alias' => 'gcloud', 'config' => [ 'public_url' => '%app.media_public_url%' ] ]);
+    $services
+        ->set(FlysystemCacheResolver::class)
+        ->args([
+            '$filesystem' => new Reference("api_components.filesystem.gcloud"),
+            '$rootUrl' => '%app.media_public_url%',
+            '$cachePrefix' => 'cache',
+            '$visibility' => 'public'
+        ])
+        ->tag('liip_imagine.cache.resolver', [ 'resolver' => 'in_memory_cache_resolver' ]);
 
     $services
         ->set(SkipAwareMercureHub::class)

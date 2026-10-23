@@ -432,7 +432,9 @@ run_browser_tests() {
     echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   fi
   # CWA_CI_E2E_SCALED="true" runs them against two php pods on one Redis and one Mercure hub (#85).
-  E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" E2E_SCALED="${CWA_CI_E2E_SCALED:-}" sh ./e2e/run.sh
+  # CWA_CI_E2E_STORAGE="gcloud" stores media in a Cloud Storage stand-in instead of the local volume (#211).
+  E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" E2E_SCALED="${CWA_CI_E2E_SCALED:-}" \
+    E2E_STORAGE="${CWA_CI_E2E_STORAGE:-}" sh ./e2e/run.sh
 }
 
 # A leading or trailing dot means the url's variable (e.g. KUBE_INGRESS_BASE_DOMAIN) was empty.

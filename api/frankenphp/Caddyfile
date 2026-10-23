@@ -314,7 +314,7 @@ http://127.0.0.1:2080 {
     }
 
     @api_handle expression `
-        {path}.startsWith("/_api") || {path}.startsWith("/uploads/") || {path}.startsWith("/bundles/")
+        {path}.startsWith("/_api") || {path}.startsWith("/bundles/")
     `
 
     # Scaled mode (#85): subscribers reach the hub's own pod through php, so the ingress and TLS stay as they are.
@@ -332,6 +332,11 @@ http://127.0.0.1:2080 {
     @purge_method method PURGE BAN
     handle @purge_method {
         respond 405
+    }
+
+    # Stored media is only ever a file: a stored .php under /uploads is sent, never run (#211).
+    handle /uploads/* {
+        file_server
     }
 
     handle @api_handle {
