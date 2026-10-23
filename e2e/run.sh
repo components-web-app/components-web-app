@@ -89,11 +89,15 @@ if compose exec -T app wget -q -T 3 -O /dev/null http://php:2019/config/ 2>/dev/
   exit 1
 fi
 echo "  ok: port 2019 unreachable from the app container"
-# An upload and its WebP variants are served, and still are after php is recreated (#211).
-media=$(compose exec -T -e ADMIN_PASSWORD="$ADMIN_PASSWORD" php sh -s upload < media-checks.sh)
-compose up -d --no-build --no-deps --force-recreate --wait --wait-timeout 300 php
-# shellcheck disable=SC2086
-compose exec -T php sh -s served $media < media-checks.sh
+# An upload and its WebP variants are served, and still are after php is recreated (#211); skipped without the image feature.
+if compose exec -T php test -f src/Entity/Image.php; then
+  media=$(compose exec -T -e ADMIN_PASSWORD="$ADMIN_PASSWORD" php sh -s upload < media-checks.sh)
+  compose up -d --no-build --no-deps --force-recreate --wait --wait-timeout 300 php
+  # shellcheck disable=SC2086
+  compose exec -T php sh -s served $media < media-checks.sh
+else
+  echo "  skipped: media checks (no Image component in this project)"
+fi
 # The browser tests start cold, as they did before the checks.
 compose exec -T php bin/console silverback:api-components:purge-http-cache --quiet
 
