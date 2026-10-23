@@ -7,7 +7,7 @@ rand_str() {
   head -c ${len} /tmp/urandom.tr
 }
 
-# What the build jobs need: the docker image has docker, buildx and (normally) git; no helm or kubectl.
+# Installs what a build job needs: git, if the docker image lacks it (docker and buildx are already there). Builds never need helm or kubectl.
 install_build_dependencies() {
   command -v git >/dev/null || apk add --no-cache git
 }
@@ -141,7 +141,7 @@ setup_test_db_environment() {
   echo "Test database: ${DATABASE_URL}"
 }
 
-# The default branch's image tag; nothing on that branch itself.
+# Prints the default branch's image tag (e.g. main); prints nothing when this build is on the default branch.
 default_branch_slug() {
   local slug
   slug=$(printf '%s' "${CI_DEFAULT_BRANCH:-main}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/^-*//; s/-*$//' | cut -c1-63)
@@ -159,24 +159,29 @@ default_branch_cache_from() {
   fi
 }
 
-# What an image's build depends on: its context's git tree, the build options ($2) and the ISO week, so a moving base image is picked up at least weekly.
+# Prints a hash of everything an image's build depends on: the git tree of its context dir ($1), the build options ($2) and the ISO week.
+# Same hash = same image; the week makes moving base images reach a build at least weekly.
 image_inputs() {
   local tree
   tree=$(git rev-parse "HEAD:$1" 2>/dev/null) || { echo "❌ No git tree for $1" >&2; return 1; }
   printf '%s|%s|%s' "$tree" "$2" "$(date -u +%G-W%V)" | sha256sum | cut -c1-40
 }
 
-# Skips a build whose inputs ($3) match an image already pushed: :$TAG, else the default branch's (a new branch). CWA_CI_BUILD_FORCE="true" always builds.
+# Returns 0 (skip the build) when an image already pushed was built from the same inputs hash ($3), and records its digest; returns 1 to build.
+# Looks at this branch's tag, then the default branch's (a new branch's first push). CWA_CI_BUILD_FORCE="true" always builds.
 reuse_image() {
   local name="$1" repo="$2" inputs="$3" ref found digest
   [ "${CWA_CI_BUILD_FORCE:-}" != "true" ] || return 1
   for ref in "$TAG" $(default_branch_slug); do
+    # The hash stored in that image's label, if the image exists.
     found=$(docker buildx imagetools inspect --format '{{json .Image}}' "$repo:$ref" 2>/dev/null \
       | grep -o "\"$IMAGE_INPUTS_LABEL\": *\"[0-9a-f]*\"" | head -1 | sed 's/.*"\([0-9a-f]*\)"$/\1/')
     [ "$found" = "$inputs" ] || continue
+    # A default-branch image: tag it for this branch too (same digest, nothing copied).
     if [ "$ref" != "$TAG" ]; then
       docker buildx imagetools create --tag "$repo:$TAG" "$repo:$ref" || return 1
     fi
+    # The digest the deploy pins, as a build would record it.
     digest=$(docker buildx imagetools inspect --format '{{json .Manifest}}' "$repo:$TAG" | grep -m1 -o '"digest": *"sha256:[0-9a-f]*"' | grep -o 'sha256:[0-9a-f]*') || return 1
     echo "♻️ $repo:$ref was built from these inputs ($inputs): not building $name again."
     save_image_digest "$name" "$digest"
@@ -186,6 +191,7 @@ reuse_image() {
   return 1
 }
 
+# The image label holding the inputs hash.
 IMAGE_INPUTS_LABEL=rocks.cwa.ci.inputs
 
 # The php base to build on (#208): from source when asked, or in the template's own CI so its patches are tested; else CWA_CI_PHP_BASE_IMAGE or the Dockerfile's default.
@@ -222,6 +228,7 @@ build_api() {
   # downloads from github.com. A build secret, so it's never written to the
   # image; empty is fine, the Dockerfile only uses it when it has content.
   php_base_args=$(php_base_build_args) || return 1
+  # Stop here when an existing image was built from the same inputs.
   inputs=$(image_inputs api "$php_base_args frankenphp_prod") || return 1
   reuse_image PHP "$PHP_REPOSITORY" "$inputs" && return 0
   docker buildx build --push \
@@ -250,6 +257,7 @@ build_app() {
 	docker context create builder
   docker buildx create builder --driver=docker-container --use
 
+  # Stop here when an existing image was built from the same inputs.
   inputs=$(image_inputs app "CI=true prod") || return 1
   reuse_image APP "$APP_REPOSITORY" "$inputs" && return 0
   # Site settings are runtime env: never pass one as a --build-arg or --secret.
