@@ -23,6 +23,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- **create-cwa projects that chose GitHub Actions got no workflows**: `.gitattributes` still had the API Platform template's `.github export-ignore`, and GitHub's tarball honours it, so `.github/` never reached a new project (since 2.0.0-alpha.1). A project created that way copies `.github/workflows/` from this release (except `publish-create-cwa.yml` and `publish-php-base.yml`). [ac42d4a](https://github.com/components-web-app/components-web-app/commit/ac42d4a3566119ec90e06a3a28104a6f79157d44)
 - Caddy holds page requests for up to 5 s while the app container restarts, instead of answering 502 straight away (`lb_try_duration` on the app proxy). On Kubernetes a request that finds no ready SSR pod fails at most 5 s later (#216). [8702196](https://github.com/components-web-app/components-web-app/commit/87021963044d24ef4efc47e7adb66e82ba61e781)
 
 ### Security
