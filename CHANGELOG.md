@@ -34,6 +34,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- The TipTap editor's bubble and floating menus show again once a component is selected (#222): they stayed on the editor `build()` replaces. Projects copy `app/app/components/TipTapHtmlEditor.vue`. [e82eb69](https://github.com/components-web-app/components-web-app/commit/e82eb69a14c6ea5bf7fd3ba0641c50613e5931e6)
 - The browser tests no longer fail in a project created without the image feature: `e2e/run.sh` skips its upload check when there's no `Image` component. [259055c](https://github.com/components-web-app/components-web-app/commit/259055ccd1282ccc271722b4822978eddd830479)
 - Review apps sharing a namespace no longer share one TLS Certificate, which only the newest app's host matched and which stopping any of them deleted (#221). [64d7152](https://github.com/components-web-app/components-web-app/commit/64d71523c2a42d8995eafbc13e387adafa7c9964)
 
