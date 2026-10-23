@@ -347,6 +347,9 @@ http://127.0.0.1:2080 {
     # Comment the following line if you don't want Next.js to catch requests for HTML documents.
     # In this case, they will be handled by the PHP app.
     reverse_proxy http://{$APP_UPSTREAM} {
+        # Retry a refused connection for a few seconds, so a restarting app holds requests instead of a 502 (#216).
+        lb_try_duration 5s
+        lb_try_interval 250ms
         fail_duration 2s
         unhealthy_request_count 20000
     }
