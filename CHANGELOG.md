@@ -15,6 +15,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - `@cwa/nuxt` 2.0.0-alpha.29 and the Yjs TipTap editor go together, and need api-components-bundle 2.0.0-alpha.37: copy `app/app/components/TipTapHtmlEditor.vue`, `app/app/tiptap/` (`co-editing.ts`, and new `y-sync.ts`, `y-seed.ts`, `y-session.ts`, `y-state.ts`, `y-cursors.ts`) and both HtmlContent components (they now pass `field="html"`), and add `yjs`, `@tiptap/extension-collaboration` (your `@tiptap/*` version) and `@tiptap/y-tiptap` to `dependencies`. Check the lock has one `yjs`. This replaces the alpha.28 editor above. [92565ad](https://github.com/components-web-app/components-web-app/commit/92565ad71a97f13769063d8704345d0d26bed3dc)
 
+- `@cwa/nuxt` 2.0.0-alpha.30: copy `app/app/components/TipTapHtmlEditor.vue` and `app/app/tiptap/y-session.ts` again with the module update. [3487864](https://github.com/components-web-app/components-web-app/commit/34878641f5877421beeaa355f709bd5f99bba923)
+
 ### Changed
 
 - **TipTap co-editing** (`@cwa/nuxt` 2.0.0-alpha.28, cwa-nuxt-module#429): the body-text editor outlines the field with the name of another admin editing it, applies their saves without moving your caret or adding to your undo history, shows their caret live, and offers "Use theirs / Keep mine" on a held change. Ported from the module's playground. Known module issue: when two admins save the same field at the same moment, one edit can be lost without a conflict row (reported to the module) (#219). [685dfdf](https://github.com/components-web-app/components-web-app/commit/685dfdf2c1d4553daf3495cfba64789d82e38cd6)
@@ -22,7 +24,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - **api-components-bundle 2.0.0-alpha.36** (api-components-bundle#561): components and page data are sent with an `ETag`, and a write with `If-Match` is refused if someone saved in between. Groundwork for the module's fix for simultaneous saves (#219). [ede2e9f](https://github.com/components-web-app/components-web-app/commit/ede2e9f2f59dc917783b2651ea1072543a893991)
 - **api-components-bundle 2.0.0-alpha.37** (api-components-bundle#564): stores collaborative-editing state (`/_/collaboration_states`) for the module's next TipTap editor (#219). [e3cda2d](https://github.com/components-web-app/components-web-app/commit/e3cda2d26b32350e76e8955b91aa24bb7ccf3adb)
 
-- **TipTap co-editing through Yjs** (`@cwa/nuxt` 2.0.0-alpha.29, cwa-nuxt-module#439): admins in one field share a Yjs document, so simultaneous typing merges instead of one save replacing the other; the editing state is stored through the bundle's `/_/collaboration_states`. Known module issue: in about 1 in 9 two-window runs, an older save arriving late still removes one admin's simultaneous text (reported to the module) (#219). [92565ad](https://github.com/components-web-app/components-web-app/commit/92565ad71a97f13769063d8704345d0d26bed3dc)
+- **TipTap co-editing through Yjs** (`@cwa/nuxt` 2.0.0-alpha.29, cwa-nuxt-module#439): admins in one field share a Yjs document, so simultaneous typing merges instead of one save replacing the other; the editing state is stored through the bundle's `/_/collaboration_states`. (#219). [92565ad](https://github.com/components-web-app/components-web-app/commit/92565ad71a97f13769063d8704345d0d26bed3dc)
+
+### Fixed
+
+- TipTap co-editing no longer loses one admin's text when both type at once (`@cwa/nuxt` 2.0.0-alpha.30, cwa-nuxt-module#440): a refused save (412) no longer shows the pre-typing HTML, and a component shown twice on a page no longer takes its own tab's save for someone else's (#219). [3487864](https://github.com/components-web-app/components-web-app/commit/34878641f5877421beeaa355f709bd5f99bba923)
 
 ### Security
 
