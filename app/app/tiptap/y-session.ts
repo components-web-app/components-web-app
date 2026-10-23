@@ -25,6 +25,7 @@ interface Session {
   closed: boolean
   started: boolean
   claimed: boolean
+  saves: (string | null)[]
   start: YSessionStart
   closing?: ReturnType<typeof setTimeout>
 }
@@ -101,7 +102,7 @@ export function acquireYSession(tab: object, key: string, options: YSessionOptio
         return stored && decodeUpdate(stored.state)
       },
     })
-    const created: Session = { doc, sync, state, refs: 0, closed: false, started: false, claimed: false, start: 'current', ready: Promise.resolve('current') }
+    const created: Session = { doc, sync, state, refs: 0, closed: false, started: false, claimed: false, saves: [], start: 'current', ready: Promise.resolve('current') }
     created.ready = begin(created, options).then((start) => {
       created.started = true
       created.start = start
@@ -118,6 +119,7 @@ export function acquireYSession(tab: object, key: string, options: YSessionOptio
     doc: held.doc,
     sync: held.sync,
     state: held.state,
+    saves: held.saves,
     ready: held.ready,
     claim(): YSessionStart {
       if (held.claimed) {

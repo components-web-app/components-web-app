@@ -156,7 +156,6 @@ const session = shallowRef<ReturnType<typeof acquireYSession>>()
 const ready = ref(false)
 const heard = ref(0)
 const senders = new Map<string, { name: string, colour: string }>()
-const ownSaves: (string | null)[] = []
 let cursorChannel: Shared['channel'] | undefined
 let stopHearing: (() => void) | undefined
 let settleTimer: ReturnType<typeof setTimeout> | undefined
@@ -199,8 +198,9 @@ function storedHtml(): string | null | undefined {
 
 function save(current: CoreEditor) {
   const value = current.isEmpty ? null : current.getHTML()
-  ownSaves.push(value)
-  ownSaves.splice(0, ownSaves.length - OWN_SAVES)
+  const saves = session.value?.saves
+  saves?.push(value)
+  saves?.splice(0, saves.length - OWN_SAVES)
   html.value = value
 }
 
@@ -225,7 +225,7 @@ function settleSoon() {
 
 function isOutside(value: string | null | undefined) {
   const writer = $cwa.resources.getResource(props.iri).value?.data?._metadata?.lastWrite?.clientId
-  return !ownSaves.includes(value ?? null) && !session.value?.sync.peers().some(peer => peer.clientId === writer)
+  return !session.value?.saves.includes(value ?? null) && !session.value?.sync.peers().some(peer => peer.clientId === writer)
 }
 
 function caretIn(previous: Editor | undefined): Caret {
