@@ -16,6 +16,7 @@
     ".github/pull_request_template.md",
     ".github/workflows/publish-create-cwa.yml",
     ".github/workflows/publish-php-base.yml",
+    ".github/workflows/create-cwa-smoke.yml",
     ".github/php-base/",
     ".gitlab/ci/template-only.yml"
   ],
