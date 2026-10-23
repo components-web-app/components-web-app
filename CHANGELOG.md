@@ -6,6 +6,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Media storage is chosen at runtime by `MEDIA_STORAGE`** (`local` or `gcloud`, #211), so copy `api/config/services.php` with the new `api/src/Flysystem/MediaAdapterFactory.php` and `MediaUrlEnvVarProcessor.php`. Kubernetes deploys keep Cloud Storage (the prod default is `gcloud`) and need nothing else. A single-server site already using a bucket with `compose.prod.yaml` sets `MEDIA_STORAGE=gcloud`, because the file now defaults to `local`. A project that edited the storage block of `services.php` merges its change into the new wiring. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
+- `api/frankenphp/Caddyfile` changed (`/uploads` is static only); copy it. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
+
+### Security
+
+- **`/uploads` is served as files only, never run as PHP** (#211). The bundle keeps an upload's own extension when it can't tell the type, so a stored `.php` under `public/uploads` (dev's media folder, and now single-server production's) would have run. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
+
 ### Changed
 
 - **A deploy restarts pods only when their image or settings changed:** the per-deploy `timestamp` pod annotation is gone (the chart's checksum annotations already roll pods on a ConfigMap, Secret or site-settings change). To restart on purpose, `kubectl rollout restart` or `CWA_CI_BUILD_FORCE="true"`. [29d26a2](https://github.com/components-web-app/components-web-app/commit/29d26a26f44b63f07890670ce4085dc7fad88772)
@@ -16,6 +25,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Added
 
+- **Single-server production stores media on the server** (#211): `compose.prod.yaml` keeps uploads in a `media_data` volume, served at `https://<SITE_HOST>/uploads/`, and no longer needs a Cloud Storage bucket. The browser tests upload an image and check it and its WebP variants are served, before and after php is recreated (local storage, or `CWA_CI_E2E_STORAGE="gcloud"`). Dev media URLs are now `https://localhost/uploads/…` too. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
 - **`create-cwa` runs unattended:** `--yes` takes every default, `--ci` never prompts (a missing project name is an error, a failed `bin/up` exits 1), `--template-dir <path>` copies a local checkout instead of downloading, and `--pipeline`, `--features`, `--[no-]fixtures`, `--[no-]start` and `--[no-]install-deps` answer their questions. Without flags nothing changes (#215). [24c09d3](https://github.com/components-web-app/components-web-app/commit/24c09d3dfdf3d0e2b8d21d1e9a4386ecdd890f2f)
 - **create-cwa smoke job** (template CI only, GitHub and GitLab): creates a project from the pushed ref, starts it through `bin/up` and signs in, with all features and with none (#215). [593ce7a](https://github.com/components-web-app/components-web-app/commit/593ce7adcc2f7e895a698d27f169166a020760c9)
 
