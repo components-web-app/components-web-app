@@ -28,6 +28,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- Caddy holds page requests for up to 5 s while the app container restarts, instead of answering 502 straight away (`lb_try_duration` on the app proxy). Kubernetes is unaffected beyond that: a request that finds no ready SSR pod fails at most 5 s later (#216). [8702196](https://github.com/components-web-app/components-web-app/commit/87021963044d24ef4efc47e7adb66e82ba61e781)
 - TipTap co-editing no longer loses one admin's text when both type at once (`@cwa/nuxt` 2.0.0-alpha.30, cwa-nuxt-module#440): a refused save (412) no longer shows the pre-typing HTML, and a component shown twice on a page no longer takes its own tab's save for someone else's (#219). [3487864](https://github.com/components-web-app/components-web-app/commit/34878641f5877421beeaa355f709bd5f99bba923)
 
 ### Security
