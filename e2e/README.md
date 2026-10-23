@@ -39,7 +39,8 @@ E2E_PHP_IMAGE=cwa-e2e-php:local E2E_APP_IMAGE=cwa-e2e-app:local sh e2e/run.sh
   hub (`compose.scaled.yaml`). In CI, set `CWA_CI_E2E_SCALED="true"`.
 - `E2E_STORAGE=gcloud` stores media in a Cloud Storage stand-in (`fake-gcs-server`) instead of the local volume that
   `compose.prod.yaml` uses (#211). In CI, set `CWA_CI_E2E_STORAGE="gcloud"`. Either way, `run.sh` uploads an image,
-  checks it and its WebP variants are served, recreates php and checks again (`media-checks.sh`).
+  checks it and its WebP variants are served, recreates php and checks again (`media-checks.sh`). A project
+  without the image feature (no `api/src/Entity/Image.php`) skips that step.
 - Each checkout gets its own stack, `cwa-e2e-<directory>` (`COMPOSE_PROJECT_NAME` overrides it), so two projects can
   run at once on one machine (#178).
 - Reports land in `playwright-report/` and `test-results/`.
