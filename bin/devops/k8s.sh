@@ -1301,7 +1301,6 @@ deploy() {
   GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
   NUXT_SITE_URL="https://${DOMAIN}"
-  CURRENT_DATE=$(date)
 
   # Per-track sizing defaults (requests only; limits are the same on every track). A CI variable still wins.
   case "$track" in
@@ -1448,8 +1447,8 @@ postgresql:
 $(postgres_auth_yaml)
 $(postgres_persistence_yaml)
 replicaCount: ${CWA_CI_API_REPLICA_COUNT:-"1"}
+# No timestamp: pods roll on a new image digest or a config/secret checksum, not on every deploy.
 podAnnotations:
-  timestamp: "${CURRENT_DATE}"
   app.gitlab.com/app: "${CI_PROJECT_PATH_SLUG}"
   app.gitlab.com/env: "${CI_ENVIRONMENT_SLUG}"
 # API (php) tier only - the PWA has its own block above. The default max is 1
