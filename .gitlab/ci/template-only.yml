@@ -68,3 +68,42 @@ create-cwa smoke:
     expire_in: 14 days
     paths:
       - .create-cwa-smoke/create-cwa.log
+
+# bin/server's init, deploy, backup and restore against this ref's images (#212), on any branch when they or what they
+# run change, else manual.
+server scripts:
+  stage: test
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  dependencies: []
+  needs:
+    - job: build api
+      optional: true
+    - job: build app
+      optional: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" || $CWA_CI_TEST_DISABLED == "true" || $CI_COMMIT_BRANCH == null'
+      when: never
+    - changes:
+        - .gitlab/ci/template-only.yml
+        - bin/server/**/*
+        - bin/lib/**/*
+        - bin/test/server-scripts.sh
+        - compose.yaml
+        - compose.prod.yaml
+        - e2e/compose.yaml
+        - e2e/media-checks.sh
+        - api/Dockerfile
+        - api/frankenphp/**/*
+        - api/config/**/*
+        - api/migrations/**/*
+    - when: manual
+      allow_failure: true
+  script:
+    - apk add --no-cache openssl curl >/dev/null
+    - setup_docker_environment
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" sh bin/test/server-scripts.sh

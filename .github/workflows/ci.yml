@@ -169,6 +169,8 @@ jobs:
         run: sh bin/test/php-base-version.sh
       - name: Check compose.prod.yaml's host settings match the Kubernetes deploy's (#207)
         run: sh bin/test/site-hosts-parity.sh
+      - name: Check the shared sitemap warm runs under plain sh and from k8s.sh (#212)
+        run: sh bin/test/site-lib.sh
 
   # compose.prod.yaml renders with every required value and refuses without each one (#207). Only the compose CLI.
   compose-config:

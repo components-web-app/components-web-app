@@ -1,5 +1,5 @@
-# Single-server production, a PREVIEW for the beta: no deploy script yet (#212).
-# `docker compose -f compose.yaml -f compose.prod.yaml up -d --wait`; every secret and site value is required.
+# Single-server production, a PREVIEW for the beta. bin/server/init writes its settings (.env.prod) and bin/server/deploy.sh
+# deploys it (#212); by hand: `docker compose --env-file .env.prod up -d --wait`. Every secret and site value is required.
 
 # CI boots it under e2e/compose.yaml and renders it in bin/test/compose-prod-config.sh (#207).
 
