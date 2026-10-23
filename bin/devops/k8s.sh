@@ -7,6 +7,11 @@ rand_str() {
   head -c ${len} /tmp/urandom.tr
 }
 
+# What the build jobs need: the docker image has docker, buildx and (normally) git; no helm or kubectl.
+install_build_dependencies() {
+  command -v git >/dev/null || apk add --no-cache git
+}
+
 install_dependencies() {
   echo "➡️ Installing prerequisites..."
   # upgrade for curl fix https://github.com/curl/curl/issues/4357

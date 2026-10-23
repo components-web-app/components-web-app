@@ -65,7 +65,7 @@ build api:
   variables:
     DOCKER_DRIVER: overlay2
   script:
-    - install_dependencies
+    - install_build_dependencies
     - setup_docker_environment
     - build_api
   # The pushed digest, which the deploys pin and promote (#164).
@@ -92,7 +92,7 @@ build app:
   variables:
     DOCKER_DRIVER: overlay2
   script:
-    - install_dependencies
+    - install_build_dependencies
     - setup_docker_environment
     - build_app
   # The pushed digest, which the deploys pin and promote (#164).
