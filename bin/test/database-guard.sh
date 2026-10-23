@@ -59,6 +59,8 @@ chmod +x "$DIR/bin/helm" "$DIR/bin/kubectl"
 
 # run <function call> <settings>: in a fresh shell, from $DIR/work, output in $DIR/out, status in $DIR/status.
 case "$K8S" in /*) ;; *) K8S="$(pwd)/$K8S" ;; esac
+# k8s.sh sources bin/lib/site.sh, which the work directory below doesn't have.
+export CWA_SITE_LIB="$(dirname "$K8S")/../lib/site.sh"
 run() {
   : >"$DIR/log"
   : >"$DIR/log.values"

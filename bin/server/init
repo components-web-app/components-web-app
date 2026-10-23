@@ -1,0 +1,67 @@
+#!/bin/sh
+# Writes .env.prod for a single-server site (#212): random secrets, a JWT key pair and the site's host and mail relay.
+# Run once, from anywhere in the checkout: bin/server/init. Asks for SITE_HOST, SITE_ALIASES and MAILER_DSN unless
+# they're already in the environment (SITE_HOST=example.com MAILER_DSN=… bin/server/init runs unattended).
+# Never overwrites .env.prod. Needs openssl.
+set -eu
+
+cd "$(dirname "$0")/../.."
+ENV_FILE=${CWA_SERVER_ENV_FILE:-.env.prod}
+[ ! -e "$ENV_FILE" ] || { echo "$ENV_FILE already exists: delete it first to start again (its secrets are the site's)." >&2; exit 1; }
+command -v openssl >/dev/null || { echo "Needs openssl." >&2; exit 1; }
+
+# A value from the environment, else asked for on the terminal; $2 is the question, $3 "optional" allows empty.
+ask() {
+  eval "value=\${$1:-}"
+  if [ -z "$value" ] && [ -t 0 ]; then
+    printf '%s: ' "$2" >&2
+    read -r value
+  fi
+  if [ -z "$value" ] && [ "${3:-}" != "optional" ]; then
+    echo "$1 is required: set it in the environment or answer the question." >&2
+    exit 1
+  fi
+  case "$value" in *"'"*) echo "$1 can't contain a single quote." >&2; exit 1 ;; esac
+  printf '%s' "$value"
+}
+
+SITE_HOST=$(ask SITE_HOST "The site's domain, e.g. www.example.com")
+SITE_ALIASES=$(ask SITE_ALIASES "Other domains served the same, space-separated (Enter for none)" optional)
+MAILER_DSN=$(ask MAILER_DSN "Your mail relay as a Symfony Mailer DSN, e.g. smtp://user:pass@smtp.example.com:587")
+# The same check the php entrypoint makes on these hosts (api/frankenphp/site-hosts.sh), so a typo fails here.
+for host in $SITE_HOST $SITE_ALIASES; do
+  case "$host" in *[!A-Za-z0-9.-]*|.*|*.|"") echo "Not a host name: '$host' (no scheme, port or path)." >&2; exit 1 ;; esac
+done
+
+rand() { openssl rand -hex "${1:-24}"; }
+JWT_PASSPHRASE=$(rand)
+ADMIN_PASSWORD=$(rand 12)
+keydir=$(mktemp -d)
+trap 'rm -rf "$keydir"' EXIT
+# Both keys from a plain one, as e2e/run.sh does, so nothing has to read the passphrase back.
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out "$keydir/plain.pem" 2>/dev/null
+openssl pkey -in "$keydir/plain.pem" -pubout -out "$keydir/public.pem"
+openssl pkey -in "$keydir/plain.pem" -aes256 -passout "pass:$JWT_PASSPHRASE" -out "$keydir/private.pem"
+
+umask 077
+{
+  echo "# Written by bin/server/init. The site's secrets: keep this file, back it up off the server, never commit it."
+  echo "COMPOSE_FILE=compose.yaml:compose.prod.yaml"
+  echo "SITE_HOST='$SITE_HOST'"
+  echo "SITE_ALIASES='$SITE_ALIASES'"
+  echo "MAILER_DSN='$MAILER_DSN'"
+  echo "APP_SECRET=$(rand)"
+  echo "NUXT_APP_SECRET=$(rand)"
+  echo "CADDY_MERCURE_JWT_SECRET=$(rand)"
+  echo "POSTGRES_PASSWORD=$(rand)"
+  echo "ADMIN_PASSWORD=$ADMIN_PASSWORD"
+  echo "JWT_PASSPHRASE=$JWT_PASSPHRASE"
+  # Multi-line values in double quotes, which compose reads whole.
+  printf 'JWT_SECRET_KEY="%s"\n' "$(cat "$keydir/private.pem")"
+  printf 'JWT_PUBLIC_KEY="%s"\n' "$(cat "$keydir/public.pem")"
+} > "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+
+echo "Wrote $ENV_FILE (mode 600)."
+echo "Admin login after the first deploy: admin / $ADMIN_PASSWORD (also in $ENV_FILE)."
+echo "Next: point $SITE_HOST at this server, open ports 80 and 443, then run bin/server/deploy.sh."

@@ -1,0 +1,10 @@
+# A single-server site's scheduled jobs (#212): copy into `crontab -e` for the user that runs docker, with the path
+# to your checkout. Times are the server's local time; the Kubernetes deploy's orphan scan runs at 03:00 Europe/London.
+
+# Daily backup at 02:30: the database, media and Caddy's TLS certificates into backups/, keeping the newest 5.
+30 2 * * * cd /srv/my-site && sh bin/server/backup.sh >> backups/backup.log 2>&1
+# Then copy backups/ off the server (a backup on the same disk isn't a backup), e.g. with rclone or rsync:
+# 0 3 * * * rsync -a --delete /srv/my-site/backups/ backup-host:/backups/my-site/
+
+# Daily orphan scan at 03:00: emails MAILER_EMAIL when unused files or resources change (delete them in /_cwa/orphaned).
+0 3 * * * cd /srv/my-site && docker compose --env-file .env.prod exec -T php bin/console silverback:api-components:scan-orphaned >> backups/orphan-scan.log 2>&1

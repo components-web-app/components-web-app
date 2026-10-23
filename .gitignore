@@ -11,3 +11,7 @@
 # Build outputs read by CI (#164)
 /build-metadata.json
 /image_digest.env
+
+# Single-server settings and backups (bin/server, #212).
+/.env.prod
+/backups/
