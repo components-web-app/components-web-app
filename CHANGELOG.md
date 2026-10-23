@@ -34,6 +34,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Fixed
 
+- The browser tests no longer fail in a project created without the image feature: `e2e/run.sh` skips its upload check when there's no `Image` component. [259055c](https://github.com/components-web-app/components-web-app/commit/259055ccd1282ccc271722b4822978eddd830479)
 - Review apps sharing a namespace no longer share one TLS Certificate, which only the newest app's host matched and which stopping any of them deleted (#221). [64d7152](https://github.com/components-web-app/components-web-app/commit/64d71523c2a42d8995eafbc13e387adafa7c9964)
 
 ## [2.0.0-alpha.47](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.47) - 2026-10-23
