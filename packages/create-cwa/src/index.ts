@@ -33,17 +33,132 @@ const CLI_VERSION: string = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8')
 ).version
 
-function parseArgs(argv: string[]): { projectName?: string; ref: string } {
+interface CliOptions {
+  projectName?: string
+  ref: string
+  refGiven: boolean
+  yes: boolean
+  ci: boolean
+  templateDir?: string
+  pipeline?: string
+  features?: string[]
+  fixtures?: boolean
+  start?: boolean
+  installDeps?: boolean
+  help: boolean
+}
+
+const USAGE = `Usage: create-cwa [project-name] [options]
+
+Without options every question is asked. A flag answers its question, so it isn't asked.
+
+Options:
+  --ref <tag|branch>          template version to download (default v${CLI_VERSION})
+  --template-dir <path>       copy the template from a local checkout instead of downloading it
+  --pipeline <id>             CI/CD pipeline: github, gitlab or none
+  --features <list>           comma-separated features, "all" or "none"
+  --fixtures, --no-fixtures   include the sample pages, or not
+  --start, --no-start         run bin/up once the project is created, or not
+  --install-deps, --no-install-deps
+                              pnpm install in app/ on this machine (only when the stack isn't started)
+  -y, --yes                   take the default for every question no flag answers
+  --ci                        never prompt (implies --yes); a missing project name is an error
+  -h, --help                  show this help`
+
+class UsageError extends Error {}
+
+const VALUE_FLAGS = ['--ref', '--template-dir', '--pipeline', '--features']
+
+// Flags for unattended runs (#215); with none given, every question is asked as before.
+function parseArgs(argv: string[]): CliOptions {
   const args = argv.slice(2)
-  let ref = `v${CLI_VERSION}`
+  const opts: CliOptions = { ref: `v${CLI_VERSION}`, refGiven: false, yes: false, ci: false, help: false }
   const positional: string[] = []
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i]
-    if (arg === '--ref' && args[i + 1]) ref = args[++i]
-    else if (arg.startsWith('--ref=')) ref = arg.slice('--ref='.length)
-    else positional.push(arg)
+    let arg = args[i]
+    let value: string | undefined
+    const eq = arg.indexOf('=')
+    if (arg.startsWith('--') && eq > 0) {
+      value = arg.slice(eq + 1)
+      arg = arg.slice(0, eq)
+      if (!VALUE_FLAGS.includes(arg)) throw new UsageError(`${arg} takes no value`)
+    } else if (VALUE_FLAGS.includes(arg)) {
+      value = args[i + 1]
+      if (value === undefined || value.startsWith('-')) throw new UsageError(`${arg} needs a value`)
+      i++
+    }
+    switch (arg) {
+      case '--':
+        break
+      case '--ref':
+        opts.ref = value as string
+        opts.refGiven = true
+        break
+      case '--template-dir':
+        opts.templateDir = value
+        break
+      case '--pipeline':
+        opts.pipeline = value
+        break
+      case '--features':
+        opts.features = (value as string).split(',').map((f) => f.trim()).filter(Boolean)
+        break
+      case '--fixtures':
+      case '--no-fixtures':
+        opts.fixtures = arg === '--fixtures'
+        break
+      case '--start':
+      case '--no-start':
+        opts.start = arg === '--start'
+        break
+      case '--install-deps':
+      case '--no-install-deps':
+        opts.installDeps = arg === '--install-deps'
+        break
+      case '-y':
+      case '--yes':
+        opts.yes = true
+        break
+      case '--ci':
+        opts.ci = true
+        opts.yes = true
+        break
+      case '-h':
+      case '--help':
+        opts.help = true
+        break
+      default:
+        if (arg.startsWith('-')) throw new UsageError(`Unknown option ${arg}`)
+        positional.push(arg)
+    }
   }
-  return { projectName: positional[0], ref }
+  if (positional.length > 1) throw new UsageError(`Unexpected argument "${positional[1]}"`)
+  if (opts.templateDir && opts.refGiven) throw new UsageError("--ref and --template-dir can't be used together")
+  if (opts.start && opts.installDeps) {
+    throw new UsageError('--install-deps is only for a stack that isn\'t started: the app container installs its own')
+  }
+  opts.projectName = positional[0]
+  return opts
+}
+
+function fail(message: string): never {
+  cancel(message)
+  process.exit(1)
+}
+
+// A spinner when someone is watching, plain log lines under --ci.
+function progress(plain: boolean): { start(msg: string): void; stop(msg: string): void } {
+  return plain ? { start: (msg) => log.step(msg), stop: (msg) => log.info(msg) } : spinner()
+}
+
+async function readLocalManifest(templateDir: string): Promise<Manifest> {
+  const path = join(resolve(templateDir), 'cwa-manifest.json')
+  if (!existsSync(path)) throw new Error(`No CWA template in "${templateDir}": ${path} is missing.`)
+  try {
+    return JSON.parse(await readFile(path, 'utf-8')) as Manifest
+  } catch {
+    throw new Error(`${path} is not valid JSON.`)
+  }
 }
 
 async function fetchManifest(ref: string): Promise<Manifest> {
@@ -108,46 +223,80 @@ function validateProjectName(value: string | undefined): string | undefined {
   return undefined
 }
 
-async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Answers> {
+// Each answer comes from its flag, else the default under --yes (what Enter picks), else a prompt (#215).
+async function askQuestions(manifest: Manifest, opts: CliOptions): Promise<Answers> {
   const question = (id: string): ManifestQuestion | undefined =>
     manifest.questions.find((q) => q.id === id)
 
   const nameQuestion = question('projectName')
-  const projectName = checkCancel(
-    await text({
-      message: withHint(nameQuestion?.message ?? 'Project name?', nameQuestion?.hint),
-      placeholder: nameQuestion?.placeholder ?? 'my-cwa-app',
-      initialValue: targetArg ?? '',
-      validate: validateProjectName,
-    })
-  ) as string
+  let projectName: string
+  if (opts.yes && opts.projectName !== undefined) {
+    const error = validateProjectName(opts.projectName)
+    if (error) fail(`Project name "${opts.projectName}": ${error}`)
+    projectName = opts.projectName
+  } else if (opts.ci) {
+    fail('--ci needs the project name: create-cwa <project-name> --ci')
+  } else {
+    projectName = checkCancel(
+      await text({
+        message: withHint(nameQuestion?.message ?? 'Project name?', nameQuestion?.hint),
+        placeholder: nameQuestion?.placeholder ?? 'my-cwa-app',
+        initialValue: opts.projectName ?? '',
+        validate: validateProjectName,
+      })
+    ) as string
+  }
 
   const ciQuestion = question('ci')
-  const ci = checkCancel(
-    await select({
-      message: withHint(ciQuestion?.message ?? 'CI/CD pipeline?', ciQuestion?.hint),
-      options: ciQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? [
-        { value: 'github', label: 'GitHub Actions' },
-        { value: 'gitlab', label: 'GitLab CI' },
-        { value: 'none', label: 'None' },
-      ],
-    })
-  ) as string
+  const ciOptions = ciQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? [
+    { value: 'github', label: 'GitHub Actions' },
+    { value: 'gitlab', label: 'GitLab CI' },
+    { value: 'none', label: 'None' },
+  ]
+  let ci: string
+  if (opts.pipeline !== undefined) {
+    if (!ciOptions.some((c) => c.value === opts.pipeline)) {
+      fail(`--pipeline ${opts.pipeline}: choose one of ${ciOptions.map((c) => c.value).join(', ')}`)
+    }
+    ci = opts.pipeline
+  } else if (opts.yes) {
+    ci = ciOptions[0].value
+  } else {
+    ci = checkCancel(
+      await select({
+        message: withHint(ciQuestion?.message ?? 'CI/CD pipeline?', ciQuestion?.hint),
+        options: ciOptions,
+      })
+    ) as string
+  }
 
   const featuresQuestion = question('features')
   const featureChoices =
     featuresQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? []
 
-  const features = checkCancel(
-    await multiselect({
-      message: withHint(
-        `${featuresQuestion?.message ?? 'Which features to include?'} (space to toggle, enter to confirm)`,
-        featuresQuestion?.hint
-      ),
-      options: featureChoices,
-      required: false,
-    })
-  ) as string[]
+  let features: string[]
+  if (opts.features !== undefined) {
+    const all = featureChoices.map((c) => c.value)
+    const flag = opts.features
+    features = flag.length === 1 && flag[0] === 'all' ? all : flag.length === 1 && flag[0] === 'none' ? [] : flag
+    const unknown = features.filter((f) => !all.includes(f))
+    if (unknown.length) {
+      fail(`--features: unknown ${unknown.join(', ')}. Choose from ${all.join(', ')}, or "all" or "none"`)
+    }
+  } else if (opts.yes) {
+    features = []
+  } else {
+    features = checkCancel(
+      await multiselect({
+        message: withHint(
+          `${featuresQuestion?.message ?? 'Which features to include?'} (space to toggle, enter to confirm)`,
+          featuresQuestion?.hint
+        ),
+        options: featureChoices,
+        required: false,
+      })
+    ) as string[]
+  }
 
   // Auto-include required features
   const resolved = new Set(features)
@@ -165,21 +314,77 @@ async function askQuestions(manifest: Manifest, targetArg?: string): Promise<Ans
   }
 
   const fixturesQuestion = question('fixtures')
-  const fixtures = checkCancel(
-    await confirm({
-      message: withHint(
-        fixturesQuestion?.message ?? 'Include database fixtures for selected features?',
-        fixturesQuestion?.hint
-      ),
-      initialValue: fixturesQuestion?.default ?? true,
-    })
-  ) as boolean
+  const fixtures =
+    opts.fixtures ??
+    (opts.yes
+      ? (fixturesQuestion?.default ?? true)
+      : (checkCancel(
+          await confirm({
+            message: withHint(
+              fixturesQuestion?.message ?? 'Include database fixtures for selected features?',
+              fixturesQuestion?.hint
+            ),
+            initialValue: fixturesQuestion?.default ?? true,
+          })
+        ) as boolean))
 
   return { projectName: projectName.trim(), ci, features: [...resolved], fixtures }
 }
 
-async function downloadRepo(manifest: Manifest, ref: string, tempDir: string): Promise<void> {
-  const s = spinner()
+// Files a download would contain: what git tracks or would track, minus export-ignore paths (GitHub's tarball honours them).
+function templateFiles(src: string): string[] | null {
+  const ls = spawnSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
+    cwd: src,
+    encoding: 'utf8',
+  })
+  if (ls.status !== 0) return null
+  const files = ls.stdout.split('\0').filter((f) => f && existsSync(join(src, f)))
+
+  const paths = new Set<string>()
+  for (const file of files) {
+    const parts = file.split('/')
+    for (let i = 1; i <= parts.length; i++) paths.add(parts.slice(0, i).join('/'))
+  }
+  const attr = spawnSync('git', ['check-attr', '-z', '--stdin', 'export-ignore'], {
+    cwd: src,
+    input: [...paths].join('\0'),
+    encoding: 'utf8',
+  })
+  if (attr.status !== 0) return null
+  const out = attr.stdout.split('\0')
+  const ignored = new Set<string>()
+  for (let i = 0; i + 2 < out.length; i += 3) {
+    if (out[i + 2] === 'set') ignored.add(out[i])
+  }
+  return files.filter((file) => {
+    const parts = file.split('/')
+    for (let i = 1; i <= parts.length; i++) if (ignored.has(parts.slice(0, i).join('/'))) return false
+    return true
+  })
+}
+
+// --template-dir (#215): a local checkout instead of the download; excludes and stripping still apply after.
+async function copyTemplateDir(templateDir: string, tempDir: string, plain: boolean): Promise<void> {
+  const src = resolve(templateDir)
+  const s = progress(plain)
+  s.start(`Copying template from ${src}...`)
+  const files = templateFiles(src)
+  if (files) {
+    for (const file of files) {
+      await fse.copy(join(src, file), join(tempDir, file), { dereference: false })
+    }
+  } else {
+    // Not a git checkout: everything but dependencies and VCS data.
+    const skip = new Set(['.git', 'node_modules', 'vendor'])
+    await fse.copy(src, tempDir, {
+      filter: (path) => !path.slice(src.length).split(/[\\/]/).some((part) => skip.has(part)),
+    })
+  }
+  s.stop('Template copied.')
+}
+
+async function downloadRepo(manifest: Manifest, ref: string, tempDir: string, plain: boolean): Promise<void> {
+  const s = progress(plain)
   s.start(`Downloading template (${ref})...`)
   try {
     await downloadTemplate(`github:${manifest.repo}#${ref}`, {
@@ -336,80 +541,103 @@ async function moveToTarget(tempDir: string, targetDir: string): Promise<void> {
 // Decides, before anything is downloaded, whether to start the stack and whether to
 // install app/ dependencies on the host. The host install shares app/node_modules with
 // the app container, so it's only offered when the stack isn't started now (#204).
-async function askSetup(): Promise<{ startDocker: boolean; installDeps: boolean }> {
+// --start fails when the stack can't be started; without it (prompted or --yes) the project is created anyway (#215).
+async function askSetup(opts: CliOptions): Promise<{ startDocker: boolean; installDeps: boolean }> {
   let startDocker = false
   if (commandExists('docker')) {
-    startDocker = checkCancel(
-      await confirm({
-        message: withHint('Start the Docker stack when the project is ready?', 'bin/up: starts it, loads fixtures, prints the login'),
-        initialValue: true,
-      })
-    ) as boolean
+    startDocker =
+      opts.start ??
+      (opts.yes ||
+        (checkCancel(
+          await confirm({
+            message: withHint('Start the Docker stack when the project is ready?', 'bin/up: starts it, loads fixtures, prints the login'),
+            initialValue: true,
+          })
+        ) as boolean))
+  } else if (opts.start) {
+    fail('--start: docker not found. Install Docker Desktop (or Docker Engine with the compose plugin).')
   } else {
     log.warn('docker not found. Install Docker Desktop, then run `bin/up` in the project.')
   }
 
   if (startDocker) {
-    const s = spinner()
+    const s = progress(opts.ci)
     s.start('Checking Docker and ports...')
     const result = await preflight()
     s.stop('Docker checked.')
-    if (!result.dockerRunning) {
-      log.warn('Docker is installed but `docker info` failed: start Docker Desktop (or the Docker daemon).')
-      startDocker = false
-    } else if (result.takenPorts.length) {
-      log.warn(result.takenPorts.join('\n\n'))
-      startDocker = false
-    }
+    const problem = !result.dockerRunning
+      ? 'Docker is installed but `docker info` failed: start Docker Desktop (or the Docker daemon).'
+      : result.takenPorts.join('\n\n')
     if (result.memoryWarning) log.warn(result.memoryWarning)
-    if (!startDocker) {
+    if (problem) {
+      if (opts.start) fail(`--start: ${problem}`)
+      log.warn(problem)
       log.info('The project will be created without starting Docker. Run `bin/up` in it once that is fixed.')
+      startDocker = false
     }
     return { startDocker, installDeps: false }
   }
 
   let installDeps = false
   if (commandExists('pnpm')) {
-    installDeps = checkCancel(
-      await confirm({
-        message: withHint(
-          'Install app/ dependencies on this machine?',
-          'only for editor types; the app container installs its own on first start'
-        ),
-        initialValue: false,
-      })
-    ) as boolean
+    installDeps =
+      opts.installDeps ??
+      (!opts.yes &&
+        (checkCancel(
+          await confirm({
+            message: withHint(
+              'Install app/ dependencies on this machine?',
+              'only for editor types; the app container installs its own on first start'
+            ),
+            initialValue: false,
+          })
+        ) as boolean))
+  } else if (opts.installDeps) {
+    fail('--install-deps: pnpm not found.')
   }
   return { startDocker, installDeps }
 }
 
 async function main(): Promise<void> {
+  let args: CliOptions
+  try {
+    args = parseArgs(process.argv)
+  } catch (err) {
+    if (!(err instanceof UsageError)) throw err
+    console.error(`create-cwa: ${err.message}\n\n${USAGE}`)
+    process.exit(2)
+  }
+  if (args.help) {
+    console.log(USAGE)
+    return
+  }
+
   intro(`create-cwa ${CLI_VERSION} — Components Web App scaffolder`)
   log.warn(
     'CWA is a prerelease: expect breaking changes between versions (see CHANGELOG.md on GitHub).\n' +
       'create-cwa collects no telemetry; it only downloads the template from GitHub.'
   )
 
-  const args = parseArgs(process.argv)
-  const s = spinner()
-  s.start('Fetching manifest...')
+  const s = progress(args.ci)
+  s.start(args.templateDir ? `Reading the manifest in ${args.templateDir}...` : 'Fetching manifest...')
   let manifest: Manifest
   try {
-    manifest = await fetchManifest(args.ref)
+    manifest = args.templateDir ? await readLocalManifest(args.templateDir) : await fetchManifest(args.ref)
     s.stop('Manifest loaded.')
   } catch (err) {
     s.stop((err as Error).message)
     process.exit(1)
   }
 
-  const answers = await askQuestions(manifest, args.projectName)
-  const setup = await askSetup()
+  const answers = await askQuestions(manifest, args)
+  const setup = await askSetup(args)
   const targetDir = resolve(process.cwd(), answers.projectName)
   const tempDir = join(tmpdir(), `cwa-${randomBytes(6).toString('hex')}`)
 
-  await downloadRepo(manifest, args.ref, tempDir)
+  if (args.templateDir) await copyTemplateDir(args.templateDir, tempDir, args.ci)
+  else await downloadRepo(manifest, args.ref, tempDir, args.ci)
 
-  const s2 = spinner()
+  const s2 = progress(args.ci)
   s2.start('Configuring project...')
 
   try {
@@ -465,6 +693,7 @@ async function main(): Promise<void> {
     log.step('Running: pnpm install (in app/)')
     if (!run('pnpm', ['install'], join(targetDir, 'app'))) {
       log.warn('pnpm install failed. Run it manually inside app/.')
+      if (args.ci) process.exitCode = 1
     }
   }
 
@@ -476,10 +705,13 @@ async function main(): Promise<void> {
       log.step('Running: bin/up')
       ready = run('sh', ['bin/up'], targetDir)
       if (!ready) log.warn('bin/up failed (see above). Fix it, then run bin/up again in the project directory.')
+      // Under --ci a failed start fails the run (#215).
+      if (!ready && args.ci) process.exitCode = 1
     } else {
       log.step('Running: docker compose up -d --wait')
       if (!run('docker', ['compose', 'up', '-d', '--wait'], targetDir)) {
         log.warn('docker compose up -d --wait failed. Run it again in the project directory.')
+        if (args.ci) process.exitCode = 1
       }
     }
   }

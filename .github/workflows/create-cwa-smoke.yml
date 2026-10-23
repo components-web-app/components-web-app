@@ -1,0 +1,83 @@
+# Creates a project from this ref with the built create-cwa, runs its bin/up and checks the login (#215).
+# Template only: create-cwa leaves this file out (cwa-manifest.json alwaysExclude).
+name: create-cwa smoke
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '.github/workflows/create-cwa-smoke.yml'
+      - 'packages/create-cwa/**'
+      - 'cwa-manifest.json'
+      - 'bin/up'
+      - 'compose.yaml'
+      - 'compose.override.yaml'
+      - 'api/Dockerfile'
+      - 'api/.dockerignore'
+      - 'api/frankenphp/**'
+      - 'api/composer.json'
+      - 'api/composer.lock'
+      - 'api/src/DataFixtures/**'
+      - 'app/Dockerfile'
+      - 'app/.dockerignore'
+      - 'app/package.json'
+      - 'app/pnpm-lock.yaml'
+      - 'app/pnpm-workspace.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: create-cwa-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: create-cwa + bin/up (${{ matrix.name }})
+    if: github.repository == 'components-web-app/components-web-app'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: all features, fixtures
+            features: all
+            fixtures: 'true'
+          - name: no features, no fixtures
+            features: none
+            fixtures: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build create-cwa
+        working-directory: packages/create-cwa
+        run: pnpm install --frozen-lockfile && pnpm run build
+
+      # GITHUB_TOKEN reaches the php container through compose, so composer isn't rate-limited.
+      - name: Create a project and start it
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMOKE_FEATURES: ${{ matrix.features }}
+          SMOKE_FIXTURES: ${{ matrix.fixtures }}
+        run: sh packages/create-cwa/smoke.sh "$RUNNER_TEMP/smoke"
+
+      - name: Upload the create-cwa log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: create-cwa-smoke-${{ matrix.features }}
+          path: ${{ runner.temp }}/smoke/create-cwa.log
+          if-no-files-found: ignore
+          retention-days: 14

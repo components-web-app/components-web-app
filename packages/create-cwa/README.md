@@ -27,6 +27,24 @@ If you start the stack, the CLI runs the project's `bin/up`: it waits until the 
 ## Options
 
 - `--ref <tag or branch>`: the template version to download. By default `create-cwa` X downloads the template tagged `vX`, so an install is reproducible. `--ref main` gets the latest unreleased template.
+- `--template-dir <path>`: copy the template from a local checkout instead of downloading it: the files git tracks (or would track), minus `export-ignore` paths, like a download. The manifest's excludes and feature stripping apply as usual. Can't be combined with `--ref`.
+
+Each of these answers its question, so it isn't asked:
+
+- `--pipeline <github|gitlab|none>`: the CI/CD pipeline.
+- `--features <list>`: comma-separated feature ids (`navigation`, `html-content`, `image`, `blog`, `nested-pages`, `forms`), `all` or `none`. Features another one needs are still added.
+- `--fixtures` / `--no-fixtures`: include the sample pages, or not.
+- `--start` / `--no-start`: run `bin/up` once the project is created, or not. With `--start`, a check that fails (Docker not running, a port taken) stops the CLI before anything is created.
+- `--install-deps` / `--no-install-deps`: `pnpm install` in `app/` on this machine; only when the stack isn't started.
+
+For unattended runs:
+
+- `-y`, `--yes`: take the default for every question no flag answers: GitHub Actions, no features, fixtures, start the stack (when Docker is there and the checks pass), no host install. The project name has no default, so it's still asked for when not given.
+- `--ci`: never prompt (implies `--yes`). A missing or invalid project name is an error, and a failed `bin/up` makes the CLI exit 1. For example:
+
+```sh
+npx create-cwa my-app --ci --pipeline none --features all --no-start
+```
 
 ## Privacy
 

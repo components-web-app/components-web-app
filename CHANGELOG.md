@@ -6,6 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Added
+
+- **`create-cwa` runs unattended:** `--yes` takes every default, `--ci` never prompts (a missing project name is an error, a failed `bin/up` exits 1), `--template-dir <path>` copies a local checkout instead of downloading, and `--pipeline`, `--features`, `--[no-]fixtures`, `--[no-]start` and `--[no-]install-deps` answer their questions. Without flags nothing changes (#215). [24c09d3](https://github.com/components-web-app/components-web-app/commit/24c09d3dfdf3d0e2b8d21d1e9a4386ecdd890f2f)
+- **create-cwa smoke job** (template CI only, GitHub and GitLab): creates a project from the pushed ref, starts it through `bin/up` and signs in, with all features and with none (#215). [593ce7a](https://github.com/components-web-app/components-web-app/commit/593ce7adcc2f7e895a698d27f169166a020760c9)
+
 ## [2.0.0-alpha.47](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.47) - 2026-10-23
 
 ### Upgrade notes
