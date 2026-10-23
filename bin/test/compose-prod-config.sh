@@ -12,7 +12,7 @@ trap 'rm -f "$out"' EXIT
 
 # The template's own required values; a project's extra ${NAME:?…} values are found in the files and tested too.
 TEMPLATE_REQUIRED="SITE_HOST APP_SECRET NUXT_APP_SECRET CADDY_MERCURE_JWT_SECRET POSTGRES_PASSWORD JWT_SECRET_KEY JWT_PUBLIC_KEY
-  JWT_PASSPHRASE MAILER_DSN GCLOUD_BUCKET ADMIN_PASSWORD"
+  JWT_PASSPHRASE MAILER_DSN ADMIN_PASSWORD"
 REQUIRED=$(grep -ho '[$]{[A-Za-z_][A-Za-z0-9_]*:[?]' compose.yaml compose.prod.yaml | sed 's/^[$]{//; s/:[?]$//' | sort -u | tr '\n' ' ')
 for name in $TEMPLATE_REQUIRED; do
   case " $REQUIRED " in *" $name "*) ;; *) fail "$name is no longer required (\${$name:?…})" ;; esac
@@ -36,6 +36,8 @@ has 'NUXT_CWA_API_URL: http://php.local/_api' "SSR's API URL (#98)"
 has 'MERCURE_PUBLIC_URL: https://example.com/.well-known/mercure' "the Mercure public URL"
 has 'MAILER_DSN: dummy-MAILER_DSN' "MAILER_DSN"
 has 'TRUSTED_HOSTS: ""' "TRUSTED_HOSTS left to the entrypoint"
+has 'MEDIA_STORAGE: local' "media is local by default (#211)"
+has 'target: /app/public/uploads' "media is in a volume, so it outlives php (#211)"
 has 'max-size: 10m' "log rotation"
 has 'condition: service_healthy' "php waits for a healthy database"
 if grep -q '2019' "$out"; then fail "port 2019 (Caddy admin) appears in the config"; else pass "port 2019 isn't published"; fi

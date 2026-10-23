@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Flysystem;
 
 use App\Flysystem\GoogleCloudStorageFactory;
+use App\Flysystem\MediaAdapterFactory;
 use App\Flysystem\PathPrefixEnvVarProcessor;
 use League\Flysystem\Config;
+use League\Flysystem\Filesystem;
+use League\Flysystem\Local\LocalFilesystemAdapter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\Exception\RuntimeException;
@@ -65,5 +68,28 @@ class StoragePathPrefixTest extends TestCase
         $adapter = (new GoogleCloudStorageFactory(['project_id' => 'test'], 'bucket', 'http://gcs.invalid'))();
 
         self::assertSame('https://storage.googleapis.com/bucket/a.png', $adapter->publicUrl('a.png', new Config()));
+    }
+
+    // The same prefix applies to local media, under public/uploads (#211).
+    public function test_local_media_stores_under_the_prefix(): void
+    {
+        $root = sys_get_temp_dir() . '/cwa-media-' . bin2hex(random_bytes(4));
+        $adapter = (new MediaAdapterFactory('local', $root, 'review/x/', static fn () => self::fail('local media built the Cloud Storage adapter')))();
+        self::assertInstanceOf(LocalFilesystemAdapter::class, $adapter);
+
+        (new Filesystem($adapter))->write('a.png', 'png');
+
+        self::assertFileExists($root . '/review/x/a.png');
+        unlink($root . '/review/x/a.png');
+        rmdir($root . '/review/x');
+        rmdir($root . '/review');
+        rmdir($root);
+    }
+
+    public function test_gcloud_media_uses_the_cloud_storage_adapter(): void
+    {
+        $adapter = (new MediaAdapterFactory(' GCloud ', '/unused', 'review/x/', static fn () => new GoogleCloudStorageFactory(['project_id' => 'test'], 'bucket', 'http://gcs.invalid', 'review/x/')))();
+
+        self::assertSame('https://storage.googleapis.com/bucket/review/x/a.png', $adapter->publicUrl('a.png', new Config()));
     }
 }

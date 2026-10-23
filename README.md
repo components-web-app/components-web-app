@@ -76,7 +76,7 @@ Full instructions: [cwa.rocks › Installation](https://cwa.rocks/getting-starte
 | Option | Status |
 |---|---|
 | Kubernetes with Helm, through the template's GitLab CI or GitHub Actions pipelines | **Supported.** This is how the demo and the sites built on CWA run. |
-| One server with `compose.prod.yaml` | **Preview.** Not yet tested as a production setup: media still needs a Google Cloud Storage bucket ([#211](https://github.com/components-web-app/components-web-app/issues/211)) and there is no deploy script yet ([#212](https://github.com/components-web-app/components-web-app/issues/212)). |
+| One server with `compose.prod.yaml` | **Preview.** Not yet tested as a production setup: there is no deploy script or backup yet ([#212](https://github.com/components-web-app/components-web-app/issues/212)). Media is stored on the server. |
 
 See [cwa.rocks › Deployment](https://cwa.rocks/deployment).
 

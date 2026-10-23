@@ -89,6 +89,11 @@ if compose exec -T app wget -q -T 3 -O /dev/null http://php:2019/config/ 2>/dev/
   exit 1
 fi
 echo "  ok: port 2019 unreachable from the app container"
+# An upload and its WebP variants are served, and still are after php is recreated (#211).
+media=$(compose exec -T -e ADMIN_PASSWORD="$ADMIN_PASSWORD" php sh -s upload < media-checks.sh)
+compose up -d --no-build --no-deps --force-recreate --wait --wait-timeout 300 php
+# shellcheck disable=SC2086
+compose exec -T php sh -s served $media < media-checks.sh
 # The browser tests start cold, as they did before the checks.
 compose exec -T php bin/console silverback:api-components:purge-http-cache --quiet
 
@@ -113,13 +118,17 @@ if [ "${error_mails:-0}" != "0" ]; then
   tests_status=1
 fi
 
-# Every object stays under GCLOUD_PATH_PREFIX, and the stop-review delete empties it (#166).
-objects() { compose exec -T php curl -fs "http://gcs:8000/storage/v1/b/cwa-e2e/o$1" | grep -o '"name": *"[^"]*"' | wc -l | tr -d ' '; }
-outside=$(( $(objects '') - $(objects '?prefix=review/e2e/') ))
+# Every stored file stays under GCLOUD_PATH_PREFIX, and the stop-review delete empties it (#166), in either storage.
+if [ "${E2E_STORAGE:-local}" = "gcloud" ]; then
+  objects() { compose exec -T php curl -fs "http://gcs:8000/storage/v1/b/cwa-e2e/o${1:+?prefix=$1}" | grep -o '"name": *"[^"]*"' | wc -l | tr -d ' '; }
+else
+  objects() { compose exec -T php sh -c 'find "/app/public/uploads/$1" -type f 2>/dev/null | wc -l' sh "$1" | tr -d ' '; }
+fi
+outside=$(( $(objects '') - $(objects 'review/e2e/') ))
 compose exec -T php sh -c 'exec php bin/console silverback:api-components:delete-stored-files gcloud --all --only-if-value="$GCLOUD_PATH_PREFIX" --matching="~(^|/)review/[^/]+/\$~"'
 left=$(objects '')
 if [ "$outside" != "0" ] || [ "$left" != "0" ]; then
-  echo "Storage prefix: $outside object(s) outside review/e2e/, $left left after delete-stored-files." >&2
+  echo "Storage prefix: $outside file(s) outside review/e2e/, $left left after delete-stored-files." >&2
   tests_status=1
 fi
 exit "$tests_status"
