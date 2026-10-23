@@ -97,17 +97,25 @@
 import { StarterKit } from '@tiptap/starter-kit'
 import { Placeholder } from '@tiptap/extension-placeholder'
 import { Link } from '@tiptap/extension-link'
+import { Collaboration } from '@tiptap/extension-collaboration'
+import { ySyncPluginKey } from '@tiptap/y-tiptap'
 import {
-  useEditor,
+  Editor,
   EditorContent,
 } from '@tiptap/vue-3'
 import { BubbleMenu, FloatingMenu } from '@tiptap/vue-3/menus'
-import { computed, reactive, toRef, watch } from 'vue'
-import type { Editor, ChainedCommands } from '@tiptap/core'
+import { getSchema } from '@tiptap/core'
+import type { ChainedCommands, Editor as CoreEditor } from '@tiptap/core'
+import type { Transaction } from '@tiptap/pm/state'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import * as Y from 'yjs'
 import BubbleMenuButton from '~/components/TipTap/BubbleMenuButton.vue'
-import { RemoteCursors, applyRemoteContent, setRemoteCursors } from '~/tiptap/co-editing'
-import type { RemoteCursor } from '~/tiptap/co-editing'
-import { useCwaRealtime } from '#imports'
+import { applyRemoteContent, sameContent } from '~/tiptap/co-editing'
+import { createCursorChannel, YRemoteCursors } from '~/tiptap/y-cursors'
+import { acquireYSession } from '~/tiptap/y-session'
+import { createCollaborationState } from '~/tiptap/y-state'
+import type { YSyncData } from '~/tiptap/y-sync'
+import { useCwa, useCwaRealtime } from '#imports'
 import type { useCwaResourceModel } from '#imports'
 
 // The menu buttons. Hiding one only removes it from the menus: the extension stays registered (pastes, shortcuts).
@@ -116,6 +124,7 @@ type EditorStyle = 'h1' | 'h2' | 'bold' | 'italic' | 'underline' | 'link' | 'bul
 const props = defineProps<{
   model: ReturnType<typeof useCwaResourceModel<string>>
   iri: string
+  field: string
   disabled?: boolean
   editorClasses?: string
   // Every button shows by default. Set a style to `false` to hide its button, for
@@ -130,45 +139,45 @@ const show = (style: EditorStyle) => props.config?.[style] !== false
 // page overlay. `document` isn't available in the template expression scope, so define it here.
 const appendToBody = () => document.body
 
-const { model: html, remoteChange, focusedBy, focusListeners } = props.model
+const parseOptions = { preserveWhitespace: true } as const
+const SETTLE_MS = 1500
+const OWN_SAVES = 20
 
-// Other admins' carets (#219): sent and received over the module's real-time channel, drawn only while they're in this field.
-type Selection = { from: number, to: number } | null
-const { send, on } = useCwaRealtime<{ selection: { selection: Selection } }>(() => props.iri)
-const selections = reactive(new Map<string, RemoteCursor>())
+const { model: html, remoteChange, focusedBy, focusListeners, states } = props.model
+const $cwa = useCwa()
+const event = `yjs:${props.field}`
+const { send, on, peers } = useCwaRealtime<Record<string, YSyncData>>(() => props.iri)
 
-on('selection', ({ data: { selection }, clientId, name, colour }) => {
-  if (!selection) {
-    selections.delete(clientId)
-    return
-  }
-  selections.set(clientId, { id: clientId, name, colour, ...selection })
-})
+type Shared = { doc: Y.Doc, channel: ReturnType<typeof createCursorChannel> }
+type Caret = { from: number, to: number } | undefined
 
+const editor = shallowRef<Editor>()
+const session = shallowRef<ReturnType<typeof acquireYSession>>()
+const ready = ref(false)
+const heard = ref(0)
+const senders = new Map<string, { name: string, colour: string }>()
+const ownSaves: (string | null)[] = []
+let cursorChannel: Shared['channel'] | undefined
+let stopHearing: (() => void) | undefined
+let settleTimer: ReturnType<typeof setTimeout> | undefined
+
+const live = computed(() => peers.value.map(peer => peer.clientId))
 const inField = computed(() => focusedBy.value.flatMap(peer => peer.clientIds))
+const company = computed(() => heard.value >= 0 && !!session.value?.sync.peers().some(peer => live.value.includes(peer.clientId)))
+const saver = computed(() => heard.value >= 0 && (!session.value || session.value.sync.isSaver(live.value)))
 
-watch(inField, (now, before) => {
-  before.filter(clientId => !now.includes(clientId)).forEach(clientId => selections.delete(clientId))
+on(event, ({ clientId, name, colour, data }) => {
+  senders.set(clientId, { name, colour })
+  session.value?.sync.receive(clientId, data)
 })
 
-const cursors = computed(() => [...selections.values()].filter(({ id }) => inField.value.includes(id)))
-
-function sendSelection(selection: Selection) {
-  send('selection', { selection })
-}
-
-const editor = useEditor({
-  content: html.value,
-  editorProps: {
-    attributes: {
-      class: props.editorClasses || '',
-    },
-  },
-  extensions: [
+function extensions(shared?: Shared) {
+  return [
     StarterKit.configure({
       // TipTap v3 StarterKit includes Link by default — disable it here and
       // register it explicitly below so we can apply custom configuration.
       link: false,
+      ...(shared ? { undoRedo: false as const } : {}),
     }),
     Placeholder.configure({
       placeholder: 'Write something …',
@@ -178,17 +187,193 @@ const editor = useEditor({
       openOnClick: false,
       defaultProtocol: 'https',
     }),
-    RemoteCursors,
-  ],
-  onUpdate: ({ editor }) => {
-    html.value = editor.isEmpty ? null : editor.getHTML()
-  },
-  onSelectionUpdate: ({ editor }) => {
-    editor.isFocused && sendSelection({ from: editor.state.selection.from, to: editor.state.selection.to })
-  },
-  onFocus: ({ editor }) => sendSelection({ from: editor.state.selection.from, to: editor.state.selection.to }),
-  onBlur: () => sendSelection(null),
-  editable: !props.disabled,
+    ...(shared ? [Collaboration.configure({ document: shared.doc }), YRemoteCursors.configure({ channel: shared.channel })] : []),
+  ]
+}
+
+const schema = getSchema(extensions())
+
+function storedHtml(): string | null | undefined {
+  return $cwa.resources.getResource(props.iri).value?.data?.[props.field]
+}
+
+function save(current: CoreEditor) {
+  const value = current.isEmpty ? null : current.getHTML()
+  ownSaves.push(value)
+  ownSaves.splice(0, ownSaves.length - OWN_SAVES)
+  html.value = value
+}
+
+function isLocal(transaction: Transaction) {
+  const sync = transaction.getMeta(ySyncPluginKey)
+  return !sync?.isChangeOrigin || !!sync.isUndoRedoOperation
+}
+
+function settle() {
+  const current = editor.value
+  if (!ready.value || !saver.value || !current) {
+    return
+  }
+  sameContent(current, html.value) || save(current)
+  session.value?.state.save(storedHtml())
+}
+
+function settleSoon() {
+  clearTimeout(settleTimer)
+  settleTimer = setTimeout(settle, SETTLE_MS)
+}
+
+function isOutside(value: string | null | undefined) {
+  const writer = $cwa.resources.getResource(props.iri).value?.data?._metadata?.lastWrite?.clientId
+  return !ownSaves.includes(value ?? null) && !session.value?.sync.peers().some(peer => peer.clientId === writer)
+}
+
+function caretIn(previous: Editor | undefined): Caret {
+  const selection = document.getSelection()
+  if (!previous || !selection?.anchorNode || !selection.focusNode || !previous.view.dom.contains(selection.anchorNode)) {
+    return
+  }
+  try {
+    return { from: previous.view.posAtDOM(selection.anchorNode, selection.anchorOffset), to: previous.view.posAtDOM(selection.focusNode, selection.focusOffset) }
+  }
+  catch {
+    return
+  }
+}
+
+function focusTaken() {
+  return !!document.activeElement && document.activeElement !== document.body
+}
+
+function build(shared?: Shared, wantsFocus = false) {
+  const previous = editor.value
+  const focus = wantsFocus && !focusTaken()
+  const caret = focus ? caretIn(previous) : undefined
+  let rendered = !shared
+  cursorChannel = shared?.channel
+  editor.value = new Editor({
+    ...(shared ? {} : { content: html.value }),
+    parseOptions,
+    editorProps: {
+      attributes: {
+        class: props.editorClasses || '',
+      },
+    },
+    extensions: extensions(shared),
+    onCreate: ({ editor: created }) => {
+      rendered = true
+      focus && created.chain().setTextSelection(caret ?? created.state.selection).focus(null, { scrollIntoView: false }).run()
+    },
+    onUpdate: ({ editor: changed, transaction }) => {
+      if (!rendered || !shared) {
+        return
+      }
+      isLocal(transaction) && save(changed)
+      saver.value && settleSoon()
+    },
+    editable: !!shared && !props.disabled,
+  })
+  previous && nextTick(() => previous.destroy())
+}
+
+function showRemoteCursors() {
+  cursorChannel?.setRemote((session.value?.sync.peers() ?? []).filter(peer => inField.value.includes(peer.clientId)).map(peer => ({
+    ...peer,
+    name: senders.get(peer.clientId)?.name ?? 'Someone',
+    colour: senders.get(peer.clientId)?.colour ?? '#a8a29e',
+  })))
+}
+
+function endSession() {
+  stopHearing?.()
+  stopHearing = undefined
+  clearTimeout(settleTimer)
+  session.value?.release()
+  session.value = undefined
+  ready.value = false
+}
+
+async function startSession(focus: boolean) {
+  endSession()
+  const published = $cwa.resources.findPublishedComponentIri(props.iri).value ?? props.iri
+  const held = acquireYSession($cwa, `${published}#${props.field}`, {
+    send: data => send(event, data),
+    others: () => live.value.length > 0,
+    html: () => html.value,
+    schema,
+    parseOptions,
+    state: doc => createCollaborationState($cwa.cwaFetch.fetch, { iri: () => published, field: props.field, encode: () => Y.encodeStateAsUpdate(doc) }),
+  })
+  session.value = held
+  const stop = held.sync.onChange(() => heard.value++)
+  await held.ready
+  if (session.value !== held) {
+    stop()
+    return
+  }
+  const start = held.claim()
+  stopHearing = stop
+  build({ doc: held.doc, channel: createCursorChannel(cursor => held.sync.setCursor(cursor)) }, focus)
+  ready.value = true
+  showRemoteCursors()
+  const built = editor.value!
+  start === 'stale' && applyRemoteContent(built, html.value)
+  start === 'ahead' && save(built)
+  settleSoon()
+}
+
+onMounted(() => {
+  build()
+  props.disabled || startSession(false)
+})
+
+onBeforeUnmount(() => {
+  endSession()
+  editor.value?.destroy()
+})
+
+watch(live, (now, before) => {
+  before.filter(clientId => !now.includes(clientId)).forEach(clientId => session.value?.sync.forget(clientId))
+})
+
+watch(saver, isSaver => isSaver && settleSoon())
+
+watch([heard, inField], showRemoteCursors)
+
+watch(() => states.submitting.value, (submitting, before) => {
+  before && !submitting && saver.value && settleSoon()
+})
+
+watch(remoteChange, (change) => {
+  const current = editor.value
+  if (!change || !company.value || !current) {
+    return
+  }
+  if (sameContent(current, change.value as string | null | undefined)) {
+    change.accept()
+    return
+  }
+  save(current)
+  change.keep()
+})
+
+watch([html, () => props.iri], ([value, iri], [, before]) => {
+  const current = editor.value
+  if (!current || iri !== before || sameContent(current, value)) {
+    return
+  }
+  if (!company.value || (ready.value && saver.value && isOutside(value))) {
+    applyRemoteContent(current, value)
+  }
+})
+
+watch(() => props.disabled, (disabled) => {
+  if (disabled) {
+    endSession()
+    build()
+    return
+  }
+  startSession(true)
 })
 
 function showLinkManager() {
@@ -221,31 +406,6 @@ function showLinkManager() {
     .setLink({ href: url })
     .run()
 }
-
-// A remote save keeps the caret and stays out of undo history (#219).
-watch(html, (value) => {
-  if (editor.value && editor.value.getHTML() !== value) {
-    applyRemoteContent(editor.value, value)
-  }
-})
-
-watch([cursors, editor], ([drawn, loaded]) => {
-  loaded && setRemoteCursors(loaded, drawn)
-})
-
-// Toggle disabled prop and focus when enabled
-const disabledRef = toRef(props, 'disabled')
-watch(disabledRef, () => {
-  if (!editor.value) {
-    return
-  }
-  const editable = !disabledRef.value
-  // emitUpdate: false, or selecting a component saves TipTap's re-serialised HTML as a draft (#167).
-  editor.value.setEditable(editable, false)
-  if (editable) {
-    editor.value.chain().focus(null, { scrollIntoView: false }).run()
-  }
-})
 
 // Common menu item props
 const buttonBubbleMenuProps = computed(() => (call: keyof ChainedCommands, isActiveName: string, editorArgs?: (string | number | object)[]) => {

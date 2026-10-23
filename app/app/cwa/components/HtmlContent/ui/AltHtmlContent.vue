@@ -8,6 +8,7 @@
       v-if="$cwa.admin.isEditing"
       :model="resourceModel"
       :iri="iri"
+      field="html"
       :disabled="disableEditor"
       data-placeholder="[Empty HTML Content Area]"
       :class="{ 'is-empty opacity-50 text-inherit': disableEditor && !htmlContent }"
