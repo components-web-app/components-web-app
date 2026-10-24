@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+
+- The create-cwa smoke job (template CI only) skips, instead of failing, on a release commit whose `cwa-php-base` isn't published yet: orange on GitLab, a warning on GitHub. Re-run it once `publish-php-base.yml` has pushed the image. [64e2c2a](https://github.com/components-web-app/components-web-app/commit/64e2c2abdcf0dd387576a0527ad6a6c2b48f7c44)
+
 ## [2.0.0-alpha.48](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.48) - 2026-10-24
 
 ### Upgrade notes
