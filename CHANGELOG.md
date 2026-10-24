@@ -8,6 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- **An empty commit no longer starts a GitLab pipeline**, a side effect of 2.0.0-alpha.48's Markdown-only rule: to rerun CI, use Run pipeline (Build → Pipelines) or the pipelines API instead of `git commit --allow-empty`. [d17d26a](https://github.com/components-web-app/components-web-app/commit/d17d26a5b99be79e5c971e65f51024cb888eb0cb)
 - The create-cwa smoke job (template CI only) skips, instead of failing, on a release commit whose `cwa-php-base` isn't published yet: orange on GitLab, a warning on GitHub. Re-run it once `publish-php-base.yml` has pushed the image. [64e2c2a](https://github.com/components-web-app/components-web-app/commit/64e2c2abdcf0dd387576a0527ad6a6c2b48f7c44)
 
 ## [2.0.0-alpha.48](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.48) - 2026-10-24
