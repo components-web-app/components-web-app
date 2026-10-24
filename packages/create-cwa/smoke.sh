@@ -20,6 +20,15 @@ fail() {
   exit 1
 }
 
+# A release commit names its own cwa-php-base before publish-php-base.yml has pushed it: skip, don't fail. GitLab shows exit 3 orange (allow_failure exit_codes).
+base=$(sed -n 's/^ARG CWA_PHP_BASE=//p' "$ROOT/api/Dockerfile" | head -n 1)
+if [ -n "$base" ] && ! out=$(docker buildx imagetools inspect "$base" 2>&1) && echo "$out" | grep -qi 'not found'; then
+  [ -z "${GITHUB_ACTIONS:-}" ] || echo "::warning::create-cwa smoke skipped: $base isn't published yet; re-run once publish-php-base.yml has pushed it"
+  echo "create-cwa smoke skipped: $base isn't published yet (a release commit before publish-php-base.yml). Re-run once it's pushed." >&2
+  [ -n "${GITLAB_CI:-}" ] && exit 3
+  exit 0
+fi
+
 if [ ! -f "$ROOT/packages/create-cwa/dist/index.js" ]; then
   (cd "$ROOT/packages/create-cwa" && pnpm install --frozen-lockfile && pnpm run build) || fail "couldn't build the CLI"
 fi

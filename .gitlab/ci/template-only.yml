@@ -29,6 +29,9 @@ create-cwa smoke:
     DOCKER_DRIVER: overlay2
   needs: []
   dependencies: []
+  # smoke.sh exits 3 when the Dockerfile's cwa-php-base isn't published yet (a release commit); keep the numbers in sync.
+  allow_failure:
+    exit_codes: [3]
   parallel:
     matrix:
       - SMOKE_FEATURES: all
