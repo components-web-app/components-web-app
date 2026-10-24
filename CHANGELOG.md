@@ -15,6 +15,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Security
 
+- **fast-uri 3.1.9 and serialize-javascript 7.1.4** clear GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr, GHSA-xhq7-xmqj-769h, GHSA-333x-w4r6-6crp and GHSA-m5mm-p8h7-m29v (both build-only). The withdrawn braces advisory GHSA-vfj7-8cjw-p6xm leaves `app/pnpm-workspace.yaml`'s accepted register; still accepted: node-forge, postcss-selector-parser, esbuild. Projects take `app/pnpm-lock.yaml` and `app/pnpm-workspace.yaml`. [f204977](https://github.com/components-web-app/components-web-app/commit/f204977568a1bbef0fd4ce6ebc9baeb62d172939)
 - **`/uploads` is served as files only, never run as PHP** (#211). The bundle keeps an upload's own extension when it can't tell the type, so a stored `.php` under `public/uploads` (dev's media folder, and now single-server production's) would have run. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
 
 ### Changed
