@@ -4,7 +4,7 @@
 
 # The php base (#208): a release sets this release's ghcr.io/components-web-app/cwa-php-base:<version>, prebuilt with our plugins, patches and extensions.
 # cwa_php_base builds it from source (--build-arg CWA_PHP_BASE=cwa_php_base), for projects that change api/frankenphp/{souin,storages,caddy}.
-ARG CWA_PHP_BASE=ghcr.io/components-web-app/cwa-php-base:2.0.0-alpha.47
+ARG CWA_PHP_BASE=ghcr.io/components-web-app/cwa-php-base:2.0.0-alpha.48
 
 FROM dunglas/frankenphp:builder AS builder
 

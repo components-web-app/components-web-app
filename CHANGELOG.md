@@ -6,8 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.48](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.48) - 2026-10-24
+
 ### Upgrade notes
 
+- **No bundle or module change:** api-components-bundle stays 2.0.0-alpha.37 and `@cwa/nuxt` 2.0.0-alpha.30.
 - **Review apps' TLS secrets are now per release** (#221): `letsencrypt-cert-<release>-api`. Each review app issues its own certificate on its next deploy; once every review app in a shared namespace has redeployed, delete the old shared secret by hand (`kubectl delete secret letsencrypt-cert-review-api -n <review namespace>`). A `CWA_CI_TLS_SECRET_NAME` set per branch as a workaround can go. [64d7152](https://github.com/components-web-app/components-web-app/commit/64d71523c2a42d8995eafbc13e387adafa7c9964)
 - **Media storage is chosen at runtime by `MEDIA_STORAGE`** (`local` or `gcloud`, #211), so copy `api/config/services.php` with the new `api/src/Flysystem/MediaAdapterFactory.php` and `MediaUrlEnvVarProcessor.php`. Kubernetes deploys keep Cloud Storage (the prod default is `gcloud`) and need nothing else. A single-server site already using a bucket with `compose.prod.yaml` sets `MEDIA_STORAGE=gcloud`, because the file now defaults to `local`. A project that edited the storage block of `services.php` merges its change into the new wiring. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
 - **`bin/devops/k8s.sh` now sources `bin/lib/site.sh`** (the sitemap and page-cache warm moved there, #212): copy both, or every deploy fails at its first line. A project with its own `stop review` job adds `bin/lib` to that job's sparse checkout, as `.gitlab-ci.yml` does. [8b4b3e9](https://github.com/components-web-app/components-web-app/commit/8b4b3e987cd863c8e8692cbc4fcd1e6cf15ac32e)
@@ -15,7 +18,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Security
 
-- **fast-uri 3.1.9 and serialize-javascript 7.1.4** clear GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr, GHSA-xhq7-xmqj-769h, GHSA-333x-w4r6-6crp and GHSA-m5mm-p8h7-m29v (both build-only). The withdrawn braces advisory GHSA-vfj7-8cjw-p6xm leaves `app/pnpm-workspace.yaml`'s accepted register; still accepted: node-forge, postcss-selector-parser, esbuild. Projects take `app/pnpm-lock.yaml` and `app/pnpm-workspace.yaml`. [f204977](https://github.com/components-web-app/components-web-app/commit/f204977568a1bbef0fd4ce6ebc9baeb62d172939)
+- **fast-uri 3.1.9 and serialize-javascript 7.1.4** clear GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr, GHSA-xhq7-xmqj-769h, GHSA-333x-w4r6-6crp and GHSA-m5mm-p8h7-m29v (both build-only). The withdrawn braces advisory GHSA-vfj7-8cjw-p6xm leaves `app/pnpm-workspace.yaml`'s accepted register; still accepted at this release (reviewed 2026-10-24), none shipping in the server output: node-forge 1.4.0 (GHSA-86w9-cpqp-85rv, high), no fix released; postcss-selector-parser 6.0.10 (GHSA-rj75-hqrm-r3gf, moderate), pinned by @tailwindcss/typography; esbuild 0.27.7 (GHSA-g7r4-m6w7-qqqr, low), via @nuxt/fonts. Projects take `app/pnpm-lock.yaml` and `app/pnpm-workspace.yaml`. [f204977](https://github.com/components-web-app/components-web-app/commit/f204977568a1bbef0fd4ce6ebc9baeb62d172939)
 - **`/uploads` is served as files only, never run as PHP** (#211). The bundle keeps an upload's own extension when it can't tell the type, so a stored `.php` under `public/uploads` (dev's media folder, and now single-server production's) would have run. [f6b8fe8](https://github.com/components-web-app/components-web-app/commit/f6b8fe8f2b2a156577f401bc0a5756c151fe1706)
 
 ### Changed
