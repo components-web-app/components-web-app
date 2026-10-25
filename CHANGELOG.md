@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Delete `app/app/pages/login.vue`** unless you've changed it beyond its header: its banner tells every visitor the password is "admin", which isn't true for your site. Without the file, `/login` is `@cwa/nuxt`'s own login page. New projects no longer get the file (the preview site keeps it). [779b578](https://github.com/components-web-app/components-web-app/commit/779b578c34b953b2c5cb9b61f757d3da9009d0fc)
+
 ### Changed
 
 - **An empty commit no longer starts a GitLab pipeline**, a side effect of 2.0.0-alpha.48's Markdown-only rule: to rerun CI, use Run pipeline (Build → Pipelines) or the pipelines API instead of `git commit --allow-empty`. [d17d26a](https://github.com/components-web-app/components-web-app/commit/d17d26a5b99be79e5c971e65f51024cb888eb0cb)
