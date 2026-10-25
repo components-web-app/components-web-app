@@ -40,7 +40,7 @@ done
 # The Caddyfile tests read it from /etc/caddy, as in a project image (its imports are relative).
 mkdir -p /etc/caddy
 cp api/frankenphp/Caddyfile api/frankenphp/worker.Caddyfile api/frankenphp/mercure-hub.caddy api/frankenphp/mercure-hub.Caddyfile /etc/caddy/
-for t in caddy-validate cache-encoding souin-backend-timeout; do
+for t in caddy-validate cache-encoding caddy-php-headers souin-backend-timeout; do
 	echo "== $t"
 	sh "bin/test/$t.sh"
 done
