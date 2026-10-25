@@ -9,11 +9,20 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Upgrade notes
 
 - **Delete `app/app/pages/login.vue`** unless you've changed it beyond its header: its banner tells every visitor the password is "admin", which isn't true for your site. Without the file, `/login` is `@cwa/nuxt`'s own login page. New projects no longer get the file (the preview site keeps it). [779b578](https://github.com/components-web-app/components-web-app/commit/779b578c34b953b2c5cb9b61f757d3da9009d0fc)
+- **Copy `api/frankenphp/Caddyfile`, and `api/src/Http/VisitorIp.php` if you need the visitor's address** (#224, #225). A project that capped `Surrogate-Key` itself (a purger extending `SouinPurger`) removes it: `api_platform.yaml`'s purger goes back to `api_platform.http_cache.purger.souin` and its `services.php` entry goes. A project with its own `App\Http\VisitorIp` takes the template's, which keeps `of(Request): ?string`. [e8f8cdc](https://github.com/components-web-app/components-web-app/commit/e8f8cdc091a99bd9d3e7404cebd00b6d854da121)
 
 ### Changed
 
 - **An empty commit no longer starts a GitLab pipeline**, a side effect of 2.0.0-alpha.48's Markdown-only rule: to rerun CI, use Run pipeline (Build → Pipelines) or the pipelines API instead of `git commit --allow-empty`. [d17d26a](https://github.com/components-web-app/components-web-app/commit/d17d26a5b99be79e5c971e65f51024cb888eb0cb)
 - The create-cwa smoke job (template CI only) skips, instead of failing, on a release commit whose `cwa-php-base` isn't published yet: orange on GitLab, a warning on GitHub. Re-run it once `publish-php-base.yml` has pushed the image. [64e2c2a](https://github.com/components-web-app/components-web-app/commit/64e2c2abdcf0dd387576a0527ad6a6c2b48f7c44)
+
+### Added
+
+- **`App\Http\VisitorIp`** (#225): the visitor's address for per-visitor limits, inject it instead of trusting `getClientIp()` behind Cloudflare. Caddy passes the address its rate limit counts (`CF-Connecting-IP` only from Cloudflare's ranges, `CLOUDFLARE_IP_RANGES` and `CADDY_TRUSTED_PROXIES` honoured) as the `CWA_VISITOR_IP` server variable, which no request header can set. [e8f8cdc](https://github.com/components-web-app/components-web-app/commit/e8f8cdc091a99bd9d3e7404cebd00b6d854da121)
+
+### Fixed
+
+- **A large API collection no longer empties the sitemap** (#224): its `Surrogate-Key` (one tag per member: 184 KB for ~1,930 routes) passed Node's and curl's header limits. Caddy now removes the header from SSR's `/_api` responses after Souin has stored the tags, so every purge stays exact; public hosts keep it and `Cache-Tag`. [e8f8cdc](https://github.com/components-web-app/components-web-app/commit/e8f8cdc091a99bd9d3e7404cebd00b6d854da121)
 
 ## [2.0.0-alpha.48](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.48) - 2026-10-24
 
