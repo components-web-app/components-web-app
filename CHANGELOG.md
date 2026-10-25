@@ -6,10 +6,17 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.49](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.49) - 2026-10-25
+
 ### Upgrade notes
 
+- **No bundle or module change:** api-components-bundle stays 2.0.0-alpha.37 and `@cwa/nuxt` 2.0.0-alpha.30.
 - **Delete `app/app/pages/login.vue`** unless you've changed it beyond its header: its banner tells every visitor the password is "admin", which isn't true for your site. Without the file, `/login` is `@cwa/nuxt`'s own login page. New projects no longer get the file (the preview site keeps it). [779b578](https://github.com/components-web-app/components-web-app/commit/779b578c34b953b2c5cb9b61f757d3da9009d0fc)
 - **Copy `api/frankenphp/Caddyfile`, and `api/src/Http/VisitorIp.php` if you need the visitor's address** (#224, #225). A project that capped `Surrogate-Key` itself (a purger extending `SouinPurger`) removes it: `api_platform.yaml`'s purger goes back to `api_platform.http_cache.purger.souin` and its `services.php` entry goes. A project with its own `App\Http\VisitorIp` takes the template's, which keeps `of(Request): ?string`. [e8f8cdc](https://github.com/components-web-app/components-web-app/commit/e8f8cdc091a99bd9d3e7404cebd00b6d854da121)
+
+### Security
+
+- No new npm advisories (`pnpm audit`, 2026-10-25). Still accepted, none shipping in the server output: node-forge 1.4.0 (GHSA-86w9-cpqp-85rv, high), no fix released; postcss-selector-parser 6.0.10 (GHSA-rj75-hqrm-r3gf, moderate), pinned by @tailwindcss/typography; esbuild 0.27.7 (GHSA-g7r4-m6w7-qqqr, low), via @nuxt/fonts.
 
 ### Changed
 
