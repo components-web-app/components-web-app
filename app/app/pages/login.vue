@@ -1,3 +1,4 @@
+<!-- The preview site's login page only: create-cwa leaves it out (alwaysExclude), so projects get the module's (#223). -->
 <template>
   <CwaAuthLoginPage
     v-model="credentials"

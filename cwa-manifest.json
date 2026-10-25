@@ -18,7 +18,8 @@
     ".github/workflows/publish-php-base.yml",
     ".github/workflows/create-cwa-smoke.yml",
     ".github/php-base/",
-    ".gitlab/ci/template-only.yml"
+    ".gitlab/ci/template-only.yml",
+    "app/app/pages/login.vue"
   ],
   "questions": [
     {
