@@ -294,6 +294,16 @@ http://127.0.0.1:2080 {
         }
     }
 
+    # SSR's API responses lose Surrogate-Key once Souin has stored the tags: a large collection's passed Node's limit (#224).
+    @ssr_surrogate_key {
+        path /_api*
+        header_regexp host ^[A-Za-z0-9-]+(\.local)?(:[0-9]{1,5})?$
+    }
+    header @ssr_surrogate_key {
+        -Surrogate-Key
+        defer
+    }
+
     # Per-visitor rate limit on misses and uncached paths (#106); private addresses (SSR, warm, probes) are exempt.
     # The default is generous on purpose: editors, shared networks and the deploy's cache warm must never hit it.
     @rate_limited {
@@ -346,7 +356,10 @@ http://127.0.0.1:2080 {
         # Needs TRUSTED_PROXIES to cover the caller's network.
         request_header @internal X-Forwarded-Proto https
 
-        php_server
+        # The visitor the rate limit counts, for App\Http\VisitorIp; an env var, so no request header can set it (#225).
+        php_server {
+            env CWA_VISITOR_IP {http.vars.cwa_client_ip}
+        }
     }
 
     # Comment the following line if you don't want Next.js to catch requests for HTML documents.

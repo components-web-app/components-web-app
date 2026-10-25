@@ -120,6 +120,7 @@ unit tests:
     - cd "$CI_PROJECT_DIR" && sh bin/test/souin-redis-shared-purge.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/caddy-validate.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/cache-encoding.sh
+    - cd "$CI_PROJECT_DIR" && sh bin/test/caddy-php-headers.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/storage-prefix-parity.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/api-scaling-config.sh
     - cd "$CI_PROJECT_DIR" && sh bin/test/api-warm-surge.sh
