@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Security
+
+- **postcss-selector-parser 6.0.10 moves to 6.1.5** for GHSA-rj75-hqrm-r3gf (moderate). Projects take `app/pnpm-lock.yaml` and `app/pnpm-workspace.yaml`. [!17](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/17)
+
 ## [2.0.0-alpha.49](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.49) - 2026-10-25
 
 ### Upgrade notes
