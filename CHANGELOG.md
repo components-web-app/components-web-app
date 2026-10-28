@@ -6,8 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.50](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.50) - 2026-10-28
+
 ### Upgrade notes
 
+- **No bundle or module change:** api-components-bundle stays 2.0.0-alpha.37 and `@cwa/nuxt` 2.0.0-alpha.30.
 - **Take `app/pnpm-workspace.yaml`, `app/pnpm-lock.yaml` and `api/composer.lock`'s phpunit** for the security fixes below. A project with its own overrides or register entries merges them into the file. [!18](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/18)
 
 ### Security
