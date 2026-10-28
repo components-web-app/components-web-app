@@ -6,6 +6,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Take `app/pnpm-workspace.yaml`, `app/pnpm-lock.yaml` and `api/composer.lock`'s phpunit** for the security fixes below. A project with its own overrides or register entries merges them into the file. [!18](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/18)
+
+### Security
+
+- **node-forge 1.4.0 → 1.4.2** for GHSA-86w9-cpqp-85rv (high, CVE-2026-85393). It's fixed in 1.4.1, although GitHub's advisory doesn't list a fixed version yet; 1.4.2 also fixes 1.4.1's `pem.decode()` regression. **postcss-selector-parser 6.0.10 → 6.1.5** for GHSA-rj75-hqrm-r3gf (moderate), and **esbuild 0.27.7 → 0.28.2** for GHSA-g7r4-m6w7-qqqr (low), each by an override. **phpunit 13.4.3 → 13.4.5** for PKSA-qhjm-rpqc-qkn6 (dev only). [!18](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/18)
+- Still accepted, not in the server output: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low), @rollup/plugin-node-resolve's at build only, with no fix released. [!18](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/18)
+
 ## [2.0.0-alpha.49](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.49) - 2026-10-25
 
 ### Upgrade notes
