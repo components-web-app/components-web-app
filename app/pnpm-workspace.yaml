@@ -1,4 +1,5 @@
 overrides:
+  'esbuild@>=0.27.3 <0.28.1': '^0.28.1'
   tar-fs: '>=3.0.7'
   ws: '>=8.21.0'
   'fflate@^0.7.3': '^0.7.5'
@@ -10,8 +11,6 @@ auditConfig:
     - GHSA-86w9-cpqp-85rv
     # postcss-selector-parser 6.0.10, moderate: @tailwindcss/typography pins it, our own CSS at build only; fix is 7.x.
     - GHSA-rj75-hqrm-r3gf
-    # esbuild 0.27.7, low: esbuild's dev server, which fontless (@nuxt/fonts) never starts; build only; waits on @nuxt/ui moving to @nuxt/fonts 1.x.
-    - GHSA-g7r4-m6w7-qqqr
 shamefullyHoist: true
 strictPeerDependencies: false
 minimumReleaseAge: 0
