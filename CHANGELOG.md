@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Security
+
+- **esbuild 0.27.7 moves to 0.28.2** for GHSA-g7r4-m6w7-qqqr (low). Projects take `app/pnpm-lock.yaml` and `app/pnpm-workspace.yaml`. [!16](https://gitlab.com/silverback-web-apps/cwa/components-web-app/-/merge_requests/16)
+
 ## [2.0.0-alpha.49](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.49) - 2026-10-25
 
 ### Upgrade notes
