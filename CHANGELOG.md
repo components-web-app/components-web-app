@@ -6,6 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+
+- **A release's create-cwa smoke test runs on its own image** ([#226](https://github.com/components-web-app/components-web-app/issues/226)): `publish-php-base.yml` calls `create-cwa-smoke.yml` once the release's `cwa-php-base` is tagged, failing (not skipping) without it, and `publish-create-cwa.yml` publishes only after that run passed. The push-time smoke jobs still skip on a release commit. Template CI only. ([merge](https://github.com/components-web-app/components-web-app/commit/d863dc5fe325f8e16d2d839beadd35467f85010a))
+- The php entrypoint retries `composer install` three times, 10 s apart, and a failed smoke test prints php's full log and how its network reaches `api.github.com` (#226). ([merge](https://github.com/components-web-app/components-web-app/commit/d863dc5fe325f8e16d2d839beadd35467f85010a))
+
 ## [2.0.0-alpha.52](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.52) - 2026-10-30
 
 ### Upgrade notes
