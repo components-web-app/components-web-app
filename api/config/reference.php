@@ -2073,6 +2073,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             prefix?: scalar|Param|null, // The flysystem store's folder within the adapter. // Default: ""
  *         },
  *     },
+ *     uuid_uri_variables?: array{
+ *         accept_any_identifier?: list<scalar|Param|null>,
+ *     },
  * }
  * @psalm-type LiipImagineConfig = array{
  *     resolvers?: array<string, array{ // Default: []
