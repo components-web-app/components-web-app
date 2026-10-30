@@ -37,7 +37,7 @@
         "jcupitt/vips": "^2.6",
         "league/flysystem": "^3.0",
         "league/flysystem-google-cloud-storage": "^3.0",
-        "rokka/imagine-vips": "^0.41",
+        "rokka/imagine-vips": "^0.42",
         "runtime/frankenphp-symfony": "^1.0.0",
         "symfony/console": "^8.1",
         "symfony/dotenv": "^8.1",

@@ -12,6 +12,8 @@ auditConfig:
     - GHSA-rj75-hqrm-r3gf
     # esbuild 0.27.7, low: esbuild's dev server, which fontless (@nuxt/fonts) never starts; build only; waits on @nuxt/ui moving to @nuxt/fonts 1.x.
     - GHSA-g7r4-m6w7-qqqr
+    # deepmerge 4.3.1, low: @rollup/plugin-node-resolve (Nitro's build) only, not in .output; no patched release yet.
+    - GHSA-gcqx-w48m-w2h4
 shamefullyHoist: true
 strictPeerDependencies: false
 minimumReleaseAge: 0
