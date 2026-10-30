@@ -11,6 +11,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 ### Upgrade notes
 
 - **Bundle 2.0.0-alpha.38 and `@cwa/nuxt` 2.0.0-alpha.31.** Take `api/composer.json` and `api/composer.lock`, and `app/package.json` and `app/pnpm-lock.yaml`; no migration, nothing else to change. The bundle answers an item URL whose id isn't a UUID with a 404 instead of a 500; the module's release updates its dependencies. [2b69ad2](https://github.com/components-web-app/components-web-app/commit/2b69ad24216875a24368b72b457a796378573767)
+- **A project that fetches a resource by a non-UUID id through its item URL gets a 404 from bundle alpha.38**, before any provider of its own runs (for example a page looked up by `reference` at `/_api/_/pages/<reference>`). Only routes (by path), component groups (by reference) and forms still accept one. Until the bundle has a supported way to allow it ([api-components-bundle#567](https://github.com/components-web-app/api-components-bundle/issues/567)), such a project decorates `silverback.api_components.api_platform.uuid_uri_variable_transformer` to let its identifier through for that resource only. Search the project's tests and providers for item lookups by anything other than the id before deploying.
 
 ### Security
 
