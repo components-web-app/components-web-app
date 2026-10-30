@@ -8,6 +8,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  actions: read
 
 jobs:
   publish:
@@ -29,6 +30,16 @@ jobs:
             -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" \
             "https://ghcr.io/v2/components-web-app/cwa-php-base/manifests/$V" \
             || { echo "::error::ghcr.io/components-web-app/cwa-php-base:$V is missing or private: wait for publish-php-base.yml on v$V, and make the package public"; exit 1; }
+
+      # Its run also smoke-tests the release on that image (#226): publish only after the newest run for v<version> passed.
+      - name: Check publish-php-base.yml passed on the release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          V=$(node -p "require('./package.json').version")
+          c=$(gh run list -R "$GITHUB_REPOSITORY" --workflow publish-php-base.yml --branch "v$V" --event push --limit 1 --json status,conclusion --jq '.[0] | "\(.status) \(.conclusion)"')
+          [ "$c" = "completed success" ] || { echo "::error::publish-php-base.yml on v$V is '${c:-missing}', not 'completed success': wait for it (or rerun its failed jobs), then re-run this workflow"; exit 1; }
 
       - uses: pnpm/action-setup@v4
         with:
