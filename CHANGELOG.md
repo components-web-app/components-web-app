@@ -6,9 +6,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.51](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.51) - 2026-10-30
+
 ### Upgrade notes
 
 - **Bundle 2.0.0-alpha.38 and `@cwa/nuxt` 2.0.0-alpha.31.** Take `api/composer.json` and `api/composer.lock`, and `app/package.json` and `app/pnpm-lock.yaml`; no migration, nothing else to change. The bundle answers an item URL whose id isn't a UUID with a 404 instead of a 500; the module's release updates its dependencies. [2b69ad2](https://github.com/components-web-app/components-web-app/commit/2b69ad24216875a24368b72b457a796378573767)
+
+### Security
+
+- No new advisories (`pnpm audit` and `composer audit`, 2026-10-30). Still accepted, not in the server output: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low), @rollup/plugin-node-resolve's at build only, with no fix released.
 
 ### Changed
 
