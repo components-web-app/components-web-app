@@ -16,7 +16,14 @@ export CWA_UP_TIMEOUT="${CWA_UP_TIMEOUT:-1800}"
 fail() {
   [ -z "${GITHUB_ACTIONS:-}" ] || echo "::error::create-cwa smoke: $*"
   echo "create-cwa smoke failed: $*" >&2
-  [ "$(pwd)" != "$PROJECT" ] || docker compose logs --no-color --tail 80 php app >&2
+  if [ -f "$PROJECT/compose.yaml" ]; then
+    (cd "$PROJECT" && docker compose logs --no-color --tail 200 php app) >&2
+    # How the project's network reaches GitHub, for composer's refused downloads (#226).
+    net=$(docker network ls --format '{{.Name}}' | grep -m 1 "^${NAME}_default$" || true)
+    [ -z "$net" ] || docker run --rm --network "$net" curlimages/curl:8.11.1 -sS -o /dev/null --max-time 20 \
+      -w 'api.github.com from the project network: %{http_code} via %{remote_ip}\n' https://api.github.com/ >&2 || true
+    getent ahosts api.github.com >&2 || true
+  fi
   exit 1
 }
 
