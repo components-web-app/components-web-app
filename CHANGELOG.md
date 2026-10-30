@@ -6,9 +6,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.52](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.52) - 2026-10-30
+
 ### Upgrade notes
 
-- **Bundle 2.0.0-alpha.39 ([api-components-bundle#567](https://github.com/components-web-app/api-components-bundle/issues/567)).** Take `api/composer.json`, `api/composer.lock` and `api/config/reference.php`; no migration, no module or CORS change. A project that fetches a resource through its item URL by an id that isn't a UUID (alpha.51's upgrade note) now lists that resource's class under `silverback_api_components.uuid_uri_variables.accept_any_identifier` instead of decorating `silverback.api_components.api_platform.uuid_uri_variable_transformer`, and removes the decorator. For a page looked up by `reference`: `accept_any_identifier: ['Silverback\ApiComponentsBundle\Entity\Core\Page']`. Classes are matched exactly, and a listed class needs a provider that resolves the string or returns null. ([merge](https://github.com/components-web-app/components-web-app/commit/0f7faa88c92dc71123879ae2a4a721df8eeaa9e8))
+- **Bundle 2.0.0-alpha.39 ([api-components-bundle#567](https://github.com/components-web-app/api-components-bundle/issues/567)).** Take `api/composer.lock` and `api/config/reference.php`; no migration, no module or CORS change. A project that fetches a resource through its item URL by an id that isn't a UUID (alpha.51's upgrade note) now lists that resource's class under `silverback_api_components.uuid_uri_variables.accept_any_identifier` instead of decorating `silverback.api_components.api_platform.uuid_uri_variable_transformer`, and removes the decorator. For a page looked up by `reference`: `accept_any_identifier: ['Silverback\ApiComponentsBundle\Entity\Core\Page']`. Classes are matched exactly, and a listed class needs a provider that resolves the string or returns null. ([merge](https://github.com/components-web-app/components-web-app/commit/0f7faa88c92dc71123879ae2a4a721df8eeaa9e8))
+
+### Security
+
+- No new advisories (`pnpm audit` and `composer audit`, 2026-10-30). Still accepted, not in the server output: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low), @rollup/plugin-node-resolve's at build only, with no fix released.
 
 ### Fixed
 
