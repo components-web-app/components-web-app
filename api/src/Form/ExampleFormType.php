@@ -208,6 +208,7 @@ class ExampleFormType extends AbstractType
                     'empty_data' => [],
                     'constraints' => [
                         new All(constraints: [
+                            new NotBlank(message: 'Please fill in this entry or remove it'),
                             new Length(min: 2, minMessage: 'Must be at least 2 characters'),
                         ]),
                     ],
