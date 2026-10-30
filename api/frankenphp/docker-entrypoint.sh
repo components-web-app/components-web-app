@@ -13,7 +13,13 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 		  # if invalid GITHUB_TOKEN characters this will need to be run to clear it
       rm -rf /config/composer/auth.json
     fi
-		composer install --prefer-dist --no-progress --no-interaction
+		# Three tries, 10 s apart: one refused connection to GitHub left vendor/ empty and php unhealthy (#226).
+		for attempt in 1 2 3; do
+			composer install --prefer-dist --no-progress --no-interaction && break
+			[ "$attempt" = 3 ] && exit 1
+			echo "composer install failed (attempt $attempt of 3); retrying in 10 s" >&2
+			sleep 10
+		done
 	fi
 
 	# Dev keys only: production passes the keys as env, and the prod image carries no key files.

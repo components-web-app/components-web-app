@@ -353,3 +353,14 @@ jobs:
           base=$(docker inspect -f '{{ index .Config.Labels "rocks.cwa.php-base.version" }}' cwa-php-verify:local)
           [ "$base" = "$TAG" ] || { echo "::error::built on cwa-php-base '$base', expected '$TAG'"; exit 1; }
           docker run --rm -i --entrypoint sh cwa-php-verify:local -s < bin/test/caddy-validate.sh
+
+  # The release's own create-cwa smoke test, on the image just tagged; publish-create-cwa.yml waits for this run to pass (#226).
+  smoke:
+    name: create-cwa smoke on the release
+    if: github.event_name == 'push'
+    needs: [plan, merge]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/create-cwa-smoke.yml
+    with:
+      ref: ${{ needs.plan.outputs.sha }}

@@ -1,5 +1,6 @@
 # Creates a project from this ref with the built create-cwa, runs its bin/up and checks the login (#215).
 # Template only: create-cwa leaves this file out (cwa-manifest.json alwaysExclude).
+# publish-php-base.yml calls it on a release tag once the image is tagged, the release's real smoke test (#226).
 name: create-cwa smoke
 
 on:
@@ -24,6 +25,12 @@ on:
       - 'app/pnpm-lock.yaml'
       - 'app/pnpm-workspace.yaml'
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit to test'
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -51,6 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref || github.sha }}
           persist-credentials: false
 
       - uses: pnpm/action-setup@v4
@@ -71,6 +79,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SMOKE_FEATURES: ${{ matrix.features }}
           SMOKE_FIXTURES: ${{ matrix.fixtures }}
+          SMOKE_REQUIRE_BASE: ${{ inputs.ref != '' }}
         run: sh packages/create-cwa/smoke.sh "$RUNNER_TEMP/smoke"
 
       - name: Upload the create-cwa log
