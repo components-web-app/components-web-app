@@ -6,12 +6,19 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Bundle 2.0.0-alpha.40 and `@cwa/nuxt` 2.0.0-alpha.32 go together**: take both in one deploy (`api/composer.lock`, `api/config/reference.php`, `app/package.json`, `app/pnpm-lock.yaml`). No migration.
+  - Every write to CWA content (pages, layouts, routes, component groups and positions, components including `/move`, and page data, your own classes included) now needs `publishable.permission` (the template's is `is_granted('ROLE_ADMIN')`) or the class's `#[Publishable(isGranted:)]`. A project resource that anyone else writes needs `extraProperties: ['publishable_permission' => false]` on that operation. Form `/submit` stays public.
+  - An email change now confirms at the new address, and setting `newEmailAddress` needs the signed-in user's own password as `oldPassword` (an admin changing another user's email enters their own). The module's admin user page sends it; a project's own change-email form must too. ([merge](https://github.com/components-web-app/components-web-app/commit/c2b118f71de153562b39271c22d5c7171a3b5f18))
+
 ### Security
 
 - Accepted, not in the server output: glob 10.5.0, 11.1.0 and 13.0.6 (GHSA-3g3m-2fjr-6pw4, moderate; archiver-utils, workbox-build and @vercel/nft at build only) and minimatch 5.1.9, 9.0.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate; under them, filelist and readdir-glob). Both are fixed only in new majors (glob 14, minimatch 11) that their dependents don't allow; the production app image has them only in the Node image's own npm CLI. ([commit](https://github.com/components-web-app/components-web-app/commit/91343e9f527ab441276ae6a51446731ada23a614))
 
 ### Changed
 
+- api-components-bundle 2.0.0-alpha.40 (also: an email logo setting, `emails.logo`, and user fixes) and `@cwa/nuxt` 2.0.0-alpha.32 (the synchroniser runs only for admins; the admin user page sends `oldPassword`). ([merge](https://github.com/components-web-app/components-web-app/commit/c2b118f71de153562b39271c22d5c7171a3b5f18))
 - **A release's create-cwa smoke test runs on its own image** ([#226](https://github.com/components-web-app/components-web-app/issues/226)): `publish-php-base.yml` calls `create-cwa-smoke.yml` once the release's `cwa-php-base` is tagged, failing (not skipping) without it, and `publish-create-cwa.yml` publishes only after that run passed. The push-time smoke jobs still skip on a release commit. Template CI only. ([merge](https://github.com/components-web-app/components-web-app/commit/d863dc5fe325f8e16d2d839beadd35467f85010a))
 - The php entrypoint retries `composer install` three times, 10 s apart, and a failed smoke test prints php's full log and how its network reaches `api.github.com` (#226). ([merge](https://github.com/components-web-app/components-web-app/commit/d863dc5fe325f8e16d2d839beadd35467f85010a))
 

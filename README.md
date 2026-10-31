@@ -117,6 +117,7 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 
 | `@cwa/nuxt` | Needs api-components-bundle at least | Why |
 |---|---|---|
+| 2.0.0-alpha.32 | 2.0.0-alpha.40 | Go together: bundle alpha.40 refuses non-admin content writes, which older modules' synchroniser makes, and needs `oldPassword` on an email change, which alpha.32's admin user page sends |
 | 2.0.0-alpha.29 | 2.0.0-alpha.37 | The Yjs editor stores its state in `/_/collaboration_states` and saves with `If-Match` |
 | 2.0.0-alpha.26 | 2.0.0-alpha.35 | Co-editing reads `_metadata.lastWrite` on admin writes |
 | 2.0.0-alpha.24 | 2.0.0-alpha.32 | Move uses `POST {component}/move`; the shared-component list reads `GET {component}/usage` |
