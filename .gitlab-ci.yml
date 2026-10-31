@@ -156,7 +156,7 @@ functional tests:
     POSTGRES_HOST_AUTH_METHOD: trust
   allow_failure: false
   services:
-    - postgres:14
+    - postgres:18
   script:
     - setup_test_db_environment
     - run_test_functional

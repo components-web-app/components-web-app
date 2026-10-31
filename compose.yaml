@@ -19,7 +19,7 @@ services:
       MERCURE_CORS_ORIGIN: ${CADDY_MERCURE_CORS_ORIGIN:-https://localhost}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
       TRUSTED_HOSTS: ${TRUSTED_HOSTS:-^(?:${SERVER_NAME:-localhost}|php(?:\.local)?)$$}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-16}&charset=${POSTGRES_CHARSET:-utf8}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-18}&charset=${POSTGRES_CHARSET:-utf8}
       MERCURE_URL: ${CADDY_MERCURE_URL:-http://php.local/.well-known/mercure}
       MERCURE_PUBLIC_URL: ${CADDY_MERCURE_PUBLIC_URL:-https://${SERVER_NAME:-localhost}/.well-known/mercure}
       MERCURE_JWT_SECRET: ${CADDY_MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}
@@ -66,7 +66,7 @@ services:
 
 ###> doctrine/doctrine-bundle ###
   database:
-    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    image: postgres:${POSTGRES_VERSION:-18}-alpine
     # Small component tables never reach autoanalyze's floor; a server flag, as the app user can't ALTER SYSTEM.
     command:
       - postgres
@@ -83,9 +83,9 @@ services:
       retries: 5
       start_period: 60s
     volumes:
-      - database_data:/var/lib/postgresql/data:rw
+      - database_data:/var/lib/postgresql:rw
       # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
-      # - ./api/docker/db/data:/var/lib/postgresql/data:rw
+      # - ./api/docker/db/data:/var/lib/postgresql:rw
 ###< doctrine/doctrine-bundle ###
 
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service

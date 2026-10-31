@@ -304,7 +304,7 @@ databaseJob:
       memory: 512Mi
   backup:
     # pg_dump of the server's major version; k8s.sh picks it from the plan.
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     # A private bucket, never the media bucket (public, and its orphan scan would list the dumps).
     bucket: ""
     # The backup service account's key JSON, base64-encoded; k8s.sh passes it in a temporary values file.
