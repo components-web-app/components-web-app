@@ -6,6 +6,11 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **PostgreSQL 18** ([commit](https://github.com/components-web-app/components-web-app/commit/b711a4d8c1a8ffe6bf6904e09d49311b5ff4ebfd)): Doctrine's `server_version`, compose's database image and `serverVersion` default, the e2e image, the CI test service and the backup job's default image go to 18. PG18 images keep their data under `/var/lib/postgresql` (a versioned directory), so compose mounts the volume there instead of `/data`: an existing local PG14/16 volume won't start under 18. Dump it first (`pg_dump`) or recreate it (`docker compose down -v`, then `bin/up`).
+- **The in-cluster PostgreSQL is the chart's own StatefulSet on `postgres:18-alpine`** ([commit](https://github.com/components-web-app/components-web-app/commit/baa7c0bd0572fdafc705ef0e94601303a0bd27f7)), replacing the Bitnami subchart, which never published PostgreSQL 18. Take `helm/cwa` whole (`templates/postgresql.yaml` is new, `Chart.lock` goes), with `bin/devops/k8s.sh` and `bin/test/database-job-chart.sh`. It upgrades a release in place (same immutable StatefulSet fields; rehearsed from chart 14.3.3 in kind), but the data directory is new, so an in-cluster database starts empty on its first deploy: reload fixtures, or `pg_dump` a persistent one first. `CWA_CI_POSTGRES_IMAGE_TAG` is now an official image tag (default `18-alpine`); `POSTGRES_ROOT_PASSWORD` is no longer read.
+
 ## [2.0.0-alpha.53](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.53) - 2026-10-31
 
 ### Upgrade notes
