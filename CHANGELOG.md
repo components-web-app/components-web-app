@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Security
+
+- Accepted, not in the server output: glob 10.5.0, 11.1.0 and 13.0.6 (GHSA-3g3m-2fjr-6pw4, moderate; archiver-utils, workbox-build and @vercel/nft at build only) and minimatch 5.1.9, 9.0.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate; under them, filelist and readdir-glob). Both are fixed only in new majors (glob 14, minimatch 11) that their dependents don't allow; the production app image has them only in the Node image's own npm CLI. ([commit](https://github.com/components-web-app/components-web-app/commit/91343e9f527ab441276ae6a51446731ada23a614))
+
 ### Changed
 
 - **A release's create-cwa smoke test runs on its own image** ([#226](https://github.com/components-web-app/components-web-app/issues/226)): `publish-php-base.yml` calls `create-cwa-smoke.yml` once the release's `cwa-php-base` is tagged, failing (not skipping) without it, and `publish-create-cwa.yml` publishes only after that run passed. The push-time smoke jobs still skip on a release commit. Template CI only. ([merge](https://github.com/components-web-app/components-web-app/commit/d863dc5fe325f8e16d2d839beadd35467f85010a))
