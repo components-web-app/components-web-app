@@ -1943,6 +1943,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     website_name?: scalar|Param|null,
  *     table_prefix?: scalar|Param|null, // Default: "_acb_"
  *     metadata_key?: scalar|Param|null, // Default: "_metadata"
+ *     emails?: array{
+ *         logo?: scalar|Param|null, // The Twig path of the logo at the top of every email the bundle sends. // Default: "@SilverbackApiComponents/assets/images/email_logo.png"
+ *         logo_width?: int|Param, // The width in pixels the logo is shown at, so a 2x image renders sharp. Null shows it at its own width. // Default: null
+ *     },
  *     mercure?: array{
  *         hub_name?: scalar|Param|null, // Default: null
  *         secure_subscriptions?: bool|Param, // When true, subscriber JWT tokens only include topics for resources the current user can access. Requires class-level security expressions (i.e. no "object" variable) on API operations to be evaluated at subscription time. // Default: false
@@ -2026,6 +2030,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             password_changed?: bool|array{
  *                 enabled?: bool|Param, // Default: true
  *                 subject?: scalar|Param|null, // Default: "Your password has been changed"
+ *             },
+ *             change_email_notice?: bool|array{
+ *                 enabled?: bool|Param, // Default: true
+ *                 subject?: scalar|Param|null, // Default: "Your email address is being changed"
  *             },
  *         },
  *     },
