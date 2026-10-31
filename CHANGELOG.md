@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.53](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.53) - 2026-10-31
+
 ### Upgrade notes
 
 - **Bundle 2.0.0-alpha.40 and `@cwa/nuxt` 2.0.0-alpha.32 go together**: take both in one deploy (`api/composer.lock`, `api/config/reference.php`, `app/package.json`, `app/pnpm-lock.yaml`). No migration.
@@ -14,6 +16,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Security
 
+- `pnpm audit` and `composer audit` (2026-10-31): nothing new besides the two below. Still accepted, not in the server output: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low), @rollup/plugin-node-resolve's at build only, with no fix released.
 - Accepted, not in the server output: glob 10.5.0, 11.1.0 and 13.0.6 (GHSA-3g3m-2fjr-6pw4, moderate; archiver-utils, workbox-build and @vercel/nft at build only) and minimatch 5.1.9, 9.0.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate; under them, filelist and readdir-glob). Both are fixed only in new majors (glob 14, minimatch 11) that their dependents don't allow; the production app image has them only in the Node image's own npm CLI. ([commit](https://github.com/components-web-app/components-web-app/commit/91343e9f527ab441276ae6a51446731ada23a614))
 
 ### Changed
