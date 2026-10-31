@@ -63,9 +63,9 @@ printf '%s\n' "$out" | grep -A1 'emptyDir:' | grep -q 'sizeLimit: "5Gi"' || fail
 out=$(render --set databaseJob.task=backup --set databaseJob.name=x --set databaseJob.backup.bucket=backups --set databaseJob.backup.gcloudJsonB64=a2V5 --set-string databaseJob.backup.storage=20Gi)
 printf '%s\n' "$out" | grep -q 'sizeLimit: "20Gi"' || fail backup-storage "databaseJob.backup.storage isn't the sizeLimit"
 
-# The in-cluster restore command k8s.sh prints reads these from the PostgreSQL pod (#183): a chart bump that renames them fails here.
-out=$(helm template rel "$DIR/cwa" --set mercure.publicUrl=https://x/.well-known/mercure --show-only charts/postgresql/templates/primary/statefulset.yaml 2>&1)
-for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DATABASE; do
+# The in-cluster restore command k8s.sh prints reads these from the PostgreSQL pod (#183): renaming them fails here.
+out=$(helm template rel "$DIR/cwa" --set mercure.publicUrl=https://x/.well-known/mercure --show-only templates/postgresql.yaml 2>&1)
+for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB; do
   printf '%s\n' "$out" | grep -q -- "- name: $name\$" || fail restore-env "the PostgreSQL pod has no $name"
 done
 printf '%s\n' "$out" | grep -q -- '- name: postgresql$' || fail restore-env "the PostgreSQL container isn't named postgresql"

@@ -1,0 +1,147 @@
+{{- if .Values.postgresql.enabled }}
+{{- $name := printf "%s-postgresql" .Release.Name }}
+{{- $auth := .Values.postgresql.global.postgresql.auth }}
+{{- $persistence := .Values.postgresql.primary.persistence }}
+# The in-cluster PostgreSQL on the official image. It replaced Bitnami's chart, which never published PostgreSQL 18.
+# Immutable fields match the Bitnami StatefulSet, so a release upgrades in place: the selector labels, the serviceName
+# (<name>-hl) and the "data" volumeClaimTemplate. The pod is still <name>-0 with a container named postgresql, so
+# k8s.sh's restore hint and persistence check work as before.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "cwa.postgresqlLabels" . | nindent 4 }}
+type: Opaque
+data:
+  password: {{ $auth.password | b64enc | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "cwa.postgresqlLabels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    {{- include "cwa.postgresqlSelectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-hl
+  labels:
+    {{- include "cwa.postgresqlLabels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    {{- include "cwa.postgresqlSelectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "cwa.postgresqlLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ $name }}-hl
+  selector:
+    matchLabels:
+      {{- include "cwa.postgresqlSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # A credential change restarts the pod; the official image applies them only on an empty data directory.
+        checksum/credentials: {{ printf "%s/%s/%s" $auth.username $auth.password $auth.database | sha256sum }}
+      labels:
+        {{- include "cwa.postgresqlSelectorLabels" . | nindent 8 }}
+    spec:
+      # Explicit: an upgrade from Bitnami otherwise keeps its deleted service account (the deprecated serviceAccount alias).
+      serviceAccountName: default
+      automountServiceAccountToken: false
+      containers:
+        - name: postgresql
+          image: {{ printf "%s:%s" .Values.postgresql.image.repository (toString .Values.postgresql.image.tag) | quote }}
+          imagePullPolicy: {{ .Values.postgresql.primary.pullPolicy | default "IfNotPresent" }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ $auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $name }}
+                  key: password
+            - name: POSTGRES_DB
+              value: {{ $auth.database | quote }}
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", 'pg_isready -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          {{- with .Values.postgresql.primary.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            # PostgreSQL 18 images keep the cluster in a versioned directory under /var/lib/postgresql.
+            - name: data
+              mountPath: /var/lib/postgresql
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+        {{- if not $persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if $persistence.enabled }}
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ $persistence.size | quote }}
+        {{- /* As Bitnami's: "-" is no storage class, unset is the cluster's default. */}}
+        {{- if $persistence.storageClass }}
+        {{- if eq "-" $persistence.storageClass }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: {{ $persistence.storageClass | quote }}
+        {{- end }}
+        {{- end }}
+  {{- end }}
+{{- end }}

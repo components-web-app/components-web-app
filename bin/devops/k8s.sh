@@ -943,8 +943,8 @@ yaml_squote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"
 }
 
-# postgresql.global.postgresql.auth (Bitnami prefers it; secrets.yaml builds
-# database-url from it), with only the values that are set.
+# postgresql.global.postgresql.auth (templates/postgresql.yaml and secrets.yaml's
+# database-url both read it), with only the values that are set.
 postgres_auth_yaml() {
   local lines=""
   if [ -n "$POSTGRES_USER" ]; then
@@ -999,7 +999,7 @@ check_postgres_persistence() {
   if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ] || [ -z "$want$size$class" ]; then
     return 0
   fi
-  # Bitnami's "-" means no storage class.
+  # "-" means no storage class (templates/postgresql.yaml).
   if [ "$class" = "-" ]; then class=""; fi
   if ! out=$(kubectl get statefulset -n "$KUBE_NAMESPACE" \
     -l "app.kubernetes.io/instance=$name,app.kubernetes.io/name=postgresql,app.kubernetes.io/component=primary" \
@@ -1471,11 +1471,9 @@ $(ingress_rate_limit_annotations)
 $(generate_alias_tls_yaml "$track")
 postgresql:
   image:
-    tag: ${CWA_CI_POSTGRES_IMAGE_TAG:-"14"}
+    tag: ${CWA_CI_POSTGRES_IMAGE_TAG:-"18-alpine"}
   url: ${DATABASE_URL:-"~"}
   enabled: ${CWA_CI_POSTGRES_ENABLED:-"true"}
-  auth:
-    postgresPassword: ${POSTGRES_ROOT_PASSWORD-"pg_root_password"}
 $(postgres_auth_yaml)
 $(postgres_persistence_yaml)
 replicaCount: ${CWA_CI_API_REPLICA_COUNT:-"1"}
@@ -2345,8 +2343,8 @@ write_maintenance_notice() {
       if [ "${CWA_CI_POSTGRES_ENABLED:-true}" = "false" ]; then
         echo "  pg_restore --clean --if-exists --no-owner --dbname='postgresql://<user>:<password>@<host>/<database>' database.dump"
       else
-        # The Bitnami chart's env names (bin/test/database-job-chart.sh checks them); no POSTGRES_USER means the postgres user (#183).
-        echo "  kubectl exec -i -n $KUBE_NAMESPACE $name-postgresql-0 -c postgresql -- sh -c 'PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_restore --clean --if-exists --no-owner -h 127.0.0.1 -U \"\${POSTGRES_USER:-postgres}\" -d \"\${POSTGRES_DATABASE:-postgres}\"' < database.dump"
+        # The official image's env names (bin/test/database-job-chart.sh checks them).
+        echo "  kubectl exec -i -n $KUBE_NAMESPACE $name-postgresql-0 -c postgresql -- sh -c 'PGPASSWORD=\"\$POSTGRES_PASSWORD\" pg_restore --clean --if-exists --no-owner -h 127.0.0.1 -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\"' < database.dump"
       fi
     fi
     echo "Fix forward and deploy again: any production deploy ends the window, with or without CWA_CI_MAINTENANCE_DURING_MIGRATIONS."

@@ -109,6 +109,21 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+The in-cluster PostgreSQL's selector: Bitnami's, as a StatefulSet's selector can't change, and k8s.sh selects on it.
+*/}}
+{{- define "cwa.postgresqlSelectorLabels" -}}
+app.kubernetes.io/name: postgresql
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: primary
+{{- end }}
+
+{{- define "cwa.postgresqlLabels" -}}
+helm.sh/chart: {{ include "cwa.chart" . }}
+{{ include "cwa.postgresqlSelectorLabels" . }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
 The Mercure hub's own labels in scaled mode: never the API's name label.
 */}}
 {{- define "cwa.mercureLabels" -}}
