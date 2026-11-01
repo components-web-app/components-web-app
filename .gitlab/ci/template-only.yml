@@ -35,9 +35,9 @@ create-cwa smoke:
   parallel:
     matrix:
       - SMOKE_FEATURES: all
-        SMOKE_FIXTURES: "true"
+        SMOKE_CONTENT: demo
       - SMOKE_FEATURES: none
-        SMOKE_FIXTURES: "false"
+        SMOKE_CONTENT: home
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" || $CWA_CI_TEST_DISABLED == "true" || $CI_COMMIT_BRANCH == null'
       when: never

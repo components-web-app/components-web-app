@@ -41,8 +41,9 @@ interface CliOptions {
   ci: boolean
   templateDir?: string
   pipeline?: string
+  deploy?: string
   features?: string[]
-  fixtures?: boolean
+  content?: string
   start?: boolean
   installDeps?: boolean
   help: boolean
@@ -56,8 +57,11 @@ Options:
   --ref <tag|branch>          template version to download (default v${CLI_VERSION})
   --template-dir <path>       copy the template from a local checkout instead of downloading it
   --pipeline <id>             CI/CD pipeline: github, gitlab or none
-  --features <list>           comma-separated features, "all" or "none"
-  --fixtures, --no-fixtures   include the sample pages, or not
+  --deploy <target>           with a pipeline: kubernetes, or server (one server with Docker, over SSH)
+  --features <list>           comma-separated components, "default", "all" or "none"
+  --content <level>           starting pages: demo (an example of each component), home (just a home page)
+                              or empty (only the admin login)
+  --fixtures, --no-fixtures   the same as --content demo, or --content empty
   --start, --no-start         run bin/up once the project is created, or not
   --install-deps, --no-install-deps
                               pnpm install in app/ on this machine (only when the stack isn't started)
@@ -67,7 +71,7 @@ Options:
 
 class UsageError extends Error {}
 
-const VALUE_FLAGS = ['--ref', '--template-dir', '--pipeline', '--features']
+const VALUE_FLAGS = ['--ref', '--template-dir', '--pipeline', '--deploy', '--features', '--content']
 
 // Flags for unattended runs (#215); with none given, every question is asked as before.
 function parseArgs(argv: string[]): CliOptions {
@@ -100,12 +104,18 @@ function parseArgs(argv: string[]): CliOptions {
       case '--pipeline':
         opts.pipeline = value
         break
+      case '--deploy':
+        opts.deploy = value
+        break
       case '--features':
         opts.features = (value as string).split(',').map((f) => f.trim()).filter(Boolean)
         break
+      case '--content':
+        opts.content = value
+        break
       case '--fixtures':
       case '--no-fixtures':
-        opts.fixtures = arg === '--fixtures'
+        opts.content = arg === '--fixtures' ? 'demo' : 'empty'
         break
       case '--start':
       case '--no-start':
@@ -270,21 +280,49 @@ async function askQuestions(manifest: Manifest, opts: CliOptions): Promise<Answe
     ) as string
   }
 
+  // Kubernetes or one server (#212), only with a pipeline: bin/server/ deploys by hand without one.
+  let deploy = 'none'
+  if (ci !== 'none') {
+    const deployQuestion = question('deploy')
+    const deployOptions = deployQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? [
+      { value: 'kubernetes', label: 'A Kubernetes cluster' },
+    ]
+    if (opts.deploy !== undefined) {
+      if (!deployOptions.some((c) => c.value === opts.deploy)) {
+        fail(`--deploy ${opts.deploy}: choose one of ${deployOptions.map((c) => c.value).join(', ')}`)
+      }
+      deploy = opts.deploy
+    } else if (opts.yes || deployOptions.length === 1) {
+      deploy = deployOptions[0].value
+    } else {
+      deploy = checkCancel(
+        await select({
+          message: withHint(deployQuestion?.message ?? 'Deploy to?', deployQuestion?.hint),
+          options: deployOptions,
+        })
+      ) as string
+    }
+  } else if (opts.deploy !== undefined) {
+    fail('--deploy needs a pipeline (--pipeline github or gitlab); without one, bin/server/ deploys by hand')
+  }
+
   const featuresQuestion = question('features')
   const featureChoices =
     featuresQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? []
+  const preselected = featuresQuestion?.choices?.filter((c) => c.selected).map((c) => c.value) ?? []
 
   let features: string[]
   if (opts.features !== undefined) {
     const all = featureChoices.map((c) => c.value)
     const flag = opts.features
-    features = flag.length === 1 && flag[0] === 'all' ? all : flag.length === 1 && flag[0] === 'none' ? [] : flag
+    const one = flag.length === 1 ? flag[0] : undefined
+    features = one === 'all' ? all : one === 'none' ? [] : one === 'default' ? preselected : flag
     const unknown = features.filter((f) => !all.includes(f))
     if (unknown.length) {
-      fail(`--features: unknown ${unknown.join(', ')}. Choose from ${all.join(', ')}, or "all" or "none"`)
+      fail(`--features: unknown ${unknown.join(', ')}. Choose from ${all.join(', ')}, or "default", "all" or "none"`)
     }
   } else if (opts.yes) {
-    features = []
+    features = preselected
   } else {
     features = checkCancel(
       await multiselect({
@@ -293,6 +331,7 @@ async function askQuestions(manifest: Manifest, opts: CliOptions): Promise<Answe
           featuresQuestion?.hint
         ),
         options: featureChoices,
+        initialValues: preselected,
         required: false,
       })
     ) as string[]
@@ -301,10 +340,7 @@ async function askQuestions(manifest: Manifest, opts: CliOptions): Promise<Answe
   // Auto-include required features
   const resolved = new Set(features)
   for (const feat of features) {
-    const requires =
-      manifest.questions
-        .find((q) => q.id === 'features')
-        ?.choices?.find((c) => c.value === feat)?.requires ?? []
+    const requires = featuresQuestion?.choices?.find((c) => c.value === feat)?.requires ?? []
     requires.forEach((r) => resolved.add(r))
   }
 
@@ -313,22 +349,33 @@ async function askQuestions(manifest: Manifest, opts: CliOptions): Promise<Answe
     note(`Also enabling: ${added.join(', ')} (required by selected features)`, 'Dependencies')
   }
 
-  const fixturesQuestion = question('fixtures')
-  const fixtures =
-    opts.fixtures ??
-    (opts.yes
-      ? (fixturesQuestion?.default ?? true)
-      : (checkCancel(
-          await confirm({
-            message: withHint(
-              fixturesQuestion?.message ?? 'Include database fixtures for selected features?',
-              fixturesQuestion?.hint
-            ),
-            initialValue: fixturesQuestion?.default ?? true,
-          })
-        ) as boolean))
+  // Starting pages: demo, home or empty. An older template (no content question) has only demo or empty.
+  const contentQuestion = question('content')
+  const contentOptions = contentQuestion?.choices?.map((c) => ({ value: c.value, label: c.label, hint: c.hint })) ?? [
+    { value: 'demo', label: 'Example pages' },
+    { value: 'empty', label: 'An empty site', hint: 'only the admin login' },
+  ]
+  const contentDefault =
+    typeof contentQuestion?.default === 'string' ? contentQuestion.default : contentOptions[0].value
+  let content: string
+  if (opts.content !== undefined) {
+    if (!contentOptions.some((c) => c.value === opts.content)) {
+      fail(`--content ${opts.content}: choose one of ${contentOptions.map((c) => c.value).join(', ')}`)
+    }
+    content = opts.content
+  } else if (opts.yes) {
+    content = contentDefault
+  } else {
+    content = checkCancel(
+      await select({
+        message: withHint(contentQuestion?.message ?? 'Start with example pages?', contentQuestion?.hint),
+        options: contentOptions,
+        initialValue: contentDefault,
+      })
+    ) as string
+  }
 
-  return { projectName: projectName.trim(), ci, features: [...resolved], fixtures }
+  return { projectName: projectName.trim(), ci, deploy, features: [...resolved], content }
 }
 
 // Files a download would contain: what git tracks or would track, minus export-ignore paths (GitHub's tarball honours them).
@@ -454,22 +501,52 @@ async function replaceProjectName(tempDir: string, projectName: string): Promise
 }
 
 async function generateReadme(tempDir: string, answers: Answers): Promise<void> {
-  const featureList = answers.features.length
-    ? answers.features.map((f) => `- ${f}`).join('\n')
-    : '- Core (Title component)'
+  const featureList =
+    ['- title (always)', ...answers.features.map((f) => `- ${f}`)].join('\n') +
+    '\n\nA component you left out can be added later: `cwa-manifest.json` in the' +
+    ' [template](https://github.com/components-web-app/components-web-app) lists the files each one needs.'
 
-  const ciSection =
+  const pipelineFiles =
     answers.ci === 'github'
-      ? '## CI/CD\n\nGitHub Actions workflows are in `.github/workflows/`. See the workflow files for required secrets and variables.\n'
-      : answers.ci === 'gitlab'
-        ? '## CI/CD\n\nGitLab CI is configured in `.gitlab-ci.yml`. See `bin/devops/` for the reusable pipeline scripts.\n'
-        : ''
+      ? 'GitHub Actions workflows are in `.github/workflows/`'
+      : 'GitLab CI is configured in `.gitlab-ci.yml`'
+  const serverVariables =
+    answers.ci === 'github'
+      ? 'repository variables, and `CWA_CI_SERVER_SSH_KEY` as a secret'
+      : 'CI/CD variables (not Protected), with `CWA_CI_SERVER_SSH_KEY` Masked'
+  const ciSection =
+    answers.ci === 'none'
+      ? `## Deploying
+
+There's no pipeline yet. \`bin/server/\` runs the site on one server with Docker: on the server, \`sh bin/server/init\`
+writes its settings, then \`sh bin/server/deploy.sh --fixtures\` deploys it (see the comments at the top of each script).
+`
+      : answers.deploy === 'server'
+        ? `## Deploying to one server
+
+${pipelineFiles}. The pipeline builds and tests every push; the manual production server deploy copies the
+commit to your server over SSH and runs \`bin/server/deploy.sh\` there. Single-server deploys are a preview.
+
+1. On the server: install Docker with the compose plugin, rsync and curl, and add a \`deploy\` user to the
+   \`docker\` group with your pipeline's public SSH key in \`~/.ssh/authorized_keys\`.
+2. Set these ${serverVariables}: \`CWA_CI_SERVER_HOST\` (the server's address; setting it turns the Kubernetes
+   jobs off), \`CWA_CI_SERVER_SSH_KEY\` (the private key) and \`CWA_CI_SERVER_KNOWN_HOSTS\` (the output of
+   \`ssh-keyscan <host>\`). \`bin/devops/server-deploy.sh\` lists the optional ones.
+3. Run the production server deploy once: it copies the files, then stops and asks you to run
+   \`cd cwa && sh bin/server/init && sh bin/server/deploy.sh --fixtures\` on the server.
+4. After that, every production server deploy updates the site.
+`
+        : `## Deploying to Kubernetes
+
+${pipelineFiles}, with the deploy scripts in \`bin/devops/\` and the Helm chart in \`helm/cwa/\`. See the
+pipeline files for the secrets and variables they need.
+`
 
   const fixturesSection = `## Fixtures and the admin account
 
 \`bin/up\` loads the fixtures with \`--append\`, which only creates what's missing: the admin
 (\`ADMIN_USERNAME\` / \`ADMIN_PASSWORD\` / \`ADMIN_EMAIL\` in \`api/.env.local\`, default
-\`admin\` / \`admin\` / \`admin@example.com\`)${answers.fixtures ? ' and the sample pages' : ''}. Each load resets the
+\`admin\` / \`admin\` / \`admin@example.com\`)${answers.content === 'demo' ? ' and the example pages' : answers.content === 'home' ? ' and the home page' : ''}. Each load resets the
 admin's password to \`ADMIN_PASSWORD\`; \`bin/up --skip-fixtures\` keeps one changed in the admin.
 To load them by hand:
 
@@ -482,7 +559,7 @@ docker compose exec php bin/console doctrine:fixtures:load --append
 
 A [CWA](https://github.com/components-web-app/components-web-app) project.
 
-## Features
+## Components
 
 ${featureList}
 
@@ -652,10 +729,11 @@ async function main(): Promise<void> {
       }
     }
 
-    if (!answers.fixtures) {
-      // Sample content only: UsersFixture stays, so the admin is still created from ADMIN_* (#142).
-      await removeExcluded(tempDir, ['api/src/DataFixtures/AppScaffold.php', 'api/src/DataFixtures/Parts/'])
-    }
+    // Starting content: UsersFixture always stays, so the admin is created from ADMIN_* (#142).
+    const contentExclude =
+      manifest.content?.[answers.content]?.exclude ??
+      (answers.content === 'empty' ? ['api/src/DataFixtures/AppScaffold.php', 'api/src/DataFixtures/Parts/'] : [])
+    await removeExcluded(tempDir, contentExclude)
 
     await processNuxtConfig(tempDir, answers.features)
     await replaceProjectName(tempDir, answers.projectName)
@@ -680,7 +758,7 @@ async function main(): Promise<void> {
       '(which your editor reads too) and runs the dev server.',
       '',
       'bin/up waits for all that, loads the fixtures (the admin' +
-        (answers.fixtures ? ' and sample pages' : '') +
+        (answers.content === 'demo' ? ' and the example pages' : answers.content === 'home' ? ' and the home page' : '') +
         '),',
       'pre-compiles the first pages and prints where to sign in. Run it again any time.',
     ]

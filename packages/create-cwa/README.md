@@ -17,12 +17,13 @@ Requires Node.js 22.13 or later, and Docker to run the project.
 The CLI asks for:
 
 - **Project name**: lower-case letters, digits and dashes. It becomes the directory (which must not exist yet, or be empty) and the Docker Compose project name.
-- **CI/CD pipeline**: GitHub Actions, GitLab CI (both deploy to Kubernetes) or None to decide later.
-- **Features**: navigation links, an HTML content editor, image uploads, a blog, nested pages and an example form. Features another one needs are added for you.
-- **Fixtures**: sample pages for the chosen features.
+- **Pipeline**: GitHub Actions, GitLab CI or None to set one up later.
+- **Deploy to** (with a pipeline): a Kubernetes cluster, or one server with Docker, which the pipeline deploys over SSH (a preview). The project's README lists the variables to set.
+- **Components**: a navigation menu, rich text (TipTap), images, a blog, nested pages and an example form. The first three are pre-selected. Components another one needs are added for you.
+- **Starting pages**: a home page plus an example of each component you chose, just a home page, or an empty site (only the admin login).
 - **Start the Docker stack?** Before anything is downloaded, it checks that Docker is running and that ports 80, 443, 3001, 5432 and 8025 are free, and names whatever holds a port. If you don't start the stack now, it offers to install `app/` dependencies on your machine for editor types (default No): the app container installs its own either way.
 
-If you start the stack, the CLI runs the project's `bin/up`: it waits until the stack is healthy, loads the fixtures (which create the admin, and the sample pages if you chose them), pre-compiles the first pages and prints the login. Run `bin/up` again any time; it's safe to repeat. The site is at `https://localhost`, the admin signs in at `https://localhost/login` (`admin` / `admin` in dev), and Mailpit shows the emails the API sends at `http://localhost:8025`. Without a POSIX shell (Windows without WSL), the CLI prints the steps instead.
+If you start the stack, the CLI runs the project's `bin/up`: it waits until the stack is healthy, loads the fixtures (which create the admin, and the starting pages you chose), pre-compiles the first pages and prints the login. Run `bin/up` again any time; it's safe to repeat. The site is at `https://localhost`, the admin signs in at `https://localhost/login` (`admin` / `admin` in dev), and Mailpit shows the emails the API sends at `http://localhost:8025`. Without a POSIX shell (Windows without WSL), the CLI prints the steps instead.
 
 ## Options
 
@@ -32,14 +33,15 @@ If you start the stack, the CLI runs the project's `bin/up`: it waits until the 
 Each of these answers its question, so it isn't asked:
 
 - `--pipeline <github|gitlab|none>`: the CI/CD pipeline.
-- `--features <list>`: comma-separated feature ids (`navigation`, `html-content`, `image`, `blog`, `nested-pages`, `forms`), `all` or `none`. Features another one needs are still added.
-- `--fixtures` / `--no-fixtures`: include the sample pages, or not.
+- `--deploy <kubernetes|server>`: where the pipeline deploys; needs a pipeline.
+- `--features <list>`: comma-separated component ids (`navigation`, `html-content`, `image`, `blog`, `nested-pages`, `forms`), `default` (the pre-selected three), `all` or `none`. Components another one needs are still added.
+- `--content <demo|home|empty>`: the starting pages. `--fixtures` and `--no-fixtures` still work, as `--content demo` and `--content empty`.
 - `--start` / `--no-start`: run `bin/up` once the project is created, or not. With `--start`, a check that fails (Docker not running, a port taken) stops the CLI before anything is created.
 - `--install-deps` / `--no-install-deps`: `pnpm install` in `app/` on this machine; only when the stack isn't started.
 
 For unattended runs:
 
-- `-y`, `--yes`: take the default for every question no flag answers: GitHub Actions, no features, fixtures, start the stack (when Docker is there and the checks pass), no host install. The project name has no default, so it's still asked for when not given.
+- `-y`, `--yes`: take the default for every question no flag answers: GitHub Actions, Kubernetes, the pre-selected components, a home page with examples, start the stack (when Docker is there and the checks pass), no host install. The project name has no default, so it's still asked for when not given.
 - `--ci`: never prompt (implies `--yes`). A missing or invalid project name is an error, and a failed `bin/up` makes the CLI exit 1. For example:
 
 ```sh

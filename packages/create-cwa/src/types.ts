@@ -3,6 +3,8 @@ export interface ManifestChoice {
   label: string
   hint?: string
   requires?: string[]
+  // Pre-selected in a multiselect, and what --yes picks.
+  selected?: boolean
 }
 
 export interface ManifestQuestion {
@@ -11,7 +13,7 @@ export interface ManifestQuestion {
   message: string
   placeholder?: string
   hint?: string
-  default?: boolean
+  default?: boolean | string
   choices?: ManifestChoice[]
 }
 
@@ -34,11 +36,15 @@ export interface Manifest {
   questions: ManifestQuestion[]
   features: Record<string, ManifestFeature>
   ci: Record<string, ManifestCi>
+  // Starting content (demo, home, empty): the files each level removes. Missing in templates before 2.0.0-alpha.55.
+  content?: Record<string, ManifestCi>
 }
 
 export interface Answers {
   projectName: string
   ci: string
+  // kubernetes or server; none when there's no pipeline.
+  deploy: string
   features: string[]
-  fixtures: boolean
+  content: string
 }

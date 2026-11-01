@@ -49,12 +49,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: all features, fixtures
+          - name: all features, demo pages
             features: all
-            fixtures: 'true'
-          - name: no features, no fixtures
+            content: demo
+          - name: no features, home page only
             features: none
-            fixtures: 'false'
+            content: home
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,7 +78,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SMOKE_FEATURES: ${{ matrix.features }}
-          SMOKE_FIXTURES: ${{ matrix.fixtures }}
+          SMOKE_CONTENT: ${{ matrix.content }}
           SMOKE_REQUIRE_BASE: ${{ inputs.ref != '' }}
         run: sh packages/create-cwa/smoke.sh "$RUNNER_TEMP/smoke"
 

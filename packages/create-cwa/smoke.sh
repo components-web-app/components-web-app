@@ -1,13 +1,13 @@
 #!/bin/sh
 # Template CI only (#215): creates a project from this checkout with the built CLI, starts it through bin/up and checks the login.
-# Usage: packages/create-cwa/smoke.sh <work dir>   (SMOKE_FEATURES: all|none|a,b; SMOKE_FIXTURES: true|false; SMOKE_REQUIRE_BASE=true fails instead of skipping)
+# Usage: packages/create-cwa/smoke.sh <work dir>   (SMOKE_FEATURES: all|none|a,b; SMOKE_CONTENT: demo|home|empty; SMOKE_REQUIRE_BASE=true fails instead of skipping)
 # Needs node and pnpm (or a built dist/), git, docker with compose, and free ports 80, 443, 3001, 5432 and 8025.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 WORK=${1:?usage: smoke.sh <work dir>}
 FEATURES=${SMOKE_FEATURES:-all}
-FIXTURES=${SMOKE_FIXTURES:-true}
+CONTENT=${SMOKE_CONTENT:-demo}
 NAME=cwa-smoke
 PROJECT="$WORK/$NAME"
 # The images' first build, composer and pnpm installs on a CI runner take longer than a laptop's default 900 s.
@@ -47,12 +47,11 @@ mkdir -p "$WORK" || exit 1
 # CI checkouts can belong to another user than the one running git here (GitLab's dind job, GitHub containers).
 if [ -n "${CI:-}" ]; then git config --global --add safe.directory "$ROOT"; fi
 
-[ "$FIXTURES" = true ] && fixtures=--fixtures || fixtures=--no-fixtures
 cd "$WORK" || exit 1
-echo "==> create-cwa $NAME --ci --template-dir $ROOT --pipeline none --features $FEATURES $fixtures --start"
+echo "==> create-cwa $NAME --ci --template-dir $ROOT --pipeline none --features $FEATURES --content $CONTENT --start"
 # The exit status goes through a file: POSIX sh has no pipefail.
 { node "$ROOT/packages/create-cwa/bin/create-cwa.js" "$NAME" --ci --template-dir "$ROOT" \
-    --pipeline none --features "$FEATURES" "$fixtures" --start 2>&1; echo $? > "$WORK/status"; } | tee "$WORK/create-cwa.log"
+    --pipeline none --features "$FEATURES" --content "$CONTENT" --start 2>&1; echo $? > "$WORK/status"; } | tee "$WORK/create-cwa.log"
 status=$(cat "$WORK/status")
 [ "$status" = 0 ] || fail "create-cwa exited $status (bin/up's output is above)"
 
@@ -69,4 +68,11 @@ code=$(docker compose exec -T php curl -sk --max-time 30 --resolve localhost:443
   -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin"}' https://localhost/_api/login | tr -d '\r')
 [ "$code" = 204 ] || fail "signing in as admin / admin answered $code, not 204"
 
-echo "create-cwa smoke passed: features $FEATURES, fixtures $FIXTURES"
+# demo and home both create the home page (CoreScaffoldPart); empty has none.
+if [ "$CONTENT" != empty ]; then
+  home=$(docker compose exec -T php curl -fsSk --max-time 60 --resolve localhost:443:127.0.0.1 https://localhost/) \
+    || fail "https://localhost/ didn't answer 200 with --content $CONTENT"
+  echo "$home" | grep -q 'Welcome to CWA' || fail "the home page has no 'Welcome to CWA' title"
+fi
+
+echo "create-cwa smoke passed: features $FEATURES, content $CONTENT"

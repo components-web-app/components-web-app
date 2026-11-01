@@ -1,6 +1,7 @@
 <?php
 // Regression test (#227): a project created without a feature keeps no file that still uses that feature's PHP classes
-// or (for image) NuxtImg. A dropped feature also drops the features that require it, as create-cwa does.
+// or (for image) NuxtImg. A dropped feature also drops the features that require it, as create-cwa does. Each starting
+// content level (manifest "content") is checked the same way.
 // Usage (repository root): php bin/test/manifest-features.php
 
 $manifest = json_decode(file_get_contents('cwa-manifest.json'), true, flags: JSON_THROW_ON_ERROR);
@@ -53,10 +54,18 @@ function dropped(string $feature, array $features): array
     return $out;
 }
 
-$failures = 0;
+// Each case: a name, the features it drops, and the files removed.
+$cases = [];
 foreach (array_keys($features) as $feature) {
     $ids = dropped($feature, $features);
-    $excludes = array_merge(...array_map(fn ($id) => $features[$id]['exclude'] ?? [], $ids));
+    $cases[] = [$feature, $ids, array_merge(...array_map(fn ($id) => $features[$id]['exclude'] ?? [], $ids))];
+}
+foreach ($manifest['content'] ?? [] as $level => $config) {
+    $cases[] = ['content '.$level, [], $config['exclude']];
+}
+
+$failures = 0;
+foreach ($cases as [$feature, $ids, $excludes]) {
 
     // Excluded PHP under api/src: App\<path> for a file, the App\<dir>\ namespace for a directory.
     $patterns = [];

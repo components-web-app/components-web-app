@@ -32,33 +32,109 @@
     {
       "id": "ci",
       "type": "select",
-      "message": "CI/CD pipeline?",
-      "hint": "Kubernetes deploy pipelines; choose None to decide later",
+      "message": "Where will the pipeline run?",
+      "hint": "it builds, tests and deploys the site; choose None to set one up later",
       "choices": [
-        { "value": "github", "label": "GitHub Actions" },
-        { "value": "gitlab", "label": "GitLab CI" },
-        { "value": "none", "label": "None" }
+        {
+          "value": "github",
+          "label": "GitHub Actions"
+        },
+        {
+          "value": "gitlab",
+          "label": "GitLab CI"
+        },
+        {
+          "value": "none",
+          "label": "None yet"
+        }
+      ]
+    },
+    {
+      "id": "deploy",
+      "type": "select",
+      "message": "Deploy to?",
+      "choices": [
+        {
+          "value": "kubernetes",
+          "label": "A Kubernetes cluster",
+          "hint": "Helm; review apps, staging and production"
+        },
+        {
+          "value": "server",
+          "label": "One server with Docker",
+          "hint": "preview: the pipeline deploys over SSH; set CWA_CI_SERVER_HOST"
+        }
       ]
     },
     {
       "id": "features",
       "type": "multiselect",
-      "message": "Which features to include?",
+      "message": "Which components do you want to build pages with?",
       "choices": [
-        { "value": "navigation", "label": "Navigation links" },
-        { "value": "html-content", "label": "HTML content editor (requires TipTap)" },
-        { "value": "image", "label": "Image uploads (local in dev; a bucket in production)" },
-        { "value": "blog", "label": "Blog / articles", "requires": ["html-content", "image"] },
-        { "value": "nested-pages", "label": "Nested pages / topics", "requires": ["html-content"] },
-        { "value": "forms", "label": "Example form (Symfony form composables demo)" }
-      ]
+        {
+          "value": "navigation",
+          "label": "Navigation menu",
+          "hint": "links in the site header",
+          "selected": true
+        },
+        {
+          "value": "html-content",
+          "label": "Rich text",
+          "hint": "headings, lists and links, edited in place (TipTap)",
+          "selected": true
+        },
+        {
+          "value": "image",
+          "label": "Images",
+          "hint": "upload and place pictures; stored locally in dev, set up storage when you deploy",
+          "selected": true
+        },
+        {
+          "value": "blog",
+          "label": "Blog",
+          "requires": [
+            "html-content",
+            "image"
+          ],
+          "hint": "an article list with search, and an article page template"
+        },
+        {
+          "value": "nested-pages",
+          "label": "Nested pages",
+          "requires": [
+            "html-content"
+          ],
+          "hint": "topics with chapter sub-pages"
+        },
+        {
+          "value": "forms",
+          "label": "Example form",
+          "hint": "a form with every field type, to copy from"
+        }
+      ],
+      "hint": "you can delete any of them later"
     },
     {
-      "id": "fixtures",
-      "type": "confirm",
-      "message": "Include database fixtures for selected features?",
-      "hint": "sample pages; the admin login is created either way",
-      "default": true
+      "id": "content",
+      "type": "select",
+      "message": "Start with example pages?",
+      "hint": "edit or delete them in the admin later",
+      "default": "demo",
+      "choices": [
+        {
+          "value": "demo",
+          "label": "A home page plus an example of each component"
+        },
+        {
+          "value": "home",
+          "label": "Just a home page"
+        },
+        {
+          "value": "empty",
+          "label": "An empty site",
+          "hint": "only the admin login"
+        }
+      ]
     }
   ],
   "features": {
@@ -87,7 +163,10 @@
       ]
     },
     "blog": {
-      "requires": ["html-content", "image"],
+      "requires": [
+        "html-content",
+        "image"
+      ],
       "exclude": [
         "api/src/Entity/BlogArticleData.php",
         "api/config/serializer/BlogArticleData.yaml",
@@ -99,7 +178,9 @@
       ]
     },
     "nested-pages": {
-      "requires": ["html-content"],
+      "requires": [
+        "html-content"
+      ],
       "exclude": [
         "api/src/Entity/NestedPageData.php",
         "api/src/DataFixtures/Parts/NestedPagesScaffoldPart.php"
@@ -115,13 +196,44 @@
   },
   "ci": {
     "github": {
-      "exclude": [".gitlab-ci.yml"]
+      "exclude": [
+        ".gitlab-ci.yml"
+      ]
     },
     "gitlab": {
-      "exclude": [".github/", "bin/devops/github-export-vars.sh", "bin/devops/github-export-secrets.sh"]
+      "exclude": [
+        ".github/",
+        "bin/devops/github-export-vars.sh",
+        "bin/devops/github-export-secrets.sh"
+      ]
     },
     "none": {
-      "exclude": [".github/", ".gitlab-ci.yml", "bin/devops/"]
+      "exclude": [
+        ".github/",
+        ".gitlab-ci.yml",
+        "bin/devops/"
+      ]
+    }
+  },
+  "content": {
+    "demo": {
+      "exclude": []
+    },
+    "home": {
+      "exclude": [
+        "api/src/DataFixtures/Parts/BlogScaffoldPart.php",
+        "api/src/DataFixtures/Parts/FormsScaffoldPart.php",
+        "api/src/DataFixtures/Parts/HtmlContentScaffoldPart.php",
+        "api/src/DataFixtures/Parts/ImageScaffoldPart.php",
+        "api/src/DataFixtures/Parts/NavigationScaffoldPart.php",
+        "api/src/DataFixtures/Parts/NestedPagesScaffoldPart.php"
+      ]
+    },
+    "empty": {
+      "exclude": [
+        "api/src/DataFixtures/AppScaffold.php",
+        "api/src/DataFixtures/Parts/"
+      ]
     }
   }
 }
