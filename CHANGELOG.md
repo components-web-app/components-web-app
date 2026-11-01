@@ -6,11 +6,17 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.54](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.54) - 2026-11-01
+
 ### Upgrade notes
 
 - **PostgreSQL 18** ([commit](https://github.com/components-web-app/components-web-app/commit/b711a4d8c1a8ffe6bf6904e09d49311b5ff4ebfd)): Doctrine's `server_version`, compose's database image and `serverVersion` default, the e2e image, the CI test service and the backup job's default image go to 18. PG18 images keep their data under `/var/lib/postgresql` (a versioned directory), so compose mounts the volume there instead of `/data`: an existing local PG14/16 volume won't start under 18. Dump it first (`pg_dump`) or recreate it (`docker compose down -v`, then `bin/up`).
 - **The in-cluster PostgreSQL is the chart's own StatefulSet on `postgres:18-alpine`** ([commit](https://github.com/components-web-app/components-web-app/commit/baa7c0bd0572fdafc705ef0e94601303a0bd27f7)), replacing the Bitnami subchart, which never published PostgreSQL 18. Take `helm/cwa` whole (`templates/postgresql.yaml` is new, `Chart.lock` goes), with `bin/devops/k8s.sh` and `bin/test/database-job-chart.sh`. It upgrades a release in place (same immutable StatefulSet fields; rehearsed from chart 14.3.3 in kind), but the data directory is new, so an in-cluster database starts empty on its first deploy: reload fixtures, or `pg_dump` a persistent one first. `CWA_CI_POSTGRES_IMAGE_TAG` is now an official image tag (default `18-alpine`); `POSTGRES_ROOT_PASSWORD` (the Bitnami `postgres` superuser's password) is no longer read: delete it from a project's CI variables.
 - **No chart dependencies, and the chart's PostgreSQL values are flat** ([commit](https://github.com/components-web-app/components-web-app/commit/ba19c6300e1ec158587c36e612ab97e5ca5d77b8)): `helm_init` is gone from `bin/devops/k8s.sh`, so take `.gitlab-ci.yml` or `.github/workflows/ci.yml` and `production.yml` with it (a project job still calling `helm_init` fails with "not found"). `postgresql.global.postgresql.auth` is now `postgresql.auth`, and `postgresql.primary.persistence`, `.resources` and `.pullPolicy` are `postgresql.persistence` etc.: move any `project_values` or `--set` that used the old paths. GitHub's functional-test service and the backup image's fallback also go to PostgreSQL 18.
+
+### Security
+
+- `pnpm audit` and `composer audit` (2026-11-01): nothing new. Still accepted, not in the server output: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low), glob 10.5.0, 11.1.0 and 13.0.6 (GHSA-3g3m-2fjr-6pw4, moderate) and minimatch 5.1.9, 9.0.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate), all build-only, waiting on fixes their dependents allow.
 
 ### Fixed
 
