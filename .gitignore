@@ -13,3 +13,4 @@
 # Single-server settings and backups (bin/server, #212).
 /.env.prod
 /backups/
+/.cwa-images.yaml

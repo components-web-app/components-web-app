@@ -609,7 +609,12 @@ production server:
       dotenv: environment_url.env
   resource_group: production
   allow_failure: false
+  # The build jobs' image_digest.env: the server runs exactly the images this pipeline built and tested.
   needs:
+    - job: 'build api'
+      optional: true
+    - job: 'build app'
+      optional: true
     - job: 'unit tests'
       optional: true
     - job: 'functional tests'

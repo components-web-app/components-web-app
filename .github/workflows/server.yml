@@ -1,7 +1,7 @@
 name: Deploy to server
 
 # A single-server project (#212): run by hand, like production.yml for Kubernetes. Copies main to the server and runs
-# bin/server/deploy.sh there; bin/devops/server-deploy.sh has the variables (CWA_CI_SERVER_HOST makes a project single-server).
+# bin/server/deploy.sh there on main's images from GHCR; bin/devops/server-deploy.sh has the variables (CWA_CI_SERVER_HOST makes a project single-server).
 on:
   workflow_dispatch:
 
@@ -32,10 +32,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     environment:
       name: production
     env:
       CWA_CI_SERVER_SSH_KEY: ${{ secrets.CWA_CI_SERVER_SSH_KEY }}
+      # The server pulls main's images with this job's token, which never stays on the server.
+      CI_REGISTRY: ghcr.io
+      CI_REGISTRY_USER: ${{ github.actor }}
+      CI_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      CI_REGISTRY_IMAGE: ghcr.io/${{ github.repository }}
+      CI_COMMIT_REF_SLUG: main
     steps:
       - uses: actions/checkout@v4
         with:

@@ -24,7 +24,7 @@ cleanup() {
   status=$?
   [ "$status" -eq 0 ] || c logs --tail 60 php app 2>&1 || true
   c --profile tests down -v --remove-orphans >/dev/null 2>&1 || true
-  rm -rf "$env_file" "$backups" "$log"
+  rm -rf "$env_file" "$backups" "$log" .cwa-images.yaml
   exit "$status"
 }
 trap cleanup EXIT
@@ -69,10 +69,11 @@ if server sh bin/server/restore.sh --yes > "$log" 2>&1; then pass "restore"; els
 c exec -T php bin/console silverback:api-components:maintenance status 2>&1 | grep -qi 'off' \
   && pass "maintenance is off after the restore" || fail "maintenance isn't off after the restore"
 
-# 4. Deploying again changes nothing it shouldn't: no pending migrations, the site still answers.
-if server sh bin/server/deploy.sh > "$log" 2>&1 && grep -q 'Pending migrations: 0' "$log"; then
+# 4. Deploying again, on pulled images as CI's deploy does, changes nothing it shouldn't: no pending migrations.
+if server CWA_SERVER_PHP_IMAGE="$E2E_PHP_IMAGE" CWA_SERVER_APP_IMAGE="$E2E_APP_IMAGE" sh bin/server/deploy.sh > "$log" 2>&1 \
+  && grep -q 'Pulling the images CI built' "$log" && grep -q 'Pending migrations: 0' "$log"; then
   sed 's/^/  | /' "$log"
-  pass "a second deploy (no pending migrations)"
+  pass "a second deploy on pulled images (no pending migrations)"
 else
   fail "second deploy: $(tail -n 40 "$log")"
 fi

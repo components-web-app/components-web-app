@@ -26,7 +26,10 @@ KNOWN=$(ssh-keyscan -p 2222 127.0.0.1 2>/dev/null)
 P="$T/project" && mkdir -p "$P/bin/server" "$P/bin/lib" && cd "$P"
 cp "$SCRIPT" ./server-deploy.sh
 printf '/.env.prod\n/backups/\n' > .gitignore
-printf '#!/bin/sh\necho "STUB DEPLOY in $(pwd)"\n' > bin/server/deploy.sh
+printf '#!/bin/sh\necho "STUB DEPLOY in $(pwd) php=${CWA_SERVER_PHP_IMAGE:-} app=${CWA_SERVER_APP_IMAGE:-} config=${CWA_SERVER_REGISTRY_CONFIG:-}"\n[ -z "${CWA_SERVER_REGISTRY_CONFIG:-}" ] || cat "$CWA_SERVER_REGISTRY_CONFIG/login"\n' > bin/server/deploy.sh
+# A stub docker on the "server": records the login in its DOCKER_CONFIG.
+printf '#!/bin/sh\n[ "$1" = login ] && { echo "login $* pw=$(cat)" > "$DOCKER_CONFIG/login"; exit 0; }\nexit 1\n' > /usr/local/bin/docker
+chmod +x /usr/local/bin/docker
 printf 'env_value() { sed -n "s/^$1=//p" .env.prod; }\n' > bin/server/lib.sh
 echo old > dropped.txt
 git init -q && git -c user.email=t@t -c user.name=t add -A && git -c user.email=t@t -c user.name=t commit -qm one
@@ -61,6 +64,18 @@ grep -q SECRET=keep /home/deploy/cwa/.env.prod || fail ".env.prod was changed or
 [ -f /home/deploy/cwa/backups/a.dump ] || fail "backups/ was deleted"
 [ ! -e /home/deploy/cwa/.git ] || fail ".git was copied"
 [ "$(cat environment_url.env 2>/dev/null)" = "SITE_ENVIRONMENT_URL=https://example.test" ] || fail "environment_url.env: $(cat environment_url.env 2>/dev/null)"
+
+# With a registry: the pipeline's images by digest, a login only for the run, gone afterwards.
+digest=sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+out=$(run CI_REGISTRY=registry.test CI_REGISTRY_IMAGE=registry.test/g/p CI_REGISTRY_USER=ci-user CI_REGISTRY_PASSWORD=s3cret \
+  CWA_CI_PHP_IMAGE_DIGEST=$digest TAG=main) || fail "image run: $out"
+case "$out" in *"php=registry.test/g/p/php@$digest app=registry.test/g/p/app:main"*) ;; *) fail "images: $out" ;; esac
+case "$out" in *"login -u ci-user --password-stdin registry.test pw=s3cret"*) ;; *) fail "registry login: $out" ;; esac
+config=$(echo "$out" | sed -n 's/.*config=\([^ ]*\).*/\1/p' | head -n 1)
+[ -n "$config" ] && [ ! -e "$config" ] || fail "the registry login was left on the server: '$config'"
+out=$(run CI_REGISTRY_IMAGE=registry.test/g/p CWA_CI_SERVER_BUILD=true) || fail "build run: $out"
+case "$out" in *"php= app="*) ;; *) fail "CWA_CI_SERVER_BUILD still passed images: $out" ;; esac
+out=$(run CI_REGISTRY_IMAGE='registry.test/g/p;id' TAG=main) && fail "accepted a bad image name" || true
 
 # A base64 key works too.
 out=$(run CWA_CI_SERVER_SSH_KEY="$(base64 "$T/id" | tr -d '\n')") || fail "base64 key: $out"

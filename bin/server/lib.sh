@@ -5,8 +5,19 @@
 
 ENV_FILE=${CWA_SERVER_ENV_FILE:-.env.prod}
 
-# docker compose with the site's settings (COMPOSE_FILE in it picks compose.yaml + compose.prod.yaml).
-c() { docker compose --env-file "$ENV_FILE" "$@"; }
+# The images CI built, when deploy.sh was given them: a compose file pinning php and app to them (git ignores it).
+IMAGES_FILE=.cwa-images.yaml
+
+# docker compose with the site's settings (COMPOSE_FILE in it picks compose.yaml + compose.prod.yaml), plus IMAGES_FILE.
+c() {
+  if [ -f "$IMAGES_FILE" ]; then
+    local files
+    files=$(env_value COMPOSE_FILE)
+    COMPOSE_FILE="${files:-compose.yaml}:$IMAGES_FILE" docker compose --env-file "$ENV_FILE" "$@"
+  else
+    docker compose --env-file "$ENV_FILE" "$@"
+  fi
+}
 
 require_env_file() {
   [ -f "$ENV_FILE" ] || { echo "No $ENV_FILE: run bin/server/init first." >&2; exit 1; }

@@ -1,11 +1,13 @@
 #!/bin/sh
 # Deploys this commit to a single server over SSH (#212), from GitLab's "production server" job or GitHub's server.yml:
-# copies the commit's files to the server with rsync, then runs bin/server/deploy.sh there (build, migrate, purge, warm).
+# copies the commit's files to the server with rsync, then runs bin/server/deploy.sh there on the images this pipeline
+# built (pulled with the job's registry login, which never stays on the server), then migrates, purges and warms.
 # Setting CWA_CI_SERVER_HOST makes a project single-server: the Kubernetes deploy jobs don't run.
 #   CWA_CI_SERVER_HOST         the server's address (required)
 #   CWA_CI_SERVER_SSH_KEY      a private key the server accepts, as is or base64 on one line (required, secret)
 #   CWA_CI_SERVER_KNOWN_HOSTS  the server's host keys, from `ssh-keyscan <host>` (required; never skipped)
 #   CWA_CI_SERVER_USER         (deploy), CWA_CI_SERVER_PORT (22), CWA_CI_SERVER_PATH (cwa: relative to the user's home)
+#   CWA_CI_SERVER_BUILD        "true" builds on the server instead (a server of another architecture than the runners)
 # The server needs docker with compose, rsync and curl, and the user in the docker group. Files git ignores there
 # (.env.prod, backups/) are never sent or deleted.
 set -eu
@@ -58,5 +60,29 @@ if [ -n "$site_host" ]; then
   printf 'SITE_ENVIRONMENT_URL=https://%s\n' "$site_host" > environment_url.env
 fi
 
+# The pipeline's images: by digest when the build job recorded one (image_digest.env), else this ref's tag.
+images=""
+if [ "${CWA_CI_SERVER_BUILD:-}" != "true" ] && [ -n "${CI_REGISTRY_IMAGE:-}" ]; then
+  tag=${TAG:-${CI_COMMIT_REF_SLUG:-main}}
+  php_image="$CI_REGISTRY_IMAGE/php${CWA_CI_PHP_IMAGE_DIGEST:+@$CWA_CI_PHP_IMAGE_DIGEST}"
+  app_image="$CI_REGISTRY_IMAGE/app${CWA_CI_APP_IMAGE_DIGEST:+@$CWA_CI_APP_IMAGE_DIGEST}"
+  [ -n "${CWA_CI_PHP_IMAGE_DIGEST:-}" ] || php_image="$php_image:$tag"
+  [ -n "${CWA_CI_APP_IMAGE_DIGEST:-}" ] || app_image="$app_image:$tag"
+  case "$php_image$app_image${CI_REGISTRY:-}${CI_REGISTRY_USER:-}" in
+    *[!A-Za-z0-9._/:@-]*) fail "An image or registry name has a character that isn't allowed: $php_image $app_image" ;;
+  esac
+  images="CWA_SERVER_PHP_IMAGE='$php_image' CWA_SERVER_APP_IMAGE='$app_image'"
+  echo "Images: $php_image, $app_image"
+fi
+
 echo "➡️ Deploying on the server..."
-$ssh_cmd "$target" "cd '$dir' && sh bin/server/deploy.sh"
+if [ -n "$images" ] && [ -n "${CI_REGISTRY_PASSWORD:-}" ]; then
+  # The login lives in a temporary DOCKER_CONFIG for the pulls only, deleted however deploy.sh ends.
+  printf '%s' "$CI_REGISTRY_PASSWORD" | $ssh_cmd "$target" "set -e; d=\$(mktemp -d); trap 'rm -rf \"\$d\"' EXIT; \
+    DOCKER_CONFIG=\"\$d\" docker login -u '$CI_REGISTRY_USER' --password-stdin '$CI_REGISTRY' >/dev/null; \
+    cd '$dir' && CWA_SERVER_REGISTRY_CONFIG=\"\$d\" $images sh bin/server/deploy.sh </dev/null"
+elif [ -n "$images" ]; then
+  $ssh_cmd "$target" "cd '$dir' && $images sh bin/server/deploy.sh"
+else
+  $ssh_cmd "$target" "cd '$dir' && sh bin/server/deploy.sh"
+fi
