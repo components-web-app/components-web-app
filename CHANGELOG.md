@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.55](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.55) - 2026-11-01
+
 ### Upgrade notes
 
 - **create-cwa's questions changed** ([commit](https://github.com/components-web-app/components-web-app/commit/d84cbe77780b1d1959063f7a60e20f7918af24ea)): `--yes` and `--ci` now pick the pre-selected components (navigation, rich text, images; was none) and `--content demo`. Pass `--features none` for the old default. `--fixtures`/`--no-fixtures` still work, as `--content demo`/`--content empty`, and `--content home` creates just the layout and home page. Scripts that call create-cwa unattended should check their flags.
@@ -19,6 +21,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
   - The components are named by what an editor gets, with navigation, rich text and images pre-selected (`--features default`).
   - "Start with example pages?": an example of each component, just a home page, or an empty site (`--content demo|home|empty`).
 - `api/tests/Functional/ContentWritePermissionTest.php` ([#228](https://github.com/components-web-app/components-web-app/issues/228)): a signed-in user without `ROLE_ADMIN` gets 403 on writes to components, layouts, pages, routes, component groups and positions; an admin can write. It guards `publishable.permission` (`is_granted('ROLE_ADMIN')`). ([commit](https://github.com/components-web-app/components-web-app/commit/a97c9f9b8855c27af795366725b400fc206c2bc7))
+
+### Security
+
+- `pnpm audit` and `composer audit` (2026-11-01): nothing new. Still accepted, not in the server output: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low), glob 10.5.0, 11.1.0 and 13.0.6 (GHSA-3g3m-2fjr-6pw4, moderate) and minimatch 5.1.9, 9.0.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate), all build-only, waiting on fixes their dependents allow.
 
 ### Fixed
 
