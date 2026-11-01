@@ -262,6 +262,7 @@ review:
     refs:
       - main
     variables:
+      - $CWA_CI_SERVER_HOST
       - $CWA_CI_REVIEW_DISABLED == "true"
 
 # Optional Vercel staging PWA job (deploy_vercel_app staging in bin/devops/vercel.sh); its definition is in v2.0.0-alpha.17's .gitlab-ci.yml.
@@ -299,6 +300,9 @@ staging:
       - main
     variables:
       - $CWA_CI_STAGING_ENABLED == "true"
+  except:
+    variables:
+      - $CWA_CI_SERVER_HOST
   allow_failure: false
 
 # Optional Vercel production PWA job (deploy_vercel_app in bin/devops/vercel.sh); its definition is in v2.0.0-alpha.17's .gitlab-ci.yml.
@@ -352,6 +356,7 @@ production:
       - main
   except:
     variables:
+      - $CWA_CI_SERVER_HOST
       - $CWA_CI_PRODUCTION_DISABLED == "true"
 
 # The pending migrations and their SQL for production, read-only, with this pipeline's php image (#180). Read it before
@@ -369,6 +374,8 @@ migrations plan production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: prepare
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_MIGRATIONS_PLAN_PRODUCTION != "false"'
   script:
     - install_dependencies
@@ -387,6 +394,8 @@ database backup production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: prepare
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_DATABASE_BACKUP_BUCKET'
   script:
     - install_dependencies
@@ -405,6 +414,8 @@ image variants and warm review:
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && ($CWA_CI_IMAGE_VARIANTS_REVIEW == "true" || $CWA_CI_WARM_CACHE_REVIEW == "true")'
   script:
     - skip_unless_review_deployed
@@ -422,6 +433,8 @@ image variants and warm staging:
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && ($CWA_CI_IMAGE_VARIANTS_STAGING == "true" || $CWA_CI_WARM_CACHE_STAGING == "true")'
   script:
     - install_dependencies
@@ -438,6 +451,8 @@ image variants and warm canary:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && ($CWA_CI_IMAGE_VARIANTS_CANARY == "true" || $CWA_CI_WARM_CACHE_CANARY == "true")'
   script:
     - install_dependencies
@@ -454,6 +469,8 @@ image variants and warm production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && ($CWA_CI_IMAGE_VARIANTS_PRODUCTION != "false" || $CWA_CI_WARM_CACHE_PRODUCTION != "false")'
   script:
     - install_dependencies
@@ -476,6 +493,8 @@ performance audit review:
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH != "main" && $CWA_CI_REVIEW_DISABLED != "true" && $CWA_CI_PERFORMANCE_AUDIT_REVIEW != "false"'
       when: manual
   script:
@@ -503,6 +522,8 @@ performance audit staging:
     url: https://staging.$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_STAGING_ENABLED == "true" && $CWA_CI_PERFORMANCE_AUDIT_STAGING != "false"'
       when: manual
   script:
@@ -529,6 +550,8 @@ performance audit canary:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_CANARY_ENABLED == "true" && $CWA_CI_PERFORMANCE_AUDIT_CANARY == "true"'
       when: manual
   script:
@@ -555,6 +578,8 @@ performance audit production:
     url: https://$KUBE_INGRESS_BASE_DOMAIN
     action: verify
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_PRODUCTION_DISABLED != "true" && $CWA_CI_PERFORMANCE_AUDIT_PRODUCTION != "false"'
       when: manual
   script:
@@ -568,6 +593,33 @@ performance audit production:
     reports:
       browser_performance: performance-report/browser-performance.json
 
+# A single-server project (#212): CWA_CI_SERVER_HOST set, so the Kubernetes jobs above don't run. Copies this commit to
+# the server and runs bin/server/deploy.sh there (bin/devops/server-deploy.sh has the variables).
+production server:
+  stage: production
+  before_script:
+    - apk add --no-cache git openssh-client rsync
+  script:
+    - sh bin/devops/server-deploy.sh
+  environment:
+    name: production
+    url: $SITE_ENVIRONMENT_URL
+  artifacts:
+    reports:
+      dotenv: environment_url.env
+  resource_group: production
+  allow_failure: false
+  needs:
+    - job: 'unit tests'
+      optional: true
+    - job: 'functional tests'
+      optional: true
+    - job: 'browser tests'
+      optional: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $CWA_CI_SERVER_HOST && $CWA_CI_PRODUCTION_DISABLED != "true"'
+      when: manual
+
 load fixtures review:
   stage: review
   script:
@@ -580,6 +632,8 @@ load fixtures review:
     name: review/$CI_COMMIT_REF_NAME
     url: https://$CI_COMMIT_REF_SLUG-review.$KUBE_INGRESS_BASE_DOMAIN
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CWA_CI_FIXTURES_ENABLED != "true"'
       when: never
     - if: '$CWA_CI_REVIEW_DISABLED == "true"'
@@ -600,6 +654,8 @@ load fixtures production:
     name: production
     url: https://$KUBE_INGRESS_BASE_DOMAIN
   rules:
+    - if: $CWA_CI_SERVER_HOST
+      when: never
     - if: '$CWA_CI_FIXTURES_ENABLED != "true"'
       when: never
     # It needs the production job.
@@ -642,6 +698,7 @@ stop review:
     refs:
       - main
     variables:
+      - $CWA_CI_SERVER_HOST
       - $CWA_CI_REVIEW_DISABLED == "true"
 
 canary:
@@ -678,3 +735,6 @@ canary:
       - main
     variables:
       - $CWA_CI_CANARY_ENABLED == "true"
+  except:
+    variables:
+      - $CWA_CI_SERVER_HOST

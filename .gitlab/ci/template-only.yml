@@ -110,3 +110,22 @@ server scripts:
     - setup_docker_environment
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
     - E2E_PHP_IMAGE="$PHP_REPOSITORY:$TAG" E2E_APP_IMAGE="$APP_REPOSITORY:$TAG" sh bin/test/server-scripts.sh
+
+# bin/devops/server-deploy.sh (#212) against a real sshd on localhost, with a stub deploy.sh: no stack, no docker.
+server deploy script:
+  stage: test
+  image: alpine:3.22
+  before_script: []
+  dependencies: []
+  needs: []
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule" || $CWA_CI_TEST_DISABLED == "true" || $CI_COMMIT_BRANCH == null'
+      when: never
+    - changes:
+        - .gitlab/ci/template-only.yml
+        - bin/devops/server-deploy.sh
+        - bin/test/server-deploy.sh
+    - when: manual
+      allow_failure: true
+  script:
+    - sh bin/test/server-deploy.sh

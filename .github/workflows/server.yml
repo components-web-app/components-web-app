@@ -1,0 +1,49 @@
+name: Deploy to server
+
+# A single-server project (#212): run by hand, like production.yml for Kubernetes. Copies main to the server and runs
+# bin/server/deploy.sh there; bin/devops/server-deploy.sh has the variables (CWA_CI_SERVER_HOST makes a project single-server).
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Tests main's images before they are deployed (#157), when vars.CWA_CI_E2E_ENABLED is "true".
+  browser-tests:
+    name: Browser tests
+    if: vars.CWA_CI_E2E_ENABLED == 'true' && vars.CWA_CI_TEST_DISABLED != 'true'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/browser-tests.yml
+    with:
+      ref_slug: main
+
+  deploy:
+    name: Deploy to the server
+    needs: [browser-tests]
+    if: always() && vars.CWA_CI_SERVER_HOST != '' && needs.browser-tests.result != 'failure' && needs.browser-tests.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    environment:
+      name: production
+    env:
+      CWA_CI_SERVER_SSH_KEY: ${{ secrets.CWA_CI_SERVER_SSH_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Expose repository variables to the scripts, as GitLab does
+        env:
+          VARS_JSON: ${{ toJSON(vars) }}
+        run: bin/devops/github-export-vars.sh
+      - name: Deploy
+        run: sh bin/devops/server-deploy.sh

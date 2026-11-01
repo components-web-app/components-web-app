@@ -38,7 +38,8 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.action }}
     needs: [browser-tests]
-    if: always() && needs.browser-tests.result != 'failure' && needs.browser-tests.result != 'cancelled'
+    # A single-server project deploys with server.yml (#212).
+    if: always() && vars.CWA_CI_SERVER_HOST == '' && needs.browser-tests.result != 'failure' && needs.browser-tests.result != 'cancelled'
     runs-on: ubuntu-latest
     # packages: write tags the deployed images; with no build here, promote_images pins :main's current digest (#164).
     permissions:

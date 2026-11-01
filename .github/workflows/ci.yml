@@ -265,6 +265,7 @@ jobs:
       needs.setup.result == 'success' &&
       github.ref != 'refs/heads/main' &&
       vars.CWA_CI_REVIEW_DISABLED != 'true' &&
+      vars.CWA_CI_SERVER_HOST == '' &&
       needs.build-api.result != 'failure' &&
       needs.build-app.result != 'failure' &&
       needs.unit-tests.result != 'failure' &&
@@ -410,6 +411,7 @@ jobs:
       needs.setup.result == 'success' &&
       github.ref == 'refs/heads/main' &&
       vars.CWA_CI_STAGING_ENABLED == 'true' &&
+      vars.CWA_CI_SERVER_HOST == '' &&
       needs.build-api.result != 'failure' &&
       needs.build-app.result != 'failure' &&
       needs.unit-tests.result != 'failure' &&
