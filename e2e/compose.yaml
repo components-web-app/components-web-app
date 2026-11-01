@@ -6,7 +6,7 @@ name: cwa-e2e
 services:
   database:
     volumes: !reset []
-    tmpfs: [/var/lib/postgresql/data]
+    tmpfs: [/var/lib/postgresql]
     healthcheck:
       interval: 2s
       retries: 30

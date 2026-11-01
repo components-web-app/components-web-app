@@ -208,7 +208,7 @@ said window-fails "MIGRATIONS FAILED"
 said window-fails "MAINTENANCE MODE IS ON"
 said window-fails "gs://backups/group-site/production/rel/20261020-000000Z-abc.dump"
 said window-fails "kubectl exec -i -n ns rel-postgresql-0 -c postgresql -- sh -c"
-said window-fails '-U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DATABASE:-postgres}"'
+said window-fails '-U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 said window-fails "silverback:api-components:maintenance off"
 said window-fails "kubectl delete configmap -n ns rel-cwa-maintenance-window"
 refuse window-fails "delete configmap"
