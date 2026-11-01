@@ -1,9 +1,10 @@
 <template>
   <article class="prose prose-stone prose-invert max-w-none min-h-[20px] bg-gray-900 px-4 pt-4 pb-0 border-4 border-dotted border-stone-200">
-    <nuxt-img
+    <!-- A plain <img>: @nuxt/image goes with create-cwa's image feature (#227). -->
+    <img
       src="/logo.svg"
-      placeholder
-    />
+      alt=""
+    >
     <TipTapHtmlEditor
       v-if="$cwa.admin.isEditing"
       :model="resourceModel"

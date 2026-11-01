@@ -173,6 +173,9 @@ jobs:
         run: sh bin/test/site-hosts-parity.sh
       - name: Check the shared sitemap warm runs under plain sh and from k8s.sh (#212)
         run: sh bin/test/site-lib.sh
+      - name: Check a create-cwa project without a feature keeps nothing that uses it (#227)
+        if: hashFiles('cwa-manifest.json') != ''
+        run: php bin/test/manifest-features.php
       - name: Check review apps sharing a namespace get a TLS secret each (#221)
         run: sh bin/test/tls-secret-name.sh
 

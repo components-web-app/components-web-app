@@ -19,7 +19,8 @@
     ".github/workflows/create-cwa-smoke.yml",
     ".github/php-base/",
     ".gitlab/ci/template-only.yml",
-    "app/app/pages/login.vue"
+    "app/app/pages/login.vue",
+    "bin/test/manifest-features.php"
   ],
   "questions": [
     {
@@ -81,7 +82,8 @@
       "exclude": [
         "api/src/Entity/Image.php",
         "app/app/cwa/components/Image/",
-        "api/src/DataFixtures/Parts/ImageScaffoldPart.php"
+        "api/src/DataFixtures/Parts/ImageScaffoldPart.php",
+        "api/tests/Functional/ImageTest.php"
       ]
     },
     "blog": {
