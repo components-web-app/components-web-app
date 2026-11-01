@@ -6,13 +6,22 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
-### Fixed
+### Upgrade notes
 
-- **A create-cwa project without the image feature builds and passes its tests** ([#227](https://github.com/components-web-app/components-web-app/issues/227)): `AltHtmlContent.vue` uses a plain `<img>` instead of `<nuxt-img>` (`@nuxt/image` goes with the image feature), and `api/tests/Functional/ImageTest.php` goes with it too. A project created without images takes `app/app/cwa/components/HtmlContent/ui/AltHtmlContent.vue` and deletes `api/tests/Functional/ImageTest.php`. `bin/test/manifest-features.php` (template CI only) checks every feature's exclude list. ([commit](https://github.com/components-web-app/components-web-app/commit/72b27ee26ce7e6860d31ac9ec483e0561c793b23))
+- **create-cwa's questions changed** ([commit](https://github.com/components-web-app/components-web-app/commit/d84cbe77780b1d1959063f7a60e20f7918af24ea)): `--yes` and `--ci` now pick the pre-selected components (navigation, rich text, images; was none) and `--content demo`. Pass `--features none` for the old default. `--fixtures`/`--no-fixtures` still work, as `--content demo`/`--content empty`, and `--content home` creates just the layout and home page. Scripts that call create-cwa unattended should check their flags.
 
 ### Added
 
+- **Single-server deploys from CI over SSH** ([#212](https://github.com/components-web-app/components-web-app/issues/212), [commit](https://github.com/components-web-app/components-web-app/commit/1aec0c9a9741e7fd81b7788cad8eb4eeb6608d94), [README](https://github.com/components-web-app/components-web-app/commit/801b3e3f361aa192fd35bb4efb98ecebec7c83ba)): GitLab's manual `production server` job and GitHub's `server.yml` run `bin/devops/server-deploy.sh`. It copies the commit to the server with rsync, never sending or deleting what git ignores there (`.env.prod`, `backups/`), and runs `bin/server/deploy.sh`. Setting `CWA_CI_SERVER_HOST` makes a project single-server, and every Kubernetes deploy job then skips. Also set `CWA_CI_SERVER_SSH_KEY` (secret) and `CWA_CI_SERVER_KNOWN_HOSTS` (host keys are always checked), with optional `_USER` (`deploy`), `_PORT` and `_PATH` (`cwa`). Take `.gitlab-ci.yml`, or `.github/workflows/` (`server.yml` is new; `ci.yml`, `cleanup.yml` and `production.yml` skip on it), with `bin/devops/server-deploy.sh`.
+- **create-cwa asks where to deploy and which starting pages to create** ([commit](https://github.com/components-web-app/components-web-app/commit/d84cbe77780b1d1959063f7a60e20f7918af24ea)):
+  - "Deploy to?" (with a pipeline): Kubernetes, or one server (`--deploy`).
+  - The components are named by what an editor gets, with navigation, rich text and images pre-selected (`--features default`).
+  - "Start with example pages?": an example of each component, just a home page, or an empty site (`--content demo|home|empty`).
 - `api/tests/Functional/ContentWritePermissionTest.php` ([#228](https://github.com/components-web-app/components-web-app/issues/228)): a signed-in user without `ROLE_ADMIN` gets 403 on writes to components, layouts, pages, routes, component groups and positions; an admin can write. It guards `publishable.permission` (`is_granted('ROLE_ADMIN')`). ([commit](https://github.com/components-web-app/components-web-app/commit/a97c9f9b8855c27af795366725b400fc206c2bc7))
+
+### Fixed
+
+- **A create-cwa project without the image feature builds and passes its tests** ([#227](https://github.com/components-web-app/components-web-app/issues/227)): `AltHtmlContent.vue` uses a plain `<img>` instead of `<nuxt-img>` (`@nuxt/image` goes with the image feature), and `api/tests/Functional/ImageTest.php` goes with it too. A project created without images takes `app/app/cwa/components/HtmlContent/ui/AltHtmlContent.vue` and deletes `api/tests/Functional/ImageTest.php`. `bin/test/manifest-features.php` (template CI only) checks every feature's exclude list. ([commit](https://github.com/components-web-app/components-web-app/commit/72b27ee26ce7e6860d31ac9ec483e0561c793b23))
 
 ## [2.0.0-alpha.54](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.54) - 2026-11-01
 
