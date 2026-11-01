@@ -453,12 +453,6 @@ check_kube_domain() {
   esac
 }
 
-helm_init() {
-  rm -rf ~/.helm/repository/cache/*
-  helm dependency update helm/cwa
-  helm dependency build helm/cwa
-}
-
 apply_kube_context() {
 	kubectl config get-contexts
   if [ -n "$KUBE_CONTEXT" ]; then kubectl config use-context "$KUBE_CONTEXT"; fi
@@ -943,44 +937,44 @@ yaml_squote() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/''/g")"
 }
 
-# postgresql.global.postgresql.auth (templates/postgresql.yaml and secrets.yaml's
+# postgresql.auth (templates/postgresql.yaml and secrets.yaml's
 # database-url both read it), with only the values that are set.
 postgres_auth_yaml() {
   local lines=""
   if [ -n "$POSTGRES_USER" ]; then
-    lines="${lines}        username: $(yaml_squote "$POSTGRES_USER")
+    lines="${lines}    username: $(yaml_squote "$POSTGRES_USER")
 "
   fi
   if [ -n "$POSTGRES_PASSWORD" ]; then
-    lines="${lines}        password: $(yaml_squote "$POSTGRES_PASSWORD")
+    lines="${lines}    password: $(yaml_squote "$POSTGRES_PASSWORD")
 "
   fi
   if [ -n "$POSTGRES_DB" ]; then
-    lines="${lines}        database: $(yaml_squote "$POSTGRES_DB")
+    lines="${lines}    database: $(yaml_squote "$POSTGRES_DB")
 "
   fi
   if [ -n "$lines" ]; then
-    printf '  global:\n    postgresql:\n      auth:\n%s' "$lines"
+    printf '  auth:\n%s' "$lines"
   fi
 }
 
-# postgresql.primary.persistence, with only the values that are set.
+# postgresql.persistence, with only the values that are set.
 postgres_persistence_yaml() {
   local lines=""
   if [ -n "$CWA_CI_POSTGRES_PERSISTENCE" ]; then
-    lines="${lines}      enabled: ${CWA_CI_POSTGRES_PERSISTENCE}
+    lines="${lines}    enabled: ${CWA_CI_POSTGRES_PERSISTENCE}
 "
   fi
   if [ -n "$CWA_CI_POSTGRES_PERSISTENCE_SIZE" ]; then
-    lines="${lines}      size: $(yaml_squote "$CWA_CI_POSTGRES_PERSISTENCE_SIZE")
+    lines="${lines}    size: $(yaml_squote "$CWA_CI_POSTGRES_PERSISTENCE_SIZE")
 "
   fi
   if [ -n "$CWA_CI_POSTGRES_STORAGE_CLASS" ]; then
-    lines="${lines}      storageClass: $(yaml_squote "$CWA_CI_POSTGRES_STORAGE_CLASS")
+    lines="${lines}    storageClass: $(yaml_squote "$CWA_CI_POSTGRES_STORAGE_CLASS")
 "
   fi
   if [ -n "$lines" ]; then
-    printf '  primary:\n    persistence:\n%s' "$lines"
+    printf '  persistence:\n%s' "$lines"
   fi
 }
 
@@ -2299,7 +2293,7 @@ database_backup() {
   location=$(database_backup_location "$track") || return 1
   bucket="${location%% *}" directory="${location#* }"
   major="${DATABASE_SERVER_VERSION%%[!0-9]*}"
-  image="${CWA_CI_DATABASE_BACKUP_IMAGE:-postgres:${major:-16}-alpine}"
+  image="${CWA_CI_DATABASE_BACKUP_IMAGE:-postgres:${major:-18}-alpine}"
   label=$(printf '%s' "${CI_COMMIT_SHORT_SHA:-${CI_COMMIT_SHA:-deploy}}" | cut -c1-12)
   # The backup key goes to helm in a values file, never on a command line; removed straight after.
   key=$(mktemp)

@@ -144,23 +144,20 @@ postgresql:
   enabled: true
   # If bringing your own PostgreSQL, the full uri to use
   #url: postgresql://cwa:!ChangeMe!@database:5432/api?serverVersion=18&charset=utf8
-  global:
-    postgresql:
-      auth:
-        username: "example"
-        password: "!ChangeMe!"
-        database: "api"
-  primary:
-    # Off: the data lives only in the pod. A StatefulSet's volume can't be added or removed later (check_postgres_persistence).
-    persistence:
-      enabled: false
-      storageClass: standard
-      size: 1Gi
-    pullPolicy: IfNotPresent
-    resources:
-      requests:
-        memory: 50Mi
-        cpu: 10m
+  auth:
+    username: "example"
+    password: "!ChangeMe!"
+    database: "api"
+  # Off: the data lives only in the pod. A StatefulSet's volume can't be added or removed later (check_postgres_persistence).
+  persistence:
+    enabled: false
+    storageClass: standard
+    size: 1Gi
+  pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: 50Mi
+      cpu: 10m
 
 # CWA_ENVIRONMENT / NUXT_PUBLIC_CWA_ENVIRONMENT. Empty sets neither.
 cwaEnvironment: ""

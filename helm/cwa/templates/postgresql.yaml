@@ -1,11 +1,9 @@
 {{- if .Values.postgresql.enabled }}
 {{- $name := printf "%s-postgresql" .Release.Name }}
-{{- $auth := .Values.postgresql.global.postgresql.auth }}
-{{- $persistence := .Values.postgresql.primary.persistence }}
-# The in-cluster PostgreSQL on the official image. It replaced Bitnami's chart, which never published PostgreSQL 18.
-# Immutable fields match the Bitnami StatefulSet, so a release upgrades in place: the selector labels, the serviceName
-# (<name>-hl) and the "data" volumeClaimTemplate. The pod is still <name>-0 with a container named postgresql, so
-# k8s.sh's restore hint and persistence check work as before.
+{{- $auth := .Values.postgresql.auth }}
+{{- $persistence := .Values.postgresql.persistence }}
+# The in-cluster PostgreSQL. Don't rename the selector labels, the serviceName (<name>-hl) or the "data" claim: a live
+# StatefulSet can't change them. k8s.sh's restore hint and persistence check expect pod <name>-0, container postgresql.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -68,13 +66,13 @@ spec:
       labels:
         {{- include "cwa.postgresqlSelectorLabels" . | nindent 8 }}
     spec:
-      # Explicit: an upgrade from Bitnami otherwise keeps its deleted service account (the deprecated serviceAccount alias).
+      # Explicit: an upgraded release otherwise keeps the deleted service account it was created with.
       serviceAccountName: default
       automountServiceAccountToken: false
       containers:
         - name: postgresql
           image: {{ printf "%s:%s" .Values.postgresql.image.repository (toString .Values.postgresql.image.tag) | quote }}
-          imagePullPolicy: {{ .Values.postgresql.primary.pullPolicy | default "IfNotPresent" }}
+          imagePullPolicy: {{ .Values.postgresql.pullPolicy | default "IfNotPresent" }}
           env:
             - name: POSTGRES_USER
               value: {{ $auth.username | quote }}
@@ -101,7 +99,7 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
-          {{- with .Values.postgresql.primary.resources }}
+          {{- with .Values.postgresql.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -135,7 +133,7 @@ spec:
         resources:
           requests:
             storage: {{ $persistence.size | quote }}
-        {{- /* As Bitnami's: "-" is no storage class, unset is the cluster's default. */}}
+        {{- /* "-" is no storage class, unset is the cluster's default. */}}
         {{- if $persistence.storageClass }}
         {{- if eq "-" $persistence.storageClass }}
         storageClassName: ""

@@ -109,7 +109,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
-The in-cluster PostgreSQL's selector: Bitnami's, as a StatefulSet's selector can't change, and k8s.sh selects on it.
+The in-cluster PostgreSQL's selector. Don't change it: a live StatefulSet's selector can't change, and k8s.sh selects on it.
 */}}
 {{- define "cwa.postgresqlSelectorLabels" -}}
 app.kubernetes.io/name: postgresql

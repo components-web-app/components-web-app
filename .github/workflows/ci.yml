@@ -200,7 +200,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     services:
       postgres:
-        image: postgres:14
+        image: postgres:18
         env:
           POSTGRES_USER: runner
           POSTGRES_PASSWORD: password
@@ -362,7 +362,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           check_kube_domain
-          helm_init
           apply_kube_context
           ensure_namespace
           create_docker_pull_secret
@@ -491,7 +490,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           check_kube_domain
-          helm_init
           apply_kube_context
           ensure_namespace
           create_docker_pull_secret

@@ -127,7 +127,6 @@ jobs:
           source ./bin/devops/k8s.sh
           check_kube_domain
           ensure_namespace
-          helm_init
           apply_kube_context
           create_docker_pull_secret
           deploy canary
@@ -155,7 +154,6 @@ jobs:
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
           check_kube_domain
-          helm_init
           apply_kube_context
           ensure_namespace
           create_docker_pull_secret
@@ -177,7 +175,6 @@ jobs:
         run: |
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
-          helm_init
           apply_kube_context
           migrations_plan stable
       # A database backup on demand (#180), with the backup bucket and key.
@@ -186,7 +183,6 @@ jobs:
         run: |
           source ./bin/devops/setup.sh
           source ./bin/devops/k8s.sh
-          helm_init
           apply_kube_context
           database_backup_now stable
       # Off unless CWA_CI_FIXTURES_ENABLED is "true". See load_fixtures.

@@ -8,7 +8,6 @@ command -v helm >/dev/null 2>&1 || { echo "Needs helm." >&2; exit 2; }
 DIR=$(mktemp -d)
 trap 'rm -rf "$DIR"' EXIT
 cp -R helm/cwa "$DIR/cwa"
-helm dependency build "$DIR/cwa" >/dev/null
 
 render() {
   helm template rel "$DIR/cwa" --set mercure.publicUrl=https://x/.well-known/mercure "$@" --show-only templates/database-job.yaml 2>&1
