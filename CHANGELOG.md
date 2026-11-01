@@ -6,6 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Fixed
+
+- **A create-cwa project without the image feature builds and passes its tests** ([#227](https://github.com/components-web-app/components-web-app/issues/227)): `AltHtmlContent.vue` uses a plain `<img>` instead of `<nuxt-img>` (`@nuxt/image` goes with the image feature), and `api/tests/Functional/ImageTest.php` goes with it too. A project created without images takes `app/app/cwa/components/HtmlContent/ui/AltHtmlContent.vue` and deletes `api/tests/Functional/ImageTest.php`. `bin/test/manifest-features.php` (template CI only) checks every feature's exclude list. ([commit](https://github.com/components-web-app/components-web-app/commit/72b27ee26ce7e6860d31ac9ec483e0561c793b23))
+
+### Added
+
+- `api/tests/Functional/ContentWritePermissionTest.php` ([#228](https://github.com/components-web-app/components-web-app/issues/228)): a signed-in user without `ROLE_ADMIN` gets 403 on writes to components, layouts, pages, routes, component groups and positions; an admin can write. It guards `publishable.permission` (`is_granted('ROLE_ADMIN')`). ([commit](https://github.com/components-web-app/components-web-app/commit/a97c9f9b8855c27af795366725b400fc206c2bc7))
+
 ## [2.0.0-alpha.54](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.54) - 2026-11-01
 
 ### Upgrade notes
