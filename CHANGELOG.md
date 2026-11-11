@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- A site behind Cloudflare needs `CADDY_CACHE_CDN_CONFIG` with `provider cloudflare` and a Zone → Cache Purge token, so each deploy purges the edge: otherwise Cloudflare can keep serving an earlier build's `/_nuxt` chunks and CSS. Deploys now warn when the site answers through Cloudflare without it ([521d8b8](https://github.com/components-web-app/components-web-app/commit/521d8b8c4b9dfae2cb65201a069ac6a842bf9cdd), #230).
+
 ## [2.0.0-alpha.55](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.55) - 2026-11-01
 
 ### Upgrade notes
