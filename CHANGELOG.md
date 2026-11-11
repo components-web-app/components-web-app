@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+
+- **Kubernetes console work runs in one-off Jobs, never the serving API pod** ([commit](https://github.com/components-web-app/components-web-app/commit/f7c9d3f4066ea1c7f08d072e3c32a9bab459c3dc)): the fixture load and scaled mode's `/_api` warm run in Jobs from the new suspended `<release>-console` CronJob, with their own memory limit (`CWA_CI_CONSOLE_MEMORY`, 512Mi), so a content-sized command can no longer OOM-kill the API container. Only the cache flush still runs in the API pod. Take `bin/devops/k8s.sh` with `helm/cwa/templates/console-cronjob.yaml` and `helm/cwa/values.yaml`, and deploy before the next fixture load (#229).
+
 ## [2.0.0-alpha.55](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.55) - 2026-11-01
 
 ### Upgrade notes
