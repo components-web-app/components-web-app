@@ -10,6 +10,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 - A site behind Cloudflare needs `CADDY_CACHE_CDN_CONFIG` with `provider cloudflare` and a Zone → Cache Purge token, so each deploy purges the edge: otherwise Cloudflare can keep serving an earlier build's `/_nuxt` chunks and CSS. Deploys now warn when the site answers through Cloudflare without it ([521d8b8](https://github.com/components-web-app/components-web-app/commit/521d8b8c4b9dfae2cb65201a069ac6a842bf9cdd), #230).
 
+### Changed
+
+- **Kubernetes console work runs in one-off Jobs, never the serving API pod** ([92f9bf0](https://github.com/components-web-app/components-web-app/commit/92f9bf0325ca7e25612cb1264ce9420c4c05f3db)): the fixture load and scaled mode's `/_api` warm run in Jobs from the new suspended `<release>-console` CronJob, with their own memory limit (`CWA_CI_CONSOLE_MEMORY`, 512Mi), so a content-sized command can no longer OOM-kill the API container. Only the cache flush still runs in the API pod. Take `bin/devops/k8s.sh` with `helm/cwa/templates/console-cronjob.yaml` and `helm/cwa/values.yaml`, and deploy before the next fixture load (#229).
+
 ## [2.0.0-alpha.55](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.55) - 2026-11-01
 
 ### Upgrade notes
