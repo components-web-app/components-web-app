@@ -6,6 +6,20 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **pnpm 12.18.0** ([commit](https://github.com/components-web-app/components-web-app/commit/22d719d50fc94dd7f65faf38ff86e893fd018870)): take `app/package.json`'s `packageManager` and `app/Dockerfile`'s `PNPM_VERSION` together, with `app/pnpm-workspace.yaml` (the node-forge override) and `app/pnpm-lock.yaml`. The e2e runner image moves to `playwright:v1.65.0-noble` with `@playwright/test` 1.65.0: take `e2e/Dockerfile`, `e2e/package.json` and `e2e/package-lock.json` together.
+
+### Security
+
+- **Symfony 8.1.11** ([commit](https://github.com/components-web-app/components-web-app/commit/a2936357a19d1726e6334e8e43306485d077a984)): `composer audit` reported 18 advisories against 8.1.10 in config, filesystem, framework-bundle, http-client, http-foundation, http-kernel, routing, security-http, serializer, validator and yaml (among them HEAD requests bypassing `access_control` methods, the `private_ranges` trusted-proxies shortcut trusting IPv4-mapped IPv6 clients, and client-chosen hosts in generated URLs). Also API Platform 5.0.6, Doctrine ORM 3.7.6 and DBAL 4.5.1; no schema change. `composer audit` is now clean, with nothing in `config.audit.ignore`.
+- **node-forge 1.4.3 and fast-xml-parser 5.12.0** ([commit](https://github.com/components-web-app/components-web-app/commit/22d719d50fc94dd7f65faf38ff86e893fd018870)): the node-forge override moves to `^1.4.3` (GHSA-6889-vf6x-f3g5, GHSA-w4xr-hqv8-ch44, GHSA-6cv4-p8m7-4r25, GHSA-j8rw-jp99-435v; dev server only, via listhen), and fast-xml-parser 5.12.0 (GHSA-474x-hrwr-fgx4, low; the sitemap) comes in through the lockfile update.
+- **Accepted advisories reviewed** (2026-11-11): still accepted, build-only and not in `.output`: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release), glob 11.1.0 and 13.0.7 (GHSA-3g3m-2fjr-6pw4, moderate, fixed only in glob 14.0.2) and minimatch 5.1.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate, fixed only in minimatch 11.0.1). glob 10.5.0 and minimatch 9.0.9 have left the lockfile. The e2e test runner's ESLint tooling also has minimatch 10.2.6 (same advisory; `npm audit` there reports it, as eslint and typescript-eslint don't allow 11 yet); it runs only in the browser-test container.
+
+### Changed
+
+- **Dependency updates** ([front end](https://github.com/components-web-app/components-web-app/commit/22d719d50fc94dd7f65faf38ff86e893fd018870), [e2e and create-cwa](https://github.com/components-web-app/components-web-app/commit/d70a7ed5c6475cffedc560949e3702f0aa2d512c)): Nuxt 4.6.4, TipTap 3.33.1, `@tiptap/y-tiptap` 3.3.0, Tailwind 4.3.5, `@nuxt/devtools` 4.1.0, pnpm 12.18.0; e2e `@playwright/test` 1.65.0, typescript-eslint 8.72.2, eslint-plugin-playwright 2.12.2; create-cwa `@clack/prompts` 1.9.0. TypeScript stays at 6.0.3: vue-tsc 3.3.14 still needs `typescript/lib/tsc`, and its TS 7 support (vuejs/language-tools#6170) is still a draft.
+
 ## [2.0.0-alpha.55](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.55) - 2026-11-01
 
 ### Upgrade notes
