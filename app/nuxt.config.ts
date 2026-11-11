@@ -158,6 +158,11 @@ export default defineNuxtConfig({
       devtools: false
     }
   },
+  // #230: the entry import map leaves the entry CSS out of chunk hashes, so a chunk keeps its name with new contents.
+  // Remove once nuxt/nuxt#36136 is fixed.
+  experimental: {
+    entryImportMap: false
+  },
   extends: [
     // By package name, not a path into node_modules: Node resolves it through the real
     // path, so pnpm's symlink doesn't defeat Nuxt's page-prefetch filter (nuxt/nuxt#36401,
