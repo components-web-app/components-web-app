@@ -44,7 +44,10 @@ failed() { case " ${STUB_FAIL:-} " in *" $(task "$@") "*) return 0 ;; esac; retu
 instance() { printf '%s' "$*" | sed -n 's/.*app.kubernetes.io\/instance=\([^ ,]*\).*/\1/p'; }
 case "$*" in
   *"exec "*"ADMIN_PASSWORD"*) [ -z "${STUB_POD_ADMIN_DEFAULT:-}" ] || exit 3 ;;
+  *"get cronjob"*"name=cwa-console,"*) echo "cronjob.batch/$(instance "$@")-cwa-console" ;;
+  "create job "*"--dry-run=client"*|"patch --local "*) echo '{}' ;;
   "create "*) cat "$4" >>"$STUB_LOG" ;;
+  *"get pods"*"job-name="*) echo 0 ;;
   *"get job"*"succeeded}{.status.failed}"*) echo 1 ;;
   *"get job"*"status.succeeded}"*) failed "$@" || echo 1 ;;
   "logs "*)
@@ -253,10 +256,10 @@ if grep -qF "s3cret-long-value" "$DIR/out"; then fail admin-set "printed the pas
 # The fixture load checks the pod's own value, since that's what it writes.
 run "load_fixtures" "ADMIN_PASSWORD=s3cret-long-value STUB_POD_ADMIN_DEFAULT=1"
 said fixtures-pod-default "ADMIN_PASSWORD is unset or 'admin' in the API pod"
-expect fixtures-pod-default "doctrine:fixtures:load --append"
+expect fixtures-pod-default '"doctrine:fixtures:load","--append"'
 run "load_fixtures" "ADMIN_PASSWORD=admin"
 if grep -qF "$ADMIN_WARNING" "$DIR/out"; then fail fixtures-pod-set "warned though the pod has a real password"; fi
-expect fixtures-pod-set "doctrine:fixtures:load --append"
+expect fixtures-pod-set '"doctrine:fixtures:load","--append"'
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2
