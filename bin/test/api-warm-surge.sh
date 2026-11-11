@@ -1,6 +1,6 @@
 #!/bin/sh
 # Regression test (#85): a scaled deploy's purge_rendered_html raises the API autoscaler's minimum by
-# CWA_CI_API_WARM_SURGE, flushes, warms through the API service, puts the minimum back, then checks the cache is a Redis
+# CWA_CI_API_WARM_SURGE, flushes, warms through the API service from console Jobs (#229), puts the minimum back, then checks the cache is a Redis
 # hit and only warns if not (#193); a single-pod deploy
 # warms in its pod as before. Commands run in a ready pod, never `deploy/…`, which can pick a terminating one. Runs k8s.sh against a stub kubectl. Usage (repository root): bin/test/api-warm-surge.sh [k8s.sh]
 set -eu
@@ -28,6 +28,10 @@ case "$*" in
   *"get deploy"*"name=cwa-pwa,"*) echo "deployment.apps/rel-cwa-pwa" ;;
   *"get deploy"*"name=cwa,"*) echo "deployment.apps/rel-cwa" ;;
   *"get deployment.apps/rel-cwa"*readyReplicas*) echo 4 ;;
+  *"get cronjob"*"name=cwa-console,"*) echo "cronjob.batch/rel-cwa-console" ;;
+  *"create job"*"--dry-run=client"*|*"patch --local"*) echo '{}' ;;
+  *"get job "*) echo 1 ;;
+  *"get pods"*"job-name="*) echo 0 ;;
   *"get pods"*"{{if .metadata.deletionTimestamp}}"*) ;;
   *"get pods"*"name=cwa,"*) echo "pod/rel-cwa-new" ;;
   *"exec"*" curl "*) printf 'HTTP/1.1 200 OK\r\nCache-Status: %s\r\n\r\n' "$STUB_CACHE_STATUS" ;;
@@ -97,8 +101,9 @@ expect surge '"minReplicas":2,"maxReplicas":3'
 expect surge 'purge-http-cache'
 expect surge 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-http-cache'
 refuse surge 'exec -n ns deployment.apps/rel-cwa '
-expect surge '--base-url=http://rel-cwa --concurrency=8'
-expect surge '--base-url=http://rel-cwa --concurrency=8 --requests-per-connection=1'
+# The warm runs in console Jobs through the service, never in an API pod (#229).
+expect surge '"--base-url=http://rel-cwa","--concurrency=8","--requests-per-connection=1"'
+refuse surge 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:warm-http-cache'
 order surge '"minReplicas":4' 'purge-http-cache'
 order surge 'deletionTimestamp' 'purge-http-cache'
 order surge 'purge-http-cache' '--base-url=http://rel-cwa'
@@ -130,15 +135,15 @@ expect surge-under-max '"minReplicas":2,"maxReplicas":6'
 
 run "CWA_CI_API_SCALED_PRODUCTION=true"
 expect scaled 'purge-http-cache'
-expect scaled '--base-url=http://rel-cwa --concurrency=4'
+expect scaled '"--base-url=http://rel-cwa","--concurrency=4"'
 refuse scaled 'patch hpa'
 
 # Per pod (#195): 2 pods x 3, and with the surge (2 + 2 pods) x 3.
 run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_CONCURRENCY=3"
-expect concurrency '--base-url=http://rel-cwa --concurrency=6'
+expect concurrency '"--base-url=http://rel-cwa","--concurrency=6"'
 
 run "CWA_CI_API_SCALED_PRODUCTION=true CWA_CI_API_WARM_SURGE=2 CWA_CI_API_WARM_CONCURRENCY=3"
-expect surge-concurrency '--base-url=http://rel-cwa --concurrency=12'
+expect surge-concurrency '"--base-url=http://rel-cwa","--concurrency=12"'
 
 run ""
 expect single 'purge-rendered-html'

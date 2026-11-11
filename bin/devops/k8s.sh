@@ -1524,6 +1524,13 @@ cronjobs:
         memory: "${CWA_CI_IMAGE_VARIANTS_MEMORY:-1536Mi}"
       limits:
         memory: "${CWA_CI_IMAGE_VARIANTS_MEMORY:-1536Mi}"
+  console:
+    resources:
+      requests:
+        cpu: 100m
+        memory: "${CWA_CI_CONSOLE_MEMORY:-512Mi}"
+      limits:
+        memory: "${CWA_CI_CONSOLE_MEMORY:-512Mi}"
 EOF
 
   # Holds secrets: removed after helm.
@@ -1592,6 +1599,64 @@ api_wait_old_pods_gone() {
   echo "WARNING: old API pods were still stopping after 120s; warming anyway." >&2
 }
 
+# A JSON string for one shell argument (backslashes and double quotes escaped).
+json_string() {
+  printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+}
+
+# run_console_job <track> [NAME=value ...] <command> [options ...]: `bin/console <command>` in a one-off Job from the
+# suspended <release>-console CronJob, never the serving API pod (#229). Prints the log; returns its exit code (124: never finished).
+run_console_job() {
+  local track="${1:-stable}" release_name="$RELEASE" template env="" args='"bin/console"' arg name job spec patched state="" waited=0 status
+  shift
+  [ "$track" = "stable" ] || release_name="$RELEASE-$track"
+  template=$(kubectl get cronjob -n "$KUBE_NAMESPACE" \
+    -l "app.kubernetes.io/name=cwa-console,app.kubernetes.io/instance=$release_name" -o name | sed -n 1p)
+  if [ -z "$template" ]; then
+    echo "!!!! CONSOLE JOB NOT RUN: release '$release_name' has no console CronJob (cronjobs.console.enabled): deploy with this chart first !!!!"
+    return 1
+  fi
+  while [ "$#" -gt 0 ]; do
+    case "$1" in *=*) name=${1%%=*} ;; *) break ;; esac
+    case "$name" in ''|[0-9]*|*[!A-Z0-9_]*) break ;; esac
+    env="$env,{\"op\":\"add\",\"path\":\"/spec/template/spec/containers/0/env/-\",\"value\":{\"name\":\"$name\",\"value\":$(json_string "${1#*=}")}}"
+    shift
+  done
+  for arg in "$@"; do args="$args,$(json_string "$arg")"; done
+  CONSOLE_JOB_RUNS=$(( ${CONSOLE_JOB_RUNS:-0} + 1 ))
+  job="$(printf '%s' "$release_name" | cut -c1-36)-console-$(date +%s)-${CONSOLE_JOB_RUNS}"
+  spec=$(mktemp)
+  patched=$(mktemp)
+  echo "Running bin/console $* in Job ${job}..."
+  if ! kubectl create job -n "$KUBE_NAMESPACE" "$job" --from="cronjob/${template#*/}" --dry-run=client -o json >"$spec" \
+    || ! kubectl patch --local -f "$spec" --type=json -o json \
+      -p "[{\"op\":\"replace\",\"path\":\"/spec/template/spec/containers/0/args\",\"value\":[${args}]}${env}]" >"$patched" \
+    || ! kubectl create -n "$KUBE_NAMESPACE" -f "$patched" >/dev/null; then
+    rm -f "$spec" "$patched"
+    echo "!!!! CONSOLE JOB NOT CREATED: ${job} !!!!"
+    return 1
+  fi
+  rm -f "$spec" "$patched"
+  while :; do
+    state=$(kubectl get job -n "$KUBE_NAMESPACE" "$job" -o jsonpath='{.status.succeeded}{.status.failed}' 2>/dev/null || true)
+    if [ -n "$state" ] || [ "$waited" -ge "${CWA_CI_CONSOLE_TIMEOUT:-1900}" ]; then break; fi
+    sleep 5
+    waited=$(( waited + 5 ))
+  done
+  kubectl logs -n "$KUBE_NAMESPACE" "job/$job" 2>&1 || true
+  status=$(kubectl get pods -n "$KUBE_NAMESPACE" -l "job-name=$job" \
+    -o jsonpath='{.items[0].status.containerStatuses[0].state.terminated.exitCode}' 2>/dev/null || true)
+  [ -n "$status" ] || status=124
+  if [ "$status" -eq 0 ]; then
+    kubectl delete job -n "$KUBE_NAMESPACE" "$job" --wait=false >/dev/null 2>&1 || true
+  elif [ "$status" -eq 124 ]; then
+    echo "Console Job ${job} did not finish (not scheduled, or past its deadline): see kubectl describe job -n $KUBE_NAMESPACE ${job}"
+  else
+    echo "Console Job ${job} exited ${status} (137: its memory limit, CWA_CI_CONSOLE_MEMORY; the API pods were not affected)."
+  fi
+  return "$status"
+}
+
 load_fixtures() {
   local track="${1-stable}"
   local release_name="$RELEASE"
@@ -1630,11 +1695,18 @@ load_fixtures() {
     -- sh -c '[ -n "${ADMIN_PASSWORD:-}" ] && [ "$ADMIN_PASSWORD" != admin ] || exit 3' || admin_check=$?
   [ "$admin_check" = 3 ] && admin_password_warning "unset or 'admin' in the API pod"
   [ -n "$append" ] && echo "Loading database fixtures (append - existing content is kept)..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
-    -- env SKIP_MERCURE_PUBLISH=true php bin/console doctrine:fixtures:load $append --no-interaction
+  # In a Job with its own memory limit, never the serving API pod (#229). Its own end-of-load flush can't reach Souin there and only logs.
+  local load=0
+  run_console_job "$track" SKIP_MERCURE_PUBLISH=true doctrine:fixtures:load $append --no-interaction || load=$?
+  if [ "$load" -ne 0 ]; then
+    echo "!!!! FIXTURES NOT LOADED: doctrine:fixtures:load exited ${load}; the HTTP cache was not flushed !!!!"
+    [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Fixtures not loaded::doctrine:fixtures:load exited ${load} - see the step log"
+    return "$load"
+  fi
 
   # The load changes data under Souin's cache, so flush all of it; one pod's flush reaches every pod in scaled mode's Redis.
-  echo "Flushing the HTTP cache..."
+  # Souin's admin API is the API pod's loopback, so this is the one command still run there (#229).
+  echo "Flushing the HTTP cache in the API pod (the load's own flush can't reach Souin from its Job)..."
   kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
     -- php bin/console silverback:api-components:purge-http-cache || return 1
   # The flush emptied the API cache, so warm it as after a deploy's flush (#174).
@@ -1756,7 +1828,7 @@ api_warm_max_time() {
 
 # Warms /_api in the API pod after a full flush, as its postStart does: gzip for SSR, then br for browsers (#175).
 # Each pass stops at api_warm_max_time seconds for the caller's $track (0 skips it); a failure only warns.
-# In scaled mode ($2 is the API service URL) it goes through the service, so every API pod renders a share (#85).
+# In scaled mode ($2 is the API service URL) it goes through the service from console Jobs, so every API pod renders a share (#85, #229).
 warm_api_cache() {
   local api_deploy="$1" base_url="${2:-http://localhost}" concurrency="${3:-2}" max_time="$(api_warm_max_time "${track:-stable}")" spread=""
   # Through a Service: a new connection per request, so kube-proxy spreads them across the pods (#196).
@@ -1765,6 +1837,14 @@ warm_api_cache() {
     return 0
   fi
   echo "Warming /_api through ${base_url} (gzip, then br; ${concurrency} at a time, at most ${max_time}s each)..."
+  # Through the Service (scaled mode) from console Jobs, not an API pod (#229); http://localhost is only Souin inside the pod.
+  if [ "$base_url" != "http://localhost" ]; then
+    run_console_job "${track:-stable}" silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" ${spread} --max-time="$max_time" --no-interaction \
+      || echo "WARNING: the gzip /_api warm failed; visitors' first requests render cold." >&2
+    run_console_job "${track:-stable}" silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" ${spread} --accept-encoding=br --max-time="$max_time" --no-interaction \
+      || echo "WARNING: the br /_api warm failed; visitors' first requests render cold." >&2
+    return 0
+  fi
   kubectl exec -n "$KUBE_NAMESPACE" "$api_deploy" \
     -- php bin/console silverback:api-components:warm-http-cache --base-url="$base_url" --concurrency="$concurrency" ${spread} --max-time="$max_time" --no-interaction \
     || echo "WARNING: the gzip /_api warm failed; visitors' first requests render cold." >&2

@@ -281,6 +281,17 @@ cronjobs:
         memory: 1536Mi
       limits:
         memory: 1536Mi
+  # Template for one-off console Jobs (run_console_job in k8s.sh: the fixture load, scaled mode's /_api warm; #229); never
+  # scheduled. 512Mi: the console's 256M memory_limit (10-app.ini) plus the binary and opcache; request = limit, as for image variants.
+  console:
+    enabled: true
+    activeDeadlineSeconds: 1800
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 512Mi
 
 # The deploy's one-off database Jobs (#180): templates/database-job.yaml, which helm never installs. k8s.sh renders it
 # alone from the live release's values with the new php image (plan, backup, migrate). An empty task renders nothing.
