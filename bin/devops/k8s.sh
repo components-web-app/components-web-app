@@ -1258,6 +1258,23 @@ check_admin_password() {
   return 0
 }
 
+# Warns when DOMAIN answers through Cloudflare but no Cloudflare purge is configured: its edge keeps immutable
+# /_nuxt files from earlier builds (#230). Only a warning: the request can fail, or the domain not point here yet.
+check_cdn_purge() {
+  case "${CADDY_CACHE_CDN_CONFIG:-}" in *provider*cloudflare*) return 0 ;; esac
+  [ -n "${DOMAIN:-}" ] || return 0
+  curl -ksS -o /dev/null -D - --max-time 10 "https://${DOMAIN}/" 2>/dev/null | grep -qi '^cf-ray:' || return 0
+  echo "##################################################################" >&2
+  echo "!!!! ${DOMAIN} IS BEHIND CLOUDFLARE, BUT NO CLOUDFLARE PURGE IS SET UP !!!!" >&2
+  echo "Cloudflare caches /_nuxt files for a year, and nothing purges them" >&2
+  echo "on deploy, so pages can load an earlier build's chunks and CSS." >&2
+  echo "Set CADDY_CACHE_CDN_CONFIG with 'provider cloudflare' and a Zone >" >&2
+  echo "Cache Purge token (docs: Cloudflare), then deploy." >&2
+  echo "##################################################################" >&2
+  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Cloudflare purge not configured::${DOMAIN} is behind Cloudflare; set CADDY_CACHE_CDN_CONFIG with provider cloudflare"
+  return 0
+}
+
 deploy() {
 	local track="${1-stable}" environment_name site_env_yaml pwa_min_default pwa_max_default
 	local pwa_cpu_request_default pwa_memory_request_default api_cpu_request_default
@@ -1265,6 +1282,7 @@ deploy() {
 	check_cdn_config || return 1
 	check_cache_config || return 1
 	check_admin_password
+	check_cdn_purge
 	apply_site_defaults "$track"
 	# Before anything changes in the cluster, so a bad name stops the deploy cold.
 	environment_name=$(cwa_environment_name "$track") || return 1
