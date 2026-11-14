@@ -105,7 +105,8 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 
 | Template | api-components-bundle | `@cwa/nuxt` |
 |---|---|---|
-| 2.0.0-alpha.55 (latest) | 2.0.0-alpha.40 | 2.0.0-alpha.32 |
+| 2.0.0-alpha.56 (latest) | 2.0.0-alpha.41 | 2.0.0-alpha.32 |
+| 2.0.0-alpha.55 | 2.0.0-alpha.40 | 2.0.0-alpha.32 |
 | 2.0.0-alpha.54 | 2.0.0-alpha.40 | 2.0.0-alpha.32 |
 | 2.0.0-alpha.53 | 2.0.0-alpha.40 | 2.0.0-alpha.32 |
 | 2.0.0-alpha.52 | 2.0.0-alpha.39 | 2.0.0-alpha.31 |

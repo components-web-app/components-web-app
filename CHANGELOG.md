@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.56](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.56) - 2026-11-14
+
 ### Upgrade notes
 
 - A site behind Cloudflare needs `CADDY_CACHE_CDN_CONFIG` with `provider cloudflare` and a Zone → Cache Purge token, so each deploy purges the edge: otherwise Cloudflare can keep serving an earlier build's `/_nuxt` chunks and CSS. Deploys now warn when the site answers through Cloudflare without it ([521d8b8](https://github.com/components-web-app/components-web-app/commit/521d8b8c4b9dfae2cb65201a069ac6a842bf9cdd), #230).
@@ -26,7 +28,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 - **e2e: minimatch 11.0.8** ([c244eeb](https://github.com/components-web-app/components-web-app/commit/c244eebf2624dd2574b8c8cedd1a1abcffce1db9)): an npm `overrides` entry (`minimatch: ^11.0.1`) in `e2e/package.json` fixes GHSA-g3hv-75wg-m249 under eslint and typescript-eslint, whose ^10 range has no fixed release; `npm audit` for e2e is clean (was 12 moderate). Test linting only, never shipped.
 - **Symfony 8.1.11** ([e3659c3](https://github.com/components-web-app/components-web-app/commit/e3659c3d535c8335a09a3f90adf77d60224798f0)): `composer audit` reported 18 advisories against 8.1.10 in config, filesystem, framework-bundle, http-client, http-foundation, http-kernel, routing, security-http, serializer, validator and yaml (among them HEAD requests bypassing `access_control` methods, the `private_ranges` trusted-proxies shortcut trusting IPv4-mapped IPv6 clients, and client-chosen hosts in generated URLs). Also API Platform 5.0.6, Doctrine ORM 3.7.6 and DBAL 4.5.1; no schema change. `composer audit` is now clean, with nothing in `config.audit.ignore`.
 - **node-forge 1.4.3 and fast-xml-parser 5.12.0** ([5adbd14](https://github.com/components-web-app/components-web-app/commit/5adbd1422ab3b36f30bef3a28cdd1364f89926d3)): the node-forge override moves to `^1.4.3` (GHSA-6889-vf6x-f3g5, GHSA-w4xr-hqv8-ch44, GHSA-6cv4-p8m7-4r25, GHSA-j8rw-jp99-435v; dev server only, via listhen), and fast-xml-parser 5.12.0 (GHSA-474x-hrwr-fgx4, low; the sitemap) comes in through the lockfile update.
-- **Accepted advisories reviewed** (2026-11-11): still accepted, build-only and not in `.output`: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release), glob 11.1.0 and 13.0.7 (GHSA-3g3m-2fjr-6pw4, moderate, fixed only in glob 14.0.2) and minimatch 5.1.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate, fixed only in minimatch 11.0.1). glob 10.5.0 and minimatch 9.0.9 have left the lockfile. The e2e test runner's ESLint tooling also has minimatch 10.2.6 (same advisory; `npm audit` there reports it, as eslint and typescript-eslint don't allow 11 yet); it runs only in the browser-test container.
+- **Accepted advisories reviewed** (2026-11-11): still accepted, build-only and not in `.output`: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release), glob 11.1.0 and 13.0.7 (GHSA-3g3m-2fjr-6pw4, moderate, fixed only in glob 14.0.2) and minimatch 5.1.9 and 10.2.6 (GHSA-g3hv-75wg-m249, moderate, fixed only in minimatch 11.0.1). glob 10.5.0 and minimatch 9.0.9 have left the lockfile. The e2e test runner's ESLint tooling now overrides minimatch to 11 (above), so nothing is accepted there.
 
 ## [2.0.0-alpha.55](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.55) - 2026-11-01
 
