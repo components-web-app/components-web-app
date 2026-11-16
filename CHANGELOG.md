@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Security
+
+- **app: glob 14.0.6 and minimatch 11.0.8** ([b42967c](https://github.com/components-web-app/components-web-app/commit/b42967c3dcb0cdb775cc98a43ab150874527e942)): `overrides` in `app/pnpm-workspace.yaml` (`glob@>=9 <14.0.2` → `^14.0.2`, `minimatch@>=5 <11.0.1` → `^11.0.1`) fix GHSA-3g3m-2fjr-6pw4 and GHSA-g3hv-75wg-m249 under workbox-build, @vercel/nft, archiver and jake, whose ranges allow no fixed release; both leave the accepted register. Still accepted: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release). Build-only, never in `.output`.
+
 ## [2.0.0-alpha.56](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.56) - 2026-11-14
 
 ### Upgrade notes
