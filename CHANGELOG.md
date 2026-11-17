@@ -6,6 +6,10 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Changed
+
+- **Bundle 2.0.0-alpha.42** ([e956861](https://github.com/components-web-app/components-web-app/commit/e956861570e576ea3c6423e1ac0557929c48585b)): signed-in `Page` GETs are `private, no-store` (`Page` joins `http_cache.personalised_resource_classes`; a site that sets that list adds `Page`); template pages carry `_metadata.pageDataCount` and `GET /_/routes` takes `pages[]`, for the module's admin lists. Needs API Platform 5.0.7 or later (locked at 5.0.8). Take `api/composer.lock` and `api/config/reference.php`; no migration. Also Doctrine ORM 3.8.0, DBAL 4.6.0, DoctrineBundle 3.4.2, Guzzle 8.5.2.
+
 ## [2.0.0-alpha.57](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.57) - 2026-11-16
 
 ### Upgrade notes
