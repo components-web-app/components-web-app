@@ -6,8 +6,21 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **`@cwa/nuxt` 2.0.0-alpha.33 (the admin UI kit) needs bundle 2.0.0-alpha.42** and Nuxt 4.6.4: take both in the same deploy ([16d7443](https://github.com/components-web-app/components-web-app/commit/16d74430615d14ca7b95a8c5844dbc3a6172909c)). Then, in a site's own `app/`:
+  - **Manager tabs:** `CwaUiFormButton`, `CwaUiFormSelect`, `CwaUiFormToggle`, `CwaUiFormSearchResource`, `CwaUiFormFile`, `CwaUiFormInput`, `CwaUiFormLabelWrapper` and the `CwaUiFormButtonPopover*` components are removed, with `useCwaResourceUpload`'s `bind`, `useCwaSelectInput` (`#cwa/composables/cwa-select-input`) and `usePopper`. Rewrite each tab as one `<CwaUiManagerTab>` of kit fields (`CwaUiInput`, `CwaUiSelect`, `CwaUiNumber`, `CwaUiToggle`, `CwaUiResourceSearch`, `CwaUiFileUpload`, `CwaUiLinkInput`), each bound by exactly one of `field="…"`, `:model` or `v-model`. Take the template's `app/app/cwa/components/*/admin/*.vue` for its own components. No `CwaUiTextarea` in a tab: multi-line text is edited on the page (`CwaUiInlineHandoff`, as the new `HtmlContent/admin/Content.vue`).
+  - **`CwaUiSelect`** takes one choice of string values; use `CwaUiMultiSelect` for several and `nullable` (optionally `noneLabel`) for a null option.
+  - **Spinner:** `#cwa/templates/components/utils/Spinner.vue` is now `ui/Spinner.vue` with no `show` prop: put it under a `v-if` in a `role="status"` element with screen-reader text (the template's `layouts/primary.vue` and `Collection.vue`).
+  - **Images:** `imageRef` on `withFile` / `useCwaFileField` is opt-in: pass a `useTemplateRef` of the `<img>`, and render it with `v-show`, not `v-if` on `loaded` (the template's `CollectionImage.vue`).
+  - **Rich text:** take `app/app/components/TipTapHtmlEditor.vue` (and `TipTap/`, `tiptap/`) from the template; links use the kit's `CwaUiLinkPopover`, and a component not yet added starts no Yjs session (the `collaboration_states` 500 on `__new__`).
+  - `@headlessui/vue`, `@popperjs/core` and `vue-input-autowidth` are no longer module dependencies: keep them in a site's own `package.json` only if it imports them (the template dropped `@headlessui/vue`).
+  - Browser tests: the admin menu toggle is a `button` named "Menu" (`e2e/tests/admin.spec.ts`).
+  - CORS must still allow `If-Match` and `X-CWA-Client-Id` and expose `Retry-After` and `ETag` (the template's `nelmio_cors.yaml` already does).
+
 ### Changed
 
+- **`@cwa/nuxt` 2.0.0-alpha.33** ([16d7443](https://github.com/components-web-app/components-web-app/commit/16d74430615d14ca7b95a8c5844dbc3a6172909c)): the admin UI kit (cwa-nuxt-module#236, #461). The template's manager tabs, TipTap editor, spinners and image components follow the module playground; titles are edited where they sit, an empty image shows the kit's placeholder in edit mode, and body text gets a Content tab that hands off to the editor on the page. The editor keeps the template's `config` prop and Underline button.
 - **Bundle 2.0.0-alpha.42** ([e956861](https://github.com/components-web-app/components-web-app/commit/e956861570e576ea3c6423e1ac0557929c48585b)): signed-in `Page` GETs are `private, no-store` (`Page` joins `http_cache.personalised_resource_classes`; a site that sets that list adds `Page`); template pages carry `_metadata.pageDataCount` and `GET /_/routes` takes `pages[]`, for the module's admin lists. Needs API Platform 5.0.7 or later (locked at 5.0.8). Take `api/composer.lock` and `api/config/reference.php`; no migration. Also Doctrine ORM 3.8.0, DBAL 4.6.0, DoctrineBundle 3.4.2, Guzzle 8.5.2.
 
 ## [2.0.0-alpha.57](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.57) - 2026-11-16
