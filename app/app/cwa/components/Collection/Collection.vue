@@ -59,7 +59,10 @@
           v-if="isLoadingCollection"
           class="absolute z-10 top-0 left-0 right-0 bottom-0 flex justify-center items-center"
         >
-          <Spinner :show="true" />
+          <span
+            role="status"
+            class="cwa:inline-flex"
+          ><Spinner /><span class="cwa:sr-only">Loading</span></span>
         </div>
       </Transition>
     </div>
@@ -77,7 +80,7 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs'
-import Spinner from '#cwa/templates/components/utils/Spinner.vue'
+import Spinner from '#cwa/templates/components/ui/Spinner.vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
 import { useCwaComponent, withCollection } from '#imports'
 

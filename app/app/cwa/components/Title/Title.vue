@@ -1,14 +1,24 @@
 <template>
   <h1 class="text-primary text-4xl font-bold">
-    {{ resource?.data?.title || 'No Title' }}
+    <LazyCwaUiInlineEdit
+      v-if="$cwa.admin.isEditing"
+      :model="title"
+      label="Title"
+      placeholder="Add a title"
+    />
+    <template v-else>
+      {{ resource?.data?.title || 'No Title' }}
+    </template>
   </h1>
 </template>
 
 <script setup lang="ts">
+import { toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { useCwaComponent } from '#imports'
+import { useCwaComponent, useCwaResourceModel } from '#imports'
 
 const props = defineProps<IriProp>()
-const { resource, exposeMeta } = useCwaComponent(props)
+const { resource, exposeMeta, $cwa } = useCwaComponent(props)
+const title = useCwaResourceModel<string>(toRef(props, 'iri'), 'title')
 defineExpose(exposeMeta)
 </script>

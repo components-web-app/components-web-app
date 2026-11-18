@@ -1,20 +1,17 @@
-<template>
-  <CwaUiFormLabelWrapper label="Label">
-    <CwaUiFormInput v-model="labelModel.model.value" />
-  </CwaUiFormLabelWrapper>
-</template>
-
 <script setup lang="ts">
-import {
-  useCwaResourceManagerTab,
-  useCwaResourceModel,
-} from '#imports'
+import { useCwaResourceManagerTab } from '#imports'
 
-const { exposeMeta, iri }
-  = useCwaResourceManagerTab({ name: 'Label' })
-
-const labelModel
-  = useCwaResourceModel<string>(iri, 'label')
+const { exposeMeta } = useCwaResourceManagerTab({ name: 'Label' })
 
 defineExpose(exposeMeta)
 </script>
+
+<template>
+  <CwaUiManagerTab>
+    <CwaUiInput
+      field="label"
+      label="Label"
+      width="lg"
+    />
+  </CwaUiManagerTab>
+</template>

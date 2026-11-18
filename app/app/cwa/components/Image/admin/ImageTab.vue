@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { useCwaResourceManagerTab, useCwaResourceUpload } from '#imports'
+import { useCwaResourceManagerTab } from '#imports'
 
-const { exposeMeta, iri } = useCwaResourceManagerTab({
+const { exposeMeta } = useCwaResourceManagerTab({
   name: 'Upload',
 })
-
-const { bind } = useCwaResourceUpload(iri)
 
 defineExpose(exposeMeta)
 </script>
 
 <template>
-  <div>
-    <CwaUiFormFile
-      v-bind="bind"
-      label="Upload Image"
+  <CwaUiManagerTab>
+    <CwaUiFileUpload
+      field="file"
+      label="Image"
+      accept="image/*"
     />
-  </div>
+  </CwaUiManagerTab>
 </template>

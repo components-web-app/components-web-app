@@ -1,9 +1,10 @@
 <template>
   <div class="relative grow flex flex-col">
-    <Spinner
-      :show="$cwa.resources.isLoading.value"
-      class="absolute top-4 right-4 z-50"
-    />
+    <span
+      v-if="$cwa.resources.isLoading.value"
+      role="status"
+      class="absolute top-4 right-4 z-50 text-white"
+    ><Spinner /><span class="sr-only">Loading</span></span>
     <header class="relative bg-stone-900 border-b border-b-stone-700">
       <div class="mx-auto flex max-w-7xl items-center p-6 md:justify-start lg:px-8">
         <nav class="space-x-5 flex w-full items-center">
@@ -64,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import Spinner from '#cwa/templates/components/utils/Spinner.vue'
+import Spinner from '#cwa/templates/components/ui/Spinner.vue'
 import { useCwa, useCwaLayout } from '#imports'
 import { useHead } from '#app'
 

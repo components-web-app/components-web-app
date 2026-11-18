@@ -9,7 +9,7 @@
       leave-to-class="transform opacity-0"
     >
       <NuxtImg
-        v-if="loaded"
+        v-show="loaded"
         ref="file"
         :src="contentUrl"
         :width="displayMedia?.width"
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { useTemplateRef } from 'vue'
 import { useCwa, useCwaFileField } from '#imports'
 
 const props = defineProps<{
@@ -39,5 +40,7 @@ await $cwa.fetchResource({
   path: props.iri,
 })
 
-const { contentUrl, displayMedia, handleLoad, loaded } = useCwaFileField(props, { imagineFilterName: 'thumbnail' })
+// v-show, not v-if: only this element's @load sets `loaded`; imageRef catches a cached image that loaded first (#267).
+const imageRef = useTemplateRef<unknown>('file')
+const { contentUrl, displayMedia, handleLoad, loaded } = useCwaFileField(props, { imagineFilterName: 'thumbnail', imageRef })
 </script>

@@ -1,59 +1,39 @@
 <script setup lang="ts">
-import { useCwaResourceManagerTab, useCwaResourceModel, useCwaSelect } from '#imports'
-import type { SelectOption } from '#cwa/composables/cwa-select-input'
+import { useCwaResourceManagerTab } from '#imports'
 
-const { exposeMeta, iri } = useCwaResourceManagerTab({
+const { exposeMeta } = useCwaResourceManagerTab({
   name: 'Collection',
 })
 
-const perPageModel = useCwaResourceModel<string | null>(iri, 'perPage')
-const resourceIriModel = useCwaResourceModel<string | null>(iri, 'resourceIri', {
-  debounceTime: 0,
-})
-const defaultQueryParametersModel = useCwaResourceModel<string | null>(iri, 'defaultQueryParameters', {
-  debounceTime: 0,
-})
-
-const categoryOptions: SelectOption[] = [
+const categoryOptions = [
   {
     label: 'Blog Articles',
     value: '/page_data/blog_article_datas',
   },
 ]
-if (!resourceIriModel.model.value) {
-  categoryOptions.unshift({
-    label: 'Please select',
-    value: undefined,
-  })
-}
-const resourceIriSelect = useCwaSelect(resourceIriModel.model, categoryOptions)
-
-const defaultQueryParametersSelect = useCwaSelect(defaultQueryParametersModel.model, [
-  {
-    label: 'None',
-    value: '',
-  },
-])
 
 defineExpose(exposeMeta)
 </script>
 
 <template>
-  <div class="flex space-x-4">
-    <CwaUiFormLabelWrapper label="Data Category">
-      <CwaUiFormSelect
-        v-model="resourceIriSelect.model.value"
-        :options="resourceIriSelect.options.value"
-      />
-    </CwaUiFormLabelWrapper>
-    <CwaUiFormLabelWrapper label="Filter">
-      <CwaUiFormSelect
-        v-model="defaultQueryParametersSelect.model.value"
-        :options="defaultQueryParametersSelect.options.value"
-      />
-    </CwaUiFormLabelWrapper>
-    <CwaUiFormLabelWrapper label="Items Per Page">
-      <CwaUiFormInput v-model.number="perPageModel.model.value" />
-    </CwaUiFormLabelWrapper>
-  </div>
+  <CwaUiManagerTab>
+    <CwaUiSelect
+      field="resourceIri"
+      label="Data category"
+      placeholder="Please select"
+      :options="categoryOptions"
+    />
+    <CwaUiSelect
+      field="defaultQueryParameters"
+      label="Filter"
+      nullable
+      :options="[]"
+    />
+    <CwaUiNumber
+      field="perPage"
+      label="Items per page"
+      :min="1"
+      noun="item"
+    />
+  </CwaUiManagerTab>
 </template>

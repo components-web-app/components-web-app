@@ -21,6 +21,11 @@
         :class="{ 'opacity-0': files.file.loaded }"
       />
     </div>
+    <LazyCwaUiEditPlaceholder
+      v-else-if="$cwa.admin.isEditing"
+      label="Add an image"
+      class="w-40 h-40"
+    />
     <div v-else>
       <div
         data-placeholder="true"
@@ -41,7 +46,7 @@ const props = defineProps<IriProp>()
 // The display filter; without it (SVG, or skipped over the memory budget) the module serves the original (#143).
 // imageRef lets the module mark an image loaded before hydration as loaded, so the placeholder fades (#146).
 const fileRef = useTemplateRef('file')
-const { exposeMeta, files } = useCwaComponent(props, [withFile({ imagineFilterName: 'general', imageRef: fileRef })])
+const { exposeMeta, files, $cwa } = useCwaComponent(props, [withFile({ imagineFilterName: 'general', imageRef: fileRef })])
 // Shown at general's width, or the viewport's when narrower; a plain <img>, as NuxtImg reads `sizes` as its own spec.
 const sizes = computed(() => {
   const width = files.file?.displayMedia?.width
