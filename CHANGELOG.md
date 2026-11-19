@@ -53,10 +53,74 @@ The module's admin form components are replaced by a new kit. A site's own manag
     - Edit a title and body text on the page, add an image, then sign out from the Menu.
     - There are no console errors.
 
+#### 3. Component config in each SFC, keyed styles and routes on create: `@cwa/nuxt` 2.0.0-alpha.36 with bundle 2.0.0-alpha.43
+
+Module alpha.36 needs bundle alpha.43, so deploy both together. Both steps are breaking: a site that only bumps the versions **loses its component names, descriptions and styles in the admin, and every stored style stops rendering**. The build reports config it can't read, but it doesn't report config that is still in `nuxt.config.ts`.
+
+1. **Dependencies.**
+   - API: in the php container, `composer update components-web-app/api-components-bundle` to 2.0.0-alpha.43. There's no migration. `POST /_/routes/generate` is gone: the module builds a route's path itself, and a new page or page data is created with its route in one request.
+   - App: `"@cwa/nuxt": "^2.0.0-alpha.36"`.
+2. **Find what needs changing.** From the repository root, run:
+   - `grep -nE '^    (resources|layouts|pages):' app/nuxt.config.ts`. Every hit is config to move (`pageData` stays where it is).
+   - `grep -rnE 'useCwaAutoClass|autoClass|getCurrentStyleName|resourcesConfig|setResourceMeta|layoutsConfig|pagesConfig|styles:' app/app`. Every `styles:` passed to `useCwaResource` or `useCwaComponent` has to move.
+   - `ls app/app/cwa/components/*/`. A folder that isn't a resource type (the template's old `ExampleForm/`) has to move, and so does a helper SFC that sits beside `<Type>.vue`.
+3. **The template's own components.** If the site still has these unchanged from the template, copy them over. If it has edited them, apply the same changes by hand ([48fbcf0](https://github.com/components-web-app/components-web-app/commit/48fbcf0dd37f4337183e30eee99d88053a987307) has the diff):
+   - `app/nuxt.config.ts`. The `resources`, `layouts` and `pages` blocks are gone.
+   - Under `app/app/cwa/`: `components/Title/Title.vue`, `HtmlContent/HtmlContent.vue`, `HtmlContent/ui/AltHtmlContent.vue`, `NavigationLink/NavigationLink.vue`, `Image/Image.vue`, `Collection/Collection.vue`, `Collection/admin/CollectionTab.vue` (with the new `app/app/collection/collection-sources.ts`), `layouts/primary.vue`, and the three files in `pages/`.
+   - Forms: `components/ExampleForm/` becomes `components/Form/ui/ExampleForm.vue`, and its helpers move to `components/Form/_parts/`. Delete the old folder.
+   - `cwa-manifest.json` (only for a site that runs create-cwa from its own checkout).
+4. **Move each config entry into its SFC.** `cwa.resources.<Type>` goes into `app/app/cwa/components/<Type>/<Type>.vue`, a layout into `app/app/cwa/layouts/<name>.vue` and a page template into `app/app/cwa/pages/<Name>.vue`, as one `defineCwaConfig({ … })` call:
+   - The argument is a single object literal: no variables, spreads, function calls or computed keys, and one call per file. Anything else is reported at build time and that file's config is ignored.
+   - Components take `name`, `description`, `icon`, `group`, `image`, `defaultData`, `styles` and `allowMultiple`. A UI variant (`<Type>/ui/<Variant>.vue`) takes only `name`, `styles` and `allowMultiple`. Layouts and pages take `name` and `styles`. Any other key is reported and ignored.
+   - `description` is inline Markdown (`**bold**`, `*italic*`, `` `code` ``, `[links](url)`, blank-line paragraphs), not HTML. Remove the `<p>` tags: the build strips HTML and warns.
+   - With auto-imports off, add `import { defineCwaConfig } from '#imports'`.
+5. **Folders now have fixed roles.**
+   - `<Type>/<Type>.vue` is the resource type, and nothing else configures it.
+   - `<Type>/ui/*.vue` are its UI variants.
+   - `<Type>/admin/*.vue` are its manager tabs.
+   - Any other SFC in the folder goes in `<Type>/_parts/`.
+6. **Forms are UI variants of the module's `Form`.** The module ships Form's config and a default renderer.
+   - Keep each form as `components/Form/ui/<Name>.vue`, with its helpers in `components/Form/_parts/`.
+   - Delete any Form renderer the site copied in. A site's own `Form/Form.vue` replaces both the module's renderer and its config.
+7. **Keyed styles.** `styles: { <key>: { label, classes } }`. The key is what content stores, so choose one that won't need renaming; the label can change freely.
+   - Before: `{ multiple: true, classes: { 'Black Background': ['bg-black …'] } }`. After: `allowMultiple: true` and `styles: { 'black-bg': { label: 'Black Background', classes: 'bg-black …' } }`.
+   - Layout and page `classes: { Label: '…' }` maps convert the same way.
+   - A style's classes are resolved when the page renders. Changing them in code changes every component using that style on the next deploy.
+   - `getCurrentStyleName(…) === 'X'` becomes `styleKeys.value.includes('<key>')`, with `styleKeys` from `useCwaComponent` or `useCwaResource`. `Title.vue` uses it for its Underlined style.
+   - `useCwaAutoClass`, `autoClass`, `$cwa.resourcesConfig`, `$cwa.setResourceMeta`, `$cwa.layoutsConfig` and `$cwa.pagesConfig` are removed, with no replacement. The layout and `ResourceLoader` apply the classes.
+8. **Best practice: categorise and restrict.** The template now follows these practices; follow them in the site's own components.
+   - **Give every component an `icon` and a `group`.** The add component dialog shows both, so editors can find a component by kind.
+     - Use a built-in kind where one fits: `heading`, `rich-text`, `image`, `gallery`, `video`, `hero`, `card`, `link`, `button`, `form`, `collection`, `articles`, `quote` and more (the full list is `COMPONENT_KIND_ICONS` in the module's [`src/admin-resources.ts`](https://github.com/components-web-app/cwa-nuxt-module/blob/main/src/admin-resources.ts)).
+     - Otherwise use `'lucide:<name>'`, or a `./icon.svg` drawn in `currentColor`.
+     - The template's groups are Text (Title, Body Text), Navigation (Link), Media (Image) and Lists (Collection). A group is free text: keep the list short, and the same across components.
+   - **Write descriptions for editors:** say what the component is for, in a sentence.
+   - **Restrict what goes where on the `CwaComponentGroup`:** `:allowed-components="[CwaComponentNames.NavigationLink]"` (by name, auto-imported, not by IRI) and `:max-components`. `layouts/primary.vue` allows only links in its navigation groups.
+   - **Restrict styles per UI variant:** a variant that declares `styles` offers only its own; one that declares none inherits the primary component's. Switching variant keeps only the stored keys the new variant defines. Declare `allowMultiple` only where combining styles makes sense (Body Text).
+   - **Drop `instantAdd`.** A component can now be filled in, files included, before it is added: a chosen file is kept in the browser and uploaded straight after Add. So `instantAdd` is no longer needed for images, and our sites don't use it. The template's Image no longer sets it. Keep it only for a component that has nothing to fill in before it is added.
+9. **Update stored values: each site migrates its own.** The template and the module ship no migration. Do this straight after the deploy, because until then the old code renders the old values. Once alpha.36 is live:
+   - Every stored `uiClassNames` entry (components, layouts and pages) must be `style:<key>`, using a key defined by the `styles` of the SFC that renders it. Any other value renders no classes.
+   - Every form's stored `uiComponent` must be the variant's full name: `ExampleForm` becomes `CwaComponentFormUiExampleForm`. Otherwise the form page shows only "The component 'CwaComponentExampleForm' … cannot be resolved"; it does **not** fall back to the module's default renderer. The template's fixture (`FormsScaffoldPart.php`) now stores the full name.
+   - **A site with a few styled components:** re-select each style, and each form's variant, in the admin.
+   - **A site with many:** script it. Map each type's old class string to its key, then `PATCH { uiClassNames: [...] }` to each resource as an admin, adding `?published=true` for a live publishable component so that no draft is created. For example, `{ HtmlContent: { 'bg-black border border-white p-2': 'black-bg' } }` maps an entry to `style:black-bg`. Tested on the template's dev stack: an old class string rendered nothing, and `PATCH …?published=true` with `{"uiClassNames":["style:black-bg"]}` brought the classes back on the anonymous page without creating a draft. `{"uiComponent":"CwaComponentFormUiExampleForm"}` brought the form back the same way. Layouts and pages weren't tested: check one first.
+10. **Check it:**
+    - `pnpm run build` passes with no `defineCwaConfig` reports.
+    - The greps in step 2 print nothing.
+    - The add component dialog shows each component's name, icon, group and description.
+    - Each component's style picker offers its keys.
+    - Pages that had styles still show them after step 9.
+    - The form page renders its variant.
+    - Creating a page with a path in its Routes tab creates the route too.
+    - There are no console errors.
+
 ### Changed
 
+- **`@cwa/nuxt` 2.0.0-alpha.36 and bundle 2.0.0-alpha.43** ([ff4c7ee](https://github.com/components-web-app/components-web-app/commit/ff4c7ee9a1e93267a522f3f545d5c9d224978649)): component config in each SFC with `defineCwaConfig` (cwa-nuxt-module#454), keyed styles, a page's route set before Create (api-components-bundle#594, #596), plus admin polish (drag reordering, phone bottom sheets, copy IDs, link menus in edit mode). The template follows ([48fbcf0](https://github.com/components-web-app/components-web-app/commit/48fbcf0dd37f4337183e30eee99d88053a987307)): config moved out of `nuxt.config.ts` into each SFC with an icon and group (Text, Navigation, Media, Lists), Markdown descriptions and keyed styles (Title gains Centred and Underlined); `ExampleForm` is now `Form/ui/ExampleForm.vue` and its fixture stores `CwaComponentFormUiExampleForm`; Image drops `instantAdd`; the layout's navigation groups allow links by `CwaComponentNames`.
 - **`@cwa/nuxt` 2.0.0-alpha.35** ([8ab510e](https://github.com/components-web-app/components-web-app/commit/8ab510e756898044799a9cf313bbbfd82d5d90e0); admin UI only: the add-component dialog lists every component, slide-overs close with a toast after saving, the header menu's ✕ closes it), alpha.34 ([46139e8](https://github.com/components-web-app/components-web-app/commit/46139e8abd4c2ca6543cf1acea33c09369804f83); alpha.34 only stops sign-out throwing in the page) and alpha.33 ([16d7443](https://github.com/components-web-app/components-web-app/commit/16d74430615d14ca7b95a8c5844dbc3a6172909c)): the admin UI kit (cwa-nuxt-module#236, #461). The template's manager tabs, TipTap editor, spinners and image components follow the module playground; titles are edited where they sit, an empty image shows the kit's placeholder in edit mode, and body text gets a Content tab that hands off to the editor on the page. The editor keeps the template's `config` prop and Underline button.
 - **Bundle 2.0.0-alpha.42** ([e956861](https://github.com/components-web-app/components-web-app/commit/e956861570e576ea3c6423e1ac0557929c48585b)): signed-in `Page` GETs are `private, no-store` (`Page` joins `http_cache.personalised_resource_classes`; a site that sets that list adds `Page`); template pages carry `_metadata.pageDataCount` and `GET /_/routes` takes `pages[]`, for the module's admin lists. Needs API Platform 5.0.7 or later (locked at 5.0.8). Take `api/composer.lock` and `api/config/reference.php`; no migration. Also Doctrine ORM 3.8.0, DBAL 4.6.0, DoctrineBundle 3.4.2, Guzzle 8.5.2.
+
+### Fixed
+
+- The Collection tab offers each page data collection by the IRI the API gives it, so its Data category shows the stored collection and saves under the `/_api` prefix (ported from cwa-nuxt-module `bb2457a3`; [48fbcf0](https://github.com/components-web-app/components-web-app/commit/48fbcf0dd37f4337183e30eee99d88053a987307)).
 
 ## [2.0.0-alpha.57](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.57) - 2026-11-16
 
