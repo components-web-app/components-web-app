@@ -8,15 +8,50 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
-- **`@cwa/nuxt` 2.0.0-alpha.35 (the admin UI kit, from alpha.33) needs bundle 2.0.0-alpha.42** and Nuxt 4.6.4: take both in the same deploy ([16d7443](https://github.com/components-web-app/components-web-app/commit/16d74430615d14ca7b95a8c5844dbc3a6172909c)). Then, in a site's own `app/`:
-  - **Manager tabs:** `CwaUiFormButton`, `CwaUiFormSelect`, `CwaUiFormToggle`, `CwaUiFormSearchResource`, `CwaUiFormFile`, `CwaUiFormInput`, `CwaUiFormLabelWrapper` and the `CwaUiFormButtonPopover*` components are removed, with `useCwaResourceUpload`'s `bind`, `useCwaSelectInput` (`#cwa/composables/cwa-select-input`) and `usePopper`. Rewrite each tab as one `<CwaUiManagerTab>` of kit fields (`CwaUiInput`, `CwaUiSelect`, `CwaUiNumber`, `CwaUiToggle`, `CwaUiResourceSearch`, `CwaUiFileUpload`, `CwaUiLinkInput`), each bound by exactly one of `field="…"`, `:model` or `v-model`. Take the template's `app/app/cwa/components/*/admin/*.vue` for its own components. No `CwaUiTextarea` in a tab: multi-line text is edited on the page (`CwaUiInlineHandoff`, as the new `HtmlContent/admin/Content.vue`).
-  - **`CwaUiSelect`** takes one choice of string values; use `CwaUiMultiSelect` for several and `nullable` (optionally `noneLabel`) for a null option.
-  - **Spinner:** `#cwa/templates/components/utils/Spinner.vue` is now `ui/Spinner.vue` with no `show` prop: put it under a `v-if` in a `role="status"` element with screen-reader text (the template's `layouts/primary.vue` and `Collection.vue`).
-  - **Images:** `imageRef` on `withFile` / `useCwaFileField` is opt-in: pass a `useTemplateRef` of the `<img>`, and render it with `v-show`, not `v-if` on `loaded` (the template's `CollectionImage.vue`).
-  - **Rich text:** take `app/app/components/TipTapHtmlEditor.vue` (and `TipTap/`, `tiptap/`) from the template; links use the kit's `CwaUiLinkPopover`, and a component not yet added starts no Yjs session (the `collaboration_states` 500 on `__new__`).
-  - `@headlessui/vue`, `@popperjs/core` and `vue-input-autowidth` are no longer module dependencies: keep them in a site's own `package.json` only if it imports them (the template dropped `@headlessui/vue`).
-  - Browser tests: the admin menu toggle is a `button` named "Menu" (`e2e/tests/admin.spec.ts`).
-  - CORS must still allow `If-Match` and `X-CWA-Client-Id` and expose `Retry-After` and `ETag` (the template's `nelmio_cors.yaml` already does).
+This release brings several module and bundle batches. Work through them in order. Each one says what to change, which template files to copy, and how to check it.
+
+#### 1. Bundle 2.0.0-alpha.42 (API)
+
+- In the php container: `composer update components-web-app/api-components-bundle`, so API Platform moves to 5.0.7 or later. Then take the template's `api/config/reference.php`. There's no migration.
+- If the site sets `http_cache.personalised_resource_classes` itself, add `Page` to the list. Otherwise a signed-in `Page` GET could be cached.
+- Deploy it with step 2: module 2.0.0-alpha.33 and later need bundle 2.0.0-alpha.42.
+
+#### 2. Admin UI kit: `@cwa/nuxt` 2.0.0-alpha.35 (from alpha.33)
+
+The module's admin form components are replaced by a new kit. A site's own manager tabs **won't keep working unchanged**: the removed components only show up at runtime as unknown elements, and `vue-tsc` doesn't catch them.
+
+1. **Dependencies.** Set `"@cwa/nuxt": "^2.0.0-alpha.35"` with Nuxt 4.6.4. `@headlessui/vue`, `@popperjs/core` and `vue-input-autowidth` are no longer module dependencies: drop them from `app/package.json` unless the site imports them itself.
+2. **Find what needs changing.** In `app/`, run:
+   `grep -rnE 'CwaUiForm|useCwaSelectInput|cwa-select-input|usePopper|utils/Spinner|CwaUiTextarea|filenameInputModel|useCwaResourceUpload' app`
+   Every hit needs changing. The one exception is `CwaUiTextarea`, which still exists: only a hit inside an `admin/` tab needs changing.
+3. **The template's own components.** If the site still has these unchanged from the template, copy them over:
+   - manager tabs: `app/app/cwa/components/Title/admin/Title.vue`, `NavigationLink/admin/LinkLabel.vue`, `NavigationLink/admin/LinkTab.vue`, `Image/admin/ImageTab.vue`, `Collection/admin/CollectionTab.vue`, and the new `HtmlContent/admin/Content.vue`
+   - components: `Title/Title.vue` (the title is edited where it sits), `Image/Image.vue` (an empty image shows the kit's placeholder in edit mode), `Collection/Collection.vue`, `app/app/components/CollectionImage.vue`, `app/app/cwa/layouts/primary.vue` and `app/app/components/TipTapHtmlEditor.vue`
+
+   If the site has edited any of them, apply the same changes by hand ([16d7443](https://github.com/components-web-app/components-web-app/commit/16d74430615d14ca7b95a8c5844dbc3a6172909c) has the diff).
+4. **The site's own manager tabs.** Rewrite each one:
+   - **Removed:** `CwaUiFormButton`, `CwaUiFormSelect`, `CwaUiFormToggle`, `CwaUiFormSearchResource`, `CwaUiFormFile`, `CwaUiFormInput`, `CwaUiFormLabelWrapper` and the `CwaUiFormButtonPopover*` components. Also removed: `useCwaResourceUpload`'s `bind` and `filenameInputModel`, `useCwaSelectInput` (`#cwa/composables/cwa-select-input`) and `usePopper`.
+   - **A tab is one `<CwaUiManagerTab>` of kit fields**, such as `CwaUiInput`, `CwaUiSelect`, `CwaUiMultiSelect`, `CwaUiNumber`, `CwaUiToggle`, `CwaUiResourceSearch`, `CwaUiFileUpload` and `CwaUiLinkInput`. The full set is in `node_modules/@cwa/nuxt/dist/runtime/templates/components/ui/README.md`.
+     - Each field takes its own `label`; there's no wrapper component.
+     - Each field is bound by **exactly one** of `field="…"` (the resource's field), `:model` or `v-model`.
+     - The template's `Title/admin/Title.vue` is the smallest example.
+   - **No `CwaUiTextarea` in a tab:** multi-line text is edited on the page. The tab hands off to it with `<CwaUiInlineHandoff field="…" label="…" />`, as in `HtmlContent/admin/Content.vue`.
+   - **`CwaUiSelect`** takes one choice of string values. For several values, use `CwaUiMultiSelect`. For a null option, add `nullable` (optionally with `noneLabel`).
+5. **Spinner.** `#cwa/templates/components/utils/Spinner.vue` is now `#cwa/templates/components/ui/Spinner.vue`. It takes `size` and has no `show` prop. Put it under a `v-if`, inside a `role="status"` element with screen-reader text, as in `layouts/primary.vue` and `Collection.vue`.
+6. **Images.** `imageRef` on `withFile` / `useCwaFileField` is opt-in.
+   - Pass a `useTemplateRef` of the `<img>`.
+   - Show the `<img>` with `v-show` on `loaded`, not `v-if`, as in `CollectionImage.vue`.
+7. **Rich text.** Take `app/app/components/TipTapHtmlEditor.vue`, keeping any edits to its `config` prop.
+   - Links now use the kit's `CwaUiLinkPopover`.
+   - A component that hasn't been added yet starts no Yjs session; this fixes the `collaboration_states` 500 on `__new__`.
+8. **Browser tests.** The admin menu toggle is a `button` named "Menu": `getByRole('button', { name: 'Menu', exact: true })`, as in `e2e/tests/admin.spec.ts`.
+9. **CORS.** This only matters for a site whose API is on another origin. It must still allow `If-Match` and `X-CWA-Client-Id`, and expose `Retry-After` and `ETag`. The template's `nelmio_cors.yaml` already does.
+10. **Check it:**
+    - `pnpm run build` passes.
+    - The grep in step 2 prints nothing (apart from any `CwaUiTextarea` outside an `admin/` tab).
+    - Signed in as an admin, open every component's manager, change a field in each tab, and save.
+    - Edit a title and body text on the page, add an image, then sign out from the Menu.
+    - There are no console errors.
 
 ### Changed
 
