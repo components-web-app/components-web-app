@@ -82,7 +82,14 @@
 import dayjs from 'dayjs'
 import Spinner from '#cwa/templates/components/ui/Spinner.vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { useCwaComponent, withCollection } from '#imports'
+import { useCwaComponent, withCollection, defineCwaConfig } from '#imports'
+
+defineCwaConfig({
+  name: 'Collection',
+  description: 'A paged, searchable list of blog articles.',
+  icon: 'articles',
+  group: 'Lists',
+})
 
 const props = defineProps<IriProp>()
 const {

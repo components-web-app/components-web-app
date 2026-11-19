@@ -25,12 +25,16 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { useCwaResource, useHtmlContent } from '#imports'
+import { useCwaResource, useHtmlContent, defineCwaConfig } from '#imports'
 import { useCustomHtmlComponent } from '../../../../composables/useCustomHtmlComponent'
 
 // Loaded only when an admin starts editing, so TipTap and ProseMirror (about 135 KB
 // gzipped) are not preloaded for every visitor (cwa-nuxt-module#332).
 const TipTapHtmlEditor = defineAsyncComponent(() => import('../../../../components/TipTapHtmlEditor.vue'))
+
+defineCwaConfig({
+  name: 'Alternative',
+})
 
 // Setup the resource
 const props = defineProps<IriProp>()

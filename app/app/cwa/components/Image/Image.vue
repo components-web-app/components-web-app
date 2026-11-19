@@ -40,7 +40,14 @@
 <script setup lang="ts">
 import type { IriProp } from '#cwa/composables/cwa-resource'
 import { computed, useTemplateRef } from 'vue'
-import { useCwaComponent, withFile } from '#imports'
+import { useCwaComponent, withFile, defineCwaConfig } from '#imports'
+
+defineCwaConfig({
+  name: 'Image',
+  description: 'A picture uploaded to the site, with **alt text** for screen readers',
+  icon: 'image',
+  group: 'Media',
+})
 
 const props = defineProps<IriProp>()
 // The display filter; without it (SVG, or skipped over the memory budget) the module serves the original (#143).

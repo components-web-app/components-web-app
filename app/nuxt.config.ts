@@ -72,59 +72,6 @@ export default defineNuxtConfig({
     '~/assets/css/tailwind.css',
   ],
   cwa: {
-    resources: {
-      Title: {
-        name: 'Title',
-        description: '<p>A simple title component for page headings.</p>'
-      },
-      // @cwa-if:navigation
-      NavigationLink: {
-        name: 'Link',
-        description: '<p>Use this component to display a link for a website user to click so they can visit another page or URL</p>'
-      },
-      // @cwa-end:navigation
-      // @cwa-if:html-content
-      HtmlContent: {
-        name: 'Body Text',
-        description: '<p>Easily create a body of text with the ability to style and format the content using themes in-keeping with your website.</p>'
-      },
-      // @cwa-end:html-content
-      // @cwa-if:image
-      Image: {
-        instantAdd: true
-      },
-      // @cwa-end:image
-      // @cwa-if:forms
-      ExampleForm: {
-        name: 'Example Form',
-        description: '<p>Demonstrates all Symfony form field types using the CWA form composables.</p>'
-      },
-      // @cwa-end:forms
-    },
-    layouts: {
-      Primary: {
-        name: 'Primary Layout',
-        classes: {
-          'Blue Background': ['bg-blue-600']
-        }
-      }
-    },
-    pages: {
-      PrimaryPageTemplate: {
-        name: 'Primary Page',
-        classes: {
-          'Big Text': ['text-2xl']
-        }
-      },
-      // @cwa-if:nested-pages
-      NestedTopicTemplate: {
-        name: 'Nested Topic Page'
-      },
-      NestedSubPageTemplate: {
-        name: 'Nested Sub-Page'
-      },
-      // @cwa-end:nested-pages
-    },
     pageData: {
       // @cwa-if:blog
       BlogArticleData: {

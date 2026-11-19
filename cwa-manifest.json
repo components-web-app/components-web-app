@@ -171,6 +171,7 @@
         "api/src/Entity/BlogArticleData.php",
         "api/config/serializer/BlogArticleData.yaml",
         "app/app/cwa/components/Collection/",
+        "app/app/collection/",
         "app/app/components/CollectionImage.vue",
         "app/app/components/CollectionPagination.vue",
         "app/app/components/CollectionSearch.vue",
@@ -188,7 +189,7 @@
     },
     "forms": {
       "exclude": [
-        "app/app/cwa/components/ExampleForm/",
+        "app/app/cwa/components/Form/",
         "api/src/Form/",
         "api/src/DataFixtures/Parts/FormsScaffoldPart.php"
       ]

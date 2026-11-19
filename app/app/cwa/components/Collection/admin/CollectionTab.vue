@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import { useCwaResourceManagerTab } from '#imports'
+import { collectionSourceOptions } from '~/collection/collection-sources'
 
-const { exposeMeta } = useCwaResourceManagerTab({
+const { exposeMeta, $cwa } = useCwaResourceManagerTab({
   name: 'Collection',
 })
 
-const categoryOptions = [
-  {
-    label: 'Blog Articles',
-    value: '/page_data/blog_article_datas',
-  },
-]
+const categoryOptions = ref<{ label: string, value: string }[]>([])
+
+onMounted(async () => {
+  categoryOptions.value = collectionSourceOptions(await $cwa.getApiDocumentation(), $cwa.pageDataConfig)
+})
 
 defineExpose(exposeMeta)
 </script>

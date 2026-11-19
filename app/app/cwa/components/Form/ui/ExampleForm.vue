@@ -259,9 +259,13 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
 import type { IriProp } from '#cwa/composables/cwa-resource'
-import { useCwaResource, useCwaForm, useCwaFormInput, useCwaFormRepeated, useCwaFormCollection } from '#imports'
-import FormChildEntry from './FormChildEntry.vue'
-import FormTextEntry from './FormTextEntry.vue'
+import { useCwaResource, useCwaForm, useCwaFormInput, useCwaFormRepeated, useCwaFormCollection, defineCwaConfig } from '#imports'
+import FormChildEntry from '../_parts/FormChildEntry.vue'
+import FormTextEntry from '../_parts/FormTextEntry.vue'
+
+defineCwaConfig({
+  name: 'Example Form',
+})
 
 // Returns a trailing icon name for text-like inputs: spinner while validating, tick when valid.
 function trailingIcon(field: { validating: { value: boolean }, valid: { value: boolean | null } }) {

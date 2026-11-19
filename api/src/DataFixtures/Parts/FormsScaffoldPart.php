@@ -20,7 +20,7 @@ class FormsScaffoldPart implements ScaffoldPartInterface
     {
         $formComponent = new Form();
         $formComponent->formType = ExampleFormType::class;
-        $formComponent->uiComponent = 'ExampleForm';
+        $formComponent->uiComponent = 'CwaComponentFormUiExampleForm';
         // Workaround: CwaFixtureBuilder::createPositions() does not call persistTimestampedFields
         // on components added via GroupBuilder::add() — only on their ComponentPosition.
         $formComponent->createdAt = new \DateTimeImmutable();

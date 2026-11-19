@@ -8,6 +8,14 @@
 
 <script setup lang="ts">
 import type { IriProp } from '#cwa/composables/cwa-resource'
+import { defineCwaConfig } from '#imports'
+
+defineCwaConfig({
+  name: 'Primary Page',
+  styles: {
+    'big-text': { label: 'Big Text', classes: 'text-2xl' },
+  },
+})
 
 const props = defineProps<IriProp>()
 </script>
