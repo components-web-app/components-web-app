@@ -59,6 +59,11 @@ umask 077
   # Multi-line values in double quotes, which compose reads whole.
   printf 'JWT_SECRET_KEY="%s"\n' "$(cat "$keydir/private.pem")"
   printf 'JWT_PUBLIC_KEY="%s"\n' "$(cat "$keydir/public.pem")"
+  echo "# Behind Cloudflare, Souin's cdn block, so writes and deploys purge the zone (docs: Cloudflare), e.g."
+  echo "# CADDY_CACHE_CDN_CONFIG=\"provider cloudflare"
+  echo "# api_key <Zone > Cache Purge token>"
+  echo "# zone_id <zone id>"
+  echo "# strategy hard\""
 } > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 

@@ -696,40 +696,6 @@ cleanup_tls_certificates() {
   done
 }
 
-# Souin panics on a `cdn` line with no value while helm says deployed (#116); an unexpanded $NAME fails here too.
-check_cdn_config() {
-  local line directive value bad=""
-  while IFS= read -r line; do
-    set -f
-    # shellcheck disable=SC2086
-    set -- $line
-    set +f
-    directive="${1:-}"
-    value="${2:-}"
-    case "$directive" in
-      api_key|email|hostname|network|provider|service_id|strategy|zone_id) ;;
-      *) continue ;;
-    esac
-    if [ -z "$value" ]; then
-      bad="${bad}  '$directive' has no value
-"
-    else
-      case "$value" in
-        '$'*) bad="${bad}  '$directive' is '$value', a variable reference that was never expanded
-" ;;
-      esac
-    fi
-  done <<EOF
-${CADDY_CACHE_CDN_CONFIG:-}
-EOF
-  if [ -n "$bad" ]; then
-    echo "CADDY_CACHE_CDN_CONFIG is incomplete, so php would not start:" >&2
-    printf '%s' "$bad" >&2
-    echo "Check the variable it refers to reaches this job (on GitLab, a Protected variable is only given to protected branches) and that its reference is expanded." >&2
-    return 1
-  fi
-}
-
 # Souin silently lets a later store or `timeout` block in CADDY_CACHE_EXTRA_CONFIG replace the Caddyfile's (#170).
 check_cache_config() {
   local line word bad="" timeout="${CWA_API_CADDY_CACHE_BACKEND_TIMEOUT:-}"
@@ -1255,23 +1221,6 @@ check_admin_password() {
     "") admin_password_warning "unset" ;;
     admin) admin_password_warning "'admin'" ;;
   esac
-  return 0
-}
-
-# Warns when DOMAIN answers through Cloudflare but no Cloudflare purge is configured: its edge keeps immutable
-# /_nuxt files from earlier builds (#230). Only a warning: the request can fail, or the domain not point here yet.
-check_cdn_purge() {
-  case "${CADDY_CACHE_CDN_CONFIG:-}" in *provider*cloudflare*) return 0 ;; esac
-  [ -n "${DOMAIN:-}" ] || return 0
-  curl -ksS -o /dev/null -D - --max-time 10 "https://${DOMAIN}/" 2>/dev/null | grep -qi '^cf-ray:' || return 0
-  echo "##################################################################" >&2
-  echo "!!!! ${DOMAIN} IS BEHIND CLOUDFLARE, BUT NO CLOUDFLARE PURGE IS SET UP !!!!" >&2
-  echo "Cloudflare caches /_nuxt files for a year, and nothing purges them" >&2
-  echo "on deploy, so pages can load an earlier build's chunks and CSS." >&2
-  echo "Set CADDY_CACHE_CDN_CONFIG with 'provider cloudflare' and a Zone >" >&2
-  echo "Cache Purge token (docs: Cloudflare), then deploy." >&2
-  echo "##################################################################" >&2
-  [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::warning title=Cloudflare purge not configured::${DOMAIN} is behind Cloudflare; set CADDY_CACHE_CDN_CONFIG with provider cloudflare"
   return 0
 }
 

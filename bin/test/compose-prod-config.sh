@@ -22,7 +22,7 @@ prod() { env -i PATH="$PATH" HOME="${HOME:-/tmp}" "$@" docker compose --env-file
 values() { for name in $REQUIRED; do printf ' %s=dummy-%s' "$name" "$name"; done; }
 
 # shellcheck disable=SC2046
-if prod $(values) SITE_HOST=example.com SITE_ALIASES=www.example.com > "$out" 2>&1; then
+if prod $(values) SITE_HOST=example.com SITE_ALIASES=www.example.com CADDY_CACHE_CDN_CONFIG=provider-cloudflare > "$out" 2>&1; then
   pass "renders with every required value"
 else
   fail "doesn't render with every required value: $(cat "$out")"
@@ -38,6 +38,7 @@ has 'MAILER_DSN: dummy-MAILER_DSN' "MAILER_DSN"
 has 'TRUSTED_HOSTS: ""' "TRUSTED_HOSTS left to the entrypoint"
 has 'MEDIA_STORAGE: local' "media is local by default (#211)"
 has 'target: /app/public/uploads' "media is in a volume, so it outlives php (#211)"
+has 'CADDY_CACHE_CDN_CONFIG: provider-cloudflare' "Souin's cdn block reaches php when set (#230)"
 has 'max-size: 10m' "log rotation"
 has 'condition: service_healthy' "php waits for a healthy database"
 if grep -q '2019' "$out"; then fail "port 2019 (Caddy admin) appears in the config"; else pass "port 2019 isn't published"; fi

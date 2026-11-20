@@ -17,6 +17,10 @@ for arg in "$@"; do
 done
 require_env_file
 SITE_HOST=$(env_value SITE_HOST)
+# Souin's cdn block, from .env.prod; with `provider cloudflare` the deploy purges the zone too (#230).
+CADDY_CACHE_CDN_CONFIG=$(env_value CADDY_CACHE_CDN_CONFIG)
+check_cdn_config || exit 1
+DOMAIN=$SITE_HOST check_cdn_purge
 
 # CWA_SERVER_PHP_IMAGE and CWA_SERVER_APP_IMAGE (both, as name@digest or name:tag): run the images CI built and
 # tested instead of building here. CWA_SERVER_REGISTRY_CONFIG is a DOCKER_CONFIG holding the pull's login.
@@ -67,6 +71,16 @@ fi
 # Cached pages reference the old /_nuxt files (#71).
 echo "➡️ Purging rendered HTML..."
 c exec -T php bin/console silverback:api-components:purge-rendered-html
+# Cloudflare also holds /_nuxt and /_api from earlier builds (#218, #230); a full flush also purges the whole zone.
+case "$CADDY_CACHE_CDN_CONFIG" in
+  *"provider cloudflare"*)
+    echo "➡️ Purging everything at Cloudflare..."
+    c exec -T php bin/console app:edge-cache:purge-everything || {
+      echo "➡️ The edge-only purge failed: flushing the HTTP cache instead, which also purges everything at Cloudflare..."
+      c exec -T php bin/console silverback:api-components:purge-http-cache
+    }
+    ;;
+esac
 warm_api
 
 status=0

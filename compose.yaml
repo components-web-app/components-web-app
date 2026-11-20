@@ -35,6 +35,8 @@ services:
       # Souin's store and backend timeout (#170), defaults otter and 30s; same pass-through rule.
       CADDY_CACHE_STORAGE:
       CADDY_CACHE_BACKEND_TIMEOUT:
+      # Souin's cdn block (default `strategy hard`); with `provider cloudflare` writes and deploys purge the zone (#108).
+      CADDY_CACHE_CDN_CONFIG:
       # Cloudflare purge pacing (#115), read by the patched Souin, which has its
       # own defaults; same pass-through rule.
       CLOUDFLARE_PURGE_PLAN:
