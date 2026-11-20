@@ -6,6 +6,15 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Bundle 2.0.0-alpha.44 and `@cwa/nuxt` 2.0.0-alpha.38 go together.** In the php container run `composer update components-web-app/api-components-bundle` (there's no migration), and set `"@cwa/nuxt": "^2.0.0-alpha.38"` in `app/package.json`. From now on a route's path must start with its nearest routed ancestor's path, then the page data class's `#[RoutePrefix]` if it has one, then `/`. A new route, a path change or a route link that breaks this is refused with a 422. Existing routes aren't re-checked until one of them is written. Fixture routes that set their path explicitly aren't checked, so make sure a site's own paths follow the rule.
+
+### Changed
+
+- api-components-bundle 2.0.0-alpha.44: route paths follow their parent's path, and moving a page or page data to a new parent rewrites its route and its descendants' routes, leaving redirects from the old paths ([c0ae92c](https://github.com/components-web-app/components-web-app/commit/c0ae92c3d51aa14f7a93f281d6bd7cc6f55eb730))
+- `@cwa/nuxt` 2.0.0-alpha.38: the admin shows a route's required start locked in front of the path input and follows a moved page in the address bar. Popovers close on a second click, and Remove from here no longer deletes the component from the page you just left ([e3bc64f](https://github.com/components-web-app/components-web-app/commit/e3bc64f97c9be1c4a46b51ae95c3b17a5c1d14fe))
+
 ## [2.0.0-alpha.58](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.58) - 2026-11-20
 
 ### Upgrade notes

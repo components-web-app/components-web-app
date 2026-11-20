@@ -123,6 +123,7 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 
 | `@cwa/nuxt` | Needs api-components-bundle at least | Why |
 |---|---|---|
+| 2.0.0-alpha.38 | 2.0.0-alpha.44 | Go together: the admin's path input shows the required start the bundle now enforces, and moving a page relies on the bundle rewriting its routes |
 | 2.0.0-alpha.36 | 2.0.0-alpha.43 | Go together: a new page or page data is created with its route in one request, and bundle alpha.43 removes `POST /_/routes/generate`, which older modules call |
 | 2.0.0-alpha.33 | 2.0.0-alpha.42 | The admin's page lists use `GET /_/routes?pages[]=…` and `_metadata.pageDataCount` |
 | 2.0.0-alpha.32 | 2.0.0-alpha.40 | Go together: bundle alpha.40 refuses non-admin content writes, which older modules' synchroniser makes, and needs `oldPassword` on an email change, which alpha.32's admin user page sends |
