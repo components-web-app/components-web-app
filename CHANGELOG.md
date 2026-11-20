@@ -112,6 +112,19 @@ Module alpha.36 needs bundle alpha.43, so deploy both together. Both steps are b
     - Creating a page with a path in its Routes tab creates the route too.
     - There are no console errors.
 
+#### 4. Deploy scripts: Cloudflare on one server, lower-case image names
+
+1. Copy these files together: `bin/lib/site.sh`, `bin/devops/k8s.sh`, `bin/devops/setup.sh`, `bin/devops/server-deploy.sh`, `bin/server/deploy.sh`, `bin/server/init`, `compose.yaml` and `.github/workflows/ci.yml`. `k8s.sh` now takes `check_cdn_config` and `check_cdn_purge` from `bin/lib/site.sh`, so an old `site.sh` fails the deploy.
+2. A single server behind Cloudflare: add Souin's cdn block to the server's `.env.prod` as one double-quoted, multi-line value (`bin/server/init` writes a commented example), then deploy:
+   ```
+   CADDY_CACHE_CDN_CONFIG="provider cloudflare
+   api_key <Zone > Cache Purge token>
+   zone_id <zone id>
+   strategy hard"
+   ```
+   Writes then purge their tags at Cloudflare, and each deploy purges the zone. Until it's set, keep the DNS records DNS-only or purge everything after each deploy.
+3. Check: the deploy log shows "Purging everything at Cloudflare..." and no Cloudflare warning.
+
 ### Changed
 
 - **`@cwa/nuxt` 2.0.0-alpha.36 and bundle 2.0.0-alpha.43** ([ff4c7ee](https://github.com/components-web-app/components-web-app/commit/ff4c7ee9a1e93267a522f3f545d5c9d224978649)): component config in each SFC with `defineCwaConfig` (cwa-nuxt-module#454), keyed styles, a page's route set before Create (api-components-bundle#594, #596), plus admin polish (drag reordering, phone bottom sheets, copy IDs, link menus in edit mode). The template follows ([48fbcf0](https://github.com/components-web-app/components-web-app/commit/48fbcf0dd37f4337183e30eee99d88053a987307)): config moved out of `nuxt.config.ts` into each SFC with an icon and group (Text, Navigation, Media, Lists), Markdown descriptions and keyed styles (Title gains Centred and Underlined); `ExampleForm` is now `Form/ui/ExampleForm.vue` and its fixture stores `CwaComponentFormUiExampleForm`; Image drops `instantAdd`; the layout's navigation groups allow links by `CwaComponentNames`.
@@ -120,6 +133,8 @@ Module alpha.36 needs bundle alpha.43, so deploy both together. Both steps are b
 
 ### Fixed
 
+- A single-server deploy behind Cloudflare purges the zone: compose passes `CADDY_CACHE_CDN_CONFIG` to php, and `bin/server/deploy.sh` checks it, warns when it's missing behind Cloudflare and purges after `purge-rendered-html` (upgrade note 4; [6983e41](https://github.com/components-web-app/components-web-app/commit/6983e41df734477e40a78e5aa8392c5db332fcf8)).
+- GitHub repositories with capitals in their name can push and pull their images: GHCR refuses capitals, so the scripts and `ci.yml`'s job containers lower-case the image name ([e2c30c9](https://github.com/components-web-app/components-web-app/commit/e2c30c9ae826c5e815ae7ded094040aaf279aa99)).
 - The Collection tab offers each page data collection by the IRI the API gives it, so its Data category shows the stored collection and saves under the `/_api` prefix (ported from cwa-nuxt-module `bb2457a3`; [48fbcf0](https://github.com/components-web-app/components-web-app/commit/48fbcf0dd37f4337183e30eee99d88053a987307)).
 
 ## [2.0.0-alpha.57](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.57) - 2026-11-16
