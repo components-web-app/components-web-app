@@ -64,6 +64,8 @@ fi
 images=""
 if [ "${CWA_CI_SERVER_BUILD:-}" != "true" ] && [ -n "${CI_REGISTRY_IMAGE:-}" ]; then
   tag=${TAG:-${CI_COMMIT_REF_SLUG:-main}}
+  # Registries refuse capitals, which a GitHub repository name can have.
+  CI_REGISTRY_IMAGE=$(printf '%s' "$CI_REGISTRY_IMAGE" | tr '[:upper:]' '[:lower:]')
   php_image="$CI_REGISTRY_IMAGE/php${CWA_CI_PHP_IMAGE_DIGEST:+@$CWA_CI_PHP_IMAGE_DIGEST}"
   app_image="$CI_REGISTRY_IMAGE/app${CWA_CI_APP_IMAGE_DIGEST:+@$CWA_CI_APP_IMAGE_DIGEST}"
   [ -n "${CWA_CI_PHP_IMAGE_DIGEST:-}" ] || php_image="$php_image:$tag"

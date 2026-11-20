@@ -3,6 +3,11 @@
 # echo the commands that are run
 [[ "$CWA_CI_TRACE" ]] && set -x
 
+# Registries refuse capitals, which a GitHub repository name can have (GitLab's is already lower case).
+if [[ -n "$CI_REGISTRY_IMAGE" ]]; then
+  CI_REGISTRY_IMAGE=$(printf '%s' "$CI_REGISTRY_IMAGE" | tr '[:upper:]' '[:lower:]')
+  export CI_REGISTRY_IMAGE
+fi
 export CI_APPLICATION_REPOSITORY=$CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
 export CI_APPLICATION_TAG=$CI_COMMIT_SHA
 

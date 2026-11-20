@@ -24,6 +24,7 @@ jobs:
     outputs:
       ref_slug: ${{ steps.vars.outputs.ref_slug }}
       env_slug: ${{ steps.vars.outputs.env_slug }}
+      registry_image: ${{ steps.vars.outputs.registry_image }}
     steps:
       - name: Compute CI variables
         id: vars
@@ -31,7 +32,9 @@ jobs:
         # interpolated into it.
         env:
           REF_NAME: ${{ github.ref_name }}
+        # GHCR refuses capitals, which a repository name can have; setup.sh lowercases the scripts' copy.
         run: |
+          echo "registry_image=ghcr.io/$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
           REF_SLUG=$(echo "$REF_NAME" | tr '[:upper:]/' '[:lower:]-' | sed 's/[^a-z0-9-]/-/g' | sed 's/-\+/-/g;s/^-//;s/-$//' | cut -c1-56)
           echo "ref_slug=$REF_SLUG" >> "$GITHUB_OUTPUT"
           echo "env_slug=review-${REF_SLUG}" >> "$GITHUB_OUTPUT"
@@ -114,7 +117,7 @@ jobs:
     needs: [setup, build-api]
     if: always() && needs.setup.result == 'success' && vars.CWA_CI_TEST_DISABLED != 'true' && needs.build-api.result != 'failure'
     container:
-      image: ghcr.io/${{ github.repository }}/php:${{ needs.setup.outputs.ref_slug }}
+      image: ${{ needs.setup.outputs.registry_image }}/php:${{ needs.setup.outputs.ref_slug }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -199,7 +202,7 @@ jobs:
     needs: [setup, build-api]
     if: always() && needs.setup.result == 'success' && vars.CWA_CI_TEST_DISABLED != 'true' && needs.build-api.result != 'failure'
     container:
-      image: ghcr.io/${{ github.repository }}/php:${{ needs.setup.outputs.ref_slug }}
+      image: ${{ needs.setup.outputs.registry_image }}/php:${{ needs.setup.outputs.ref_slug }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

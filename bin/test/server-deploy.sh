@@ -67,7 +67,8 @@ grep -q SECRET=keep /home/deploy/cwa/.env.prod || fail ".env.prod was changed or
 
 # With a registry: the pipeline's images by digest, a login only for the run, gone afterwards.
 digest=sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-out=$(run CI_REGISTRY=registry.test CI_REGISTRY_IMAGE=registry.test/g/p CI_REGISTRY_USER=ci-user CI_REGISTRY_PASSWORD=s3cret \
+# A GitHub repository name can have capitals; registries refuse them, so the images are lower-cased.
+out=$(run CI_REGISTRY=registry.test CI_REGISTRY_IMAGE=registry.test/G/P CI_REGISTRY_USER=ci-user CI_REGISTRY_PASSWORD=s3cret \
   CWA_CI_PHP_IMAGE_DIGEST=$digest TAG=main) || fail "image run: $out"
 case "$out" in *"php=registry.test/g/p/php@$digest app=registry.test/g/p/app:main"*) ;; *) fail "images: $out" ;; esac
 case "$out" in *"login -u ci-user --password-stdin registry.test pw=s3cret"*) ;; *) fail "registry login: $out" ;; esac
