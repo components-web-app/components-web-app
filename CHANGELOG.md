@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.58](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.58) - 2026-11-20
+
 ### Upgrade notes
 
 This release brings several module and bundle batches. Work through them in order. Each one says what to change, which template files to copy, and how to check it.
@@ -137,6 +139,10 @@ Module alpha.36 needs bundle alpha.43, so deploy both together. Both steps are b
 - A single-server deploy behind Cloudflare purges the zone: compose passes `CADDY_CACHE_CDN_CONFIG` to php, and `bin/server/deploy.sh` checks it, warns when it's missing behind Cloudflare and purges after `purge-rendered-html` (upgrade note 4; [6983e41](https://github.com/components-web-app/components-web-app/commit/6983e41df734477e40a78e5aa8392c5db332fcf8)).
 - GitHub repositories with capitals in their name can push and pull their images: GHCR refuses capitals, so the scripts and `ci.yml`'s job containers lower-case the image name ([e2c30c9](https://github.com/components-web-app/components-web-app/commit/e2c30c9ae826c5e815ae7ded094040aaf279aa99)).
 - The Collection tab offers each page data collection by the IRI the API gives it, so its Data category shows the stored collection and saves under the `/_api` prefix (ported from cwa-nuxt-module `bb2457a3`; [48fbcf0](https://github.com/components-web-app/components-web-app/commit/48fbcf0dd37f4337183e30eee99d88053a987307)).
+
+### Security
+
+- No new advisories: `pnpm audit` and `composer audit` are clean. Still accepted: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release). Build-only, never in `.output`.
 
 ## [2.0.0-alpha.57](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.57) - 2026-11-16
 
