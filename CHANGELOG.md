@@ -8,12 +8,19 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
-- **The php image moves to PHP 8.6.** `cwa-php-base` for this release is PHP 8.6.0, where alpha.59's was 8.5.13. A project with its own PHP code or `composer.json` constraints should check them against 8.6 before deploying. APCu and xdebug have no 8.6 release yet, so they're built from pinned upstream commits (#234) ([fce699a](https://github.com/components-web-app/components-web-app/commit/fce699a992d49ed60b2b602bca14ad9e31c119dd))
 - **Scaled-mode sites (`CWA_CI_API_SCALED_*`) should take this release's `bin/devops/k8s.sh`.** If a scaled-mode site serves an earlier build's pages after a deploy (unstyled, or old content), press *Purge all cached data*. A pod log line `redis: connection pool: failed to dial` near the deploy's flush is the sign; this release prevents it.
+
+### Changed
+
+- The php image stays on PHP 8.5: `api/Dockerfile` builds from `dunglas/frankenphp:builder-php8.5` and `:php8.5`, because `:latest` moved to PHP 8.6, which the bundle's dependencies and APCu don't support yet (#234) ([5505018](https://github.com/components-web-app/components-web-app/commit/5505018d5e4c42c1535635d3c3d8035e0fe39f65))
 
 ### Fixed
 
 - Scaled mode: a full cache flush (deploy, fixture load, image variants, maintenance window) could silently miss Redis when Souin's Redis client timed out, leaving the previous build's pages cached with `/_nuxt` links that 404. Redis is now emptied directly, and its reply checked, before the flush that purges Cloudflare (#233) ([c2256aa](https://github.com/components-web-app/components-web-app/commit/c2256aa4be408888d470bfb8fe007242847bc20c))
+
+### Security
+
+- No new advisories: `pnpm audit` and `composer audit` are clean. Still accepted: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release). Build-only, never in `.output`.
 
 ## [2.0.0-alpha.59](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.59) - 2026-11-20
 
