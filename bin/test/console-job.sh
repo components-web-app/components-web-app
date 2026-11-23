@@ -40,6 +40,8 @@ case "$*" in
   *"get deploy"*"name=cwa,"*) echo "deployment.apps/$STUB_RELEASE-cwa" ;;
   *"get pods"*"{{if .metadata.deletionTimestamp}}"*) ;;
   *"get pods"*"name=cwa,"*) echo "pod/$STUB_RELEASE-cwa-new" ;;
+  *"get pods"*"name=cwa-redis,"*) echo "pod/$STUB_RELEASE-cwa-redis-1" ;;
+  *"FLUSHDB ASYNC"*) if [ -n "${STUB_REDIS_FAIL:-}" ]; then echo "Could not connect to Redis"; else echo OK; fi ;;
 esac
 exit 0
 STUB
@@ -136,9 +138,18 @@ expect scaled '"silverback:api-components:warm-http-cache","--base-url=http://re
 expect scaled '"--requests-per-connection=1","--accept-encoding=br","--max-time=60"'
 refuse scaled 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:warm-http-cache'
 order scaled 'purge-http-cache' 'warm-http-cache'
+# Redis is emptied directly before Souin's flush (#233).
+expect scaled 'exec -n ns pod/rel-cwa-redis-1 -- sh -c redis-cli -a "$REDIS_PASSWORD" --no-auth-warning FLUSHDB ASYNC'
+order scaled 'FLUSHDB ASYNC' 'purge-http-cache'
 if [ "$(grep -c 'create -n ns -f ' "$DIR/log")" -ne 3 ]; then
   fail scaled "expected 3 console Jobs (load, gzip, br), got $(grep -c 'create -n ns -f ' "$DIR/log")"
 fi
+
+# A failed Redis flush fails the load's job before the warm (#233).
+run rel 'load_fixtures' "CWA_CI_API_SCALED_PRODUCTION=true STUB_REDIS_FAIL=1"
+exited redis-fail 1
+said redis-fail 'SCALED MODE: REDIS WAS NOT FLUSHED'
+refuse redis-fail 'warm-http-cache'
 
 if [ "$failures" -ne 0 ]; then
   echo "$failures checks failed." >&2

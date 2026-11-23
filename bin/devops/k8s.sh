@@ -1528,10 +1528,32 @@ persist_environment_url() {
 # still terminating after a rollout, whose own cache a flush would empty instead of scaled mode's Redis (#85).
 api_ready_pod() {
   local pod
-  pod=$(kubectl get pods -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=cwa,app.kubernetes.io/instance=$1" \
+  pod=$(kubectl get pods -n "$KUBE_NAMESPACE" -l "app.kubernetes.io/name=${3:-cwa},app.kubernetes.io/instance=$1" \
     -o go-template='{{range .items}}{{$name := .metadata.name}}{{if not .metadata.deletionTimestamp}}{{range .status.conditions}}{{if and (eq .type "Ready") (eq .status "True")}}pod/{{$name}}{{"\n"}}{{end}}{{end}}{{end}}{{end}}' 2>/dev/null \
     | sed -n 1p)
   printf '%s' "${pod:-$2}"
+}
+
+# A full HTTP cache flush in a ready API pod. In scaled mode Redis is emptied directly first: Souin's /flush gives up
+# silently on a Redis timeout and still answers 204, which left a site serving the previous build's pages (#233).
+# Redis first, so the flush's Cloudflare purge comes after it and the edge can't refetch a stale copy.
+flush_http_cache() {
+  local track="$1" api_pod="$2" release_name="$3" redis_pod reply
+  if api_scaled "$track"; then
+    redis_pod=$(api_ready_pod "$release_name" "" cwa-redis)
+    reply=""
+    [ -n "$redis_pod" ] && reply=$(kubectl exec -n "$KUBE_NAMESPACE" "$redis_pod" -- \
+      sh -c 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning FLUSHDB ASYNC' 2>&1)
+    if [ "$reply" != "OK" ]; then
+      echo "!!!! SCALED MODE: REDIS WAS NOT FLUSHED: the shared cache may still hold the previous build's responses !!!!"
+      echo "Redis pod: '${redis_pod}'; reply: '${reply}'. Flush it by hand: kubectl exec -n $KUBE_NAMESPACE <redis pod> -- sh -c 'redis-cli -a \"\$REDIS_PASSWORD\" --no-auth-warning FLUSHDB ASYNC'"
+      [ "${GITHUB_ACTIONS:-}" = "true" ] && echo "::error title=Redis not flushed::the scaled-mode cache flush failed; see the step log"
+      kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- php bin/console silverback:api-components:purge-http-cache
+      return 1
+    fi
+    echo "Scaled mode: Redis flushed."
+  fi
+  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- php bin/console silverback:api-components:purge-http-cache
 }
 
 # Waits (up to 120s) until no API pod is terminating. Right after a rollout the service still sends some connections to
@@ -1656,8 +1678,7 @@ load_fixtures() {
   # The load changes data under Souin's cache, so flush all of it; one pod's flush reaches every pod in scaled mode's Redis.
   # Souin's admin API is the API pod's loopback, so this is the one command still run there (#229).
   echo "Flushing the HTTP cache in the API pod (the load's own flush can't reach Souin from its Job)..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
-    -- php bin/console silverback:api-components:purge-http-cache || return 1
+  flush_http_cache "$track" "$api_pod" "$release_name" || return 1
   # The flush emptied the API cache, so warm it as after a deploy's flush (#174).
   warm_api_cache_for "$track" "$api_pod" "$release_name"
 }
@@ -1724,8 +1745,8 @@ purge_rendered_html() {
         api_warm_surge_start "$(cwa_fullname "$release_name")" "$api_deploy"
       fi
       echo "$flush"
-      kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
-        -- php bin/console silverback:api-components:purge-http-cache
+      # A failed Redis flush is loud but the release is live, so the job's later steps still run (as #193).
+      flush_http_cache "$track" "$api_pod" "$release_name" || true
       # The flush empties the new pod's postStart warm, so a visitor's first page would miss on every /_api fetch (#175).
       if api_scaled "$track"; then
         warm_api_cache_for "$track" "$api_pod" "$release_name" "${CWA_CI_API_WARM_SURGE:-0}"
@@ -1905,12 +1926,13 @@ generate_image_variants() {
   echo "Generated ${total} image variants in ${runs} Job(s)."
   if [[ "$total" -gt 0 ]]; then
     echo "Purging the HTTP cache, so cached API responses list the new variants..."
-    local api_pod
+    local api_pod flushed=0
     api_pod=$(api_ready_pod "$release_name" "$api_deploy")
-    kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" \
-      -- php bin/console silverback:api-components:purge-http-cache
+    flush_http_cache "$track" "$api_pod" "$release_name" || flushed=1
     warm_api_cache_for "$track" "$api_pod" "$release_name"
   fi
+  # The variants were fine but the scaled-mode Redis flush wasn't (flush_http_cache printed why): fail the job.
+  [[ "$status" -eq 0 && "${flushed:-0}" -ne 0 ]] && return 1
 
   if [[ "$status" -ne 0 ]]; then
     case "$status" in
@@ -2506,8 +2528,7 @@ finish_maintenance_window() {
   local api_pod
   api_pod=$(api_ready_pod "$name" "$api_deploy")
   echo "Flushing the HTTP cache before maintenance ends..."
-  kubectl exec -n "$KUBE_NAMESPACE" "$api_pod" -- php bin/console silverback:api-components:purge-http-cache \
-    || { database_guard_failed; return 1; }
+  flush_http_cache "$track" "$api_pod" "$name" || { database_guard_failed; return 1; }
   warm_api_cache_for "$track" "$api_pod" "$name"
   maintenance_command "$name" off || { echo "❌ Could not turn maintenance off." >&2; database_guard_failed; return 1; }
   rm -f "$MAINTENANCE_NOTICE"

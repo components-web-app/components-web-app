@@ -20,7 +20,7 @@ echo "Sourcing $K8S with $K8S_SHELL."
 DIR=$(mktemp -d)
 trap 'rm -rf "$DIR"' EXIT
 mkdir "$DIR/bin"
-# Records every call; answers the lookups purge_rendered_html makes. The API reports 4 ready pods.
+# Records every call; answers the lookups purge_rendered_html makes. The API reports 4 ready pods; STUB_REDIS_FAIL fails the Redis flush.
 cat >"$DIR/bin/kubectl" <<'STUB'
 #!/bin/sh
 echo "kubectl $*" >>"$STUB_LOG"
@@ -34,6 +34,8 @@ case "$*" in
   *"get pods"*"job-name="*) echo 0 ;;
   *"get pods"*"{{if .metadata.deletionTimestamp}}"*) ;;
   *"get pods"*"name=cwa,"*) echo "pod/rel-cwa-new" ;;
+  *"get pods"*"name=cwa-redis,"*) echo "pod/rel-cwa-redis-1" ;;
+  *"FLUSHDB ASYNC"*) if [ -n "${STUB_REDIS_FAIL:-}" ]; then echo "Could not connect to Redis"; else echo OK; fi ;;
   *"exec"*" curl "*) printf 'HTTP/1.1 200 OK\r\nCache-Status: %s\r\n\r\n' "$STUB_CACHE_STATUS" ;;
   *"app:edge-cache:purge-everything"*) [ -z "${STUB_EDGE_FAIL:-}" ] || exit 1 ;;
 esac
@@ -114,6 +116,22 @@ order surge '"minReplicas":2' ' curl '
 said surge 'the API cache is shared in Redis'
 quiet surge 'NOT SHARED'
 succeeded surge
+# Redis is emptied directly, before Souin's flush (whose Cloudflare purge must follow it), from a ready Redis pod (#233).
+expect surge 'exec -n ns pod/rel-cwa-redis-1 -- sh -c redis-cli -a "$REDIS_PASSWORD" --no-auth-warning FLUSHDB ASYNC'
+order surge 'FLUSHDB ASYNC' 'purge-http-cache'
+order surge '"minReplicas":4' 'FLUSHDB ASYNC'
+said surge 'Scaled mode: Redis flushed.'
+quiet surge 'REDIS WAS NOT FLUSHED'
+
+# Redis not flushed: loud, Souin's flush still runs, and the live deploy's job carries on (#233).
+run "CWA_CI_API_SCALED_PRODUCTION=true STUB_REDIS_FAIL=1"
+said redis-fail 'SCALED MODE: REDIS WAS NOT FLUSHED'
+said redis-fail "reply: 'Could not connect to Redis'"
+expect redis-fail 'purge-http-cache'
+expect redis-fail '"--base-url=http://rel-cwa"'
+succeeded redis-fail
+run "CWA_CI_API_SCALED_PRODUCTION=true STUB_REDIS_FAIL=1 GITHUB_ACTIONS=true"
+said redis-fail-github '::error title=Redis not flushed::'
 
 # Not a Redis hit (each pod's own store, or Redis down): loud, but the live deploy's job carries on (#193).
 run "CWA_CI_API_SCALED_PRODUCTION=true" "Souin; fwd=uri-miss; stored; key=GET-x; detail=OTTER"
@@ -149,6 +167,7 @@ run ""
 expect single 'purge-rendered-html'
 expect single 'exec -n ns pod/rel-cwa-new -- php bin/console silverback:api-components:purge-rendered-html'
 refuse single 'purge-http-cache'
+refuse single 'FLUSHDB'
 refuse single 'patch hpa'
 refuse single 'requests-per-connection'
 refuse single ' curl '
@@ -179,6 +198,7 @@ said cloudflare-single "the new pod warms /_api before it's ready"
 # The edge purge failing falls back to the full flush (which purges Cloudflare through Souin) and the warm.
 run "CDN_CLOUDFLARE=1 STUB_EDGE_FAIL=1"
 expect cloudflare-fallback 'purge-http-cache'
+refuse cloudflare-fallback 'FLUSHDB'
 expect cloudflare-fallback 'warm-http-cache'
 said cloudflare-fallback "The edge-only purge failed"
 
