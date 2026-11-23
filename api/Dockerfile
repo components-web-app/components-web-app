@@ -6,7 +6,8 @@
 # cwa_php_base builds it from source (--build-arg CWA_PHP_BASE=cwa_php_base), for projects that change api/frankenphp/{souin,storages,caddy}.
 ARG CWA_PHP_BASE=ghcr.io/components-web-app/cwa-php-base:2.0.0-alpha.59
 
-FROM dunglas/frankenphp:builder AS builder
+# PHP 8.5 until the bundle drops ocramius/package-versions, which has no PHP 8.6 release (#234).
+FROM dunglas/frankenphp:builder-php8.5 AS builder
 
 # Copy xcaddy in the builder image
 COPY --from=caddy:builder /usr/bin/xcaddy /usr/bin/xcaddy
@@ -69,7 +70,8 @@ RUN CGO_ENABLED=1 \
 	--with github.com/components-web-app/components-web-app/api/frankenphp/caddy/queryallowlist=/tmp/queryallowlist
 
 # Published as cwa-php-base by publish-php-base.yml (#208): nothing project-specific in this stage.
-FROM dunglas/frankenphp:latest AS cwa_php_base
+# Same PHP minor as the builder (#234).
+FROM dunglas/frankenphp:php8.5 AS cwa_php_base
 COPY --from=builder --link /usr/local/bin/frankenphp /usr/local/bin/frankenphp
 
 # apt retries, timeouts and no pipelining for every apt call, install-php-extensions' too; retry-fetch bounds each step (#176).
@@ -94,22 +96,9 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Uncached, about 4 minutes; a retry skips the extensions already installed.
 # brotli: warm-http-cache --accept-encoding=br decodes br with it, or warms only the routes (#175).
 # xdebug is built here but left disabled; frankenphp_dev enables it with no network (#208).
-# APCu and xdebug have no PHP 8.6 release yet: pinned master commits, built with phpize (PECL rejects their -dev versions, #234).
-# hadolint ignore=DL3008,SC2086
-RUN set -eux; \
-	saved="$(apt-mark showmanual)"; \
-	retry-fetch 240 sh -c "apt-get update && apt-get install --no-install-recommends -y $PHPIZE_DEPS curl ca-certificates"; \
-	for src in krakjoe/apcu@fb2c942552a3f5dab7f4dea4afb5cf0831222c57 xdebug/xdebug@5e19866c1766e38c527f9f94faa170370dc4209f; do \
-		dir="/tmp/ext/${src%@*}"; mkdir -p "$dir"; \
-		retry-fetch 120 sh -c "rm -rf '$dir'/* && curl -fsSL https://codeload.github.com/${src%@*}/tar.gz/${src#*@} | tar -xz -C '$dir' --strip-components=1"; \
-		(cd "$dir" && phpize && ./configure && make -j"$(nproc)" && make install); \
-	done; \
-	docker-php-ext-enable apcu; \
-	apt-mark auto '.*' >/dev/null; apt-mark manual $saved >/dev/null; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	rm -rf /tmp/ext /var/lib/apt/lists/*
 RUN retry-fetch 480 install-php-extensions \
 		@composer \
+		apcu \
 		intl \
 		opcache \
 		zip \
@@ -118,7 +107,9 @@ RUN retry-fetch 480 install-php-extensions \
 		gd \
 		ffi \
 		brotli \
-		pdo_pgsql
+		pdo_pgsql \
+		xdebug \
+	&& rm "$PHP_INI_DIR/conf.d/docker-php-ext-xdebug.ini"
 
 # libvips, the imagine driver (#141): no ImageMagick, PDF or SVG loaders for uploads, two threads per image,
 # and glibc settings that hand freed image buffers back to the OS. All overridable at runtime.
