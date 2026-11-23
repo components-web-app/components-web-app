@@ -8,6 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- **The php image moves to PHP 8.6.** `cwa-php-base` for this release is PHP 8.6.0, where alpha.59's was 8.5.13. A project with its own PHP code or `composer.json` constraints should check them against 8.6 before deploying. APCu and xdebug have no 8.6 release yet, so they're built from pinned upstream commits (#234) ([fce699a](https://github.com/components-web-app/components-web-app/commit/fce699a992d49ed60b2b602bca14ad9e31c119dd))
 - **Scaled-mode sites (`CWA_CI_API_SCALED_*`) should take this release's `bin/devops/k8s.sh`.** If a scaled-mode site serves an earlier build's pages after a deploy (unstyled, or old content), press *Purge all cached data*. A pod log line `redis: connection pool: failed to dial` near the deploy's flush is the sign; this release prevents it.
 
 ### Fixed
