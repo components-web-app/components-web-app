@@ -6,6 +6,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Scaled-mode sites (`CWA_CI_API_SCALED_*`) should take this release's `bin/devops/k8s.sh`.** If a scaled-mode site serves an earlier build's pages after a deploy (unstyled, or old content), press *Purge all cached data*. A pod log line `redis: connection pool: failed to dial` near the deploy's flush is the sign; this release prevents it.
+
+### Fixed
+
+- Scaled mode: a full cache flush (deploy, fixture load, image variants, maintenance window) could silently miss Redis when Souin's Redis client timed out, leaving the previous build's pages cached with `/_nuxt` links that 404. Redis is now emptied directly, and its reply checked, before the flush that purges Cloudflare (#233) ([c2256aa](https://github.com/components-web-app/components-web-app/commit/c2256aa4be408888d470bfb8fe007242847bc20c))
+
 ## [2.0.0-alpha.59](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.59) - 2026-11-20
 
 ### Upgrade notes
