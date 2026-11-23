@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.60](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.60) - 2026-11-23
+
 ### Upgrade notes
 
 - **Scaled-mode sites (`CWA_CI_API_SCALED_*`) should take this release's `bin/devops/k8s.sh`.** If a scaled-mode site serves an earlier build's pages after a deploy (unstyled, or old content), press *Purge all cached data*. A pod log line `redis: connection pool: failed to dial` near the deploy's flush is the sign; this release prevents it.
