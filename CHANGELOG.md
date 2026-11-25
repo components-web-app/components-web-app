@@ -6,6 +6,19 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+### Upgrade notes
+
+- **Bundle 2.0.0-alpha.46.** In the php container run `composer update components-web-app/api-components-bundle -W` (it needs cocur/slugify 4.8) and take the migration `api/migrations/Version20261125110101.php` (component groups' allowed UI variants). The bundle now secures the user API and has its own role hierarchy, so:
+  - remove `security:` from the operations in `api/src/Entity/User.php` (the bundle's checks are ANDed with any the app sets; keep one only to restrict further);
+  - remove `publishable.permission` and `routable_security` from `config/packages/silverback_api_components.yaml` if they are `is_granted('ROLE_ADMIN')`: both now default to `is_granted('ROLE_CMS_ADMIN')`, which `ROLE_ADMIN` and `ROLE_SUPER_ADMIN` include;
+  - a site that set no `routable_security` had pages no live route reaches readable by anyone; they now need `ROLE_CMS_ADMIN`. Set `routable_security: ~` to keep them public.
+
+### Changed
+
+- api-components-bundle 2.0.0-alpha.46: new `ROLE_CMS_ADMIN` (content) and `ROLE_USER_ADMIN` (users) roles under `ROLE_ADMIN`/`ROLE_SUPER_ADMIN`, component groups can limit UI variants (`allowedComponentUi`), and API Platform 5.0.9 ([6f98337](https://github.com/components-web-app/components-web-app/commit/6f98337c82b2f276cbf72990be08db42e2d29cf7))
+- `bin/devops/k8s.sh` no longer uses GNU-only `base64 -w0`, so scripts that source it also run on macOS ([1cd6526](https://github.com/components-web-app/components-web-app/commit/1cd652625e7c4c070b18140022000105c19b162d))
+- Documented two rules in CLAUDE.md for extensions: every `/_api` path goes to php, and a response that depends on the visitor sends `private`, not a bare `no-store` (cwa-nuxt-module#487) ([f3e5604](https://github.com/components-web-app/components-web-app/commit/f3e5604737c6843cff73d5b3d3c08743ac935de6))
+
 ## [2.0.0-alpha.60](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.60) - 2026-11-23
 
 ### Upgrade notes
