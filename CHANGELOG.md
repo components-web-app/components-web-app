@@ -8,6 +8,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- **`@cwa/nuxt` 2.0.0-alpha.40 needs bundle 2.0.0-alpha.47.** Set `"@cwa/nuxt": "^2.0.0-alpha.40"` in `app/package.json`. Admins need `ROLE_CMS_ADMIN` to edit content and `ROLE_USER_ADMIN` to manage users (`ROLE_ADMIN` and `ROLE_SUPER_ADMIN` include them). Replace `staticLayout` with `cwa.layout` (a layout reference), and collection IRIs in `allowedComponents` with component names: both still work, with a warning.
 - **Bundle 2.0.0-alpha.47 and this release's `api/frankenphp/Caddyfile` go together (#236).** Run `composer update components-web-app/api-components-bundle` (no migration) before or with the Caddyfile. The Caddyfile now rewrites only internal hosts (dotless or `.local` names and IP addresses) to `BROWSER_SERVER_NAME`, so a public alias reaches the API under its own name:
   - every alias must be in `TRUSTED_HOSTS` (and `CORS_ALLOW_ORIGIN` if it calls the API from the browser), or its API requests get a 400. The deploy's defaults already include `KUBE_INGRESS_ALIAS_DOMAINS`; check any `TRUSTED_HOSTS` a site sets itself;
   - on an alias with a different registrable domain from the Mercure hub, signed-in admins get no live updates (bundle alpha.47 logs a warning instead of failing login).
@@ -18,6 +19,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- `@cwa/nuxt` 2.0.0-alpha.40: layouts by reference for non-CWA pages (`cwa.layout`), component groups' allowed UI variants and styles, the narrow admin roles, and the extension API (`cwa:extend`) ([2dea6a2](https://github.com/components-web-app/components-web-app/commit/2dea6a2331b779c78d1fa1c7e59a4d23c1881943))
 - api-components-bundle 2.0.0-alpha.47: layouts can be fetched by reference (`GET /_/layouts/<reference>`, for `@cwa/nuxt` 2.0.0-alpha.40), and a host on another registrable domain from the Mercure hub no longer fails login ([7abdc5f](https://github.com/components-web-app/components-web-app/commit/7abdc5fc473335ee403a55a6731f15c1bec938f7))
 - api-components-bundle 2.0.0-alpha.46: new `ROLE_CMS_ADMIN` (content) and `ROLE_USER_ADMIN` (users) roles under `ROLE_ADMIN`/`ROLE_SUPER_ADMIN`, component groups can limit UI variants (`allowedComponentUi`), and API Platform 5.0.9 ([6f98337](https://github.com/components-web-app/components-web-app/commit/6f98337c82b2f276cbf72990be08db42e2d29cf7))
 - `bin/devops/k8s.sh` no longer uses GNU-only `base64 -w0`, so scripts that source it also run on macOS ([1cd6526](https://github.com/components-web-app/components-web-app/commit/1cd652625e7c4c070b18140022000105c19b162d))
