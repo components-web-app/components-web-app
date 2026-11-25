@@ -841,7 +841,7 @@ site_env_values() {
 "
       continue
     fi
-    b64=$(printf '%s' "$value" | base64 -w0)
+    b64=$(printf '%s' "$value" | base64 | tr -d '\n')
     case "$target:$kind" in
       pwa:config) pwa="${pwa}    \"$key\": \"$b64\"
 " ;;
@@ -1275,23 +1275,23 @@ deploy() {
   fi
   ensure_tls_certificate "$track" "$name" "$(tls_secret_name "$track" "$name")" || return 1
 
-  DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 -w0)
-  DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 -w0)
-  DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 -w0)
+  DATABASE_CA_CERT_B64=$(echo "$DATABASE_CA_CERT" | base64 | tr -d '\n')
+  DATABASE_CLIENT_CERT_B64=$(echo "$DATABASE_CLIENT_CERT" | base64 | tr -d '\n')
+  DATABASE_CLIENT_KEY_B64=$(echo "$DATABASE_CLIENT_KEY" | base64 | tr -d '\n')
   # Empty when unset, so the chart passes nothing and the Caddyfile's default
   # (`strategy hard`) applies. `echo "" | base64` gave "Cg==", a newline, which
   # replaced that default with an empty cdn block.
   CADDY_CACHE_CDN_CONFIG_B64=""
   if [ -n "${CADDY_CACHE_CDN_CONFIG:-}" ]; then
-    CADDY_CACHE_CDN_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_CDN_CONFIG" | base64 -w0)
+    CADDY_CACHE_CDN_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_CDN_CONFIG" | base64 | tr -d '\n')
   fi
   # Empty when unset, like the CDN config: the Caddyfile picks the store (#170).
   CADDY_CACHE_EXTRA_CONFIG_B64=""
   if [ -n "${CADDY_CACHE_EXTRA_CONFIG:-}" ]; then
-    CADDY_CACHE_EXTRA_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_EXTRA_CONFIG" | base64 -w0)
+    CADDY_CACHE_EXTRA_CONFIG_B64=$(printf '%s\n' "$CADDY_CACHE_EXTRA_CONFIG" | base64 | tr -d '\n')
   fi
   GCLOUD_JSON="${GCLOUD_JSON:-"{}"}"
-  GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 -w0)
+  GCLOUD_JSON_B64=$(echo "$GCLOUD_JSON" | base64 | tr -d '\n')
   NUXT_PUBLIC_CWA_API_URL_BROWSER="https://${DOMAIN}/_api"
   NUXT_SITE_URL="https://${DOMAIN}"
 
@@ -2284,7 +2284,7 @@ database_backup_key_b64() {
     echo "CWA_CI_DATABASE_BACKUP_GCLOUD_JSON is the media key (GCLOUD_JSON): backups need their own service account." >&2
     return 1
   fi
-  printf '%s' "$json" | base64 -w0
+  printf '%s' "$json" | base64 | tr -d '\n'
 }
 
 # host:port/database of a PostgreSQL URL, lower-cased, without credentials or parameters (never printed).
