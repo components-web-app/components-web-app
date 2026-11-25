@@ -319,8 +319,9 @@ http://127.0.0.1:2080 {
         }
     }
 
+    # A dotless or .local host, or an IP (kube probes), is internal; anchored, so a public alias keeps its Host (#236).
     @internal {
-        header_regexp internal host ([A-Za-z\-0-9]+(?:\.local)?(?:\:[0-9]{1,4})?)
+        header_regexp host ^([A-Za-z0-9-]+(\.local)?|[0-9]{1,3}(\.[0-9]{1,3}){3}|\[[0-9A-Fa-f:.]+\])(:[0-9]{1,5})?$
     }
 
     @api_handle expression `

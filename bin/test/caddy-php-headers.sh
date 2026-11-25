@@ -1,6 +1,7 @@
 #!/bin/sh
 # Regression test (#224, #225), on the real Caddyfile: SSR's API responses carry no Surrogate-Key yet stay purgeable by
-# tag, and php gets the visitor Caddy resolves (CWA_VISITOR_IP), never one a request header sets. No database needed.
+# tag, php gets the visitor Caddy resolves (CWA_VISITOR_IP), never one a request header sets, and only internal hosts
+# (dotless, .local, IPs) are rewritten to BROWSER_SERVER_NAME. No database needed.
 # Usage: bin/test/caddy-php-headers.sh [path-to-frankenphp] [Caddyfile]
 set -eu
 
@@ -16,6 +17,11 @@ trap 'kill "$PID" 2>/dev/null || true; rm -rf "$DIR"' EXIT
 mkdir "$DIR/public"
 cat > "$DIR/public/index.php" <<'PHP'
 <?php
+if (str_starts_with($_SERVER['REQUEST_URI'], '/_api/host')) {
+    header('Cache-Control: no-store, private');
+    echo $_SERVER['HTTP_HOST'];
+    return;
+}
 if (str_starts_with($_SERVER['REQUEST_URI'], '/_api/me')) {
     header('Cache-Control: no-store, private');
     echo $_SERVER['CWA_VISITOR_IP'] ?? '(unset)';
@@ -84,5 +90,17 @@ visitor 203.0.113.9 -H 'X-Forwarded-For: 162.158.1.1' -H 'CF-Connecting-IP: 203.
 visitor 198.51.100.7 -H 'X-Forwarded-For: 198.51.100.7' -H 'CF-Connecting-IP: 203.0.113.9'
 visitor 198.51.100.7 -H 'X-Forwarded-For: 198.51.100.7' -H 'CWA-Visitor-IP: 6.6.6.6' -H 'CWA_VISITOR_IP: 6.6.6.6'
 
+# host <sent> <want>: php sees BROWSER_SERVER_NAME for an internal host (SSR, kube probes), a public host as sent.
+host() {
+	got=$(curl -s -H "Host: $1" "http://127.0.0.1:$PORT/_api/host")
+	[ "$got" = "$2" ] || fail "Host '$1' reached php as '$got', want '$2'"
+}
+host php.local localhost
+host cwa-production:80 localhost
+host 10.4.2.17:80 localhost
+host '[fd00::1]:80' localhost
+host alias.example.org alias.example.org
+host 10.4.2.17.example.org 10.4.2.17.example.org
+
 if [ "$FAILED" -ne 0 ]; then tail -n 5 "$DIR/log"; exit 1; fi
-echo "OK: SSR's API responses carry no Surrogate-Key and stay purgeable; php gets Caddy's visitor"
+echo "OK: SSR's API responses carry no Surrogate-Key and stay purgeable; php gets Caddy's visitor and only internal hosts are rewritten"
