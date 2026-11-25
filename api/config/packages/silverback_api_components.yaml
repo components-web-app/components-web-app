@@ -30,11 +30,8 @@ silverback_api_components:
             email:
                 redirect_path_query: null
                 default_redirect_path: /confirm-new-email/{{ username }}/{{ new_email }}/{{ token }}
-    publishable:
-        permission: "is_granted('ROLE_ADMIN')"
     route_security:
         - { route: "/user-area*", security: "is_granted('ROLE_USER')" }
-    routable_security: "is_granted('ROLE_ADMIN')"
     mercure:
       cookie:
         samesite: '%env(JWT_COOKIE_SAMESITE)%'

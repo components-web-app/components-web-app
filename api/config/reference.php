@@ -259,7 +259,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         gc_divisor?: scalar|Param|null,
  *         gc_probability?: scalar|Param|null,
  *         gc_maxlifetime?: scalar|Param|null,
- *         save_path?: scalar|Param|null, // Defaults to "%kernel.cache_dir%/sessions" if the "handler_id" option is not null.
+ *         save_path?: scalar|Param|null, // Defaults to "%kernel.share_dir%/sessions" if the "handler_id" option is not null.
  *         metadata_update_threshold?: int|Param, // Seconds to wait between 2 session metadata updates. // Default: 0
  *     },
  *     request?: bool|array{ // Request configuration
@@ -522,7 +522,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         },
  *         mock_response_factory?: scalar|Param|null, // `true` to always return empty 200 responses, or the id of the service to use to generate mock responses - which should be either an invokable or an iterable.
  *         scoped_clients?: array<string, Param|string|array{ // Default: []
- *             scope?: scalar|Param|null, // The regular expression that the request URL must match before adding the other options. When none is provided, the base URI is used instead.
+ *             scope?: scalar|Param|null, // The regular expression that the request URL must match before adding the other options. When none is provided, the base URI is used instead. The regular expression should end with a "/", for example "https://api\.github\.com/", so that it doesn't match other hosts.
  *             base_uri?: scalar|Param|null, // The URI to resolve relative URLs, following rules in RFC 3985, section 2.
  *             auth_basic?: scalar|Param|null, // An HTTP Basic authentication "username:password".
  *             auth_bearer?: scalar|Param|null, // A token enabling HTTP Bearer authorization.
@@ -1964,7 +1964,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         route?: scalar|Param|null,
  *         security?: scalar|Param|null,
  *     }>,
- *     routable_security?: scalar|Param|null, // Default: null
+ *     routable_security?: scalar|Param|null, // The expression granting read access to a page or page data that no live route reaches. Null makes every such page public. // Default: "is_granted('ROLE_CMS_ADMIN')"
  *     refresh_token?: array{
  *         handler_id?: scalar|Param|null,
  *         options?: array<string, mixed>,
@@ -1973,7 +1973,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         database_user_provider?: scalar|Param|null,
  *     },
  *     publishable?: array{
- *         permission?: scalar|Param|null,
+ *         permission?: scalar|Param|null, // The expression granting draft access, publishing and every CWA content write. // Default: "is_granted('ROLE_CMS_ADMIN')"
  *     },
  *     enabled_components?: array{
  *         form?: bool|Param, // Default: true
@@ -2046,7 +2046,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         warm_after_flush?: bool|array{ // After a successful flush of the whole HTTP cache (the purge endpoint with no body, `purge-http-cache` with no options, a fixture load), dispatch a bounded warm of the public routes, shortest first, once with `Accept-Encoding: gzip` and once with `br`, as `Silverback\ApiComponentsBundle\Message\WarmHttpCacheMessage` messages on `messenger.default_bus`. Route that message to an async transport: without one the warm runs inside the request or command that flushed.
  *             enabled?: bool|Param, // Default: false
  *             base_url?: scalar|Param|null, // The URL of the HTTP cache in front of the API, as `warm-http-cache --base-url`. // Default: "http://localhost"
- *             max_time?: float|Param, // Seconds after which each warm stops starting requests. // Default: 60.0
+ *             max_time?: float|Param, // Seconds after which each warm stops starting requests; requests in flight still finish, so a warm can run up to max_time + timeout. // Default: 60.0
  *             concurrency?: int|Param, // The most warm requests in flight at once. // Default: 2
  *             timeout?: float|Param, // The most seconds one warm request may take. // Default: 30.0
  *             limit?: int|Param, // Warm at most this many routes, shortest paths first; null warms every public route until the maximum time. // Default: null
@@ -2112,6 +2112,9 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *             root_url?: scalar|Param|null,
  *             visibility?: "public"|"private"|"noPredefinedVisibility"|Param, // Default: "public"
  *         },
+ *         format_extension?: array{
+ *             resolver?: scalar|Param|null, // Name of the configured resolver to decorate, for example "default".
+ *         },
  *     }>,
  *     loaders?: array<string, array{ // Default: []
  *         stream?: array{
@@ -2160,6 +2163,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         redirect_response_code?: int|Param, // Default: 302
  *         debug?: bool|Param|null, // Whether to report images that can not be generated as an error. Defaults to the kernel debug mode. When disabled, the default image is served instead, if one is configured. // Default: null
  *     },
+ *     normalize_filter_set_names?: bool|Param|null, // Whether to replace "-" by "_" in filter set names, as Symfony does for configuration keys. Not setting this option to false is deprecated: the normalization will be removed in 3.0. // Default: null
  *     filter_sets?: array<string, array{ // Default: []
  *         quality?: scalar|Param|null,
  *         jpeg_quality?: scalar|Param|null,
