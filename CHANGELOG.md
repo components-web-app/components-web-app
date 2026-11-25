@@ -8,6 +8,9 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
+- **Bundle 2.0.0-alpha.47 and this release's `api/frankenphp/Caddyfile` go together (#236).** Run `composer update components-web-app/api-components-bundle` (no migration) before or with the Caddyfile. The Caddyfile now rewrites only internal hosts (dotless or `.local` names and IP addresses) to `BROWSER_SERVER_NAME`, so a public alias reaches the API under its own name:
+  - every alias must be in `TRUSTED_HOSTS` (and `CORS_ALLOW_ORIGIN` if it calls the API from the browser), or its API requests get a 400. The deploy's defaults already include `KUBE_INGRESS_ALIAS_DOMAINS`; check any `TRUSTED_HOSTS` a site sets itself;
+  - on an alias with a different registrable domain from the Mercure hub, signed-in admins get no live updates (bundle alpha.47 logs a warning instead of failing login).
 - **Bundle 2.0.0-alpha.46.** In the php container run `composer update components-web-app/api-components-bundle -W` (it needs cocur/slugify 4.8) and take the migration `api/migrations/Version20261125110101.php` (component groups' allowed UI variants). The bundle now secures the user API and has its own role hierarchy, so:
   - remove `security:` from the operations in `api/src/Entity/User.php` (the bundle's checks are ANDed with any the app sets; keep one only to restrict further);
   - remove `publishable.permission` and `routable_security` from `config/packages/silverback_api_components.yaml` if they are `is_granted('ROLE_ADMIN')`: both now default to `is_granted('ROLE_CMS_ADMIN')`, which `ROLE_ADMIN` and `ROLE_SUPER_ADMIN` include;
@@ -15,9 +18,14 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- api-components-bundle 2.0.0-alpha.47: layouts can be fetched by reference (`GET /_/layouts/<reference>`, for `@cwa/nuxt` 2.0.0-alpha.40), and a host on another registrable domain from the Mercure hub no longer fails login ([7abdc5f](https://github.com/components-web-app/components-web-app/commit/7abdc5fc473335ee403a55a6731f15c1bec938f7))
 - api-components-bundle 2.0.0-alpha.46: new `ROLE_CMS_ADMIN` (content) and `ROLE_USER_ADMIN` (users) roles under `ROLE_ADMIN`/`ROLE_SUPER_ADMIN`, component groups can limit UI variants (`allowedComponentUi`), and API Platform 5.0.9 ([6f98337](https://github.com/components-web-app/components-web-app/commit/6f98337c82b2f276cbf72990be08db42e2d29cf7))
 - `bin/devops/k8s.sh` no longer uses GNU-only `base64 -w0`, so scripts that source it also run on macOS ([1cd6526](https://github.com/components-web-app/components-web-app/commit/1cd652625e7c4c070b18140022000105c19b162d))
 - Documented two rules in CLAUDE.md for extensions: every `/_api` path goes to php, and a response that depends on the visitor sends `private`, not a bare `no-store` (cwa-nuxt-module#487) ([f3e5604](https://github.com/components-web-app/components-web-app/commit/f3e5604737c6843cff73d5b3d3c08743ac935de6))
+
+### Fixed
+
+- The Caddyfile's internal-host matcher wasn't anchored, so php saw every host, public aliases included, as `BROWSER_SERVER_NAME` (#236) ([ec2f9dd](https://github.com/components-web-app/components-web-app/commit/ec2f9ddd170a268d647aab59bc3ebf55809d1231))
 
 ## [2.0.0-alpha.60](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.60) - 2026-11-23
 
