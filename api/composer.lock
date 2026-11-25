@@ -361,16 +361,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.46",
+            "version": "2.0.0-alpha.47",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "d4b6370ed49b4eceebd2714e01b512fc392bdeac"
+                "reference": "2ef71eea30b716ae68b4344ef4ce7404eda41d0c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/d4b6370ed49b4eceebd2714e01b512fc392bdeac",
-                "reference": "d4b6370ed49b4eceebd2714e01b512fc392bdeac",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/2ef71eea30b716ae68b4344ef4ce7404eda41d0c",
+                "reference": "2ef71eea30b716ae68b4344ef4ce7404eda41d0c",
                 "shasum": ""
             },
             "require": {
@@ -493,9 +493,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.46"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.47"
             },
-            "time": "2026-11-25T01:49:45+00:00"
+            "time": "2026-11-25T16:21:17+00:00"
         },
         {
             "name": "composer/semver",
@@ -4006,16 +4006,16 @@
         },
         {
             "name": "phpstan/phpdoc-parser",
-            "version": "2.4.1",
+            "version": "2.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpdoc-parser.git",
-                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10"
+                "reference": "f80e753caa465ab4f93cb265ae32e2e8cb02c3f3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/af8e840551031d254cfdb3a18a62c3470a309c10",
-                "reference": "af8e840551031d254cfdb3a18a62c3470a309c10",
+                "url": "https://api.github.com/repos/phpstan/phpdoc-parser/zipball/f80e753caa465ab4f93cb265ae32e2e8cb02c3f3",
+                "reference": "f80e753caa465ab4f93cb265ae32e2e8cb02c3f3",
                 "shasum": ""
             },
             "require": {
@@ -4047,9 +4047,9 @@
             "description": "PHPDoc parser with support for nullable, intersection and generic types",
             "support": {
                 "issues": "https://github.com/phpstan/phpdoc-parser/issues",
-                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.1"
+                "source": "https://github.com/phpstan/phpdoc-parser/tree/2.4.2"
             },
-            "time": "2026-10-30T19:36:28+00:00"
+            "time": "2026-11-25T13:45:51+00:00"
         },
         {
             "name": "psr/cache",
