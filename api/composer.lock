@@ -361,16 +361,16 @@
         },
         {
             "name": "components-web-app/api-components-bundle",
-            "version": "2.0.0-alpha.47",
+            "version": "2.0.0-alpha.48",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components-web-app/api-components-bundle.git",
-                "reference": "2ef71eea30b716ae68b4344ef4ce7404eda41d0c"
+                "reference": "ffcf53df10666e0e9ff06356ac7635b1a510b01d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/2ef71eea30b716ae68b4344ef4ce7404eda41d0c",
-                "reference": "2ef71eea30b716ae68b4344ef4ce7404eda41d0c",
+                "url": "https://api.github.com/repos/components-web-app/api-components-bundle/zipball/ffcf53df10666e0e9ff06356ac7635b1a510b01d",
+                "reference": "ffcf53df10666e0e9ff06356ac7635b1a510b01d",
                 "shasum": ""
             },
             "require": {
@@ -493,9 +493,9 @@
             "homepage": "https://cwa.rocks",
             "support": {
                 "issues": "https://github.com/components-web-app/api-components-bundle/issues",
-                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.47"
+                "source": "https://github.com/components-web-app/api-components-bundle/tree/2.0.0-alpha.48"
             },
-            "time": "2026-11-25T16:21:17+00:00"
+            "time": "2026-11-26T17:10:02+00:00"
         },
         {
             "name": "composer/semver",
