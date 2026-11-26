@@ -19,6 +19,7 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Changed
 
+- api-components-bundle 2.0.0-alpha.48: a page data to-many association no longer 500s on flush, and purge failures stay safe with API Platform's upcoming purge buffer; no migration or config change ([1c8b2f9](https://github.com/components-web-app/components-web-app/commit/1c8b2f99842df4a7e81f9c68d45f097dd0a712e9))
 - `@cwa/nuxt` 2.0.0-alpha.40: layouts by reference for non-CWA pages (`cwa.layout`), component groups' allowed UI variants and styles, the narrow admin roles, and the extension API (`cwa:extend`) ([2dea6a2](https://github.com/components-web-app/components-web-app/commit/2dea6a2331b779c78d1fa1c7e59a4d23c1881943))
 - api-components-bundle 2.0.0-alpha.47: layouts can be fetched by reference (`GET /_/layouts/<reference>`, for `@cwa/nuxt` 2.0.0-alpha.40), and a host on another registrable domain from the Mercure hub no longer fails login ([7abdc5f](https://github.com/components-web-app/components-web-app/commit/7abdc5fc473335ee403a55a6731f15c1bec938f7))
 - api-components-bundle 2.0.0-alpha.46: new `ROLE_CMS_ADMIN` (content) and `ROLE_USER_ADMIN` (users) roles under `ROLE_ADMIN`/`ROLE_SUPER_ADMIN`, component groups can limit UI variants (`allowedComponentUi`), and API Platform 5.0.9 ([6f98337](https://github.com/components-web-app/components-web-app/commit/6f98337c82b2f276cbf72990be08db42e2d29cf7))
