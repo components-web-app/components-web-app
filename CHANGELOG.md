@@ -10,17 +10,17 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ### Upgrade notes
 
-This release moves from bundle 2.0.0-alpha.44 to **2.0.0-alpha.49** and from `@cwa/nuxt` 2.0.0-alpha.39 to **2.0.0-alpha.44**, which go together: the module needs alpha.49. Apply every step below, then work through *Deciding what each site takes*.
+This release moves from bundle 2.0.0-alpha.44 to **2.0.0-alpha.49** and from `@cwa/nuxt` 2.0.0-alpha.39 to **2.0.0-alpha.44**, which go together: the module needs alpha.49. Apply every step below, then check *Files lost since `@cwa/nuxt` alpha.36* and work through *Deciding what each site takes*.
 
 - **Update both together.** In the php container run `composer update components-web-app/api-components-bundle -W` (alpha.46 needs cocur/slugify 4.8), and set `"@cwa/nuxt": "^2.0.0-alpha.44"` in `app/package.json`. Take this release's `api/frankenphp/Caddyfile` in the same deploy (below).
-- **Two migrations:** `api/migrations/Version20261125110101.php` (component groups' allowed UI and styles, alpha.46) and `api/migrations/Version20261127221141.php` (users' `admin_preferences`, alpha.49). A site with its own migrations runs `doctrine:migrations:diff` after the update instead, and gets the same two columns.
+- **Two migrations:** `api/migrations/Version20261125110101.php` (component groups' allowed UI and styles, alpha.46) and `api/migrations/Version20261127221141.php` (users' `admin_preferences`, alpha.49). Copy both into the site's `api/migrations/`, beside its own (each is one `ALTER TABLE`). Skip one only if the site's schema already has that column from a migration of its own; never replace them with a `doctrine:migrations:diff`, which would also pick up unrelated drift.
 - **Roles and security (bundle alpha.46).** The bundle now has its own role hierarchy (`ROLE_SUPER_ADMIN` → `ROLE_ADMIN`, `ROLE_USER_ADMIN`; `ROLE_ADMIN` → `ROLE_CMS_ADMIN`) and secures the user API itself. Existing admins and super admins keep their access. Then:
   - remove `security:` from the operations in `api/src/Entity/User.php` (the bundle's checks are ANDed with any the app sets; keep one only to restrict further);
-  - remove `publishable.permission` and `routable_security` from `config/packages/silverback_api_components.yaml` if they are `is_granted('ROLE_ADMIN')`: both now default to `is_granted('ROLE_CMS_ADMIN')`;
+  - remove `publishable.permission` and `routable_security` from `api/config/packages/silverback_api_components.yaml` if they are `is_granted('ROLE_ADMIN')`: both now default to `is_granted('ROLE_CMS_ADMIN')`;
   - a site that set no `routable_security` had pages no live route reaches readable by anyone; they now need `ROLE_CMS_ADMIN`. Set `routable_security: ~` to keep them public;
   - a site's own `role_hierarchy` entries for these roles are merged with the bundle's, so they can stay. `http_cache.personalised_resource_classes`, `scheduled_expiry_resource_classes` and `purge_rendered_html_classes` now always keep the bundle's classes and add a site's own, so a site that listed the defaults can drop them;
   - assigning a role the signed-in user doesn't have is a 422, and only someone who outranks a user can edit or delete them. A site with its own user admin screens or scripts should check them.
-- **Bundle alpha.47 and this release's Caddyfile go together (#236).** The Caddyfile now rewrites only internal hosts (dotless or `.local` names and IP addresses) to `BROWSER_SERVER_NAME`, so a public alias reaches the API under its own name:
+- **Bundle alpha.47 and this release's Caddyfile go together (#236).** Nothing to do unless a site sets its own `TRUSTED_HOSTS` or `CORS_ALLOW_ORIGIN`, or serves an alias on another registrable domain from its Mercure hub. The Caddyfile now rewrites only internal hosts (dotless or `.local` names and IP addresses) to `BROWSER_SERVER_NAME`, so a public alias reaches the API under its own name:
   - every alias must be in `TRUSTED_HOSTS` (and `CORS_ALLOW_ORIGIN` if it calls the API from the browser), or its API requests get a 400. The deploy's defaults already include `KUBE_INGRESS_ALIAS_DOMAINS`; check any `TRUSTED_HOSTS` a site sets itself;
   - on an alias with a different registrable domain from the Mercure hub, signed-in admins get no live updates (bundle alpha.47 logs a warning instead of failing login).
 - **Front end (`@cwa/nuxt` alpha.40 to alpha.44).**
@@ -29,11 +29,23 @@ This release moves from bundle 2.0.0-alpha.44 to **2.0.0-alpha.49** and from `@c
   - A site using a CWA extension takes the extension's release for this module: its admin pages move into an area of their own (`/_cwa/<segment>/<path>`), so a site's own links to them use `cwaAdminRoute()`.
 - **Route paths (bundle alpha.45).** A route path with whitespace, `?` or `#` is now refused (422) when it's saved. Stored paths aren't re-checked, but one can't be saved again until it's fixed. Find them with `SELECT route FROM _acb_route WHERE route ~ '[[:space:]?#]';`.
 
+#### Files lost since `@cwa/nuxt` alpha.36
+
+For a site that ran template 2.0.0-alpha.58 to 2.0.0-alpha.60 (module alpha.36 to alpha.42), this is a check for lost uploads, not a choice. A file chosen before Add was dropped and the component saved without it (fixed in alpha.43). Check for placed components with no file and upload them again. For the template's `Image` (a site without that entity skips this query; repeat it for each component of the site's own with a file field, on its table and file column):
+
+```sql
+SELECT p.component_group_id, i.id FROM image i
+JOIN _acb_component_position p ON p.component_id = i.id
+WHERE i.filename IS NULL;
+```
+
+An image left without a file on purpose, such as an unpublished draft, is listed too.
+
 #### Deciding what each site takes
 
 These are new features a site doesn't get by default. Decide on each one from the site's own content, checking it first (run the queries with `psql` in the database, or `docker compose exec database psql -U app -d app`):
 
-- **Who edits what (roles).** `ROLE_CMS_ADMIN` edits content only, `ROLE_USER_ADMIN` manages users only, and `ROLE_ADMIN` has both. List the users with `SELECT username, roles FROM "user" ORDER BY username;` and give editors who shouldn't manage users `ROLE_CMS_ADMIN` instead of `ROLE_ADMIN`.
+- **Who manages users (roles).** `ROLE_CMS_ADMIN` edits content, and `ROLE_ADMIN` includes it. `ROLE_USER_ADMIN` manages users, and only `ROLE_SUPER_ADMIN` includes it, so user management stays with super admins unless a site grants it. List the users with `SELECT username, roles FROM "user" ORDER BY username;` and decide who other than super admins should get `ROLE_USER_ADMIN` (alone, for someone who manages users but not content). `ROLE_CMS_ADMIN` in place of `ROLE_ADMIN` only matters if the site gives `ROLE_ADMIN` other rights of its own.
 - **Which UIs and styles each component group allows.** A rule in the template, such as `:allowed-components="[{ component: CwaComponentNames.Quote, ui: [CwaComponentUis.Quote.Card], styles: [CwaComponentStyles.Quote.boxed] }]"`, limits what admins can pick in that group (docs: *`<CwaComponentGroup />` › Limiting UIs and Styles*). A group that should only ever look one way, such as a header, a footer or a sidebar, is the usual candidate. Before adding one, see what each group holds today:
   ```sql
   SELECT split_part(g.reference, '_/', 1) AS "group",
@@ -55,13 +67,6 @@ These are new features a site doesn't get by default. Decide on each one from th
   - A rule in a template replaces any limits set by fixtures or the API, and a plain list of names clears them; leave `:allowed-components` out to keep what's stored.
 - **Which component types each group allows.** An `:allowed-components` list must name every type a group already holds (the `component` column above): a placed component of a type the list leaves out is no longer returned by the API, so it disappears from the page.
 - **The admin top bar.** It now holds shortcuts each admin picks on their *My account* page (stored on their user). A site can set the default for everyone with `cwa.admin.topBar` in `nuxt.config.ts`; the template leaves it unset.
-- **Components added with a file since `@cwa/nuxt` alpha.36** (template 2.0.0-alpha.58 to 2.0.0-alpha.60). A file chosen before Add was dropped and the component saved without it (fixed in alpha.43). Check for placed images with no file, and the same for any component of the site's own with a file field, and upload them again:
-  ```sql
-  SELECT p.component_group_id, i.id FROM image i
-  JOIN _acb_component_position p ON p.component_id = i.id
-  WHERE i.filename IS NULL;
-  ```
-  An image left without a file on purpose, such as an unpublished draft, is listed too.
 
 ### Changed
 
@@ -70,7 +75,7 @@ These are new features a site doesn't get by default. Decide on each one from th
 - api-components-bundle 2.0.0-alpha.48: a page data to-many association no longer 500s on flush, and purge failures stay safe with API Platform's upcoming purge buffer; no migration or config change ([1c8b2f9](https://github.com/components-web-app/components-web-app/commit/1c8b2f99842df4a7e81f9c68d45f097dd0a712e9))
 - `@cwa/nuxt` 2.0.0-alpha.40: layouts by reference for non-CWA pages (`cwa.layout`), component groups' allowed UI variants and styles, the narrow admin roles, and the extension API (`cwa:extend`) ([2dea6a2](https://github.com/components-web-app/components-web-app/commit/2dea6a2331b779c78d1fa1c7e59a4d23c1881943))
 - api-components-bundle 2.0.0-alpha.47: layouts can be fetched by reference (`GET /_/layouts/<reference>`, for `@cwa/nuxt` 2.0.0-alpha.40), and a host on another registrable domain from the Mercure hub no longer fails login ([7abdc5f](https://github.com/components-web-app/components-web-app/commit/7abdc5fc473335ee403a55a6731f15c1bec938f7))
-- api-components-bundle 2.0.0-alpha.46: new `ROLE_CMS_ADMIN` (content) and `ROLE_USER_ADMIN` (users) roles under `ROLE_ADMIN`/`ROLE_SUPER_ADMIN`, component groups can limit UI variants (`allowedComponentUi`), and API Platform 5.0.9 ([6f98337](https://github.com/components-web-app/components-web-app/commit/6f98337c82b2f276cbf72990be08db42e2d29cf7))
+- api-components-bundle 2.0.0-alpha.46: new `ROLE_CMS_ADMIN` (content, under `ROLE_ADMIN`) and `ROLE_USER_ADMIN` (users, under `ROLE_SUPER_ADMIN`) roles, component groups can limit UI variants (`allowedComponentUi`), and API Platform 5.0.9 ([6f98337](https://github.com/components-web-app/components-web-app/commit/6f98337c82b2f276cbf72990be08db42e2d29cf7))
 - `bin/devops/k8s.sh` no longer uses GNU-only `base64 -w0`, so scripts that source it also run on macOS ([1cd6526](https://github.com/components-web-app/components-web-app/commit/1cd652625e7c4c070b18140022000105c19b162d))
 - Documented two rules in CLAUDE.md for extensions: every `/_api` path goes to php, and a response that depends on the visitor sends `private`, not a bare `no-store` (cwa-nuxt-module#487) ([f3e5604](https://github.com/components-web-app/components-web-app/commit/f3e5604737c6843cff73d5b3d3c08743ac935de6))
 
