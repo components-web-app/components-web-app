@@ -6,6 +6,8 @@ Every change to `main` gets a line under **Unreleased**, linking its commit or m
 
 ## Unreleased
 
+## [2.0.0-alpha.61](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.61) - 2026-11-28
+
 ### Upgrade notes
 
 This release moves from bundle 2.0.0-alpha.44 to **2.0.0-alpha.49** and from `@cwa/nuxt` 2.0.0-alpha.39 to **2.0.0-alpha.44**, which go together: the module needs alpha.49. Apply every step below, then work through *Deciding what each site takes*.
@@ -75,6 +77,10 @@ These are new features a site doesn't get by default. Decide on each one from th
 ### Fixed
 
 - The Caddyfile's internal-host matcher wasn't anchored, so php saw every host, public aliases included, as `BROWSER_SERVER_NAME` (#236) ([ec2f9dd](https://github.com/components-web-app/components-web-app/commit/ec2f9ddd170a268d647aab59bc3ebf55809d1231))
+
+### Security
+
+- No new advisories: `pnpm audit` and `composer audit` are clean. Still accepted: deepmerge 4.3.1 (GHSA-gcqx-w48m-w2h4, low, no fixed release). Build-only, never in `.output`.
 
 ## [2.0.0-alpha.60](https://github.com/components-web-app/components-web-app/releases/tag/v2.0.0-alpha.60) - 2026-11-23
 

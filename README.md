@@ -105,7 +105,8 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 
 | Template | api-components-bundle | `@cwa/nuxt` |
 |---|---|---|
-| 2.0.0-alpha.60 (latest) | 2.0.0-alpha.44 | 2.0.0-alpha.39 |
+| 2.0.0-alpha.61 (latest) | 2.0.0-alpha.49 | 2.0.0-alpha.44 |
+| 2.0.0-alpha.60 | 2.0.0-alpha.44 | 2.0.0-alpha.39 |
 | 2.0.0-alpha.59 | 2.0.0-alpha.44 | 2.0.0-alpha.39 |
 | 2.0.0-alpha.58 | 2.0.0-alpha.43 | 2.0.0-alpha.37 |
 | 2.0.0-alpha.57 | 2.0.0-alpha.41 | 2.0.0-alpha.32 |
@@ -125,6 +126,8 @@ Each template release names the api-components-bundle and `@cwa/nuxt` versions i
 
 | `@cwa/nuxt` | Needs api-components-bundle at least | Why |
 |---|---|---|
+| 2.0.0-alpha.44 | 2.0.0-alpha.49 | The admin top bar's shortcuts are saved on the user's `adminPreferences` (`/me`) |
+| 2.0.0-alpha.40 | 2.0.0-alpha.47 | Admin screens follow the narrow roles (`ROLE_CMS_ADMIN`, `ROLE_USER_ADMIN`), and `cwa.layout` fetches layouts by reference |
 | 2.0.0-alpha.38 | 2.0.0-alpha.44 | Go together: the admin's path input shows the required start the bundle now enforces, and moving a page relies on the bundle rewriting its routes |
 | 2.0.0-alpha.36 | 2.0.0-alpha.43 | Go together: a new page or page data is created with its route in one request, and bundle alpha.43 removes `POST /_/routes/generate`, which older modules call |
 | 2.0.0-alpha.33 | 2.0.0-alpha.42 | The admin's page lists use `GET /_/routes?pages[]=…` and `_metadata.pageDataCount` |

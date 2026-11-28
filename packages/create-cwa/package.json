@@ -1,6 +1,6 @@
 {
   "name": "create-cwa",
-  "version": "2.0.0-alpha.60",
+  "version": "2.0.0-alpha.61",
   "description": "Create a new CWA (Components Web App) project",
   "type": "module",
   "bin": {
